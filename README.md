@@ -54,7 +54,8 @@ Una plataforma web donde el profesor:
 ├── public/                 # Logos por defecto, plantillas
 ├── README.md
 └── .env.example            # Variables de entorno necesarias
-```bash
+```
+---
 
 ## 📌 Funcionalidades Principales (MVP)
 
@@ -70,7 +71,7 @@ Una plataforma web donde el profesor:
 ## 📄 Licencia
 
 Proyecto en desarrollo.  
-Todos los derechos reservados por **Rafael Menchaca**.  
+Todos los derechos reservados por **Rafael Menchaca y Juank Zuniga**.  
 Prohibida su distribución sin autorización.
 
 ---
