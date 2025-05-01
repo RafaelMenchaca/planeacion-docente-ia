@@ -54,6 +54,7 @@ Una plataforma web donde el profesor:
 ├── public/                 # Logos por defecto, plantillas
 ├── README.md
 └── .env.example            # Variables de entorno necesarias
+```bash
 
 ## 📌 Funcionalidades Principales (MVP)
 
