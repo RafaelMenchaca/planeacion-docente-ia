@@ -71,7 +71,7 @@ Una plataforma web donde el profesor:
 ## 📄 Licencia
 
 Proyecto en desarrollo.  
-Todos los derechos reservados por **Rafael Menchaca y Juank Zuniga**.  
+Todos los derechos reservados por **Rafael Menchaca y Juan Zuniga**.  
 Prohibida su distribución sin autorización.
 
 ---
