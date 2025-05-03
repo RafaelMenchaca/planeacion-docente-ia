@@ -2,16 +2,20 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* HEADER: barra superior */
 header {
+    height: 99px;
     background-color: #000;
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 40px;
+    padding: 0 40px;
 }
 
 /* Texto del logo */
@@ -52,15 +56,17 @@ header {
 
 /* HERO: sección principal */
 .hero {
+    height: calc(100vh - 99px);
+    /* Altura total menos la del header */
     display: flex;
     flex-direction: row;
     background-color: #ffeb00;
-    min-height: 100vh;
+    flex-grow: 1;
 }
 
 /* Sección de texto */
 .texto {
-    flex: 1;
+    flex: 7;
     padding: 60px 40px;
     display: flex;
     flex-direction: column;
@@ -79,29 +85,165 @@ header {
 
 /* Imagen */
 .imagen {
-    flex: 1;
+    flex: 3;
     overflow: hidden;
+    padding-right: 70px;
+    /* ✅ aquí creamos espacio a la derecha */
+    height: 100%;
 }
 
 .imagen img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
 /* Responsive para móviles */
 @media (max-width: 768px) {
     .hero {
+        height: auto;
         flex-direction: column;
     }
 
     header {
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        flex-wrap: wrap;
         align-items: flex-start;
+        height: auto;
+        padding: 20px;
+        gap: 0;
+    }
+
+    .logo {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .nav-botones {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
     }
 
     .texto h1 {
         font-size: 36px;
     }
+
+    .imagen {
+        padding-right: 0;
+    }
+}
+
+/* SECCIÓN DE BENEFICIOS */
+.beneficios {
+    background-color: #000;
+    color: #fff;
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.beneficios h2 {
+    color: #ffeb00;
+    font-size: 24px;
+    margin-bottom: 40px;
+}
+
+/* Contenedor de los tres beneficios */
+.grid-beneficios {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+/* Cada beneficio individual */
+.item-beneficio {
+    flex: 1;
+    min-width: 250px;
+    max-width: 320px;
+    margin: auto;
+}
+
+.item-beneficio img {
+    width: 50px;
+    margin-bottom: 20px;
+}
+
+.item-beneficio h3 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.item-beneficio p {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #ffeb00;
+}
+
+/* RESPONSIVE: una sola columna en móviles */
+@media (max-width: 768px) {
+    .grid-beneficios {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* SECCIÓN AHORRA TIEMPO */
+.ahorra-tiempo {
+    background-color: #ffeb00;
+    padding: 60px 40px;
+}
+
+.contenedor-ahorra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 40px;
+}
+
+.ilustracion {
+    flex: 1;
+    min-width: 250px;
+    max-width: 300px;
+}
+
+.ilustracion img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.texto-ahorra {
+    flex: 1;
+    min-width: 250px;
+    max-width: 500px;
+    position: relative;
+    text-align: right;
+}
+
+.texto-ahorra h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #000;
+    text-align: left;
+}
+
+.texto-ahorra p {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #000;
+    margin-bottom: 20px;
+}
+
+.icono-click {
+    width: 70px;
+    height: auto;
+    display: block;
+    margin-top: -10px;
+    margin-left: auto;
+    margin-right: 0;
 }
