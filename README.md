@@ -1,5 +1,8 @@
 # 🧠 Planeación Escolar con IA – Generador Inteligente de Planeaciones Docentes
 
+📍 **Visita el sitio en vivo:**  
+👉 [https://rafaelmenchaca.github.io/planeacion-docente-ia/](https://rafaelmenchaca.github.io/planeacion-docente-ia/)
+
 Este proyecto busca transformar el proceso de planeación académica para docentes, permitiendo generar, editar y exportar formatos oficiales de planeación con asistencia de inteligencia artificial.
 
 ---
@@ -23,41 +26,53 @@ Una plataforma web donde el profesor:
 
 ---
 
+## 🌟 Avances recientes
+
+- 🔧 Sección principal completamente responsive con imagen e introducción
+- ✅ Header reorganizado para mejorar visual en dispositivos móviles
+- 🟡 Sección de beneficios con diseño claro y uso de íconos SVG
+- 📆 Sección “Ahorra tiempo” con imagen tipo calendario, texto explicativo y botón visual interactivo
+- ✔️ Íconos `calendar.svg`, `check.svg` y `click.svg` integrados visualmente
+- 📱 Diseño adaptable en pantallas móviles, tablets y escritorio
+- 🚀 Despliegue del sitio en **GitHub Pages**
+
+---
+
 ## 🛠️ Stack Tecnológico
 
 | Componente        | Tecnología              |
 |-------------------|--------------------------|
-| Frontend          | React.js + Next.js       |
-| Estilos           | Tailwind CSS             |
-| Animaciones/UX    | Framer Motion / React DnD|
-| Backend           | Node.js + Express        |
-| Base de datos     | PostgreSQL o MongoDB     |
-| IA Generativa     | OpenAI API (GPT-4 Turbo) |
-| Exportación       | react-pdf / docx-js / Puppeteer |
-| Autenticación     | Firebase Auth / Auth0    |
-| Almacenamiento    | AWS S3 / Google Cloud    |
-| Infraestructura   | Vercel o Render          |
+| Frontend          | HTML, CSS (modularizado) |
+| Estilos           | CSS personalizado (sin frameworks por ahora) |
+| Animaciones/UX    | En desarrollo            |
+| Backend           | Node.js + Express *(plan futuro)* |
+| Base de datos     | PostgreSQL o MongoDB *(plan futuro)* |
+| IA Generativa     | OpenAI API *(plan futuro)* |
+| Exportación       | PDF/Word *(próximamente)* |
+| Autenticación     | Firebase/Auth0 *(plan futuro)* |
+| Almacenamiento    | AWS S3 / GCS *(plan futuro)* |
+| Infraestructura   | GitHub Pages *(temporal para frontend)*
 
 ---
 
-## 📦 Estructura Inicial del Proyecto
+## 📦 Estructura del Proyecto
 
 ```bash
-/Educativo_ia                 # 🔰 Nombre del proyecto raíz (actualizado)
-/                             # (Directorio principal del repositorio)
-├── css/                      # Estilos separados por vista
-│   ├── index.css             # Estilos para index.html
-│   └── editor.css            # Estilos para editor.html
-├── js/                       # Lógica futura en JavaScript
-│   └── (vacío por ahora)     
-├── assets/                   # Carpeta de imágenes, íconos, etc.
-│   └── (vacío por ahora)
-├── editor.html               # Página del editor de planeaciones
-├── index.html                # Página de inicio (dashboard)
-├── README.md                 # Documentación del proyecto
-├── .git/                     # Carpeta interna de Git (automática)
-└── .gitignore                # Ignora archivos sensibles
-    └── .env                  # Variables de entorno privadas (NO subir a GitHub)
+/Educativo_ia                 # 🔰 Nombre del proyecto raíz
+├── css/
+│   ├── index.css             # Estilos para la landing page
+│   └── editor.css            # Estilos para el editor de planeaciones
+├── js/
+│   └── editor.js             # Archivo reservado para interactividad futura
+├── assets/
+│   ├── portada.jpg           # Imagen de portada principal
+│   ├── calendar.svg          # Ícono ilustrativo
+│   ├── check.svg             # Íconos de beneficios
+│   └── click.svg             # Ícono de llamada a la acción
+├── editor.html               # Página del editor
+├── index.html                # Página principal (landing page)
+├── .gitignore                # Ignora variables sensibles como .env
+└── README.md
 
 ```
 ---
@@ -67,7 +82,7 @@ Una plataforma web donde el profesor:
 - ✅ Crear y editar cajas de texto  
 - ✅ Generar contenido automático con IA  
 - ✅ Personalizar logos y nombre de institución  
-- ✅ Exportar planeación a PDF y Word  
+- ✅ Exportar planeación a PDF y Word *(próximamente)*  
 - ⏳ Panel de usuario con historial de planeaciones  
 - ⏳ Soporte multiformato (COBAC, SEP, UNAM, etc)
 
