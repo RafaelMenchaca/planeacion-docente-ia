@@ -1,24 +1,49 @@
+/* Estilo general */
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-image: url('fondo.jpg');
-    /* Reemplaza con tu imagen de fondo */
+    background-image: url('../assets/fondo.jpg');
+    /* Asegúrate de mover la imagen a /assets */
     background-size: cover;
     background-position: center;
 }
 
+/* Contenedor principal */
 .contenedor {
     padding: 40px;
     max-width: 600px;
     margin: auto;
 }
 
-h2 {
+/* Botón principal */
+.boton-crear {
+    font-size: 24px;
+    font-weight: bold;
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    display: block;
+    width: 100%;
     text-align: center;
+}
+
+.boton-crear:hover {
+    background-color: #1976d2;
+}
+
+/* Título de la sección */
+.titulo-planeaciones {
+    font-weight: bold;
+    text-align: left;
     color: black;
     margin-bottom: 30px;
 }
 
+/* Tarjetas de planeación */
 .planeacion {
     display: flex;
     align-items: center;
@@ -32,13 +57,14 @@ h2 {
 
 .planeacion:hover {
     border: 2px solid #2196f3;
-    /* borde azul al pasar el cursor */
 }
 
+/* Información de la planeación */
 .info {
     font-size: 16px;
 }
 
+/* Botón de editar */
 .boton-editar {
     background-color: transparent;
     border: none;

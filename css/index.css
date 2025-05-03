@@ -1,0 +1,107 @@
+/* Reset y fuente general */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* HEADER: barra superior */
+header {
+    background-color: #000;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+}
+
+/* Texto del logo */
+.logo p {
+    margin: 0;
+    line-height: 1.4;
+    font-size: 14px;
+}
+
+/* Botones del header */
+.nav-botones {
+    display: flex;
+    gap: 15px;
+}
+
+/* Estilo general de botones */
+.btn {
+    font-weight: bold;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* Botones amarillos */
+.btn-amarillo {
+    background-color: #ffeb00;
+    color: #000;
+}
+
+/* Botón blanco */
+.btn-blanco {
+    background-color: white;
+    color: black;
+    margin-top: 20px;
+}
+
+/* HERO: sección principal */
+.hero {
+    display: flex;
+    flex-direction: row;
+    background-color: #ffeb00;
+    min-height: 100vh;
+}
+
+/* Sección de texto */
+.texto {
+    flex: 1;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.texto h1 {
+    font-size: 56px;
+    margin: 0 0 20px 0;
+}
+
+.texto p {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Imagen */
+.imagen {
+    flex: 1;
+    overflow: hidden;
+}
+
+.imagen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .hero {
+        flex-direction: column;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .texto h1 {
+        font-size: 36px;
+    }
+}

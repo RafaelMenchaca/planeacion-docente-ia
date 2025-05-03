@@ -4,31 +4,43 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Planeación Docente IA</title>
-    <link rel="stylesheet" href="css/estilo.css" />
-
+    <title>Planea - Planeación para Docentes</title>
+    <link rel="stylesheet" href="css/index.css" />
 </head>
 
 <body>
+    <!-- Encabezado de navegación -->
     <header>
-        <h1>Planeador Inteligente para Docentes</h1>
+        <div class="logo">
+            <p><strong>PLANEA<br>PLANEACION<br>PARA DOCENTES</strong></p>
+        </div>
+        <nav class="nav-botones">
+            <button class="btn btn-amarillo">Registrarse</button>
+            <button class="btn btn-amarillo">Iniciar</button>
+        </nav>
     </header>
 
-    <main>
-        <section id="editor">
-            <!-- Aquí irán las cajas de texto -->
-            <a href="editor.html">
-                <button id="addBoxBtn">+ Agregar Nueva Planeación</button>
-            </a>
-            <div id="boxesContainer"></div>
+    <!-- Contenido principal -->
+    <main class="hero">
+        <!-- Texto de bienvenida -->
+        <section class="texto">
+            <h1>Planea</h1>
+            <p><strong>¡Bienvenido a Planea!</strong><br>
+                La plataforma inteligente que te ayuda a planificar tus clases de manera rápida, organizada y
+                personalizada.
+                <br>Con el apoyo de herramientas digitales y tecnología basada en IA,
+                podrás crear tus planificaciones docentes de forma sencilla, ahorrar tiempo y enfocarte en lo más
+                importante:
+                enseñar con calidad.
+            </p>
+            <button class="btn btn-blanco">Más información</button>
+        </section>
+
+        <!-- Imagen lateral -->
+        <section class="imagen">
+            <img src="assets/portada.jpg" alt="Laptop con útiles escolares">
         </section>
     </main>
-
-    <footer>
-        <p>Rafael Menchaca © 2025</p>
-    </footer>
-
-    <script src="script.js"></script>
 </body>
 
 </html>
