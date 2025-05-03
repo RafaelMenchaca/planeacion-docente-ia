@@ -43,17 +43,22 @@ Una plataforma web donde el profesor:
 ## 📦 Estructura Inicial del Proyecto
 
 ```bash
-/planeacion-docente-ia
-├── frontend/               # App React/Next.js
-│   ├── components/         # Cajas de texto, botones, etc.
-│   ├── pages/              # Vista Editor, Dashboard, Vista previa
-│   └── styles/             # Tailwind + diseño base
-├── backend/                # Node.js API con Express
-│   ├── routes/             # Endpoints para guardar, exportar, generar IA
-│   └── controllers/        # Lógica de IA y base de datos
-├── public/                 # Logos por defecto, plantillas
-├── README.md
-└── .env.example            # Variables de entorno necesarias
+/Educativo_ia                 # 🔰 Nombre del proyecto raíz (actualizado)
+/                             # (Directorio principal del repositorio)
+├── css/                      # Estilos separados por vista
+│   ├── index.css             # Estilos para index.html
+│   └── editor.css            # Estilos para editor.html
+├── js/                       # Lógica futura en JavaScript
+│   └── (vacío por ahora)     
+├── assets/                   # Carpeta de imágenes, íconos, etc.
+│   └── (vacío por ahora)
+├── editor.html               # Página del editor de planeaciones
+├── index.html                # Página de inicio (dashboard)
+├── README.md                 # Documentación del proyecto
+├── .git/                     # Carpeta interna de Git (automática)
+└── .gitignore                # Ignora archivos sensibles
+    └── .env                  # Variables de entorno privadas (NO subir a GitHub)
+
 ```
 ---
 
@@ -71,7 +76,7 @@ Una plataforma web donde el profesor:
 ## 📄 Licencia
 
 Proyecto en desarrollo.  
-Todos los derechos reservados por **Rafael Menchaca y Juan Zuniga**.  
+Todos los derechos reservados por **Rafael Menchaca**.  
 Prohibida su distribución sin autorización.
 
 ---
