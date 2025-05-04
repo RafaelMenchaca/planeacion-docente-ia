@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar sesión | Planea</title>
+    <link rel="stylesheet" href="css/login.css" />
+</head>
+
+<body>
+    <main class="login-container">
+        <!-- Caja de login -->
+        <section class="formulario">
+            <section class="login-box">
+                <div class="icono-usuario">👤</div>
+                <h2>Iniciar sesión</h2>
+
+                <form id="login-form">
+                    <label for="usuario" class="sr-only">Usuario</label>
+                    <input type="text" id="usuario" placeholder="Usuario" name="usuario" required />
+
+                    <label for="password" class="sr-only">Contraseña</label>
+                    <input type="password" id="password" placeholder="Contraseña" name="password" required />
+
+                    <button type="submit" class="btn-ingresar">→</button>
+                </form>
+            </section>
+        </section>
+
+        <!-- Caja de registro -->
+        <section class="registro-box">
+            <p><strong>¿Aún no eres usuario? Da clic aquí</strong></p>
+            <div class="registro-con-icono">
+                <button class="btn-registrar">Registrar</button>
+                <img src="assets/click.svg" alt="Click icono" class="icono-click" />
+            </div>
+        </section>
+    </main>
+
+    <script src="js/login.js"></script>
+</body>
+
+</html>

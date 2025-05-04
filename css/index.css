@@ -1,4 +1,10 @@
 /* Reset y fuente general */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -16,6 +22,11 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 0 40px;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
 }
 
 /* Texto del logo */
@@ -39,6 +50,11 @@ header {
     border-radius: 30px;
     cursor: pointer;
     font-size: 16px;
+}
+
+/* Enlaces con clase btn (como "Iniciar") sin subrayado */
+a.btn {
+    text-decoration: none;
 }
 
 /* Botones amarillos */
