@@ -11,6 +11,7 @@
 <body>
     <!-- Menú lateral (sidebar) -->
     <div id="sidebar" class="sidebar">
+        <a href="#" class="cerrar-btn" onclick="cerrarSidebar()">×</a>
         <a href="#">Inicio</a>
         <a href="#">Planeaciones</a>
         <a href="#">Perfil</a>
@@ -20,58 +21,66 @@
     </div>
 
     <div class="contenedor">
-        <button class="boton-crear">+ Crear Nueva Planeación</button>
+        <!-- Sección del botón -->
+        <div class="crear-planeacion">
+            <!-- Botón hamburguesa solo visible en móvil -->
+            <span class="abrir-btn" onclick="abrirSidebar()">☰</span>
 
-        <!-- Agrupar las planeaciones dentro de un div "lista-planeaciones" -->
-        <h2 class="titulo-planeaciones">Planeaciones Guardadas</h2>
+            <button class="boton-crear">+ Crear Nueva Planeación</button>
+        </div>
 
-        <div class="lista-planeaciones">
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
-            <!-- ... más planeaciones ... -->
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
+        <div class="planeaciones-guardadas">
+            <!-- Agrupar las planeaciones dentro de un div "lista-planeaciones" -->
+            <h2 class="titulo-planeaciones">Planeaciones Guardadas</h2>
 
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
+            <div class="lista-planeaciones">
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
+                <!-- ... más planeaciones ... -->
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
 
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
 
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
 
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
 
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
-            </div>
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
 
-            <div class="planeacion">
-                <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
+
+                <div class="planeacion">
+                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
+                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
+                </div>
             </div>
         </div>
 
@@ -79,8 +88,6 @@
         <div class="ver-todas">
             <a href="#" class="btn-ver-todas">Ver todas las planeaciones</a>
         </div>
-
-
 
     </div>
 
