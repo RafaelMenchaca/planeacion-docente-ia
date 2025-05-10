@@ -61,17 +61,21 @@ Una plataforma web donde el profesor:
 /Educativo_ia                 # 🔰 Nombre del proyecto raíz
 ├── css/
 │   ├── index.css             # Estilos para la landing page
-│   └── editor.css            # Estilos para el editor de planeaciones
+│   ├── dashboard.css            # Estilos para el editor de planeaciones
+│   └── login.css
 ├── js/
-│   └── editor.js             # Archivo reservado para interactividad futura
+│   ├── dashboard.js             # Archivo reservado para interactividad futura
+│   └── login.js
 ├── assets/
 │   ├── portada.jpg           # Imagen de portada principal
 │   ├── calendar.svg          # Ícono ilustrativo
 │   ├── check.svg             # Íconos de beneficios
 │   └── click.svg             # Ícono de llamada a la acción
-├── editor.html               # Página del editor
+├── dashboard.html               # Página del editor
 ├── index.html                # Página principal (landing page)
+├── login.html
 ├── .gitignore                # Ignora variables sensibles como .env
+├── CHANGELOG.md
 └── README.md
 
 ```
