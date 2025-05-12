@@ -28,11 +28,8 @@ Una plataforma web donde el profesor:
 
 ## 🌟 Avances recientes
 
-- 🔧 Sección principal completamente responsive con imagen e introducción
+- 🔧 Sección principal lading page, login page, dashboard page
 - ✅ Header reorganizado para mejorar visual en dispositivos móviles
-- 🟡 Sección de beneficios con diseño claro y uso de íconos SVG
-- 📆 Sección “Ahorra tiempo” con imagen tipo calendario, texto explicativo y botón visual interactivo
-- ✔️ Íconos `calendar.svg`, `check.svg` y `click.svg` integrados visualmente
 - 📱 Diseño adaptable en pantallas móviles, tablets y escritorio
 - 🚀 Despliegue del sitio en **GitHub Pages**
 
@@ -51,7 +48,7 @@ Una plataforma web donde el profesor:
 | Exportación       | PDF/Word *(próximamente)* |
 | Autenticación     | Firebase/Auth0 *(plan futuro)* |
 | Almacenamiento    | AWS S3 / GCS *(plan futuro)* |
-| Infraestructura   | GitHub Pages *(temporal para frontend)*
+| Infraestructura   | GitHub Pages *(temporal para frontend)*|
 
 ---
 
@@ -61,19 +58,19 @@ Una plataforma web donde el profesor:
 /Educativo_ia                 # 🔰 Nombre del proyecto raíz
 ├── css/
 │   ├── index.css             # Estilos para la landing page
-│   ├── dashboard.css            # Estilos para el editor de planeaciones
-│   └── login.css
+│   ├── dashboard.css         # Estilos para el editor de planeaciones
+│   └── login.css             # Estilos para el login
 ├── js/
-│   ├── dashboard.js             # Archivo reservado para interactividad futura
-│   └── login.js
+│   ├── dashboard.js          # Archivo reservado para interactividad futura
+│   └── login.js              # Funcionalidad para login (no base de datos)
 ├── assets/
 │   ├── portada.jpg           # Imagen de portada principal
 │   ├── calendar.svg          # Ícono ilustrativo
 │   ├── check.svg             # Íconos de beneficios
 │   └── click.svg             # Ícono de llamada a la acción
-├── dashboard.html               # Página del editor
+├── dashboard.html            # Página principal (home)
 ├── index.html                # Página principal (landing page)
-├── login.html
+├── login.html                # Pagina para login
 ├── .gitignore                # Ignora variables sensibles como .env
 ├── CHANGELOG.md
 └── README.md
@@ -83,10 +80,10 @@ Una plataforma web donde el profesor:
 
 ## 📌 Funcionalidades Principales (MVP)
 
-- ✅ Crear y editar cajas de texto  
-- ✅ Generar contenido automático con IA  
-- ✅ Personalizar logos y nombre de institución  
-- ✅ Exportar planeación a PDF y Word *(próximamente)*  
+- ⏳ Crear y editar cajas de texto  
+- ⏳ Generar contenido automático con IA  
+- ⏳ Personalizar logos y nombre de institución  
+- ⏳ Exportar planeación a PDF y Word *(próximamente)*  
 - ⏳ Panel de usuario con historial de planeaciones  
 - ⏳ Soporte multiformato (COBAC, SEP, UNAM, etc)
 
