@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="=stylesheet" href="css/planeacion.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Clases Docentes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    form {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .checkbox-group, .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    .checkbox-group label, .radio-group label {
+      font-weight: normal;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <h1>Generador de Planeación de Clases</h1>
+  <form>
+    <h2>✅ 1. Datos Generales de la Clase</h2>
+
+    <label>Materia:</label>
+    <input type="text" name="materia" />
+
+    <label>Grado escolar o nivel educativo:</label>
+    <input type="text" name="nivel" />
+
+    <label>Tema o subtema específico a tratar:</label>
+    <input type="text" name="tema" />
+
+    <label>Duración de la clase (minutos):</label>
+    <input type="number" name="duracion" />
+
+    <label>Cantidad de alumnos estimada (opcional):</label>
+    <input type="number" name="alumnos" />
+
+    <label>Objetivo principal de la clase (opcional):</label>
+    <textarea name="objetivo"></textarea>
+
+    <label>¿Deseas que se incluya teoría/concepto al inicio?</label>
+    <div class="radio-group">
+      <label><input type="radio" name="teoria" value="Sí" /> Sí</label>
+      <label><input type="radio" name="teoria" value="No" /> No</label>
+    </div>
+
+    <h2>✅ 2. Preferencias Pedagógicas y Metodológicas</h2>
+
+    <label>Enfoque educativo predominante:</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="enfoque" value="Constructivista" /> Constructivista</label>
+      <label><input type="checkbox" name="enfoque" value="Basado en proyectos" /> Basado en proyectos</label>
+      <label><input type="checkbox" name="enfoque" value="Socioemocional" /> Socioemocional</label>
+      <label><input type="checkbox" name="enfoque" value="Por competencias" /> Por competencias</label>
+      <label><input type="checkbox" name="enfoque" value="Humanista" /> Humanista</label>
+    </div>
+
+    <label>Metodología de enseñanza deseada:</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="metodologia" value="Expositiva" /> Expositiva</label>
+      <label><input type="checkbox" name="metodologia" value="Indagatoria" /> Indagatoria</label>
+      <label><input type="checkbox" name="metodologia" value="Colaborativa" /> Colaborativa</label>
+      <label><input type="checkbox" name="metodologia" value="Juegos" /> Aprendizaje basado en juegos</label>
+      <label><input type="checkbox" name="metodologia" value="TIC" /> Uso de TIC</label>
+    </div>
+
+    <label>Tipo de actividades de aprendizaje preferidas:</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="actividades" value="Escritas" /> Actividades escritas</label>
+      <label><input type="checkbox" name="actividades" value="Producto digital" /> Producto digital</label>
+      <label><input type="checkbox" name="actividades" value="Dinámicas orales" /> Dinámicas orales</label>
+      <label><input type="checkbox" name="actividades" value="Experimentos" /> Experimentos</label>
+      <label><input type="checkbox" name="actividades" value="Problemas" /> Resolución de problemas</label>
+      <label><input type="checkbox" name="actividades" value="Análisis de texto" /> Análisis de texto</label>
+      <label><input type="checkbox" name="actividades" value="Mapas conceptuales" /> Mapas conceptuales</label>
+    </div>
+
+    <label>Tipo de trabajo preferido:</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="trabajo" value="Individual" /> Individual</label>
+      <label><input type="checkbox" name="trabajo" value="Equipo" /> En equipo</label>
+      <label><input type="checkbox" name="trabajo" value="Mixto" /> Mixto</label>
+    </div>
+
+    <label>¿Deseas que los ejercicios estén contextualizados con la vida cotidiana?</label>
+    <div class="radio-group">
+      <label><input type="radio" name="contexto" value="Sí" /> Sí</label>
+      <label><input type="radio" name="contexto" value="No" /> No</label>
+    </div>
+
+    <h2>✅ 3. Configuración de Actividades y Evaluación</h2>
+
+    <label>¿Cuántas actividades prácticas deseas durante la clase?</label>
+    <input type="number" name="actividades_practicas" />
+
+    <label>¿Deseas que la IA genere lecturas, textos o problemas realistas propios?</label>
+    <div class="radio-group">
+      <label><input type="radio" name="lecturas_ia" value="Sí" /> Sí</label>
+      <label><input type="radio" name="lecturas_ia" value="No" /> No</label>
+    </div>
+
+    <label>¿Qué recursos puede usar el alumno?</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="recursos" value="Libreta" /> Libreta</label>
+      <label><input type="checkbox" name="recursos" value="Libros" /> Libros</label>
+      <label><input type="checkbox" name="recursos" value="Internet" /> Internet</label>
+      <label><input type="checkbox" name="recursos" value="Herramientas digitales" /> Herramientas digitales</label>
+      <label><input type="checkbox" name="recursos" value="Material reciclado" /> Material reciclado</label>
+    </div>
+
+    <label>¿Deseas incluir actividades interactivas o lúdicas?</label>
+    <div class="radio-group">
+      <label><input type="radio" name="ludicas" value="Sí" /> Sí</label>
+      <label><input type="radio" name="ludicas" value="No" /> No</label>
+    </div>
+
+    <label>¿Deseas incluir una autoevaluación o coevaluación?</label>
+    <div class="radio-group">
+      <label><input type="radio" name="auto_coeval" value="Sí" /> Sí</label>
+      <label><input type="radio" name="auto_coeval" value="No" /> No</label>
+    </div>
+
+    <label>Forma preferida de evaluación:</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" name="evaluacion" value="Rúbrica" /> Rúbrica</label>
+      <label><input type="checkbox" name="evaluacion" value="Lista de cotejo" /> Lista de cotejo</label>
+      <label><input type="checkbox" name="evaluacion" value="Preguntas abiertas" /> Preguntas abiertas</label>
+      <label><input type="checkbox" name="evaluacion" value="Evaluación oral" /> Evaluación oral</label>
+    </div>
+
+    <label>¿Qué resultado esperas que el alumno logre al final?</label>
+    <input type="text" name="resultado_esperado" />
+
+    <h2>✅ BONUS: Para generación de múltiples clases</h2>
+
+    <label>Nombre del bloque temático o unidad didáctica:</label>
+    <input type="text" name="bloque" />
+
+    <label>Número de clases por bloque:</label>
+    <input type="number" name="numero_clases" />
+
+    <label>Nivel de dificultad general del bloque:</label>
+    <select name="dificultad">
+      <option value="Básico">Básico</option>
+      <option value="Medio">Medio</option>
+      <option value="Avanzado">Avanzado</option>
+    </select>
+
+    <label>Objetivo general del bloque:</label>
+    <textarea name="objetivo_bloque"></textarea>
+
+    <label>¿Deseas que los productos de clase sean variados y no repetitivos?</label>
+    <div class="radio-group">
+      <label><input type="radio" name="productos_variedad" value="Sí" /> Sí</label>
+      <label><input type="radio" name="productos_variedad" value="No" /> No</label>
+    </div>
+
+    <button type="submit">Generar Clase</button>
+  </form>
+</body>
+</html>
+
+
