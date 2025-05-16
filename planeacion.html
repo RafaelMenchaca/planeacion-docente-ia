@@ -60,7 +60,7 @@
 </head>
 <body>
   <h1>Generador de Planeación de Clases</h1>
-  <form>
+  <form id="formulario-planeacion">
     <h2>✅ 1. Datos Generales de la Clase</h2>
 
     <label>Materia:</label>
@@ -200,6 +200,53 @@
 
     <button type="submit">Generar Clase</button>
   </form>
+<script>
+  document.getElementById('formulario-planeacion').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const data = new FormData(form);
+    const getMultiple = name => [...form.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value).join(', ');
+    const getRadio = name => form.querySelector(`input[name="${name}"]:checked`)?.value || 'No especificado';
+
+    let contenido = `PLANEACIÓN DE CLASE DOCENTE\n\n`;
+
+    contenido += `✅ 1. DATOS GENERALES DE LA CLASE\n`;
+    contenido += `Materia: ${data.get('materia')}\n`;
+    contenido += `Grado escolar o nivel educativo: ${data.get('nivel')}\n`;
+    contenido += `Tema o subtema específico a tratar: ${data.get('tema')}\n`;
+    contenido += `Duración de la clase (minutos): ${data.get('duracion')}\n`;
+    contenido += `Cantidad de alumnos estimada: ${data.get('alumnos')}\n`;
+    contenido += `Objetivo principal de la clase: ${data.get('objetivo')}\n`;
+    contenido += `¿Incluir teoría al inicio?: ${getRadio('teoria')}\n\n`;
+
+    contenido += `✅ 2. PREFERENCIAS PEDAGÓGICAS Y METODOLÓGICAS\n`;
+    contenido += `Enfoque educativo predominante: ${getMultiple('enfoque')}\n`;
+    contenido += `Metodología de enseñanza: ${getMultiple('metodologia')}\n`;
+    contenido += `Actividades de aprendizaje preferidas: ${getMultiple('actividades')}\n`;
+    contenido += `Tipo de trabajo preferido: ${getMultiple('trabajo')}\n`;
+    contenido += `¿Contextualizar con la vida cotidiana?: ${getRadio('contexto')}\n\n`;
+
+    contenido += `✅ 3. CONFIGURACIÓN DE ACTIVIDADES Y EVALUACIÓN\n`;
+    contenido += `Número de actividades prácticas: ${data.get('actividades_practicas')}\n`;
+    contenido += `¿Lecturas o problemas generados por IA?: ${getRadio('lecturas_ia')}\n`;
+    contenido += `Recursos permitidos para el alumno: ${getMultiple('recursos')}\n`;
+    contenido += `¿Incluir actividades lúdicas?: ${getRadio('ludicas')}\n`;
+    contenido += `¿Incluir autoevaluación o coevaluación?: ${getRadio('auto_coeval')}\n`;
+    contenido += `Forma de evaluación preferida: ${getMultiple('evaluacion')}\n`;
+
+    // BONUS opcional: puedes seguir añadiendo datos extra aquí si los tienes definidos en el HTML
+
+    // Crear archivo y descargarlo
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'planeacion_clase.txt';
+    link.click();
+  });
+</script>
+
+
 </body>
 </html>
 

@@ -92,7 +92,7 @@ Una plataforma web donde el profesor:
 ## 📄 Licencia
 
 Proyecto en desarrollo.  
-Todos los derechos reservados por **Rafael Menchaca**.  
+Todos los derechos reservados por **Rafael Menchaca, Juan Zuñiga**.  
 Prohibida su distribución sin autorización.
 
 ---
