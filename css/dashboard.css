@@ -1,353 +1,220 @@
-/* Estilo general */
-html,
-body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
+/* Por defecto, todo usa cursor de flecha */
+body,
+* {
+    cursor: default;
 }
 
-body {
-    display: flex;
-    justify-content: center;
-    aling-items: center;
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background-size: cover;
-    background-position: center;
+body,
+html {
+    overflow-x: hidden;
+    /* ✅ previene scroll horizontal innecesario */
 }
 
-/* Contenedor principal */
-.contenedor {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    /* Altura de pantalla del usuario */
-    max-width: 700px;
-    width: 100%;
-    padding: 40px;
-    box-sizing: border-box;
-    overflow: hidden;
+.tabla-planeaciones,
+.tabla-scroll,
+.tabla-encabezado,
+.fila-planeacion {
+    overflow-x: hidden;
 }
 
-.crear-planeacion {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
-.planeaciones-guardadas {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Botón principal */
-.boton-crear {
-    font-size: 20px;
-    font-weight: bold;
-    background-color: #ffeb00;
-    color: black;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 5px;
+/* Excepciones donde sí debe cambiar el cursor */
+a,
+button,
+input,
+textarea,
+select,
+label[for],
+[role="button"],
+[tabindex]:not([tabindex="-1"]) {
     cursor: pointer;
-    margin-bottom: 20px;
-    display: block;
-    width: auto;
-    text-align: center;
-    box-shadow: 0px 4px 6px rgb(0, 0, 0, 0.1);
-    max-width: 300px;
-    text-decoration: none;
 }
 
-.boton-crear:hover {
-    background-color: #fdd835;
-}
 
-/* Título de la sección */
-.titulo-planeaciones {
-    font-weight: bold;
-    text-align: left;
-    color: black;
-    margin-bottom: 30px;
-}
-
-/* Tarjetas de planeación */
-.planeacion {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.7);
-    padding: 10px 20px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    border: 2px solid transparent;
-}
-
-.planeacion:hover {
-    border: 2px solid #2196f3;
-}
-
-/* Información de la planeación */
-.info {
-    font-size: 16px;
-}
-
-/* Botón de editar */
-.boton-editar {
-    background-color: transparent;
-    border: none;
-    font-weight: bold;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-}
-
-.boton-editar:hover {
-    color: #2196f3;
-}
-
-.flecha {
-    margin-left: 5px;
-}
-
-.lista-planeaciones {
-    flex-grow: 1;
+.scrollable-list {
     overflow-y: auto;
-    margin-bottom: 20px;
-    padding-right: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: #e0e7ff #f0f0f0;
+    max-height: 300px;
+    /* ✅ esta es la única altura controlada */
 }
 
-.planeaciones-guardadas {
-    flex-grow: 1;
+.scrollable-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scrollable-list::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 10px;
+}
+
+.scrollable-list::-webkit-scrollbar-thumb {
+    background-color: #e0e7ff;
+    border-radius: 10px;
+}
+
+
+/* Nuevo contenedor scrollable */
+/* Scroll solo en esta caja */
+.tabla-scroll {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 0.5rem;
+    background: #f9fafb;
+}
+
+/* Sticky encabezado */
+.tabla-encabezado {
     display: flex;
-    flex-direction: column;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e0e7ff;
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    color: #000;
+}
+
+
+/* Filas */
+.fila-planeacion {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background-color: #fff;
+    border-left: 4px solid #e0e7ff;
+    border-radius: 0.375rem;
+    margin-top: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.fila-planeacion:hover {
+    transform: translateX(5px);
+}
+
+/* Columnas */
+.col-id {
+    width: 10%;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.col-nombre {
+    width: 40%;
+    font-size: 0.75rem;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Estilo opcional para la barra de scroll */
-.lista-planeaciones::-webkit-scrollbar {
-    width: 6px;
+.col-fecha {
+    width: 25%;
+    font-size: 0.75rem;
+    text-align: right;
+    white-space: nowrap;
 }
 
-.lista-planeaciones::-webkit-scrollbar-thumb {
-    background-color: #ffeb00;
-    border-radius: 4px;
+.col-boton {
+    width: 25%;
+    text-align: right;
 }
 
-/* Botón de "Ver todas" */
-.ver-todas {
-    text-align: center;
-    margin-top: 20px;
+.col-boton button {
+    background-color: #e0e7ff;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.btn-ver-todas {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #fdd835;
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    border-radius: 5px;
+.col-boton button:hover {
+    background-color: #6366f1;
+}
+
+/* Resto de estilos fila y botón igual que antes */
+
+
+/* Estilos de la tabla de planeaciones */
+.tabla-planeaciones {
+    border: 2px solid #e0e7ff;
+    border-radius: 0.5rem;
+    background-color: #F9FAFB;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.tabla-encabezado {
+    display: flex;
+    font-weight: 600;
+    color: #000;
+    border-bottom: 1px solid #e0e7ff;
+    padding: 0.5rem 0.75rem;
+}
+
+.tabla-encabezado>div {
+    padding-right: 0.5rem;
+}
+
+.fila-planeacion {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background-color: #fff;
+    border-left: 4px solid #e0e7ff;
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-top: 0.5rem;
+    transition: transform 0.2s ease;
+    /* ✅ Agregado */
+}
+
+.fila-planeacion:hover {
+    transform: translateX(5px);
+    /* ✅ Animación restaurada */
+}
+
+.col-id {
+    width: 10%;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.col-nombre {
+    width: 40%;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-fecha {
+    width: 25%;
+    font-size: 14px;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.col-boton {
+    width: 25%;
+    text-align: right;
+}
+
+.col-boton button {
+    background-color: #e0e7ff;
+    border: none;
+    color: #000;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     transition: background-color 0.2s ease;
 }
 
-.btn-ver-todas:hover {
-    background-color: #f8db57;
-}
-
-.info {
-    word-break: break-word;
-}
-
-/* Botón de hamburguesa (oculto en escritorio) */
-.abrir-btn {
-    display: none;
-    font-size: 28px;
-    cursor: pointer;
-    margin-right: 12px;
-    color: #111;
-    background-color: #ffeb00;
-    border: none;
-    border-radius: 5px;
-    padding: 6px 10px;
-    align-self: center;
-}
-
-/* --- SIDEBAR (MENÚ LATERAL) --- */
-.sidebar {
-    height: 100%;
-    width: 180px;
-    position: fixed;
-    z-index: 1000;
-    top: 0;
-    left: 0;
-    background-color: white;
-    overflow-x: hidden;
-    padding-top: 50px;
-    border-radius: 5px;
-}
-
-/* Enlaces del sidebar */
-.sidebar a {
-    padding: 10px 20px;
-    text-decoration: none;
-    font-size: 18px;
-    color: black;
-    display: block;
-    transition: 0.2s;
-    border-radius: 5px;
-}
-
-.sidebar a:hover {
-    background-color: #ffeb00;
-}
-
-/* Por defecto, en escritorio: no mostrar el botón cerrar */
-.cerrar-btn {
-    display: none !important;
-}
-
-
-@media (max-width: 600px) {
-    .contenedor {
-        padding: 20px 16px;
-    }
-
-    .boton-crear {
-        font-size: 18px;
-        padding: 12px 18px;
-    }
-
-    .titulo-planeaciones {
-        font-size: 18px;
-    }
-
-    .planeacion {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .info {
-        font-size: 14px;
-    }
-
-    .boton-editar {
-        align-self: flex-end;
-        font-size: 14px;
-    }
-
-    .btn-ver-todas {
-        font-size: 14px;
-        padding: 8px 16px;
-        width: 100%;
-    }
-}
-
-/* Solo visible en móviles y tablet */
-@media (max-width: 768px) {
-    .abrir-btn {
-        display: inline-block;
-    }
-
-    .sidebar {
-        width: 0;
-        position: fixed;
-        z-index: 1000;
-        transition: 0.3s;
-    }
-
-    .sidebar.activa {
-        width: 180px;
-    }
-
-    .contenedor {
-        margin-left: 0 !important;
-    }
-
-    .cerrar-btn {
-        display: block !important;
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        font-size: 30px;
-        color: black;
-        text-decoration: none;
-        z-index: 1100;
-    }
-}
-
-/* Mobile S: 320px */
-@media (max-width: 320px) {
-    .crear-planeacion {
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .abrir-btn {
-        align-self: flex-start;
-    }
-
-    .boton-crear {
-        width: 90%;
-    }
-}
-
-/* Mobile M: 375px */
-@media (max-width: 375px) and (min-width: 321px) {
-    .crear-planeacion {
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .abrir-btn {
-        align-self: flex-start;
-    }
-
-    .boton-crear {
-        width: 90%;
-    }
-}
-
-/* Mobile L: 425px */
-@media (max-width: 425px) and (min-width: 376px) {
-    .crear-planeacion {
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .abrir-btn {
-        align-self: flex-start;
-    }
-
-    .boton-crear {
-        width: 90%;
-    }
-}
-
-/* Tablet: 768px */
-@media (max-width: 768px) and (min-width: 426px) {
-    .crear-planeacion {
-        position: relative;
-        height: auto;
-        display: block;
-        text-align: center;
-    }
-
-    .abrir-btn {
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    .boton-crear {
-        margin: 0 auto;
-        display: inline-block;
-    }
+.col-boton button:hover {
+    background-color: #6366f1;
 }

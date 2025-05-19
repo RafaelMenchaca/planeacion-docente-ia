@@ -4,96 +4,46 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Planeaciones Guardadas</title>
-    <link rel="stylesheet" href="css/dashboard.css" />
+    <title>Educativo IA</title>
+    <link rel="stylesheet" href="./css/dashboard.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-    <!-- Menú lateral (sidebar) -->
-    <div id="sidebar" class="sidebar">
-        <a href="#" class="cerrar-btn" onclick="cerrarSidebar()">×</a>
-        <a href="#">Inicio</a>
-        <a href="#">Planeaciones</a>
-        <a href="#">Perfil</a>
-        <a href="#">Configuración</a>
-        <a href="#">Ayuda</a>
-        <a href="#">Cerrar sesión</a>
-    </div>
+<body class="flex flex-col h-screen overflow-hidden bg-gray-100">
+    <!-- Navbar -->
+    <div id="navbar-placeholder" class="hidden"></div>
 
-    <div class="contenedor">
-        <!-- Sección del botón -->
-        <div class="crear-planeacion">
-            <!-- Botón hamburguesa solo visible en móvil -->
-            <span class="abrir-btn" onclick="abrirSidebar()">☰</span>
+    <!-- Main ocupa el resto de la pantalla -->
+    <main class="flex-1 min-h-0 max-w-5xl mx-auto w-full px-3 py-1 flex flex-col gap-1">
+        <!-- Tarjeta principal -->
+        <div class="bg-white rounded-lg shadow-lg flex-1 flex flex-col min-h-0 p-2">
+            <!-- Encabezado reducido -->
+            <div class="flex flex-col gap-1 flex-none basis-1/8">
+                <h1 class="text-3xl font-bold">Bienvenido a Educativo IA</h1>
+                <p class="text-gray-700 text-sm mt-0 mb-4">
+                    Crea tus planeaciones educativas impulsadas por IA.
+                </p>
+                <!-- Botón Crear -->
+                <button class="text-white text-2xl font-semibold 
+                    px-6 py-2 rounded-lg shadow-lg transform transition hover:scale-105 block mx-auto"
+                    style="background-color: #4f46e5;">
+                    Crear nueva planeación
+                </button>
+            </div>
 
-            <!-- <button class="boton-crear">+ Crear Nueva Planeación</button> -->
-            <a href="planeacion.html" class="boton-crear">+ Crear Nueva Planeación</a>
-
-        </div>
-
-        <div class="planeaciones-guardadas">
-            <!-- Agrupar las planeaciones dentro de un div "lista-planeaciones" -->
-            <h2 class="titulo-planeaciones">Planeaciones Guardadas</h2>
-
-            <div class="lista-planeaciones">
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-                <!-- ... más planeaciones ... -->
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
-
-                <div class="planeacion">
-                    <span class="info">Planeación 123 &nbsp; 5/5/24</span>
-                    <button class="boton-editar">Editar <span class="flecha">→</span></button>
-                </div>
+            <!-- Lista ampliada -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <h2 class="text-xl font-semibold mb-2">Planeaciones recientes</h2>
+                <div id="plan-list-placeholder" class="hidden flex-1 min-h-0 overflow-y-auto"></div>
             </div>
         </div>
+    </main>
 
-        <!-- Nuevo botón para ver todas -->
-        <div class="ver-todas">
-            <a href="#" class="btn-ver-todas">Ver todas las planeaciones</a>
-        </div>
 
-    </div>
+    <!-- Footer -->
+    <div id="footer-placeholder" class="hidden"></div>
 
-    <script src="js/dashboard.js"></script>
+    <script src="./js/dashboard.js"></script>
 </body>
 
 </html>
