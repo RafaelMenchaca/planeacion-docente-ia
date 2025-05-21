@@ -1,101 +1,155 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  padding: 2rem;
-  background-color: #f0f4f8;
-  color: #333;
+    font-family: 'Nunito', sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
 }
 
-h1 {
-  color: #1a73e8;
-  text-align: center;
-  margin-bottom: 2rem;
+header {
+    background-color: #4f46e5;
+    color: white;
+    padding: 2rem 1rem;
+    text-align: center;
 }
 
-form {
-  max-width: 960px;
-  margin: auto;
-  background: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
 }
 
-fieldset {
-  border: 1px solid #dfe1e5;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  background-color: #f9fbfd;
+header p {
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-legend {
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: #202124;
-  padding: 0 0.5rem;
+.steps {
+    display: flex;
+    justify-content: center;
+    background-color: #e0e7ff;
+    padding: 1rem 0;
+    gap: 2rem;
 }
 
-label {
-  display: block;
-  margin-top: 1rem;
-  font-weight: 500;
-  color: #5f6368;
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #6366f1;
+    font-weight: 600;
+}
+
+.step span {
+    background-color: #6366f1;
+    color: white;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    margin-bottom: 0.3rem;
+    font-weight: bold;
+}
+
+.tab {
+    display: none;
+    background-color: white;
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.tab.active {
+    display: block;
+}
+
+h2 {
+    color: #374151;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+p.description {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    flex: 1 1 260px;
+    font-weight: 600;
 }
 
 input[type="text"],
-input[type="number"],
-textarea,
-select {
-  width: 100%;
-  padding: 0.6rem;
-  margin-top: 0.3rem;
-  border: 1px solid #dadce0;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+select,
+textarea {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #f9fafb;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: #1a73e8;
-  outline: none;
+.checkbox-group,
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
-.checkbox-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+.checkbox-group label,
+.radio-group label {
+    background-color: #eef2ff;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #c7d2fe;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: calc(50% - 1rem);
-  background-color: #e8f0fe;
-  padding: 0.4rem 0.6rem;
-  border-radius: 5px;
-  font-size: 0.95rem;
-  cursor: pointer;
+.range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.nav-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
 button {
-  display: block;
-  width: 100%;
-  padding: 0.8rem;
-  background-color: #1a73e8;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+    background-color: #4f46e5;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 button:hover {
-  background-color: #1669c1;
+    background-color: #4338ca;
 }
