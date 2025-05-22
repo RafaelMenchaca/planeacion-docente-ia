@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Planificación Escolar</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/planeacion.css">
+  <link href="./css/planeacion.css" rel="stylesheet">
 </head>
 <body>
 
@@ -15,22 +15,22 @@
   </header>
 
   <div class="steps">
-    <div class="step"><span>1</span>Datos Generales</div>
-    <div class="step"><span>2</span>Preferencias</div>
-    <div class="step"><span>3</span>Evaluación</div>
+    <div class="step active"><span>📘</span>Datos Generales</div>
+    <div class="step"><span>🎯</span>Preferencias</div>
+    <div class="step"><span>🧩</span>Evaluación</div>
   </div>
 
   <form id="wizardForm">
 
     <div class="tab active" id="tab1">
-      <h2>Datos Generales</h2>
+      <h2>📘 Datos Generales</h2>
       <p class="description">Información básica sobre tu clase</p>
       <div class="form-group">
-        <label>Clase o Asignatura<br><input type="text" /></label>
-        <label>Tema o Unidad<br><input type="text" /></label>
+        <label>Clase o Asignatura<br><input type="text" id="asignatura" name="asignatura" /></label>
+        <label>Tema o Unidad<br><input type="text" id="tema" name="tema" /></label>
         <label>Nivel Educativo<br>
-          <select>
-            <option>Seleccionar</option>
+          <select id="nivel" name="nivel">
+            <option value="">Seleccionar</option>
             <option>Preescolar</option>
             <option>Primaria Grado 1°</option>
             <option>Primaria Grado 2°</option>
@@ -38,27 +38,27 @@
             <option>Primaria Grado 4°</option>
             <option>Primaria Grado 5°</option>
             <option>Primaria Grado 6°</option>
-            <option>Secundaria  Grado 1°</option>
-            <option>Secundaria  Grado 2°</option>
-            <option>Secundaria  Grado 3°</option>
-            <option>Preparatoria semestre 1° </option>
-            <option>Preparatoria semestre 2° </option>
-            <option>Preparatoria semestre 3° </option>
-            <option>Preparatoria semestre 4° </option>
-            <option>Preparatoria semestre 5° </option>
-            <option>Preparatoria semestre 6° </option>
+            <option>Secundaria Grado 1°</option>
+            <option>Secundaria Grado 2°</option>
+            <option>Secundaria Grado 3°</option>
+            <option>Preparatoria semestre 1°</option>
+            <option>Preparatoria semestre 2°</option>
+            <option>Preparatoria semestre 3°</option>
+            <option>Preparatoria semestre 4°</option>
+            <option>Preparatoria semestre 5°</option>
+            <option>Preparatoria semestre 6°</option>
             <option>Universidad</option>
           </select>
-        </label> 
-        <label>Duración (minutos)<br><input type="text" /></label>
-        <label>Número de Clases<br><input type="text" /></label>
+        </label>
+        <label>Duración (minutos)<br><input type="text" id="duracion" name="duracion" /></label>
+        <label>Número de Clases<br><input type="text" id="num_clases" name="num_clases" /></label>
       </div>
-      <label>Objetivos de Aprendizaje<br><textarea rows="3"></textarea></label>
+      <label>🎯 Objetivos de Aprendizaje<br><textarea rows="3" id="objetivos" name="objetivos"></textarea></label>
       <p style="margin-top: 1rem;">Modalidad de la Clase</p>
       <div class="radio-group">
-        <label><input type="radio" name="modalidad"> Presencial</label>
-        <label><input type="radio" name="modalidad"> Virtual</label>
-        <label><input type="radio" name="modalidad"> Híbrida</label>
+        <label><input type="radio" name="modalidad" value="Presencial" /> Presencial</label>
+        <label><input type="radio" name="modalidad" value="Virtual" /> Virtual</label>
+        <label><input type="radio" name="modalidad" value="Híbrida" /> Híbrida</label>
       </div>
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(1)">Siguiente</button>
@@ -66,31 +66,31 @@
     </div>
 
     <div class="tab" id="tab2">
-      <h2>Preferencias Pedagógicas</h2>
+      <h2>🎯 Preferencias Pedagógicas</h2>
       <p class="description">Metodologías, estilos y tecnología</p>
       <div class="checkbox-group">
-        <label><input type="checkbox"> Constructivismo</label>
-        <label><input type="checkbox"> Aprendizaje Significativo</label>
-        <label><input type="checkbox"> Colaborativo</label>
-        <label><input type="checkbox"> Aula Invertida</label>
+        <label><input type="checkbox" name="metodologias" value="Constructivismo" /> Constructivismo</label>
+        <label><input type="checkbox" name="metodologias" value="Aprendizaje Significativo" /> Aprendizaje Significativo</label>
+        <label><input type="checkbox" name="metodologias" value="Colaborativo" /> Colaborativo</label>
+        <label><input type="checkbox" name="metodologias" value="Aula Invertida" /> Aula Invertida</label>
       </div>
       <div class="checkbox-group">
-        <label><input type="checkbox"> Pensamiento Crítico</label>
-        <label><input type="checkbox"> Creatividad</label>
-        <label><input type="checkbox"> Comunicación</label>
-        <label><input type="checkbox"> Alfabetización Digital</label>
-      </div  class="tab" id="tab2">
+        <label><input type="checkbox" name="habilidades" value="Pensamiento Crítico" /> Pensamiento Crítico</label>
+        <label><input type="checkbox" name="habilidades" value="Creatividad" /> Creatividad</label>
+        <label><input type="checkbox" name="habilidades" value="Comunicación" /> Comunicación</label>
+        <label><input type="checkbox" name="habilidades" value="Alfabetización Digital" /> Alfabetización Digital</label>
+      </div>
       <p class="description">Estilo de Aprendizaje Preferido</p>
       <div class="checkbox-group">
-       <label><input type="checkbox" />Actividades Escritas</label>
-       <label><input type="checkbox" />Producto Digital</label>
-       <label><input type="checkbox" />Dinamicas Orales</label>
-       <label><input type="checkbox" />Experimentos</label>
-       <label><input type="checkbox" />Resolucion De Problemas</label>
-       <label><input type="checkbox" />Analisis De Texto</label>
-       <label><input type="checkbox" />Organizadores Graficos</label>
+       <label><input type="checkbox" name="estilo" value="Actividades Escritas" /> Actividades Escritas</label>
+       <label><input type="checkbox" name="estilo" value="Producto Digital" /> Producto Digital</label>
+       <label><input type="checkbox" name="estilo" value="Dinámicas Orales" /> Dinámicas Orales</label>
+       <label><input type="checkbox" name="estilo" value="Experimentos" /> Experimentos</label>
+       <label><input type="checkbox" name="estilo" value="Resolución de Problemas" /> Resolución de Problemas</label>
+       <label><input type="checkbox" name="estilo" value="Análisis de Texto" /> Análisis de Texto</label>
+       <label><input type="checkbox" name="estilo" value="Organizadores Gráficos" /> Organizadores Gráficos</label>
       </div>
-      <label>Consideraciones Especiales<br><textarea rows="2"></textarea></label>
+      <label>Consideraciones Especiales<br><textarea rows="2" id="consideraciones" name="consideraciones"></textarea></label>
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(-1)">Anterior</button>
         <button type="button" onclick="nextTab(1)">Siguiente</button>
@@ -98,39 +98,37 @@
     </div>
 
     <div class="tab" id="tab3">
-      <h2>Configuracion De Actividades</h2>
-      <p class="description">Estructura De La Clase</p>
-      <div class="checkbox-group">
-        <label><input type="checkbox" checked> Inicio Motivador</label>
-        <label><input type="checkbox" checked> Desarrollo de Contenido</label>
-        <label><input type="checkbox" checked> Práctica Guiada</label>
-        <label><input type="checkbox" checked> Práctica independiente</label>
-        <label><input type="checkbox" checked> Cierre Reflexivo</label>
+      <h2>🧩 Evaluación</h2>
+      <p class="description">Tipo de evaluación y actividades</p>
+      <div class="radio-group">
+        <label><input type="radio" name="evaluacion" value="Evaluación Formativa" /> Evaluación Formativa</label>
+        <label><input type="radio" name="evaluacion" value="Evaluación Sumativa" /> Evaluación Sumativa</label>
+        <label><input type="radio" name="evaluacion" value="Autoevaluacion" /> Autoevaluacion</label>
+        <label><input type="radio" name="evaluacion" value="Coevaluacion" /> Coevaluacion</label>
       </div>
-      <p class="description">Metodos De Evaluacion</p>
+      <p class="description">Actividades a realizar</p>
       <div class="checkbox-group">
-        <label><input type="checkbox"> Evalucion Formativa</label>
-        <label><input type="checkbox"> Evaluacion Sumativa</label>
-        <label><input type="checkbox"> Autoevaluacion</label>
-        <label><input type="checkbox"> Coevaluacion</label>
+        <label><input type="checkbox" name="tipo_actividad" value="Exposición" /> Exposición</label>
+        <label><input type="checkbox" name="tipo_actividad" value="Debate o Discusión" /> Debate o Discusión</label>
+        <label><input type="checkbox" name="tipo_actividad" value="Investigación" /> Investigación</label>
+        <label><input type="checkbox" name="tipo_actividad" value="Proyecto" /> Proyecto</label>
+        <label><input type="checkbox" name="tipo_actividad" value="Estudio de Caso" /> Estudio de Caso</label>
+        <label><input type="checkbox" name="tipo_actividad" value="Trabajo en Equipo" /> Trabajo en Equipo</label>
       </div>
-      <p class="description">Tipos De Actividades</p>
+      <p class="description">Recursos y Material Didáctico</p>
       <div class="checkbox-group">
-        <label><input type="checkbox"> Exposicion</label>
-        <label><input type="checkbox"> Debate o Discucion</label>
-        <label><input type="checkbox"> Trabajo En equipo</label>
-        <label><input type="checkbox"> Investigacion</label>
-        <label><input type="checkbox"> Juego Educativo</label>
-        <label><input type="checkbox"> Proyecto</label>
+        <label><input type="checkbox" name="recursos" value="Libros" /> Libros</label>
+        <label><input type="checkbox" name="recursos" value="Videos" /> Videos</label>
+        <label><input type="checkbox" name="recursos" value="Presentaciones" /> Presentaciones</label>
+        <label><input type="checkbox" name="recursos" value="Material Impreso" /> Material Impreso</label>
+        <label><input type="checkbox" name="recursos" value="Software" /> Software</label>
       </div>
-      <p class="description">Recursos Necesarios</p>
-      <div class="checkbox-group">
-        <label><input type="checkbox"> Presentación Digital</label>
-        <label><input type="checkbox"> Material Impreso</label>
-        <label><input type="checkbox"> Videos</label>
-        <label><input type="checkbox"> Apps Educativas</label>
-        <label><input type="checkbox"> Material Manupulativos</label>
+
+      <div class="checkbox-group" style="margin-top: 1rem;">
+        <label><input type="checkbox" id="generar_problemas" name="generar_problemas" /> Generar problemas con soluciones</label>
       </div>
+
+      <label>Estructura de la Clase<br><textarea rows="3" id="estructura" name="estructura"></textarea></label>
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(-1)">Anterior</button>
         <button type="submit">Finalizar</button>
@@ -139,23 +137,9 @@
 
   </form>
 
-  <script>
-    let currentTab = 1;
+  <pre id="resumen"></pre>
 
-    function nextTab(step) {
-      const tabs = document.querySelectorAll(".tab");
-      const steps = document.querySelectorAll(".step");
-
-      tabs[currentTab - 1].classList.remove("active");
-      steps[currentTab - 1].classList.remove("active");
-
-      currentTab += step;
-
-      tabs[currentTab - 1].classList.add("active");
-      steps[currentTab - 1].classList.add("active");
-    }
-  </script>
-
+  
+  <script src="./js/planeacion.js"></script>
 </body>
 </html>
-
