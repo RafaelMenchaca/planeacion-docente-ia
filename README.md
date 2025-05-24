@@ -59,18 +59,25 @@ Una plataforma web donde el profesor:
 ├── css/
 │   ├── index.css             # Estilos para la landing page
 │   ├── dashboard.css         # Estilos para el editor de planeaciones
-│   └── login.css             # Estilos para el login
+│   ├── login.css             # Estilos para el login
+│   └── planeacion.css
 ├── js/
 │   ├── dashboard.js          # Archivo reservado para interactividad futura
-│   └── login.js              # Funcionalidad para login (no base de datos)
+│   ├── login.js              # Funcionalidad para login (no base de datos)
+│   └── planeacion.js
 ├── assets/
 │   ├── portada.jpg           # Imagen de portada principal
 │   ├── calendar.svg          # Ícono ilustrativo
 │   ├── check.svg             # Íconos de beneficios
 │   └── click.svg             # Ícono de llamada a la acción
+├── components/
+│   ├── footer.html
+│   ├── navbar.html
+│   └── plan-list.html
 ├── dashboard.html            # Página principal (home)
 ├── index.html                # Página principal (landing page)
 ├── login.html                # Pagina para login
+├── planeacion.html
 ├── .gitignore                # Ignora variables sensibles como .env
 ├── CHANGELOG.md
 └── README.md
