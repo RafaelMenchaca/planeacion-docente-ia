@@ -56,29 +56,29 @@ Una plataforma web donde el profesor:
 
 ```bash
 /Educativo_ia                 # 🔰 Nombre del proyecto raíz
-├── css/
-│   ├── index.css             # Estilos para la landing page
-│   ├── dashboard.css         # Estilos para el editor de planeaciones
-│   ├── login.css             # Estilos para el login
-│   └── planeacion.css
-├── js/
-│   ├── dashboard.js          # Archivo reservado para interactividad futura
-│   ├── login.js              # Funcionalidad para login (no base de datos)
-│   └── planeacion.js
+├── .gitignore                # Ignora variables sensibles como .env
 ├── assets/
 │   ├── portada.jpg           # Imagen de portada principal
 │   ├── calendar.svg          # Ícono ilustrativo
 │   ├── check.svg             # Íconos de beneficios
 │   └── click.svg             # Ícono de llamada a la acción
-├── components/
-│   ├── footer.html
-│   ├── navbar.html
-│   └── plan-list.html
+├── components/               
+│   ├── footer.html           # Archivo de footer
+│   ├── navbar.html           # Archivo de navbar 
+│   └── plan-list.html        # Archivo de lista de planeaciones (dasboard)
+├── css/
+│   ├── index.css             # Estilos para la landing page
+│   ├── dashboard.css         # Estilos para el editor de planeaciones
+│   ├── login.css             # Estilos para el login
+│   └── planeacion.css        # Estilos para pagina de planeacion
+├── js/
+│   ├── dashboard.js          # Archivo reservado para interactividad futura
+│   ├── login.js              # Funcionalidad para login (no base de datos)
+│   └── planeacion.js         # Funcionalidad de la planeacion
 ├── dashboard.html            # Página principal (home)
 ├── index.html                # Página principal (landing page)
 ├── login.html                # Pagina para login
-├── planeacion.html
-├── .gitignore                # Ignora variables sensibles como .env
+├── planeacion.html           # Pagina para la planeacion
 ├── CHANGELOG.md
 └── README.md
 
