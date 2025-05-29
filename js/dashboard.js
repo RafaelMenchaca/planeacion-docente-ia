@@ -73,7 +73,11 @@ async function cargarPlaneaciones() {
                     })
                     : 'Sin fecha'}
         </div>
-        <div class="col-boton"><button onclick="verPlaneacion(${p.id})">Ver</button></div>
+        <div class="col-boton">
+            <a href="detalle.html?id=${p.id}">
+                <button class="text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">Ver</button>
+            </a>
+        </div> 
       `;
             lista.appendChild(fila);
         });
@@ -98,3 +102,4 @@ async function cargarPlaneaciones() {
 function verPlaneacion(id) {
     alert(`Planeación ID: ${id}`);
 }
+
