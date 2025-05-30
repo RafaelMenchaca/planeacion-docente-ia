@@ -36,6 +36,18 @@
             <!-- Lista ampliada -->
             <div class="flex-1 flex flex-col min-h-0">
                 <h2 class="text-xl font-semibold mb-2">Planeaciones recientes</h2>
+                <!-- Filtros -->
+                <div class="flex flex-wrap items-center justify-end gap-4 mb-4">
+                    <input type="text" id="filtro-materia" placeholder="Buscar por materia..."
+                        class="p-2 border rounded w-48" />
+                    <input type="text" id="filtro-grado" placeholder="Buscar por grado..."
+                        class="p-2 border rounded w-48" />
+                    <input type="date" id="filtro-fecha" class="p-2 border rounded" />
+                    <button onclick="aplicarFiltros()"
+                        class="bg-indigo-600 text-white text-sm px-3 py-1 h-auto leading-tight rounded hover:bg-indigo-700">Filtrar</button>
+                    <button onclick="resetearFiltros()"
+                        class="bg-gray-300 text-black text-sm px-3 py-1 h-auto leading-tight rounded hover:bg-gray-400">Limpiar</button>
+                </div>
                 <div id="plan-list-placeholder" class="hidden flex-1 min-h-0 overflow-y-auto"></div>
             </div>
         </div>
