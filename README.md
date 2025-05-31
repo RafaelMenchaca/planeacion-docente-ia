@@ -74,8 +74,10 @@ Una plataforma web donde el profesor:
 ├── js/
 │   ├── dashboard.js          # Archivo reservado para interactividad futura
 │   ├── login.js              # Funcionalidad para login (no base de datos)
+│   ├── detalle.js
 │   └── planeacion.js         # Funcionalidad de la planeacion
 ├── dashboard.html            # Página principal (home)
+├── detalle.html
 ├── index.html                # Página principal (landing page)
 ├── login.html                # Pagina para login
 ├── planeacion.html           # Pagina para la planeacion
