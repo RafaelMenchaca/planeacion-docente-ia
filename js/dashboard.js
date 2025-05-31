@@ -36,7 +36,7 @@ async function cargarPlaneaciones(filtros = {}) {
     container.classList.remove('hidden');
 
     try {
-        const res = await fetch('http://localhost:3000/api/planeaciones');
+        const res = await fetch(`${API_BASE_URL}/api/planeaciones`);
         const planeaciones = await res.json();
 
         if (!Array.isArray(planeaciones)) {
@@ -134,7 +134,7 @@ async function eliminarPlaneacion(id) {
     if (!confirmar) return;
 
     try {
-        const res = await fetch(`http://localhost:3000/api/planeaciones/${id}`, {
+        const res = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, {
             method: 'DELETE',
         });
 

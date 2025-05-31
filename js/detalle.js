@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const res = await fetch(`http://localhost:3000/api/planeaciones/${id}`);
+        const res = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`);
         const data = await res.json();
 
         const fecha = data.fecha_creacion ? new Date(data.fecha_creacion) : null;
