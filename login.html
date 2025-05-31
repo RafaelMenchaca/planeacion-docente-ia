@@ -18,7 +18,7 @@
 
                 <form id="login-form">
                     <label for="usuario" class="sr-only">Usuario</label>
-                    <input type="text" id="usuario" placeholder="Usuario" name="usuario" required />
+                    <input type="email" id="usuario" placeholder="Usuario" name="usuario" required />
 
                     <label for="password" class="sr-only">Contraseña</label>
                     <input type="password" id="password" placeholder="Contraseña" name="password" required />
@@ -37,6 +37,8 @@
         </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/supabaseClient.js"></script>
     <script src="js/login.js"></script>
 </body>
 

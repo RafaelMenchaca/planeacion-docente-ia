@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="./css/planeacion.css" rel="stylesheet">
 </head>
+
 <body>
 
   <header>
@@ -70,7 +72,8 @@
       <p class="description">Metodologías, estilos y tecnología</p>
       <div class="checkbox-group">
         <label><input type="checkbox" name="metodologias" value="Constructivismo" /> Constructivismo</label>
-        <label><input type="checkbox" name="metodologias" value="Aprendizaje Significativo" /> Aprendizaje Significativo</label>
+        <label><input type="checkbox" name="metodologias" value="Aprendizaje Significativo" /> Aprendizaje
+          Significativo</label>
         <label><input type="checkbox" name="metodologias" value="Colaborativo" /> Colaborativo</label>
         <label><input type="checkbox" name="metodologias" value="Aula Invertida" /> Aula Invertida</label>
       </div>
@@ -78,19 +81,21 @@
         <label><input type="checkbox" name="habilidades" value="Pensamiento Crítico" /> Pensamiento Crítico</label>
         <label><input type="checkbox" name="habilidades" value="Creatividad" /> Creatividad</label>
         <label><input type="checkbox" name="habilidades" value="Comunicación" /> Comunicación</label>
-        <label><input type="checkbox" name="habilidades" value="Alfabetización Digital" /> Alfabetización Digital</label>
+        <label><input type="checkbox" name="habilidades" value="Alfabetización Digital" /> Alfabetización
+          Digital</label>
       </div>
       <p class="description">Estilo de Aprendizaje Preferido</p>
       <div class="checkbox-group">
-       <label><input type="checkbox" name="estilo" value="Actividades Escritas" /> Actividades Escritas</label>
-       <label><input type="checkbox" name="estilo" value="Producto Digital" /> Producto Digital</label>
-       <label><input type="checkbox" name="estilo" value="Dinámicas Orales" /> Dinámicas Orales</label>
-       <label><input type="checkbox" name="estilo" value="Experimentos" /> Experimentos</label>
-       <label><input type="checkbox" name="estilo" value="Resolución de Problemas" /> Resolución de Problemas</label>
-       <label><input type="checkbox" name="estilo" value="Análisis de Texto" /> Análisis de Texto</label>
-       <label><input type="checkbox" name="estilo" value="Organizadores Gráficos" /> Organizadores Gráficos</label>
+        <label><input type="checkbox" name="estilo" value="Actividades Escritas" /> Actividades Escritas</label>
+        <label><input type="checkbox" name="estilo" value="Producto Digital" /> Producto Digital</label>
+        <label><input type="checkbox" name="estilo" value="Dinámicas Orales" /> Dinámicas Orales</label>
+        <label><input type="checkbox" name="estilo" value="Experimentos" /> Experimentos</label>
+        <label><input type="checkbox" name="estilo" value="Resolución de Problemas" /> Resolución de Problemas</label>
+        <label><input type="checkbox" name="estilo" value="Análisis de Texto" /> Análisis de Texto</label>
+        <label><input type="checkbox" name="estilo" value="Organizadores Gráficos" /> Organizadores Gráficos</label>
       </div>
-      <label>Consideraciones Especiales<br><textarea rows="2" id="consideraciones" name="consideraciones"></textarea></label>
+      <label>Consideraciones Especiales<br><textarea rows="2" id="consideraciones"
+          name="consideraciones"></textarea></label>
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(-1)">Anterior</button>
         <button type="button" onclick="nextTab(1)">Siguiente</button>
@@ -125,13 +130,14 @@
       </div>
 
       <div class="checkbox-group" style="margin-top: 1rem;">
-        <label><input type="checkbox" id="generar_problemas" name="generar_problemas" /> Generar problemas con soluciones</label>
+        <label><input type="checkbox" id="generar_problemas" name="generar_problemas" /> Generar problemas con
+          soluciones</label>
       </div>
 
       <label>Estructura de la Clase<br><textarea rows="3" id="estructura" name="estructura"></textarea></label>
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(-1)">Anterior</button>
-        <button type="submit">Finalizar</button>
+        <button type="submit" id="btn-finalizar">Finalizar</button>
       </div>
     </div>
 
@@ -139,7 +145,21 @@
 
   <pre id="resumen"></pre>
 
-  
+  <div id="acciones-finales" style="display: none; margin-top: 2rem; text-align: center;">
+    <button onclick="window.location.href='dashboard.html'" style="margin: 0.5rem; padding: 0.5rem 1rem;">🏠 Volver al
+      dashboard</button>
+    <button id="btn-ver-detalle" style="margin: 0.5rem; padding: 0.5rem 1rem;">📄 Ver planeación</button>
+  </div>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    protegerRuta(); // Bloquea acceso si no hay login
+  </script>
   <script src="./js/planeacion.js"></script>
 </body>
+
 </html>

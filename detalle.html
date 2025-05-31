@@ -12,6 +12,12 @@
     <div id="detalle-container" class="bg-white p-4 rounded shadow"></div>
     <a href="dashboard.html" class="text-blue-600 underline mt-4 inline-block">← Volver al dashboard</a>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        protegerRuta(); // Bloquea acceso si no hay login
+    </script>
     <script src="./js/detalle.js"></script>
 </body>
 
