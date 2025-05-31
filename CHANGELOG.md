@@ -4,6 +4,33 @@ Historial de cambios para la aplicación Educativo IA.
 
 ---
 
+## [v1.3-auth-planeaciones] - 2025-05-31
+
+### 🔐 Autenticación con Supabase
+- Login funcional con correo y contraseña usando Supabase Auth.
+- Sesión persistente y protegida con `auth.js`.
+- Logout implementado desde navbar y protegido en múltiples pestañas abiertas.
+- Redirección automática a login si no hay sesión activa en `dashboard`, `planeacion` o `detalle`.
+
+### 📄 Generación de planeaciones mejorada
+- Al finalizar la planeación, se muestra un resumen en pantalla sin redirigir al dashboard.
+- Scroll automático hacia el resumen y botones finales visibles.
+- Botones agregados:
+  - `Volver al dashboard`
+  - `Ver planeación` (redirige con ID dinámico a `detalle.html?id=X`)
+- Prevención de múltiples envíos usando lógica `enviado = true` y desactivación de botón.
+
+### 🛠️ Backend actualizado
+- Ruta POST `/api/planeaciones` ahora devuelve el ID recién creado para usarlo en el frontend.
+- Limpieza de código duplicado y mejora de control de errores.
+
+### 🔎 Visualización en detalle.html
+- `detalle.js` actualizado para mostrar los campos en texto legible, no como JSON crudo.
+- Muestra correcta del nombre de materia, tema, nivel, duración, fecha y detalles pedagógicos.
+- Manejadores para mostrar “No especificado” o “Ninguno” cuando falte información.
+
+---
+
 ## [v1.2-dashboard-componentes] - 2025-05-18
 
 ### 🧱 Reestructuración de layout
