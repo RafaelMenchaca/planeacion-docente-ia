@@ -72,9 +72,12 @@ Una plataforma web donde el profesor:
 │   ├── login.css             # Estilos para el login
 │   └── planeacion.css        # Estilos para pagina de planeacion
 ├── js/
+│   ├── auth.js
 │   ├── dashboard.js          # Archivo reservado para interactividad futura
 │   ├── login.js              # Funcionalidad para login (no base de datos)
 │   ├── detalle.js
+│   ├── navbar.js
+│   ├── supabaseClient.js
 │   └── planeacion.js         # Funcionalidad de la planeacion
 ├── dashboard.html            # Página principal (home)
 ├── detalle.html
