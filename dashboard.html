@@ -9,54 +9,64 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="flex flex-col h-screen overflow-hidden bg-gray-100">
+<body class="flex flex-col min-h-screen bg-gray-100 overflow-x-hidden">
     <!-- Navbar -->
     <div id="navbar-placeholder" class="hidden"></div>
 
-    <!-- Main ocupa el resto de la pantalla -->
-    <main class="flex-1 min-h-0 max-w-5xl mx-auto w-full px-3 py-1 flex flex-col gap-1">
-        <!-- Tarjeta principal -->
-        <div class="bg-white rounded-lg shadow-lg flex-1 flex flex-col min-h-0 p-2">
-            <!-- Encabezado reducido -->
-            <div class="flex flex-col gap-1 flex-none basis-1/8">
-                <h1 class="text-3xl font-bold">Bienvenido a Educativo IA</h1>
-                <p class="text-gray-700 text-sm mt-0 mb-4">
-                    Crea tus planeaciones educativas impulsadas por IA.
-                </p>
-                <!-- Botón Crear -->
-                <a href="planeacion.html"
-                    class="text-white text-2xl font-semibold 
-                          px-6 py-2 rounded-lg shadow-lg transform transition hover:scale-105 block mx-auto text-center"
-                    style="background-color: #4f46e5;">
-                    Crear nueva planeación
-                </a>
-
-            </div>
-
-            <!-- Lista ampliada -->
-            <div class="flex-1 flex flex-col min-h-0">
-                <h2 class="text-xl font-semibold mb-2">Planeaciones recientes</h2>
-                <!-- Filtros -->
-                <div class="flex flex-wrap items-center justify-end gap-4 mb-4">
-                    <input type="text" id="filtro-materia" placeholder="Buscar por materia..."
-                        class="p-2 border rounded w-48" />
-                    <input type="text" id="filtro-grado" placeholder="Buscar por grado..."
-                        class="p-2 border rounded w-48" />
-                    <input type="date" id="filtro-fecha" class="p-2 border rounded" />
-                    <button onclick="aplicarFiltros()"
-                        class="bg-indigo-600 text-white text-sm px-3 py-1 h-auto leading-tight rounded hover:bg-indigo-700">Filtrar</button>
-                    <button onclick="resetearFiltros()"
-                        class="bg-gray-300 text-black text-sm px-3 py-1 h-auto leading-tight rounded hover:bg-gray-400">Limpiar</button>
-                </div>
-                <div id="plan-list-placeholder" class="hidden flex-1 min-h-0 overflow-y-auto"></div>
-            </div>
+    <!-- Contenido principal -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-4 overflow-y-auto">
+        <!-- Encabezado y Botón -->
+        <div class="flex flex-col items-center gap-2 text-center">
+            <h1 class="text-2xl sm:text-3xl font-bold">Bienvenido a Educativo IA</h1>
+            <p class="text-gray-700 text-sm">
+                Crea tus planeaciones educativas impulsadas por IA.
+            </p>
+            <a href="planeacion.html"
+                class="bg-indigo-600 text-white text-base font-semibold px-4 py-2 rounded-lg shadow transform transition hover:scale-105">
+                Crear nueva planeación
+            </a>
         </div>
-    </main>
 
+        <!-- Lista y filtros -->
+        <section class="flex-1 flex flex-col min-h-0">
+            <h2 class="text-lg sm:text-xl font-semibold mb-2">Planeaciones recientes</h2>
+
+
+            <!-- Botón para mostrar filtros en móvil -->
+            <div class="sm:hidden mb-2">
+                <button onclick="toggleFiltros()" class="bg-indigo-600 text-white px-4 py-1 rounded text-sm">
+                    Mostrar filtros
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div id="contenedor-filtros"
+                class="hidden sm:flex flex-col sm:flex-row sm:flex-wrap gap-2 justify-end mb-4">
+                <input type="text" id="filtro-materia" placeholder="Materia..."
+                    class="p-1 border rounded w-full sm:w-36 text-sm" />
+                <input type="text" id="filtro-grado" placeholder="Grado..."
+                    class="p-1 border rounded w-full sm:w-36 text-sm" />
+                <input type="date" id="filtro-fecha" class="p-1 border rounded w-full sm:w-36 text-sm" />
+                <div class="flex gap-2">
+                    <button onclick="aplicarFiltros()"
+                        class="bg-indigo-600 text-white text-xs px-2 py-1 rounded hover:bg-indigo-700">Filtrar</button>
+                    <button onclick="resetearFiltros()"
+                        class="bg-gray-300 text-black text-xs px-2 py-1 rounded hover:bg-gray-400">Limpiar</button>
+                </div>
+            </div>
+
+
+            <!-- Contenedor de planeaciones -->
+            <div id="plan-list-placeholder" class="hidden flex-1 min-h-0 overflow-y-auto text-sm">
+                <!-- La tabla se genera dinámicamente por JS -->
+            </div>
+        </section>
+    </main>
 
     <!-- Footer -->
     <div id="footer-placeholder" class="hidden"></div>
 
+    <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="js/supabaseClient.js"></script>
@@ -66,7 +76,6 @@
     </script>
     <script src="js/navbar.js"></script>
     <script src="js/dashboard.js"></script>
-
 </body>
 
 </html>

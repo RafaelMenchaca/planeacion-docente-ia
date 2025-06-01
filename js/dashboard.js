@@ -16,15 +16,26 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(html => {
                 const el = document.getElementById(id);
                 el.innerHTML = html;
-                el.classList.remove('hidden'); // Mostrar cuando se cargue
+                el.classList.remove('hidden');
+
+                // ✅ Activar menú hamburguesa si es navbar
+                if (id === 'navbar-placeholder') {
+                    const btn = document.getElementById('mobile-menu-button');
+                    const menu = document.getElementById('mobile-menu');
+                    if (btn && menu) {
+                        btn.addEventListener('click', () => {
+                            menu.classList.toggle('hidden');
+                        });
+                    }
+                }
             })
             .catch(error => {
                 console.error(`Error cargando ${path}:`, error);
             });
     };
 
+    // Cargar componentes de navbar y footer
     loadComponent('navbar-placeholder', './components/navbar.html');
-    loadComponent('plan-list-placeholder', './components/plan-list.html');
     loadComponent('footer-placeholder', './components/footer.html');
 });
 
@@ -57,6 +68,7 @@ async function cargarPlaneaciones(filtros = {}) {
         const scrollDiv = document.createElement('div');
         scrollDiv.className = 'tabla-scroll';
 
+        // Encabezado para escritorio
         const encabezado = document.createElement('div');
         encabezado.className = 'tabla-encabezado';
         encabezado.innerHTML = `
@@ -65,6 +77,15 @@ async function cargarPlaneaciones(filtros = {}) {
         <div class="col-fecha">Fecha</div>
         <div class="col-boton">Acciones</div>
       `;
+
+        // Encabezado para móviles (solo texto plano)
+        const encabezadoMovil = document.createElement('div');
+        encabezadoMovil.className = 'tabla-encabezado-movil sm:hidden flex text-xs font-semibold text-gray-600 px-3 pt-1 gap-2 justify-between';
+        encabezadoMovil.innerHTML = `
+        <span class="w-2/5">Nombre</span>
+        <span class="w-1/4 text-left">Fecha</span>
+        <span class="w-1/4 text-right">Acciones</span>
+        `;
 
         const lista = document.createElement('ul');
 
@@ -95,6 +116,7 @@ async function cargarPlaneaciones(filtros = {}) {
             lista.appendChild(fila);
         });
 
+        scrollDiv.appendChild(encabezadoMovil);
         scrollDiv.appendChild(encabezado);
         scrollDiv.appendChild(lista);
 
@@ -148,3 +170,11 @@ async function eliminarPlaneacion(id) {
     }
 }
 
+function toggleFiltros() {
+    const contenedor = document.getElementById('contenedor-filtros');
+    if (contenedor.classList.contains('hidden')) {
+        contenedor.classList.remove('hidden');
+    } else {
+        contenedor.classList.add('hidden');
+    }
+}
