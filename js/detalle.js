@@ -1,3 +1,21 @@
+document.addEventListener('DOMContentLoaded', function () {
+    // Cargar componentes y mostrar al terminar
+    const loadComponent = (id, path) => {
+        fetch(path)
+            .then(res => res.text())
+            .then(html => {
+                const el = document.getElementById(id);
+                el.innerHTML = html;
+                el.classList.remove('hidden'); // Mostrar cuando se cargue
+            })
+            .catch(error => {
+                console.error(`Error cargando ${path}:`, error);
+            });
+    };
+
+    loadComponent('navbar-placeholder', './components/navbar.html');
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
@@ -32,11 +50,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             <p><strong>Metodologías:</strong> ${(detalles.metodologias || []).join(', ') || 'Ninguna'}</p>
             <p><strong>Habilidades:</strong> ${(detalles.habilidades || []).join(', ') || 'Ninguna'}</p>
             <p><strong>Estilo de Aprendizaje:</strong> ${(detalles.estilo || []).join(', ') || 'Ninguno'}</p>
-            <p><strong>Actividades:</strong> ${(detalles.tipo_actividad || []).join(', ') || 'Ninguna'}</p>
+            <p><strong>Trabajo:</strong> ${detalles.trabajo || 'No especificado'}</p>
+            <p><strong>Contextualizado:</strong> ${detalles.contextualizado ? 'Sí' : 'No'}</p>
+            <p><strong>Actividades Prácticas:</strong> ${detalles.actividades_practicas || 'No especificado'}</p>
+            <p><strong>Actividades Interactivas:</strong> ${detalles.actividades_interactivas || 'No especificado'}</p>
+            <p><strong>Autoevaluación o Coevaluacion:</strong> ${detalles.auto_evaluacion || 'No especificado'}</p>
             <p><strong>Recursos:</strong> ${(detalles.recursos || []).join(', ') || 'Ninguno'}</p>
             <p><strong>Evaluación:</strong> ${detalles.evaluacion || 'No especificado'}</p>
             <p><strong>Generar Problemas:</strong> ${detalles.generarProblemas || 'No'}</p>
-            <p><strong>Consideraciones:</strong> ${detalles.consideraciones || 'Ninguna'}</p>
             <p><strong>Estructura:</strong> ${detalles.estructura || 'No definida'}</p>
             <p><strong>Número de Clases:</strong> ${detalles.num_clases || 'No definido'}</p>
         `;

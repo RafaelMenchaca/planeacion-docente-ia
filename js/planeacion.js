@@ -1,3 +1,21 @@
+document.addEventListener('DOMContentLoaded', function () {
+    // Cargar componentes y mostrar al terminar
+    const loadComponent = (id, path) => {
+        fetch(path)
+            .then(res => res.text())
+            .then(html => {
+                const el = document.getElementById(id);
+                el.innerHTML = html;
+                el.classList.remove('hidden'); // Mostrar cuando se cargue
+            })
+            .catch(error => {
+                console.error(`Error cargando ${path}:`, error);
+            });
+    };
+
+    loadComponent('navbar-placeholder', './components/navbar.html');
+});
+
 let currentTab = 0;
 const tabs = document.querySelectorAll('.tab');
 const steps = document.querySelectorAll('.step');
@@ -64,16 +82,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const duracion = form.duracion.value.trim();
         const num_clases = form.num_clases.value.trim();
         const objetivos = form.objetivos.value.trim();
-        const consideraciones = form.consideraciones.value.trim();
         const estructura = form.estructura.value.trim();
         const modalidad = getRadioValue('modalidad');
         const evaluacion = getRadioValue('evaluacion');
         const metodologias = getCheckboxValues('metodologias');
         const habilidades = getCheckboxValues('habilidades');
         const estilo = getCheckboxValues('estilo');
-        const tipo_actividad = getCheckboxValues('tipo_actividad');
+        const trabajo = getRadioValue('trabajo');
+        const contextualizado = getRadioValue('contextualizado');
+        const actividades_practicas = form.actividades_practicas.value.trim();
+        const actividades_interactivas = getRadioValue('actividades_interactivas');
+        const auto_evaluacion = getRadioValue('auto_evaluacion');
         const recursos = getCheckboxValues('recursos');
-        const generarProblemas = form.generar_problemas.checked ? 'Sí' : 'No';
+        const generarProblemas = getRadioValue('generar_problemas');
 
         const payload = {
             materia: asignatura,
@@ -86,9 +107,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 metodologias,
                 habilidades,
                 estilo,
-                tipo_actividad,
+                trabajo,
+                contextualizado,
+                actividades_practicas,
+                actividades_interactivas,
+                auto_evaluacion,
                 recursos,
-                consideraciones,
                 evaluacion,
                 generarProblemas,
                 estructura,
@@ -111,9 +135,11 @@ document.addEventListener("DOMContentLoaded", () => {
             resumenTexto += `Asignatura: ${asignatura}\nTema: ${tema}\nNivel: ${nivel}\nDuración: ${duracion} minutos\n`;
             resumenTexto += `Número de Clases: ${num_clases}\nObjetivos: ${objetivos}\nModalidad: ${modalidad}\n\n`;
             resumenTexto += `Metodologías: ${metodologias.join(', ')}\nHabilidades: ${habilidades.join(', ')}\n`;
-            resumenTexto += `Estilo: ${estilo.join(', ')}\nEvaluación: ${evaluacion}\nActividades: ${tipo_actividad.join(', ')}\n`;
-            resumenTexto += `Recursos: ${recursos.join(', ')}\nGenerar problemas: ${generarProblemas}\n`;
-            resumenTexto += `Consideraciones: ${consideraciones}\nEstructura: ${estructura}`;
+            resumenTexto += `Estilo: ${estilo.join(', ')}\nEvaluación: ${evaluacion}\n`;
+            resumenTexto += `Actividades Practicas: ${actividades_practicas}\nTrabajo: ${trabajo}\nContextualizado: ${contextualizado}\n`;
+            resumenTexto += `Actividades Interactivas: ${actividades_interactivas}\nAuto o Coevluacion: ${auto_evaluacion}\n`;
+            resumenTexto += `Recursos: ${recursos.join(', ')}\nGenerar textos, lecturas, o problemas realistas: ${generarProblemas}\n`;
+            resumenTexto += `Resultado que se espera del alumno: ${estructura}`;
 
             resumen.textContent = resumenTexto;
             resumen.style.display = 'block';

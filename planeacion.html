@@ -7,25 +7,31 @@
   <title>Planificación Escolar</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="./css/planeacion.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
 </head>
 
 <body>
 
-  <header>
+  <!-- <header>
     <h1>Planificación Escolar Asistida</h1>
     <p>Guía paso a paso para generar una planeación efectiva, adaptada a tu contexto pedagógico.</p>
-  </header>
+  </header> -->
+
+  <!-- Navbar -->
+  <div id="navbar-placeholder" class="hidden"></div>
 
   <div class="steps">
     <div class="step active"><span>📘</span>Datos Generales</div>
-    <div class="step"><span>🎯</span>Preferencias</div>
-    <div class="step"><span>🧩</span>Evaluación</div>
+    <div class="step"><span>🎯</span>Preferencias Pedagógicas</div>
+    <div class="step"><span>🧩</span>Configuración y Evaluación</div>
+    <!-- <div class="step"><span>4</span>Bonus y Generar</div> -->
   </div>
 
   <form id="wizardForm">
-
+    <!-- Paso 1 -->
     <div class="tab active" id="tab1">
-      <h2>📘 Datos Generales</h2>
+      <h2>📘 Datos Generales de la Clase</h2>
       <p class="description">Información básica sobre tu clase</p>
       <div class="form-group">
         <label>Clase o Asignatura<br><input type="text" id="asignatura" name="asignatura" /></label>
@@ -62,29 +68,37 @@
         <label><input type="radio" name="modalidad" value="Virtual" /> Virtual</label>
         <label><input type="radio" name="modalidad" value="Híbrida" /> Híbrida</label>
       </div>
+
+      <!-- Botones de navegación -->
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(1)">Siguiente</button>
       </div>
     </div>
 
+    <!-- Paso 2 -->
     <div class="tab" id="tab2">
-      <h2>🎯 Preferencias Pedagógicas</h2>
-      <p class="description">Metodologías, estilos y tecnología</p>
-      <div class="checkbox-group">
-        <label><input type="checkbox" name="metodologias" value="Constructivismo" /> Constructivismo</label>
-        <label><input type="checkbox" name="metodologias" value="Aprendizaje Significativo" /> Aprendizaje
-          Significativo</label>
-        <label><input type="checkbox" name="metodologias" value="Colaborativo" /> Colaborativo</label>
-        <label><input type="checkbox" name="metodologias" value="Aula Invertida" /> Aula Invertida</label>
+      <h2>🎯 Preferencias Pedagógicas y Metodológicas</h2>
+
+      <p class="description">Enfoque educativo predominante</p>
+      <div class="radio-group">
+        <label><input type="radio" name="metodologias" value="Constructivista" /> Constructivista</label>
+        <label><input type="radio" name="metodologias" value="Basado en proyectos" /> Basado en proyectos</label>
+        <label><input type="radio" name="metodologias" value="Socioemocional" /> Socioemocional</label>
+        <label><input type="radio" name="metodologias" value="Por competencias" /> Por competencias</label>
+        <label><input type="radio" name="metodologias" value="Humanista" /> Humanista</label>
       </div>
+
+      <p class="description">Metodología de enseñanza deseada</p>
       <div class="checkbox-group">
-        <label><input type="checkbox" name="habilidades" value="Pensamiento Crítico" /> Pensamiento Crítico</label>
-        <label><input type="checkbox" name="habilidades" value="Creatividad" /> Creatividad</label>
-        <label><input type="checkbox" name="habilidades" value="Comunicación" /> Comunicación</label>
-        <label><input type="checkbox" name="habilidades" value="Alfabetización Digital" /> Alfabetización
-          Digital</label>
+        <label><input type="checkbox" name="habilidades" value="Expositiva" /> Expositiva</label>
+        <label><input type="checkbox" name="habilidades" value="Indagatoria" /> Indagatoria</label>
+        <label><input type="checkbox" name="habilidades" value="Colaborativa" /> Colaborativa</label>
+        <label><input type="checkbox" name="habilidades" value="Aprendizaje basado en juegos" /> Aprendizaje basado en
+          juegos</label>
+        <label><input type="checkbox" name="habilidades" value="Uso de TIC" /> Uso de TIC</label>
       </div>
-      <p class="description">Estilo de Aprendizaje Preferido</p>
+
+      <p class="description">Tipo de actividades de aprendizaje preferidas</p>
       <div class="checkbox-group">
         <label><input type="checkbox" name="estilo" value="Actividades Escritas" /> Actividades Escritas</label>
         <label><input type="checkbox" name="estilo" value="Producto Digital" /> Producto Digital</label>
@@ -92,49 +106,75 @@
         <label><input type="checkbox" name="estilo" value="Experimentos" /> Experimentos</label>
         <label><input type="checkbox" name="estilo" value="Resolución de Problemas" /> Resolución de Problemas</label>
         <label><input type="checkbox" name="estilo" value="Análisis de Texto" /> Análisis de Texto</label>
-        <label><input type="checkbox" name="estilo" value="Organizadores Gráficos" /> Organizadores Gráficos</label>
+        <label><input type="checkbox" name="estilo" value="Mapas conceptuales" /> Mapas conceptuales</label>
       </div>
-      <label>Consideraciones Especiales<br><textarea rows="2" id="consideraciones"
-          name="consideraciones"></textarea></label>
+
+      <p class="description">Tipo de trabajo preferido</p>
+      <div class="radio-group">
+        <label><input type="radio" name="trabajo" value="Individual" /> Individual</label>
+        <label><input type="radio" name="trabajo" value="En Equipo" /> En Equipo</label>
+        <label><input type="radio" name="trabajo" value="Mixto" /> Mixto</label>
+      </div>
+
+      <p class="description">¿Deseas que los ejercicios estén contextualizados con la vida cotidiana?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="contextualizado" value="Sí" /> Sí</label>
+        <label><input type="radio" name="contextualizado" value="No" /> No</label>
+      </div>
+
+      <!-- Botones de navegación -->
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(-1)">Anterior</button>
         <button type="button" onclick="nextTab(1)">Siguiente</button>
       </div>
     </div>
 
+    <!-- Paso 3 -->
     <div class="tab" id="tab3">
-      <h2>🧩 Evaluación</h2>
-      <p class="description">Tipo de evaluación y actividades</p>
+      <h2>🧩 Configuración de Actividades y Evaluación</h2>
+
+      <label>¿Cuántas actividades prácticas deseas durante la clase?<br><input type="text" id="actividades_practicas"
+          name="actividades_practicas" /></label>
+
+      <p class="description mt-1">¿Deseas que la IA genere lecturas, textos o problemas realistas propios?</p>
       <div class="radio-group">
-        <label><input type="radio" name="evaluacion" value="Evaluación Formativa" /> Evaluación Formativa</label>
-        <label><input type="radio" name="evaluacion" value="Evaluación Sumativa" /> Evaluación Sumativa</label>
-        <label><input type="radio" name="evaluacion" value="Autoevaluacion" /> Autoevaluacion</label>
-        <label><input type="radio" name="evaluacion" value="Coevaluacion" /> Coevaluacion</label>
+        <label><input type="radio" name="generar_problemas" value="Sí" /> Sí</label>
+        <label><input type="radio" name="generar_problemas" value="No" /> No</label>
       </div>
-      <p class="description">Actividades a realizar</p>
+
+      <p class="description">¿Qué recursos puede usar el alumno?</p>
       <div class="checkbox-group">
-        <label><input type="checkbox" name="tipo_actividad" value="Exposición" /> Exposición</label>
-        <label><input type="checkbox" name="tipo_actividad" value="Debate o Discusión" /> Debate o Discusión</label>
-        <label><input type="checkbox" name="tipo_actividad" value="Investigación" /> Investigación</label>
-        <label><input type="checkbox" name="tipo_actividad" value="Proyecto" /> Proyecto</label>
-        <label><input type="checkbox" name="tipo_actividad" value="Estudio de Caso" /> Estudio de Caso</label>
-        <label><input type="checkbox" name="tipo_actividad" value="Trabajo en Equipo" /> Trabajo en Equipo</label>
-      </div>
-      <p class="description">Recursos y Material Didáctico</p>
-      <div class="checkbox-group">
+        <label><input type="checkbox" name="recursos" value="Libreta" /> Libreta</label>
         <label><input type="checkbox" name="recursos" value="Libros" /> Libros</label>
-        <label><input type="checkbox" name="recursos" value="Videos" /> Videos</label>
-        <label><input type="checkbox" name="recursos" value="Presentaciones" /> Presentaciones</label>
-        <label><input type="checkbox" name="recursos" value="Material Impreso" /> Material Impreso</label>
-        <label><input type="checkbox" name="recursos" value="Software" /> Software</label>
+        <label><input type="checkbox" name="recursos" value="Internet" /> Internet</label>
+        <label><input type="checkbox" name="recursos" value="Herramientas digitales" /> Herramientas digitales</label>
+        <label><input type="checkbox" name="recursos" value="Material reciclado" /> Material reciclado</label>
       </div>
 
-      <div class="checkbox-group" style="margin-top: 1rem;">
-        <label><input type="checkbox" id="generar_problemas" name="generar_problemas" /> Generar problemas con
-          soluciones</label>
+      <p class="description">¿Deseas incluir actividades interactivas o lúdicas?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="actividades_interactivas" value="Sí" /> Sí</label>
+        <label><input type="radio" name="actividades_interactivas" value="No" /> No</label>
       </div>
 
-      <label>Estructura de la Clase<br><textarea rows="3" id="estructura" name="estructura"></textarea></label>
+      <p class="description">¿Deseas incluir una autoevaluación o coevaluación?</p>
+      <div class="radio-group">
+        <label><input type="radio" name="auto_evaluacion" value="Sí" /> Sí</label>
+        <label><input type="radio" name="auto_evaluacion" value="No" /> No</label>
+      </div>
+
+      <p class="description">Forma preferida de evaluación</p>
+      <div class="radio-group">
+        <label><input type="radio" name="evaluacion" value="Rúbrica" required /> Rúbrica</label>
+        <label><input type="radio" name="evaluacion" value="Lista de cotejo" /> Lista de cotejo</label>
+        <label><input type="radio" name="evaluacion" value="Preguntas abiertas" /> Preguntas abiertas</label>
+        <label><input type="radio" name="evaluacion" value="Evaluación oral" /> Evaluación oral</label>
+      </div>
+
+      <label>¿Qué resultado esperas que el alumno logre al final?<br><textarea rows="3" id="estructura"
+          name="estructura"></textarea></label>
+
+      <!-- Botones de navegación -->
       <div class="nav-buttons">
         <button type="button" onclick="nextTab(-1)">Anterior</button>
         <button type="submit" id="btn-finalizar">Finalizar</button>
@@ -143,6 +183,8 @@
 
   </form>
 
+
+  <!-- Resumen de la planeación -->
   <pre id="resumen"></pre>
 
   <div id="acciones-finales" style="display: none; margin-top: 2rem; text-align: center;">
