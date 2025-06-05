@@ -41,10 +41,12 @@ function validateForm(tabIndex) {
     const tab = tabs[tabIndex];
     let valid = true;
 
-    // Validar inputs de texto, selects y textareas
-    const inputs = tab.querySelectorAll('input[type=text], select, textarea');
-    for (const input of inputs) {
-        if ((input.hasAttribute('required') || input.name) && input.value.trim() === '') {
+    // Validar solo campos que tengan el atributo required
+    const requiredFields = tab.querySelectorAll(
+        'input[required]:not([type=radio]), select[required], textarea[required]'
+    );
+    for (const input of requiredFields) {
+        if (input.value.trim() === '') {
             valid = false;
             alert('Por favor, completa todos los campos obligatorios.');
             break;
