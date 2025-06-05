@@ -16,6 +16,10 @@ document.addEventListener('DOMContentLoaded', function () {
     loadComponent('navbar-placeholder', './components/navbar.html');
 });
 
+if (typeof module !== 'undefined') {
+    module.exports = { validateForm };
+}
+
 let currentTab = 0;
 const tabs = document.querySelectorAll('.tab');
 const steps = document.querySelectorAll('.step');
@@ -44,7 +48,7 @@ function validateForm(tabIndex) {
     // Validar inputs de texto, selects y textareas
     const inputs = tab.querySelectorAll('input[type=text], select, textarea');
     for (const input of inputs) {
-        if ((input.hasAttribute('required') || input.name) && input.value.trim() === '') {
+        if (input.hasAttribute('required') && input.value.trim() === '') {
             valid = false;
             alert('Por favor, completa todos los campos obligatorios.');
             break;
