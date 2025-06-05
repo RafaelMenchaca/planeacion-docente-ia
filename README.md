@@ -96,8 +96,19 @@ La carpeta `components/` solo incluye `footer.html` y `navbar.html`, utilizados 
 - ⏳ Generar contenido automático con IA  
 - ⏳ Personalizar logos y nombre de institución  
 - ⏳ Exportar planeación a PDF y Word *(próximamente)*  
-- ⏳ Panel de usuario con historial de planeaciones  
+- ⏳ Panel de usuario con historial de planeaciones
 - ⏳ Soporte multiformato (COBAC, SEP, UNAM, etc)
+
+---
+
+## 🧪 Pruebas
+
+Ejecuta las pruebas unitarias con **Jest** para validar la lógica del formulario.
+
+```bash
+npm install
+npm test
+```
 
 ---
 
