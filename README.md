@@ -62,10 +62,9 @@ Una plataforma web donde el profesor:
 │   ├── calendar.svg          # Ícono ilustrativo
 │   ├── check.svg             # Íconos de beneficios
 │   └── click.svg             # Ícono de llamada a la acción
-├── components/               
-│   ├── footer.html           # Archivo de footer
-│   ├── navbar.html           # Archivo de navbar 
-│   └── plan-list.html        # Archivo de lista de planeaciones (dasboard)
+├── components/                # Fragmentos HTML reutilizables
+│   ├── footer.html           # Pie de página
+│   └── navbar.html           # Barra de navegación
 ├── css/
 │   ├── index.css             # Estilos para la landing page
 │   ├── dashboard.css         # Estilos para el editor de planeaciones
@@ -88,6 +87,7 @@ Una plataforma web donde el profesor:
 └── README.md
 
 ```
+La carpeta `components/` solo incluye `footer.html` y `navbar.html`, utilizados para modularizar la navegación y el pie de página.
 ---
 
 ## 📌 Funcionalidades Principales (MVP)
