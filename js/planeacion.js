@@ -40,7 +40,9 @@ function nextTab(n) {
 function validateForm(tabIndex) {
     const tab = tabs[tabIndex];
     let valid = true;
-    const inputs = tab.querySelectorAll('input[type=text], select, textarea, input[type=radio]');
+
+    // Validar inputs de texto, selects y textareas
+    const inputs = tab.querySelectorAll('input[type=text], select, textarea');
     for (const input of inputs) {
         if ((input.hasAttribute('required') || input.name) && input.value.trim() === '') {
             valid = false;
@@ -48,6 +50,21 @@ function validateForm(tabIndex) {
             break;
         }
     }
+
+    // Validar grupos de radios que sean requeridos
+    if (valid) {
+        const requiredRadios = tab.querySelectorAll('input[type=radio][required]');
+        const radioGroups = new Set(Array.from(requiredRadios).map(r => r.name));
+
+        for (const group of radioGroups) {
+            if (!tab.querySelector(`input[name="${group}"]:checked`)) {
+                valid = false;
+                alert('Por favor, selecciona una opción en los campos obligatorios.');
+                break;
+            }
+        }
+    }
+
     return valid;
 }
 
