@@ -28,7 +28,7 @@ Una plataforma web donde el profesor:
 
 ## 🌟 Avances recientes
 
-- 🔧 Sección principal lading page, login page, dashboard page
+ - 🔧 Sección principal landing page, login page, dashboard page
 - ✅ Header reorganizado para mejorar visual en dispositivos móviles
 - 📱 Diseño adaptable en pantallas móviles, tablets y escritorio
 - 🚀 Despliegue del sitio en **GitHub Pages**
