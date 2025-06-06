@@ -58,8 +58,10 @@
       </div>
 
       <div class="form-group">
-        <label for="subtemas">Subtemas (separados por coma):</label>
-        <input type="text" id="subtemas" />
+        <label for="subtemas">Subtemas:</label>
+        
+        <textarea id="subtemas" rows="5" placeholder="Ejemplo:&#10;Subtema 1&#10;Subtema 2&#10;Subtema 3"></textarea>
+
       </div>
 
       <div class="form-group">
@@ -75,8 +77,10 @@
 
       <div class="form-group button-group">
         <button type="button" onclick="generarPlaneacion()">Generar Planeación</button>
-        <button type="button" onclick="descargarPlaneacion()">Descargar</button>
-        <button onclick="limpiarContenido()">Limpiar</button>
+        <button id="btn-descargar" type="button" onclick="descargarWord()" style="display: none;">Descargar</button>
+        <button id="btn-nueva" type="button" style="display: none;">Nueva Planeación</button>
+
+        
 
       </div>
     </form>
