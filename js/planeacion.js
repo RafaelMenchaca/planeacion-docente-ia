@@ -1,18 +1,24 @@
-document.addEventListener('DOMContentLoaded', function () {
-    // Cargar componentes y mostrar al terminar
-    const loadComponent = (id, path) => {
-        fetch(path)
-            .then(res => res.text())
-            .then(html => {
-                const el = document.getElementById(id);
-                el.innerHTML = html;
-                el.classList.remove('hidden'); // Mostrar cuando se cargue
-            })
-            .catch(error => {
-                console.error(`Error cargando ${path}:`, error);
-            });
-    };
+function generarSubtemas() {
+  const container = document.getElementById("subtemasContainer");
+  container.innerHTML = "";
+  const subtemasTexto = document.getElementById("subtemas").value;
+  const subtemas = subtemasTexto
+    .split(",")
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
 
+<<<<<<< HEAD
+  subtemas.forEach((subtema, index) => {
+    const group = document.createElement("div");
+    group.classList.add("subtema-group");
+    group.innerHTML = `
+      <label><strong>Subtema:</strong> ${subtema}</label><br>
+      <label for="sesiones_${index}">¿Cuántas sesiones de planeación requiere este subtema?</label>
+      <input type="number" id="sesiones_${index}" name="sesiones_${index}" value="1" min="1" />
+    `;
+    container.appendChild(group);
+  });
+=======
     loadComponent('navbar-placeholder', './components/navbar.html');
 });
 
@@ -33,14 +39,92 @@ function showTab(n) {
     });
     currentTab = n;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+>>>>>>> cba72caf3f3d48e198d5a9ed4dd64c8de485a884
 }
 
-function nextTab(n) {
-    let next = currentTab + n;
-    if (next > currentTab && !validateForm(currentTab)) return false;
-    if (next >= 0 && next < tabs.length) showTab(next);
-}
+function generarPlaneacion() {
+  const tipo = document.getElementById("tipoPlaneacion").value.trim();
+  const tema = document.getElementById("tema").value.trim();
+  const subtemasTexto = document.getElementById("subtemas").value;
+  const duracion = parseInt(document.getElementById("duracion").value);
+  const nivel = document.getElementById("nivel").value.trim();
+  const subtemas = subtemasTexto
+    .split(",")
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
 
+<<<<<<< HEAD
+  if (!tema || subtemas.length === 0 || isNaN(duracion) || duracion < 10 || !nivel || !tipo) {
+    alert("Por favor, completa todos los campos correctamente.");
+    return;
+  }
+
+  let resultado = `<h2>🎓 Nivel Educativo: ${nivel}</h2>`;
+  resultado += `<h2>📘 ${tipo.toUpperCase()} - TEMA: ${tema}</h2>`;
+  let contadorSesion = 1;
+
+  subtemas.forEach((subtema, index) => {
+    const sesionesInput = document.getElementById(`sesiones_${index}`);
+    if (!sesionesInput) return;
+    const sesiones = parseInt(sesionesInput.value);
+
+    for (let s = 1; s <= sesiones; s++) {
+      const tiempoInicio = 10;
+      const tiempoDesarrollo = 25;
+      const tiempoCierre = duracion - tiempoInicio - tiempoDesarrollo;
+
+      resultado += `
+        <h3>📗 SUBTEMA ${index + 1}.${s}: ${subtema} (Duración: ${duracion} minutos)</h3>
+        <table border="1" cellspacing="0" cellpadding="5">
+          <thead>
+            <tr>
+              <th>Sesión</th>
+              <th>Tiempo</th>
+              <th>Momento</th>
+              <th>Actividad</th>
+              <th>Producto de Aprendizaje</th>
+              <th>Instrumento de Evaluación</th>
+              <th>Evaluación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${contadorSesion}</td>
+              <td><strong>${tiempoInicio} min</strong></td>
+              <td><strong>Inicio</strong></td>
+              <td><em>Escribe aquí la actividad de inicio.</em></td>
+              <td><em>Lluvia de ideas, participación oral, etc.</em></td>
+              <td><em>Lista de cotejo, escala, etc.</em></td>
+              <td><em>Diagnóstica – Heteroevaluación (%)</em></td>
+            </tr>
+            <tr>
+              <td>${contadorSesion}</td>
+              <td><strong>${tiempoDesarrollo} min</strong></td>
+              <td><strong>Desarrollo</strong></td>
+              <td><em>Describe la actividad principal.</em></td>
+              <td><em>Ejercicios, mapa mental, etc.</em></td>
+              <td><em>Rúbrica, lista, etc.</em></td>
+              <td><em>Formativa – Coevaluación (%)</em></td>
+            </tr>
+            <tr>
+              <td>${contadorSesion}</td>
+              <td><strong>${tiempoCierre} min</strong></td>
+              <td><strong>Cierre</strong></td>
+              <td><em>Reflexión, repaso o actividad de cierre.</em></td>
+              <td><em>Conclusión escrita, resumen, etc.</em></td>
+              <td><em>Lista de cotejo, rúbrica, etc.</em></td>
+              <td><em>Sumativa – Autoevaluación (%)</em></td>
+            </tr>
+          </tbody>
+        </table>
+        <br>
+      `;
+      contadorSesion++;
+    }
+  });
+
+  document.getElementById("resultado").innerHTML = resultado;
+=======
 function validateForm(tabIndex) {
     const tab = tabs[tabIndex];
     let valid = true;
@@ -70,120 +154,45 @@ function validateForm(tabIndex) {
     }
 
     return valid;
+>>>>>>> cba72caf3f3d48e198d5a9ed4dd64c8de485a884
 }
 
-function getCheckboxValues(name) {
-    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+function limpiarContenido() {
+  document.getElementById("formularioPlaneacion").reset();
+  document.getElementById("resultado").innerHTML = "";
+  document.getElementById("subtemasContainer").innerHTML = "";
 }
 
-function getRadioValue(name) {
-    const radio = document.querySelector(`input[name="${name}"]:checked`);
-    return radio ? radio.value : '';
+
+function descargarPlaneacion() {
+  const contenidoHTML = document.getElementById("resultado").innerHTML;
+  if (!contenidoHTML) {
+    alert("Primero debes generar la planeación.");
+    return;
+  }
+
+  // Solicita el nombre del archivo al usuario
+  let nombreArchivo = prompt("Escribe el nombre de tu planeacion:", "Planeacion");
+
+  // Si el usuario cancela, no se descarga nada
+  if (nombreArchivo === null) {
+    return;
+  }
+
+  // Si el usuario deja en blanco, se usa un nombre por defecto
+  if (nombreArchivo.trim() === "") {
+    nombreArchivo = "Planeacion";
+  }
+
+  const blob = new Blob(['<html><head><meta charset="UTF-8"></head><body>' + contenidoHTML + '</body></html>'], {
+    type: "application/msword"
+  });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = nombreArchivo.trim() + ".doc";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("wizardForm");
-    const btn = document.getElementById("btn-finalizar");
-    const resumen = document.getElementById("resumen");
-    const acciones = document.getElementById("acciones-finales");
-    const btnVerDetalle = document.getElementById("btn-ver-detalle");
-    let enviado = false;
-
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (enviado) return;
-        enviado = true;
-
-        btn.disabled = true;
-        btn.textContent = "Guardando...";
-
-        const asignatura = form.asignatura.value.trim();
-        const tema = form.tema.value.trim();
-        const nivel = form.nivel.value;
-        const duracion = form.duracion.value.trim();
-        const num_clases = form.num_clases.value.trim();
-        const objetivos = form.objetivos.value.trim();
-        const estructura = form.estructura.value.trim();
-        const modalidad = getRadioValue('modalidad');
-        const evaluacion = getRadioValue('evaluacion');
-        const metodologias = getCheckboxValues('metodologias');
-        const habilidades = getCheckboxValues('habilidades');
-        const estilo = getCheckboxValues('estilo');
-        const trabajo = getRadioValue('trabajo');
-        const contextualizado = getRadioValue('contextualizado');
-        const actividades_practicas = form.actividades_practicas.value.trim();
-        const actividades_interactivas = getRadioValue('actividades_interactivas');
-        const auto_evaluacion = getRadioValue('auto_evaluacion');
-        const recursos = getCheckboxValues('recursos');
-        const generarProblemas = getRadioValue('generar_problemas');
-
-        const payload = {
-            materia: asignatura,
-            grado: nivel,
-            tema,
-            duracion,
-            detalles_completos: {
-                objetivos,
-                modalidad,
-                metodologias,
-                habilidades,
-                estilo,
-                trabajo,
-                contextualizado,
-                actividades_practicas,
-                actividades_interactivas,
-                auto_evaluacion,
-                recursos,
-                evaluacion,
-                generarProblemas,
-                estructura,
-                num_clases
-            }
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/planeaciones`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-
-            // Mostrar resumen
-            let resumenTexto = '🎓 Planeación Generada:\n\n';
-            resumenTexto += `Asignatura: ${asignatura}\nTema: ${tema}\nNivel: ${nivel}\nDuración: ${duracion} minutos\n`;
-            resumenTexto += `Número de Clases: ${num_clases}\nObjetivos: ${objetivos}\nModalidad: ${modalidad}\n\n`;
-            resumenTexto += `Metodologías: ${metodologias.join(', ')}\nHabilidades: ${habilidades.join(', ')}\n`;
-            resumenTexto += `Estilo: ${estilo.join(', ')}\nEvaluación: ${evaluacion}\n`;
-            resumenTexto += `Actividades Practicas: ${actividades_practicas}\nTrabajo: ${trabajo}\nContextualizado: ${contextualizado}\n`;
-            resumenTexto += `Actividades Interactivas: ${actividades_interactivas}\nAuto o Coevluacion: ${auto_evaluacion}\n`;
-            resumenTexto += `Recursos: ${recursos.join(', ')}\nGenerar textos, lecturas, o problemas realistas: ${generarProblemas}\n`;
-            resumenTexto += `Resultado que se espera del alumno: ${estructura}`;
-
-            resumen.textContent = resumenTexto;
-            resumen.style.display = 'block';
-            resumen.scrollIntoView({ behavior: 'smooth' });
-
-            acciones.style.display = "block";
-
-            // Espera un pequeño momento para asegurarse de que los botones se rendericen
-            setTimeout(() => {
-                acciones.scrollIntoView({ behavior: 'smooth' });
-            }, 200);
-
-            btnVerDetalle.onclick = () => {
-                window.location.href = `detalle.html?id=${data.id}`;
-            };
-
-            alert("🎉 Planeación guardada exitosamente en Supabase.");
-        } catch (err) {
-            console.error("❌ Error al guardar:", err);
-            alert("❌ Error al guardar la planeación.");
-            btn.disabled = false;
-            btn.textContent = "Finalizar";
-            enviado = false;
-        }
-    });
-});
