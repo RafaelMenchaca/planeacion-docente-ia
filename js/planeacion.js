@@ -7,7 +7,6 @@ function generarSubtemas() {
     .map(s => s.trim())
     .filter(s => s.length > 0);
 
-<<<<<<< HEAD
   subtemas.forEach((subtema, index) => {
     const group = document.createElement("div");
     group.classList.add("subtema-group");
@@ -18,28 +17,6 @@ function generarSubtemas() {
     `;
     container.appendChild(group);
   });
-=======
-    loadComponent('navbar-placeholder', './components/navbar.html');
-});
-
-if (typeof module !== 'undefined') {
-    module.exports = { validateForm };
-}
-
-let currentTab = 0;
-const tabs = document.querySelectorAll('.tab');
-const steps = document.querySelectorAll('.step');
-
-function showTab(n) {
-    tabs.forEach((tab, i) => {
-        tab.classList.toggle('active', i === n);
-    });
-    steps.forEach((step, i) => {
-        step.classList.toggle('active', i === n);
-    });
-    currentTab = n;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
->>>>>>> cba72caf3f3d48e198d5a9ed4dd64c8de485a884
 }
 
 function generarPlaneacion() {
@@ -53,7 +30,6 @@ function generarPlaneacion() {
     .map(s => s.trim())
     .filter(s => s.length > 0);
 
-<<<<<<< HEAD
   if (!tema || subtemas.length === 0 || isNaN(duracion) || duracion < 10 || !nivel || !tipo) {
     alert("Por favor, completa todos los campos correctamente.");
     return;
@@ -124,45 +100,7 @@ function generarPlaneacion() {
   });
 
   document.getElementById("resultado").innerHTML = resultado;
-=======
-function validateForm(tabIndex) {
-    const tab = tabs[tabIndex];
-    let valid = true;
-
-    // Validar inputs de texto, selects y textareas
-    const inputs = tab.querySelectorAll('input[type=text], select, textarea');
-    for (const input of inputs) {
-        if (input.hasAttribute('required') && input.value.trim() === '') {
-            valid = false;
-            alert('Por favor, completa todos los campos obligatorios.');
-            break;
-        }
-    }
-
-    // Validar grupos de radios que sean requeridos
-    if (valid) {
-        const requiredRadios = tab.querySelectorAll('input[type=radio][required]');
-        const radioGroups = new Set(Array.from(requiredRadios).map(r => r.name));
-
-        for (const group of radioGroups) {
-            if (!tab.querySelector(`input[name="${group}"]:checked`)) {
-                valid = false;
-                alert('Por favor, selecciona una opción en los campos obligatorios.');
-                break;
-            }
-        }
-    }
-
-    return valid;
->>>>>>> cba72caf3f3d48e198d5a9ed4dd64c8de485a884
 }
-
-function limpiarContenido() {
-  document.getElementById("formularioPlaneacion").reset();
-  document.getElementById("resultado").innerHTML = "";
-  document.getElementById("subtemasContainer").innerHTML = "";
-}
-
 
 function descargarPlaneacion() {
   const contenidoHTML = document.getElementById("resultado").innerHTML;
@@ -196,3 +134,8 @@ function descargarPlaneacion() {
   document.body.removeChild(link);
 }
 
+function limpiarContenido() {
+  document.getElementById("formularioPlaneacion").reset();
+  document.getElementById("resultado").innerHTML = "";
+  document.getElementById("subtemasContainer").innerHTML = "";
+}
