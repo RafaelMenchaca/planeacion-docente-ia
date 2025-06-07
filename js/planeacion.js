@@ -112,116 +112,93 @@ function generarPlaneacion() {
   document.getElementById("btn-descargar").style.display = "inline-block";
 }
 // Editar el estilo del word descargable
-function descargarWord() {
-  const contenido = `
-    <div class="section">
-      <h2>Planeación Didáctica</h2>
-      <p><strong>Asignatura:</strong> Informática 3</p>
-      <p><strong>Grado:</strong> Tercer año de secundaria</p>
-      <p><strong>Docente:</strong> __________________________</p>
-      <p><strong>Fecha:</strong> __________________________</p>
-    </div>
+function crearDocumentoWord(htmlContenido, nombreArchivo = "Planeacion") {
+ const plantillaHTML = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset='utf-8'>
+  <title>Planeación Didáctica</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      padding: 30px;
+      background-color: #ffffff;
+    }
 
-    <div class="section">
-      <table>
-        <thead>
-          <tr>
-            <th>Sesión</th>
-            <th>Tiempo</th>
-            <th>Momento</th>
-            <th>Actividad</th>
-            <th>Producto de Aprendizaje</th>
-            <th>Instrumento de Evaluación</th>
-            <th>Evaluación</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>50 min</td>
-            <td>Apertura</td>
-            <td>Dinámica de integración y diagnóstico previo</td>
-            <td>Participación oral</td>
-            <td>Lista de cotejo</td>
-            <td>5 puntos</td>
-          </tr>
-          <tr>
-            <td>1</td>
-            <td>50 min</td>
-            <td>Desarrollo</td>
-            <td>Explicación del tema y actividad práctica en computadora</td>
-            <td>Ejercicio digital guardado</td>
-            <td>Rúbrica</td>
-            <td>10 puntos</td>
-          </tr>
-          <tr>
-            <td>1</td>
-            <td>50 min</td>
-            <td>Cierre</td>
-            <td>Reflexión y actividad de repaso en equipos</td>
-            <td>Resumen en cuaderno</td>
-            <td>Lista de cotejo</td>
-            <td>5 puntos</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `;
+    h1 {
+      text-align: center;
+      color: #1e3a8a;
+      border-bottom: 3px solid #1e3a8a;
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+    }
 
-  const htmlCompleto = `
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8">
-      <title>Planeación Didáctica</title>
-      <style>
-        body {
-          font-family: Calibri, sans-serif;
-          padding: 40px;
-          color: #333;
-        }
-        h2 {
-          color: #1a237e;
-          border-bottom: 2px solid #ccc;
-          padding-bottom: 4px;
-        }
-        p {
-          font-size: 14px;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-        }
-        th, td {
-          border: 1px solid #999;
-          padding: 8px;
-          font-size: 13px;
-        }
-        th {
-          background-color: #e3f2fd;
-        }
-        td {
-          background-color: #fafafa;
-        }
-        .section {
-          margin-bottom: 30px;
-        }
-      </style>
-    </head>
-    <body>
-      ${contenido}
-    </body>
-    </html>
-  `;
+    h2 {
+      color: #1e40af;
+      border-left: 5px solid #3b82f6;
+      padding-left: 10px;
+      margin-top: 30px;
+    }
 
-  const blob = new Blob(['\ufeff', htmlCompleto], {
-    type: 'application/msword'
-  });
+    h3 {
+      color: #1e40af;
+      margin-top: 20px;
+    }
 
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 20px 0;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    th {
+      background-color: #e0f2fe;
+      color: #0c4a6e;
+      font-weight: bold;
+      padding: 10px;
+      border: 1px solid #93c5fd;
+    }
+
+    td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .seccion {
+      margin-bottom: 40px;
+    }
+
+    .pie {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <h1>Planeación Didáctica</h1>
+  ${htmlContenido}
+  <div class="pie">
+    Documento generado automáticamente · ${new Date().toLocaleDateString()}
+  </div>
+</body>
+</html>
+`;
+
+
+  const blob = new Blob([plantillaHTML], { type: "application/msword" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "planeacion.doc";
+  link.download = `${nombreArchivo}.doc`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -234,35 +211,19 @@ function descargarPlaneacion() {
     return;
   }
 
-  let nombreArchivo = prompt("Escribe el nombre de tu planeacion:", "Planeacion");
+  let nombreArchivo = prompt("Escribe el nombre de tu planeación:", "Planeacion");
   if (nombreArchivo === null) return;
+   // Aquí validamos y limpiamos el nombre del archivo para que no tenga caracteres inválidos
+  nombreArchivo = nombreArchivo.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+  // si queda sin espesificar sera llamado "planeacion"
   if (nombreArchivo.trim() === "") nombreArchivo = "Planeacion";
 
+  crearDocumentoWord(contenidoHTML, nombreArchivo.trim());
 
-  const blob = new Blob(
-    [
-      '<html><head><meta charset="UTF-8"></head><body>' +
-        contenidoHTML +
-        "</body></html>",
-    ],
-    {
-      type: "application/msword",
-    }
-  );
-
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = nombreArchivo.trim() + ".doc";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  // Ocultar botón descargar y mostrar botón nueva planeación
   document.getElementById("btn-descargar").style.display = "none";
   const botonNueva = document.getElementById("btn-nueva");
   if (botonNueva) botonNueva.style.display = "inline-block";
 }
-
 function nuevaPlaneacion() {
   document.getElementById("resultado").innerHTML = "";
   const subtemasContenedor = document.getElementById("subtemasContainer");

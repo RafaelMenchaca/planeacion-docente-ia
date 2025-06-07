@@ -4,22 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Generador de Planeaciones Didácticas</title>
+  <!-- Enlace a archivo CSS externo -->
   <link rel="stylesheet" href="./css/planeacion.css">
 </head>
 <body>
   <div class="container">
     <h1>Generador de Planeaciones Didácticas</h1>
 
+    <!-- Formulario principal -->
     <form id="formularioPlaneacion">
+
+      <!-- Campo: Nombre de la asignatura -->
       <div class="form-group">
         <label for="asignatura">Clase o Asignatura:</label>
         <input type="text" id="asignatura" name="asignatura" required placeholder="Ej. Informática 3" />
       </div>
 
+      <!-- Campo: Nivel educativo -->
       <div class="form-group">
         <label for="nivel">Nivel Educativo:</label>
         <select id="nivel" name="nivel" required>
           <option value="">Seleccionar</option>
+          <!-- Niveles disponibles -->
           <option>Preescolar</option>
           <option>Primaria Grado 1°</option>
           <option>Primaria Grado 2°</option>
@@ -40,6 +46,7 @@
         </select>
       </div>
 
+      <!-- Campo: Tipo de planeación -->
       <div class="form-group">
         <label for="tipoPlaneacion">Tipo de Planeación:</label>
         <select id="tipoPlaneacion">
@@ -52,42 +59,45 @@
         </select>
       </div>
 
+      <!-- Campo: Tema -->
       <div class="form-group">
         <label for="tema">Tema:</label>
-        <input type="text" id="tema" />
+        <input type="text" id="tema" name="tema" required />
       </div>
 
+      <!-- Campo: Subtemas (varias líneas) -->
       <div class="form-group">
         <label for="subtemas">Subtemas:</label>
-        
         <textarea id="subtemas" rows="5" placeholder="Ejemplo:&#10;Subtema 1&#10;Subtema 2&#10;Subtema 3"></textarea>
-
       </div>
 
+      <!-- Campo: Duración por subtema -->
       <div class="form-group">
         <label for="duracion">Duración total por subtema (minutos):</label>
         <input type="number" id="duracion" min="10" value="50" />
       </div>
 
+      <!-- Botón para generar campos por subtema -->
       <div class="form-group full-width">
         <button type="button" onclick="generarSubtemas()">Añadir subtemas</button>
       </div>
 
+      <!-- Aquí se agregan dinámicamente los subtemas -->
       <div id="subtemasContainer" class="full-width"></div>
 
+      <!-- Botones para generar y descargar la planeación -->
       <div class="form-group button-group">
         <button type="button" onclick="generarPlaneacion()">Generar Planeación</button>
         <button id="btn-descargar" type="button" onclick="descargarWord()" style="display: none;">Descargar</button>
         <button id="btn-nueva" type="button" style="display: none;">Nueva Planeación</button>
-
-        
-
       </div>
     </form>
 
+    <!-- Resultado generado -->
     <div class="output" id="resultado"></div>
   </div>
 
+  <!-- Enlace al archivo JavaScript externo -->
   <script src="./js/planeacion.js"></script>
 </body>
 </html>
