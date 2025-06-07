@@ -1,0 +1,28 @@
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+table th,
+table td {
+    border: 1px solid #d1d5db;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+
+table thead {
+    background-color: #f3f4f6;
+}
+
+table th {
+    font-weight: bold;
+}
+
+h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.2rem;
+}
