@@ -42,7 +42,7 @@ Una plataforma web donde el profesor:
 | Frontend          | HTML, CSS (modularizado) |
 | Estilos           | CSS personalizado (sin frameworks por ahora) |
 | Animaciones/UX    | En desarrollo            |
-| Backend           | Node.js + Express *(plan futuro)* |
+| Backend           | Node.js + Express |
 | Base de datos     | PostgreSQL o MongoDB *(plan futuro)* |
 | IA Generativa     | OpenAI API *(plan futuro)* |
 | Exportación       | PDF/Word *(próximamente)* |
@@ -55,36 +55,43 @@ Una plataforma web donde el profesor:
 ## 📦 Estructura del Proyecto
 
 ```bash
+
 /Educativo_ia                 # 🔰 Nombre del proyecto raíz
-├── .gitignore                # Ignora variables sensibles como .env
-├── assets/
-│   ├── portada.jpg           # Imagen de portada principal
+├── assets/                   # Archivos visuales e íconos
 │   ├── calendar.svg          # Ícono ilustrativo
 │   ├── check.svg             # Íconos de beneficios
-│   └── click.svg             # Ícono de llamada a la acción
-├── components/                # Fragmentos HTML reutilizables
+│   ├── click.svg             # Ícono de llamada a la acción
+│   └── portada.jpg           # Imagen de portada principal
+├── components/               
 │   ├── footer.html           # Pie de página
 │   └── navbar.html           # Barra de navegación
 ├── css/
+│   ├── dashboard.css         # Estilos para el dashboard de planeaciones
 │   ├── index.css             # Estilos para la landing page
-│   ├── dashboard.css         # Estilos para el editor de planeaciones
-│   ├── login.css             # Estilos para el login
-│   └── planeacion.css        # Estilos para pagina de planeacion
+│   ├── login.css             # Estilos para la pantalla de login
+│   ├── planeacion.css        # Estilos para formulario de planeación
+│   └── tabla.css             # Estilos para tablas con sesiones
 ├── js/
-│   ├── auth.js
-│   ├── dashboard.js          # Archivo reservado para interactividad futura
-│   ├── login.js              # Funcionalidad para login (no base de datos)
-│   ├── detalle.js
-│   ├── navbar.js
-│   ├── supabaseClient.js
-│   └── planeacion.js         # Funcionalidad de la planeacion
-├── dashboard.html            # Página principal (home)
-├── detalle.html
-├── index.html                # Página principal (landing page)
-├── login.html                # Pagina para login
-├── planeacion.html           # Pagina para la planeacion
-├── CHANGELOG.md
-└── README.md
+│   ├── auth.js               # Protege rutas y maneja login persistente
+│   ├── config.js             # Config global con API_BASE_URL
+│   ├── dashboard.js          # Interactividad futura para dashboard
+│   ├── detalle.js            # Muestra detalles de planeación con estructura
+│   ├── login.js              # Login sin base de datos (modo local)
+│   ├── navbar.js             # Carga navbar en páginas protegidas
+│   ├── planeacion.js         # Genera planeaciones y las guarda en Supabase
+│   └── supabaseClient.js     # Conexión con Supabase Auth y DB
+├── node_modules/             # Dependencias instaladas por npm
+├── test/
+│   └── planeacion.test.js    # Test para funciones de planeación (en progreso)
+├── .gitignore                # Ignora variables sensibles como .env
+├── CHANGELOG.md              # Registro de versiones del proyecto
+├── dashboard.html            # Vista protegida con lista de planeaciones
+├── detalle.html              # Muestra detalles completos de cada planeación
+├── index.html                # Página de aterrizaje (landing)
+├── login.html                # Pantalla de acceso con email/contraseña
+├── package.json              # Configuración del proyecto Node.js
+├── planeacion.html           # Formulario paso a paso para crear planeaciones
+└── README.md                 # Instrucciones del proyecto
 
 ```
 La carpeta `components/` solo incluye `footer.html` y `navbar.html`, utilizados para modularizar la navegación y el pie de página.
