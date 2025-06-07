@@ -3,9 +3,7 @@ function generarSubtemas() {
   const duracion = parseInt(document.getElementById("duracion").value);
   const container = document.getElementById("subtemasContainer");
 
-  container.innerHTML = ""; // Limpiar antes de generar
-
-  // Separar por líneas, eliminando líneas vacías y espacios
+  container.innerHTML = "";
   const subtemas = subtemasInput.split("\n").map(s => s.trim()).filter(Boolean);
 
   subtemas.forEach((subtema, index) => {
@@ -23,19 +21,20 @@ function generarSubtemas() {
   });
 }
 
-function generarPlaneacion() {
+async function generarPlaneacion() {
   const tipo = document.getElementById("tipoPlaneacion").value.trim();
   const tema = document.getElementById("tema").value.trim();
   const subtemasTexto = document.getElementById("subtemas").value;
   const duracion = parseInt(document.getElementById("duracion").value);
   const nivel = document.getElementById("nivel").value.trim();
+  const materia = document.getElementById("asignatura").value.trim();
 
   const subtemas = subtemasTexto
     .split("\n")
     .map(s => s.trim())
     .filter(s => s.length > 0);
 
-  if (!tema || subtemas.length === 0 || isNaN(duracion) || duracion < 10 || !nivel || !tipo) {
+  if (!tema || subtemas.length === 0 || isNaN(duracion) || duracion < 10 || !nivel || !tipo || !materia) {
     alert("Por favor, completa todos los campos correctamente.");
     return;
   }
@@ -44,10 +43,13 @@ function generarPlaneacion() {
   resultado += `<h2>📘 ${tipo.toUpperCase()} - TEMA: ${tema}</h2>`;
   let contadorSesion = 1;
 
+  const sesionesPorSubtema = {};
+
   subtemas.forEach((subtema, index) => {
     const sesionesInput = document.getElementById(`sesiones_${index}`);
     if (!sesionesInput) return;
     const sesiones = parseInt(sesionesInput.value);
+    sesionesPorSubtema[subtema] = sesiones;
 
     for (let s = 1; s <= sesiones; s++) {
       const tiempoInicio = 10;
@@ -106,126 +108,62 @@ function generarPlaneacion() {
 
   document.getElementById("resultado").innerHTML = resultado;
 
-  // Ocultar el botón "Generar Planeación"
+  // Ocultar botón generar, mostrar descargar
   document.querySelector('button[onclick="generarPlaneacion()"]').style.display = "none";
-  // Mostrar el botón "Descargar"
   document.getElementById("btn-descargar").style.display = "inline-block";
+
+  // ✅ Nuevo: guardar en Supabase
+  const payload = {
+    materia,
+    grado: nivel,
+    tema,
+    duracion,
+    detalles_completos: {
+      subtemas,
+      tipoPlaneacion: tipo,
+      sesiones_por_subtema: sesionesPorSubtema
+    }
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/planeaciones`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error("No se pudo guardar la planeación");
+
+    const data = await response.json();
+
+    // Mostrar resumen extra
+    const resumen = document.createElement("div");
+    resumen.style.marginTop = "20px";
+    resumen.innerHTML = `
+      <hr style="margin: 30px 0;">
+      <h3>✅ Planeación guardada exitosamente</h3>
+      <p><strong>Materia:</strong> ${materia}</p>
+      <p><strong>Tema:</strong> ${tema}</p>
+      <p><strong>Nivel:</strong> ${nivel}</p>
+      <p><strong>Subtemas:</strong> ${subtemas.join(', ')}</p>
+      <br>
+      <button id="btn-ver-detalle" style="padding: 10px 20px; background-color: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
+        Ver Detalles
+      </button>
+    `;
+
+    document.getElementById("resultado").appendChild(resumen);
+
+    document.getElementById("btn-ver-detalle").addEventListener("click", () => {
+      window.location.href = `detalle.html?id=${data.id}`;
+    });
+
+  } catch (error) {
+    console.error("❌ Error al guardar:", error);
+    alert("❌ Error al guardar la planeación.");
+  }
 }
-// Editar el estilo del word descargable
-function descargarWord() {
-  const contenido = `
-    <div class="section">
-      <h2>Planeación Didáctica</h2>
-      <p><strong>Asignatura:</strong> Informática 3</p>
-      <p><strong>Grado:</strong> Tercer año de secundaria</p>
-      <p><strong>Docente:</strong> __________________________</p>
-      <p><strong>Fecha:</strong> __________________________</p>
-    </div>
 
-    <div class="section">
-      <table>
-        <thead>
-          <tr>
-            <th>Sesión</th>
-            <th>Tiempo</th>
-            <th>Momento</th>
-            <th>Actividad</th>
-            <th>Producto de Aprendizaje</th>
-            <th>Instrumento de Evaluación</th>
-            <th>Evaluación</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>50 min</td>
-            <td>Apertura</td>
-            <td>Dinámica de integración y diagnóstico previo</td>
-            <td>Participación oral</td>
-            <td>Lista de cotejo</td>
-            <td>5 puntos</td>
-          </tr>
-          <tr>
-            <td>1</td>
-            <td>50 min</td>
-            <td>Desarrollo</td>
-            <td>Explicación del tema y actividad práctica en computadora</td>
-            <td>Ejercicio digital guardado</td>
-            <td>Rúbrica</td>
-            <td>10 puntos</td>
-          </tr>
-          <tr>
-            <td>1</td>
-            <td>50 min</td>
-            <td>Cierre</td>
-            <td>Reflexión y actividad de repaso en equipos</td>
-            <td>Resumen en cuaderno</td>
-            <td>Lista de cotejo</td>
-            <td>5 puntos</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  const htmlCompleto = `
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8">
-      <title>Planeación Didáctica</title>
-      <style>
-        body {
-          font-family: Calibri, sans-serif;
-          padding: 40px;
-          color: #333;
-        }
-        h2 {
-          color: #1a237e;
-          border-bottom: 2px solid #ccc;
-          padding-bottom: 4px;
-        }
-        p {
-          font-size: 14px;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-        }
-        th, td {
-          border: 1px solid #999;
-          padding: 8px;
-          font-size: 13px;
-        }
-        th {
-          background-color: #e3f2fd;
-        }
-        td {
-          background-color: #fafafa;
-        }
-        .section {
-          margin-bottom: 30px;
-        }
-      </style>
-    </head>
-    <body>
-      ${contenido}
-    </body>
-    </html>
-  `;
-
-  const blob = new Blob(['\ufeff', htmlCompleto], {
-    type: 'application/msword'
-  });
-
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "planeacion.doc";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
 
 function descargarPlaneacion() {
   const contenidoHTML = document.getElementById("resultado").innerHTML;
@@ -234,20 +172,13 @@ function descargarPlaneacion() {
     return;
   }
 
-  let nombreArchivo = prompt("Escribe el nombre de tu planeacion:", "Planeacion");
+  let nombreArchivo = prompt("Escribe el nombre de tu planeación:", "Planeacion");
   if (nombreArchivo === null) return;
   if (nombreArchivo.trim() === "") nombreArchivo = "Planeacion";
 
-
   const blob = new Blob(
-    [
-      '<html><head><meta charset="UTF-8"></head><body>' +
-        contenidoHTML +
-        "</body></html>",
-    ],
-    {
-      type: "application/msword",
-    }
+    ['<html><head><meta charset="UTF-8"></head><body>' + contenidoHTML + "</body></html>"],
+    { type: "application/msword" }
   );
 
   const link = document.createElement("a");
@@ -257,7 +188,6 @@ function descargarPlaneacion() {
   link.click();
   document.body.removeChild(link);
 
-  // Ocultar botón descargar y mostrar botón nueva planeación
   document.getElementById("btn-descargar").style.display = "none";
   const botonNueva = document.getElementById("btn-nueva");
   if (botonNueva) botonNueva.style.display = "inline-block";
@@ -271,20 +201,13 @@ function nuevaPlaneacion() {
   document.getElementById("btn-descargar").style.display = "none";
   document.getElementById("btn-nueva").style.display = "none";
 
-  // Mostrar el botón "Generar Planeación"
   document.querySelector('button[onclick="generarPlaneacion()"]').style.display = "inline-block";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   const botonDescargar = document.getElementById("btn-descargar");
-  if (botonDescargar) {
-    botonDescargar.addEventListener("click", descargarPlaneacion);
-  }
   const botonNueva = document.getElementById("btn-nueva");
-  if (botonNueva) {
-    botonNueva.addEventListener("click", nuevaPlaneacion);
-  }
 
-  
+  if (botonDescargar) botonDescargar.addEventListener("click", descargarPlaneacion);
+  if (botonNueva) botonNueva.addEventListener("click", nuevaPlaneacion);
 });
-

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Generador de Planeaciones Didácticas</title>
   <link rel="stylesheet" href="./css/planeacion.css">
 </head>
+
 <body>
   <div class="container">
     <h1>Generador de Planeaciones Didácticas</h1>
@@ -59,7 +61,7 @@
 
       <div class="form-group">
         <label for="subtemas">Subtemas:</label>
-        
+
         <textarea id="subtemas" rows="5" placeholder="Ejemplo:&#10;Subtema 1&#10;Subtema 2&#10;Subtema 3"></textarea>
 
       </div>
@@ -80,7 +82,7 @@
         <button id="btn-descargar" type="button" onclick="descargarWord()" style="display: none;">Descargar</button>
         <button id="btn-nueva" type="button" style="display: none;">Nueva Planeación</button>
 
-        
+
 
       </div>
     </form>
@@ -88,6 +90,15 @@
     <div class="output" id="resultado"></div>
   </div>
 
-  <script src="./js/planeacion.js"></script>
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    protegerRuta();
+  </script>
+  <script src="js/planeacion.js"></script>
 </body>
+
 </html>
