@@ -1,6 +1,6 @@
 const API_BASE_URL = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')
     ? 'http://localhost:3000' // 🧪 Local backend
-    : 'http://localhost:3000'; // 🌐 Backend real (localhost hasta no subir backend real)
+    : 'https://educativo-backend.onrender.com'; // 🌐 Backend real 
 
 const mostrarEntorno = true; // cámbialo a false si ya no quieres verlo
 
