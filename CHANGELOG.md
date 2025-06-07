@@ -4,6 +4,27 @@ Historial de cambios para la aplicación Educativo IA.
 
 ---
 
+## [v1.4-detalle-planeacion-supabase] - 2025-06-06
+
+### 🧾 Visualización detallada de planeaciones
+- `detalle.html` ahora muestra toda la planeación en formato tabla, con sesiones por subtema.
+- Estructura visual heredada de `planeacion.html` para mantener coherencia entre páginas.
+- Las tablas incluyen: sesión, tiempo, momento, actividad, producto de aprendizaje, instrumento de evaluación y evaluación.
+
+### 🧠 Datos pedagógicos conectados a Supabase
+- Se visualiza correctamente el contenido guardado: objetivos, modalidad, metodologías, habilidades, estilos, trabajo, recursos y evaluación.
+- Lógica condicional para mostrar “No especificado” o “Ninguno” cuando faltan datos.
+
+### 🎨 Estilo de tabla centralizado
+- Se creó `tabla.css` con estilos reutilizables para tablas de planeación.
+- Eliminados `<style>` embebidos en `detalle.js` y `planeacion.js`, mejorando limpieza y mantenimiento.
+
+### ✅ Mejoras funcionales
+- `generarPlaneacion()` optimizada para reflejar con precisión los datos introducidos.
+- Las sesiones por subtema se muestran dinámicamente según la duración y número indicado.
+
+---
+
 ## [v1.3-auth-planeaciones] - 2025-05-31
 
 ### 🔐 Autenticación con Supabase
