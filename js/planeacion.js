@@ -106,11 +106,11 @@ async function generarPlaneacion() {
     }
   });
 
-  document.getElementById("resultado").innerHTML = resultado;
+  // document.getElementById("resultado").innerHTML = resultado;
 
-  // Ocultar botón generar, mostrar descargar
-  document.querySelector('button[onclick="generarPlaneacion()"]').style.display = "none";
-  document.getElementById("btn-descargar").style.display = "inline-block";
+  // // Ocultar botón generar, mostrar descargar
+  // document.querySelector('button[onclick="generarPlaneacion()"]').style.display = "none";
+  // document.getElementById("btn-descargar").style.display = "inline-block";
 
   // ✅ Nuevo: guardar en Supabase
   const payload = {
@@ -131,37 +131,19 @@ async function generarPlaneacion() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-
+  
     if (!response.ok) throw new Error("No se pudo guardar la planeación");
-
+  
     const data = await response.json();
-
-    // Mostrar resumen extra
-    const resumen = document.createElement("div");
-    resumen.style.marginTop = "20px";
-    resumen.innerHTML = `
-      <hr style="margin: 30px 0;">
-      <h3>✅ Planeación guardada exitosamente</h3>
-      <p><strong>Materia:</strong> ${materia}</p>
-      <p><strong>Tema:</strong> ${tema}</p>
-      <p><strong>Nivel:</strong> ${nivel}</p>
-      <p><strong>Subtemas:</strong> ${subtemas.join(', ')}</p>
-      <br>
-      <button id="btn-ver-detalle" style="padding: 10px 20px; background-color: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
-        Ver Detalles
-      </button>
-    `;
-
-    document.getElementById("resultado").appendChild(resumen);
-
-    document.getElementById("btn-ver-detalle").addEventListener("click", () => {
-      window.location.href = `detalle.html?id=${data.id}`;
-    });
-
+  
+    // ✅ Redirige directamente al detalle con el ID
+    window.location.href = `detalle.html?id=${data.id}`;
+  
   } catch (error) {
     console.error("❌ Error al guardar:", error);
     alert("❌ Error al guardar la planeación.");
   }
+  
 }
 
 
