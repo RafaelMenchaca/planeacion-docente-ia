@@ -67,9 +67,10 @@ async function cargarPlaneaciones(filtros = {}) {
         filtradas.forEach((p, index) => {
             const fila = document.createElement('li');
             fila.className = 'fila-planeacion';
+            const safeMateria = escapeHtml(p.materia || 'Sin materia');
             fila.innerHTML = `
           <div class="col-id">${index + 1}</div>
-          <div class="col-nombre">${p.materia || 'Sin materia'}</div>
+          <div class="col-nombre">${safeMateria}</div>
           <div class="col-fecha">${new Date(p.fecha_creacion).toLocaleDateString('es-MX')}</div>
           <div class="col-boton flex gap-2">
             <a href="detalle.html?id=${p.id}">

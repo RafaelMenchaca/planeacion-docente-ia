@@ -10,8 +10,9 @@ function generarSubtemas() {
     const div = document.createElement("div");
     div.className = "form-group";
 
+    const safeSubtema = escapeHtml(subtema);
     div.innerHTML = `
-      <label>${subtema} - Duración: ${duracion} min</label>
+      <label>${safeSubtema} - Duración: ${duracion} min</label>
       <input type="hidden" name="subtema_${index}" value="${subtema}">
       <label for="sesiones_${index}">Número de sesiones:</label>
       <input type="number" id="sesiones_${index}" name="sesiones_${index}" min="1" max="10" value="1">
@@ -39,8 +40,8 @@ async function generarPlaneacion() {
     return;
   }
 
-  let resultado = `<h2>🎓 Nivel Educativo: ${nivel}</h2>`;
-  resultado += `<h2>📘 ${tipo.toUpperCase()} - TEMA: ${tema}</h2>`;
+  let resultado = `<h2>🎓 Nivel Educativo: ${escapeHtml(nivel)}</h2>`;
+  resultado += `<h2>📘 ${escapeHtml(tipo).toUpperCase()} - TEMA: ${escapeHtml(tema)}</h2>`;
   let contadorSesion = 1;
 
   const sesionesPorSubtema = {};
@@ -56,8 +57,9 @@ async function generarPlaneacion() {
       const tiempoDesarrollo = 25;
       const tiempoCierre = duracion - tiempoInicio - tiempoDesarrollo;
 
+      const safeSub = escapeHtml(subtema);
       resultado += `
-        <h3>📗 SUBTEMA ${index + 1}.${s}: ${subtema} (Duración: ${duracion} minutos)</h3>
+        <h3>📗 SUBTEMA ${index + 1}.${s}: ${safeSub} (Duración: ${duracion} minutos)</h3>
         <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; width: 100%;">
           <thead style="background-color: #f3f4f6;">
             <tr>
