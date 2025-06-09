@@ -25,12 +25,23 @@
         </div>
 
         <!-- Botón para volver -->
-        <div class="mt-6 text-center sm:text-left">
-            <a href="dashboard.html"
-                class="inline-block text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded transition">
-                ← Volver al dashboard
-            </a>
-        </div>
+        <div class="flex justify-center gap-4 mt-6">
+  <a href="dashboard.html"
+     class="px-7 py-3 text-base font-bold bg-blue-500 text-white rounded-lg min-w-[200px] shadow-md transition-all duration-300 hover:bg-blue-600 hover:shadow-xl hover:-translate-y-1 active:scale-95 active:shadow-lg">
+    ← Volver al dashboard
+  </a>
+
+  <a href="./planeacion.html" 
+     class="px-7 py-3 text-base font-bold bg-blue-500 text-white rounded-lg min-w-[200px] shadow-md transition-all duration-300 hover:bg-blue-600 hover:shadow-xl hover:-translate-y-1 active:scale-95 active:shadow-lg">
+    ➕ Nueva Planeación</a>
+</div>
+
+<div class="form-group button-group mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+  <button id="btn-descargar" type="button" onclick="descargarWord()"
+    class="px-7 py-3 text-base font-bold bg-blue-500 text-white rounded-lg min-w-[160px] max-w-[200px] shadow-md transition-all duration-300 hover:bg-blue-600 hover:shadow-xl hover:-translate-y-1 active:scale-95 active:shadow-lg">
+    📥 Descargar
+</div>
+
     </main>
 
     <!-- Scripts -->
@@ -42,6 +53,7 @@
         protegerRuta(); // Bloquea acceso si no hay login
     </script>
     <script src="./js/detalle.js"></script>
+    <script src="./js/planeacion.js"></script>
 </body>
 
 </html>
