@@ -1,3 +1,24 @@
+function validarInputs(tab) {
+  let valid = true;
+  const inputs = tab.querySelectorAll('input');
+  inputs.forEach(input => {
+    if (input.hasAttribute('required') && input.value.trim() === '') {
+      input.classList.add('invalid');
+      valid = false;
+    } else {
+      input.classList.remove('invalid');
+    }
+  });
+  return valid;
+}
+
+function validateForm(n) {
+  const tabs = document.getElementsByClassName('tab');
+  const tab = tabs[n];
+  if (!tab) return false;
+  return validarInputs(tab);
+}
+
 function generarSubtemas() {
   const subtemasInput = document.getElementById("subtemas").value;
   const duracion = parseInt(document.getElementById("duracion").value);
@@ -195,3 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (botonDescargar) botonDescargar.addEventListener("click", descargarPlaneacion);
   if (botonNueva) botonNueva.addEventListener("click", nuevaPlaneacion);
 });
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { validateForm };
+}
