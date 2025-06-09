@@ -16,10 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+    const id = parseInt(params.get('id'), 10);
     const cont = document.getElementById('detalle-container');
 
-    if (!id) {
+    if (isNaN(id)) {
         cont.innerHTML = '❌ ID no proporcionado.';
         return;
     }
@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // HTML principal
         let html = `
         <section class="space-y-2 text-sm">
-          <p><strong>📚 Materia:</strong> ${data.materia || 'No disponible'}</p>
-          <p><strong>🎓 Grado:</strong> ${data.grado || 'No disponible'}</p>
-          <p><strong>📌 Tema:</strong> ${data.tema || 'No disponible'}</p>
+          <p><strong>📚 Materia:</strong> ${escapeHtml(data.materia || 'No disponible')}</p>
+          <p><strong>🎓 Grado:</strong> ${escapeHtml(data.grado || 'No disponible')}</p>
+          <p><strong>📌 Tema:</strong> ${escapeHtml(data.tema || 'No disponible')}</p>
           <p><strong>⏱️ Duración:</strong> ${data.duracion || 'No disponible'} min</p>
           <p><strong>📅 Fecha de creación:</strong> ${fecha ? fecha.toLocaleDateString('es-MX') : 'No disponible'}</p>
         </section>
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div>
                 <strong>📚 Metodologías:</strong>
                 <ul class="list-disc list-inside ml-4 text-gray-700">
-                  ${detalles.metodologias.map(m => `<li>${m}</li>`).join('')}
+                  ${detalles.metodologias.map(m => `<li>${escapeHtml(m)}</li>`).join('')}
                 </ul>
               </div>` : ''}
   
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div>
                 <strong>💡 Habilidades:</strong>
                 <ul class="list-disc list-inside ml-4 text-gray-700">
-                  ${detalles.habilidades.map(h => `<li>${h}</li>`).join('')}
+                  ${detalles.habilidades.map(h => `<li>${escapeHtml(h)}</li>`).join('')}
                 </ul>
               </div>` : ''}
   
@@ -73,28 +73,28 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div>
                 <strong>🧠 Estilo de Aprendizaje:</strong>
                 <ul class="list-disc list-inside ml-4 text-gray-700">
-                  ${detalles.estilo.map(e => `<li>${e}</li>`).join('')}
+                  ${detalles.estilo.map(e => `<li>${escapeHtml(e)}</li>`).join('')}
                 </ul>
               </div>` : ''}
   
-            ${detalles.trabajo ? `<p><strong>👥 Tipo de trabajo:</strong> ${detalles.trabajo}</p>` : ''}
+            ${detalles.trabajo ? `<p><strong>👥 Tipo de trabajo:</strong> ${escapeHtml(detalles.trabajo)}</p>` : ''}
             ${detalles.contextualizado !== undefined ? `<p><strong>🌎 Contextualizado:</strong> ${detalles.contextualizado ? 'Sí' : 'No'}</p>` : ''}
-            ${detalles.actividades_practicas ? `<p><strong>✍️ Actividades prácticas:</strong> ${detalles.actividades_practicas}</p>` : ''}
-            ${detalles.actividades_interactivas ? `<p><strong>🤹 Actividades interactivas:</strong> ${detalles.actividades_interactivas}</p>` : ''}
-            ${detalles.auto_evaluacion ? `<p><strong>📝 Autoevaluación/Coevaluación:</strong> ${detalles.auto_evaluacion}</p>` : ''}
+            ${detalles.actividades_practicas ? `<p><strong>✍️ Actividades prácticas:</strong> ${escapeHtml(detalles.actividades_practicas)}</p>` : ''}
+            ${detalles.actividades_interactivas ? `<p><strong>🤹 Actividades interactivas:</strong> ${escapeHtml(detalles.actividades_interactivas)}</p>` : ''}
+            ${detalles.auto_evaluacion ? `<p><strong>📝 Autoevaluación/Coevaluación:</strong> ${escapeHtml(detalles.auto_evaluacion)}</p>` : ''}
   
             ${detalles.recursos?.length ? `
               <div>
                 <strong>🧰 Recursos:</strong>
                 <ul class="list-disc list-inside ml-4 text-gray-700">
-                  ${detalles.recursos.map(r => `<li>${r}</li>`).join('')}
+                  ${detalles.recursos.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
                 </ul>
               </div>` : ''}
   
-            ${detalles.evaluacion ? `<p><strong>📏 Evaluación:</strong> ${detalles.evaluacion}</p>` : ''}
-            ${detalles.generarProblemas ? `<p><strong>🧮 Generar Problemas:</strong> ${detalles.generarProblemas}</p>` : ''}
-            ${detalles.estructura ? `<p><strong>📚 Estructura de clase:</strong> ${detalles.estructura}</p>` : ''}
-            ${detalles.num_clases ? `<p><strong>📅 Número de clases:</strong> ${detalles.num_clases}</p>` : ''}
+            ${detalles.evaluacion ? `<p><strong>📏 Evaluación:</strong> ${escapeHtml(detalles.evaluacion)}</p>` : ''}
+            ${detalles.generarProblemas ? `<p><strong>🧮 Generar Problemas:</strong> ${escapeHtml(detalles.generarProblemas)}</p>` : ''}
+            ${detalles.estructura ? `<p><strong>📚 Estructura de clase:</strong> ${escapeHtml(detalles.estructura)}</p>` : ''}
+            ${detalles.num_clases ? `<p><strong>📅 Número de clases:</strong> ${escapeHtml(detalles.num_clases)}</p>` : ''}
           </section>
           <hr class="my-6 border-t border-gray-300" />
         `;
@@ -117,8 +117,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const tiempoDesarrollo = 25;
                     const tiempoCierre = duracion - tiempoInicio - tiempoDesarrollo;
 
+                    const safeSub = escapeHtml(subtema);
                     html += `
-              <h3>📗 SUBTEMA ${index + 1}.${s}: ${subtema} (Duración: ${duracion} minutos)</h3>
+              <h3>📗 SUBTEMA ${index + 1}.${s}: ${safeSub} (Duración: ${duracion} minutos)</h3>
               <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; width: 100%;">
                 <thead style="background-color: #f3f4f6;">
                   <tr>
