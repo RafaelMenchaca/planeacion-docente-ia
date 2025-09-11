@@ -25,30 +25,35 @@ async function cargarPlaneaciones(filtros = {}) {
   container.classList.remove('hidden');
 
   try {
-    // Tu backend regresa { items, page, pageSize, total }
     const res = await fetch(`${API_BASE_URL}/api/planeaciones`);
-    if (!res.ok) throw new Error('Respuesta no OK');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    // 👇 Tu backend devuelve { items, page, pageSize, total }
     const payload = await res.json();
+    const planeaciones = Array.isArray(payload) ? payload : (payload.items || []);
 
-    // Aceptamos tanto array "legacy" como objeto paginado
-    const lista = Array.isArray(payload) ? payload : (payload.items || []);
+    if (!Array.isArray(planeaciones)) {
+      container.innerHTML = "<p>Error al cargar planeaciones.</p>";
+      return;
+    }
 
-    let filtradas = lista.filter(p => {
-      const porMateria = filtros.materia
-        ? (p.materia || '').toLowerCase().includes(filtros.materia.toLowerCase())
-        : true;
-
-      const porGrado = filtros.grado
-        ? (p.grado || '').toLowerCase().includes(filtros.grado.toLowerCase())
-        : true;
-
+    // Filtros en cliente
+    let filtradas = planeaciones.filter(p => {
+      const porMateria = filtros.materia ? (p.materia || '').toLowerCase().includes(filtros.materia.toLowerCase()) : true;
+      const porGrado = filtros.grado ? (p.grado || '').toLowerCase().includes(filtros.grado.toLowerCase()) : true;
       const porFecha = filtros.fecha
         ? (p.fecha_creacion ? new Date(p.fecha_creacion).toISOString().startsWith(filtros.fecha) : false)
         : true;
-
       return porMateria && porGrado && porFecha;
     });
 
+    // Estado vacío
+    if (filtradas.length === 0) {
+      container.innerHTML = "<p class='text-sm text-gray-600'>No hay planeaciones para mostrar.</p>";
+      return;
+    }
+
+    // Construcción del listado
     const scrollDiv = document.createElement('div');
     scrollDiv.className = 'tabla-scroll';
 
@@ -69,18 +74,16 @@ async function cargarPlaneaciones(filtros = {}) {
       <span class="w-1/4 text-right">Acciones</span>
     `;
 
-    const listaUL = document.createElement('ul');
+    const lista = document.createElement('ul');
 
     filtradas.forEach((p, index) => {
       const fila = document.createElement('li');
       fila.className = 'fila-planeacion';
       const safeMateria = escapeHtml(p.materia || 'Sin materia');
-      const fecha = p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString('es-MX') : '—';
-
       fila.innerHTML = `
         <div class="col-id">${index + 1}</div>
         <div class="col-nombre">${safeMateria}</div>
-        <div class="col-fecha">${fecha}</div>
+        <div class="col-fecha">${p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString('es-MX') : '-'}</div>
         <div class="col-boton flex gap-2">
           <a href="detalle.html?id=${p.id}">
             <button class="text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">Ver</button>
@@ -89,53 +92,19 @@ async function cargarPlaneaciones(filtros = {}) {
             class="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
         </div>
       `;
-      listaUL.appendChild(fila);
+      lista.appendChild(fila);
     });
 
-    scrollDiv.innerHTML = '';
     scrollDiv.appendChild(encabezadoMovil);
     scrollDiv.appendChild(encabezado);
-    scrollDiv.appendChild(listaUL);
+    scrollDiv.appendChild(lista);
 
     container.innerHTML = '';
     container.appendChild(scrollDiv);
 
   } catch (error) {
-    console.error('❌ Error al cargar planeaciones:', error);
-    container.innerHTML = '<p>Error al cargar planeaciones.</p>';
+    console.error("❌ Error al cargar planeaciones:", error);
+    container.innerHTML = "<p>Error al cargar planeaciones.</p>";
   }
 }
 
-function aplicarFiltros() {
-  const materia = document.getElementById('filtro-materia').value;
-  const grado = document.getElementById('filtro-grado').value;
-  const fecha = document.getElementById('filtro-fecha').value;
-  cargarPlaneaciones({ materia, grado, fecha });
-}
-
-function resetearFiltros() {
-  document.getElementById('filtro-materia').value = '';
-  document.getElementById('filtro-grado').value = '';
-  document.getElementById('filtro-fecha').value = '';
-  cargarPlaneaciones();
-}
-
-async function eliminarPlaneacion(id) {
-  const confirmar = confirm('¿Estás seguro de que deseas eliminar esta planeación?');
-  if (!confirmar) return;
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('No se pudo eliminar');
-    alert('Planeación eliminada exitosamente ✅');
-    cargarPlaneaciones();
-  } catch (error) {
-    console.error('❌ Error al eliminar:', error);
-    alert('No se pudo eliminar la planeación.');
-  }
-}
-
-function toggleFiltros() {
-  const contenedor = document.getElementById('contenedor-filtros');
-  contenedor.classList.toggle('hidden');
-}
