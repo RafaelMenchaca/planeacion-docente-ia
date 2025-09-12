@@ -88,8 +88,10 @@ async function cargarPlaneaciones(filtros = {}) {
           <a href="detalle.html?id=${p.id}">
             <button class="text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">Ver</button>
           </a>
-          <button onclick="eliminarPlaneacion(${p.id})"
-            class="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+            <button onclick="eliminarPlaneacion(${p.id}, this)"
+              class="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+              Eliminar
+            </button>
         </div>
       `;
       lista.appendChild(fila);
@@ -108,3 +110,48 @@ async function cargarPlaneaciones(filtros = {}) {
   }
 }
 
+// 👇 Pega esto al final de dashboard.js
+window.eliminarPlaneacion = async function (id, btnEl) {
+  const confirmar = confirm('¿Estás seguro de que deseas eliminar esta planeación?');
+  if (!confirmar) return;
+
+  // UX: deshabilitar botón mientras borra
+  const prevText = btnEl ? btnEl.textContent : null;
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Eliminando...'; }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, {
+      method: 'DELETE'
+    });
+
+    // lee el cuerpo como texto para mostrar cualquier mensaje del backend
+    const bodyText = await res.text();
+
+    if (!res.ok) {
+      console.error('❌ DELETE fallo:', res.status, bodyText);
+      const msg = bodyText || `HTTP ${res.status}`;
+      if (res.status === 404) {
+        alert(`No se pudo eliminar: no encontrado (ID ${id}).`);
+      } else {
+        alert(`No se pudo eliminar.\n${msg}`);
+      }
+      return;
+    }
+
+    // opcional: intentar parsear JSON si el backend lo envía
+    try {
+      const json = JSON.parse(bodyText);
+      if (json?.message) console.log(json.message);
+    } catch { /* ignore parse error */ }
+
+    alert('Planeación eliminada ✅');
+    // recargar la lista
+    cargarPlaneaciones();
+
+  } catch (err) {
+    console.error('❌ Error de red en DELETE:', err);
+    alert('No se pudo eliminar la planeación (error de red).');
+  } finally {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = prevText; }
+  }
+};
