@@ -1,98 +1,141 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Planea - Planeación para Docentes</title>
-    <link rel="stylesheet" href="css/index.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planea - Planeación para Docentes</title>
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="css/index.css" />
 </head>
 
 <body>
-    <!-- Encabezado de navegación -->
-    <header>
-        <div class="logo">
-            <p><strong>PLANEA<br>PLANEACION<br>PARA DOCENTES</strong></p>
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html">Planea</a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navMain">
+        <ul class="navbar-nav ms-auto me-3">
+          <li class="nav-item"><a class="nav-link" href="#beneficios">Beneficios</a></li>
+          <li class="nav-item"><a class="nav-link" href="#ahorra">Ahorra tiempo</a></li>
+        </ul>
+        <!-- 👇 Botón corregido (ya NO amarillo) -->
+        <a href="login.html" class="btn btn-outline-light rounded-pill px-3 fw-semibold">Iniciar sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="container-fluid bg-primary text-white py-5">
+    <div class="container">
+      <div class="row align-items-center">
+        <!-- Texto -->
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <h1 class="display-4 fw-bold">Planea</h1>
+          <p class="lead mb-3">
+            <strong>¡Bienvenido a Planea!</strong><br>
+            La plataforma inteligente que te ayuda a planificar tus clases de manera rápida,
+            organizada y personalizada.
+          </p>
+          <p class="mb-4">
+            Con tecnología basada en IA podrás crear tus planificaciones de forma sencilla,
+            ahorrar tiempo y enfocarte en lo más importante: <strong>enseñar con calidad</strong>.
+          </p>
+          <a href="#beneficios" class="btn btn-light btn-lg me-2">Más información</a>
+          <a href="login.html" class="btn btn-outline-light btn-lg">Empezar</a>
         </div>
-        <nav class="nav-botones">
-            <a href="login.html" class="btn btn-amarillo">Iniciar Sesion</a>
-        </nav>
-    </header>
 
-    <!-- Contenido principal -->
-    <main class="hero">
-        <!-- Texto de bienvenida -->
-        <section class="texto">
-            <h1>Planea</h1>
-            <p><strong>¡Bienvenido a Planea!</strong><br>
-                La plataforma inteligente que te ayuda a planificar tus clases de manera rápida, organizada y
-                personalizada.
-                <br>Con el apoyo de herramientas digitales y tecnología basada en IA,
-                podrás crear tus planificaciones docentes de forma sencilla, ahorrar tiempo y enfocarte en lo más
-                importante:
-                enseñar con calidad.
-            </p>
-            <button class="btn btn-blanco">Más información</button>
-        </section>
-
-        <!-- Imagen lateral -->
-        <section class="imagen">
-            <img src="assets/portada.jpg" alt="Laptop con útiles escolares">
-        </section>
-    </main>
-
-    <!-- Sección de beneficios -->
-    <section class="beneficios">
-        <h2>Estamos aquí para ayudar y planificar</h2>
-
-        <div class="grid-beneficios">
-            <!-- Beneficio 1 -->
-            <div class="item-beneficio">
-                <img src="assets/check.svg" alt="Ícono de verificación" />
-                <h3>Hay demasiadas apps que compiten por tu atención</h3>
-                <p>Planea una aplicación de punto de partida que tiene todo lo que necesitarás. Elimina las otras.</p>
-            </div>
-
-            <!-- Beneficio 2 -->
-            <div class="item-beneficio">
-                <img src="assets/check.svg" alt="Ícono de verificación" />
-                <h3>Personalización fácil</h3>
-                <p>Personaliza tus documentos a tu gusto añadiendo tus propios logos o datos de tu institución de una
-                    manera
-                    fácil y segura.</p>
-            </div>
-
-            <!-- Beneficio 3 -->
-            <div class="item-beneficio">
-                <img src="assets/check.svg" alt="Ícono de verificación" />
-                <h3>Ahorra tu tiempo</h3>
-                <p>Con ayuda de nuestra IA Planea puede planificarte todo tu plan de estudios en tan solo minutos sin
-                    necesidad de invertir mucho tiempo.</p>
-            </div>
+        <!-- Imagen -->
+        <div class="col-lg-6 text-center">
+          <img src="assets/portada.jpg" alt="Laptop con útiles escolares" class="img-fluid rounded-4 shadow hero-img">
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- Sección Ahorra Tiempo -->
-    <section class="ahorra-tiempo">
-        <div class="contenedor-ahorra">
-            <!-- Imagen de calendario -->
-            <div class="ilustracion">
-                <img src="assets/calendar.svg" alt="Icono de calendario" />
-            </div>
+  <!-- BENEFICIOS -->
+  <section id="beneficios" class="py-5 bg-light">
+    <div class="container">
+      <h2 class="text-center fw-bold text-primary mb-4">Estamos aquí para ayudar y planificar</h2>
 
-            <!-- Texto y botón -->
-            <div class="texto-ahorra">
-                <h2>💡 Ahorra tiempo</h2>
-                <p>
-                    Transforma esas horas aburridas de planeacion en una planeacion eficiente y
-                    segura con tan solo un <strong>Click</strong> con Planea!
-                </p>
-                <img src="assets/click.svg" alt="Icono de click" class="icono-click" />
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm feature-card">
+            <div class="card-body text-center">
+              <img src="assets/check.svg" class="icon mb-3" alt="Ícono de verificación">
+              <h3 class="h6 fw-bold">Hay demasiadas apps que compiten por tu atención</h3>
+              <p class="text-secondary mb-0">
+                Planea es tu punto de partida con todo lo que necesitas. Elimina lo demás.
+              </p>
             </div>
+          </div>
         </div>
-    </section>
 
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm feature-card">
+            <div class="card-body text-center">
+              <img src="assets/check.svg" class="icon mb-3" alt="Ícono de verificación">
+              <h3 class="h6 fw-bold">Personalización fácil</h3>
+              <p class="text-secondary mb-0">
+                Añade logos o datos de tu institución de forma sencilla y segura.
+              </p>
+            </div>
+          </div>
+        </div>
 
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm feature-card">
+            <div class="card-body text-center">
+              <img src="assets/check.svg" class="icon mb-3" alt="Ícono de verificación">
+              <h3 class="h6 fw-bold">Ahorra tu tiempo</h3>
+              <p class="text-secondary mb-0">
+                Con IA, Planea genera tu plan de estudios en minutos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AHORRA TIEMPO -->
+  <section id="ahorra" class="py-5">
+    <div class="container">
+      <div class="row align-items-center gy-4">
+        <div class="col-md-5 text-center">
+          <img src="assets/calendar.svg" class="img-fluid" alt="Icono de calendario">
+        </div>
+        <div class="col-md-7">
+          <h2 class="fw-bold mb-3">💡 Ahorra tiempo</h2>
+          <p class="text-secondary mb-3">
+            Transforma horas de trabajo en una planeación eficiente y segura con un solo
+            <strong>clic</strong> usando Planea.
+          </p>
+          <img src="assets/click.svg" alt="Icono de click" class="icono-click">
+        </div>
+      </div>
+    </div>
+  </section>
+
+<!-- FOOTER -->
+<div id="footer-placeholder"></div>
+
+<script>
+    fetch('./components/footer.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('footer-placeholder').innerHTML = data;
+        })
+        .catch(error => console.error('Error loading footer:', error));
+</script>
+  <!-- Bootstrap bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
 </body>
-
 </html>
