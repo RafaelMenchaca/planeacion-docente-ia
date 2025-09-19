@@ -25,7 +25,7 @@
       <div class="collapse navbar-collapse" id="navMain">
         <ul class="navbar-nav ms-auto me-3">
           <li class="nav-item"><a class="nav-link" href="#beneficios">Beneficios</a></li>
-          <li class="nav-item"><a class="nav-link" href="#ahorra">Ahorra tiempo</a></li>
+          <li class="nav-item"><a class="nav-link" href="#como-funciona">¿Cómo funciona?</a></li>
         </ul>
         <a href="login.html" class="btn btn-outline-light rounded-pill px-3 fw-semibold">Iniciar sesión</a>
       </div>
@@ -33,12 +33,12 @@
   </nav>
 
   <!-- HERO -->
-  <section class="container-fluid bg-primary text-white py-5">
+  <section class="container-fluid bg-primary text-white min-vh-100 d-flex align-items-center">
     <div class="container">
       <div class="row align-items-center">
         <!-- Texto -->
         <div class="col-lg-6 mb-4 mb-lg-0">
-          <h1 class="display-4 fw-bold">Planea</h1>
+          <h1 class="display-3 fw-bold">Planea</h1>
           <p class="lead mb-3">
             <strong>¡Bienvenido a Planea!</strong><br>
             La plataforma inteligente que te ayuda a planificar tus clases de manera rápida,
@@ -54,15 +54,17 @@
 
         <!-- Imagen -->
         <div class="col-lg-6 text-center">
-          <img src="assets/portada.jpg" alt="Laptop con útiles escolares" class="img-fluid rounded-4 shadow hero-img">
+          <img src="assets/portada.jpg" alt="Laptop con útiles escolares" 
+              class="img-fluid rounded-4 shadow hero-img">
         </div>
       </div>
     </div>
   </section>
 
+
 <!-- BENEFICIOS (default Bootstrap example traducido) -->
 <section id="beneficios" class="container px-4 py-5" id="featured-3">
-  <h2 class="pb-2 border-bottom">Beneficios principales</h2>
+  <h2 class="pb-2 border-bottom mb-5">Beneficios principales</h2>
   <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
     <div class="feature col">
       <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient rounded-circle mb-3" style="width: 4rem; height: 4rem;">
@@ -70,9 +72,7 @@
       </div>
       <h3 class="fs-2 text-body-emphasis">Planeaciones rápidas</h3>
       <p> Genera en minutos tus planeaciones completas con el apoyo de la inteligencia artificial, evitando comenzar
-        desde cero. </p> <a href="#" class="icon-link"> Saber más <svg class="bi" aria-hidden="true">
-          <use xlink:href="#chevron-right"></use>
-        </svg> </a>
+        desde cero. </p>
     </div>
 
     <div class="feature col">
@@ -81,9 +81,7 @@
       </div>
       <h3 class="fs-2 text-body-emphasis">Enfoque en la enseñanza</h3>
       <p> Dedica más tiempo a tus alumnos y menos a las tareas administrativas. Planea simplifica tu organización
-        diaria. </p> <a href="#" class="icon-link"> Descubrir <svg class="bi" aria-hidden="true">
-          <use xlink:href="#chevron-right"></use>
-        </svg> </a>
+        diaria. </p> 
     </div>
     <div class="feature col">
       <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient rounded-circle mb-3" style="width: 4rem; height: 4rem;">
@@ -91,39 +89,98 @@
       </div>
       <h3 class="fs-2 text-body-emphasis">Personalización flexible</h3>
       <p> Ajusta y edita cada planeación según tus necesidades, agregando recursos, actividades y el estilo propio de tu
-        institución. </p> <a href="#" class="icon-link"> Personalizar <svg class="bi" aria-hidden="true">
-          <use xlink:href="#chevron-right"></use>
-        </svg> </a>
+        institución. </p> 
     </div>
   </div>
+  <p class="lead mb-4">
+    Descubre todos los beneficios que Planea tiene para ofrecerte, esto es solo el comienzo.
+  </p>
+  <button class="btn btn-primary btn-lg me-2" type="button" onclick="window.location.href='como-funciona.html'">
+            Todos los Beneficios
+  </button>
 </section>
 
 
-  <!-- AHORRA TIEMPO -->
-  <section id="ahorra" class="container py-5">
-    <div class="row featurette">
-      <!-- Texto centrado verticalmente -->
-      <div class="col-md-7 order-md-2 d-flex align-items-center">
-        <div>
-          <h2 class="featurette-heading fw-normal lh-1">
-            Optimiza tu tiempo. <span class="text-body-secondary">Planea en segundos.</span>
-          </h2>
-          <p class="lead">
-            Con Planea, las largas horas de preparación se reducen a minutos. Nuestra IA organiza contenidos, objetivos y actividades en un formato listo para usar.
-          </p>
+  <!-- CÓMO FUNCIONA -->
+  <section id="como-funciona" class="container px-4 py-5 container-fluid bg-light py-7">
+    <div class="container">
+      <h2 class="pb-2 border-bottom text-center mb-5">¿Cómo funciona Planea?</h2>
+      <div class="row align-items-center g-5">
+        
+        <!-- Imagen ilustrativa -->
+        <div class="col-md-6 text-center">
+          <img src="assets/laptop.png" alt="Ilustración de cómo funciona Planea" 
+              class="img-fluid rounded-4 shadow">
         </div>
-      </div>
-      <!-- Imagen -->
-      <div class="col-md-5 order-md-1 text-center">
-        <img src="assets/laptop.png" 
-            alt="Ejemplo de planeación en laptop" 
-            class="img-fluid mx-auto d-block rounded-3 shadow">
+
+        <!-- Texto -->
+        <div class="col-md-6">
+          <h3 class="fw-bold mb-3">Planifica en minutos, no en horas</h3>
+          <ul class="list-unstyled fs-5 mb-4">
+            <li>✅ Eliges la asignatura y nivel educativo.</li>
+            <li>✅ Nuestra IA genera automáticamente contenidos y actividades.</li>
+            <li>✅ Editas y personalizas según las necesidades de tus alumnos.</li>
+          </ul>
+          <p class="lead mb-4">
+            Así, transformas horas de preparación en minutos de organización eficiente.
+          </p>
+          <button class="btn btn-primary btn-lg me-2" type="button" onclick="window.location.href='como-funciona.html'">
+            ¿Cómo funciona?
+          </button>
+        </div>
       </div>
     </div>
   </section>
 
+
+
+  <!-- TESTIMONIOS -->
+  <section id="testimonios" class="container px-4 py-5">
+    <h2 class="pb-2 border-bottom text-center mb-5">Lo que dicen los docentes</h2>
+    <div class="row g-4 row-cols-1 row-cols-md-3">
+      
+      <!-- Testimonio 1 -->
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body text-center">
+            <img src="assets/docente1.jpg" alt="Foto docente 1" class="rounded-circle mb-3" width="80" height="80">
+            <h5 class="card-title mb-1">María López</h5>
+            <p class="text-secondary small mb-3">Maestra de Primaria</p>
+            <p class="card-text">“Planea me ahorra horas de trabajo. Ahora puedo dedicar más tiempo a preparar clases dinámicas para mis alumnos.”</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonio 2 -->
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body text-center">
+            <img src="assets/docente2.jpg" alt="Foto docente 2" class="rounded-circle mb-3" width="80" height="80">
+            <h5 class="card-title mb-1">José Martínez</h5>
+            <p class="text-secondary small mb-3">Profesor de Secundaria</p>
+            <p class="card-text">“La inteligencia artificial de Planea organiza mis planeaciones en minutos. Es como tener un asistente personal.”</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonio 3 -->
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body text-center">
+            <img src="assets/docente3.jpg" alt="Foto docente 3" class="rounded-circle mb-3" width="80" height="80">
+            <h5 class="card-title mb-1">Ana Rodríguez</h5>
+            <p class="text-secondary small mb-3">Coordinadora Académica</p>
+            <p class="card-text">“Gracias a Planea, todo el equipo docente comparte un mismo formato de calidad y ahorramos mucho tiempo.”</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
   <!-- FOOTER -->
-  <div class="container">
+  <div class="container px-4 py-5">
     <footer class="py-5">
       <div class="row">
         <!-- Columna 1 -->

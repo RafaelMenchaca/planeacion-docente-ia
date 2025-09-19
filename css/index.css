@@ -21,6 +21,10 @@
   height: auto;
 }
 
+section + section {
+  border-top: 1px solid #eaeaea;
+}
+
 /* Pequeños ajustes responsivos opcionales */
 @media (max-width: 576px) {
   .icono-click { width: 56px; }
