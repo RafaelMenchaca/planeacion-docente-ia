@@ -4,6 +4,24 @@ Historial de cambios para la aplicación Educativo IA.
 
 ---
 
+## [v1.5-public-pages-refactor] - 2025-09-20
+
+### 🌐 Nuevas páginas públicas
+- `beneficios.html`: página dedicada con 6 beneficios principales de la app, usando cards minimalistas con íconos.
+- `como_funciona.html`: página explicativa con lista de pasos e íconos temáticos para mostrar el flujo de uso de la plataforma.
+- `precios.html`: página de planes y precios con diseño basado en componentes Bootstrap y adaptado a colores institucionales.
+
+### 🎨 Refinamiento visual
+- Eliminado el fondo azul de los hero secundarios (`beneficios` y `como_funciona`), ahora con estilo minimalista en fondo claro.
+- Tipografía regular (no bold) en títulos principales de estas páginas, manteniendo consistencia con `precios.html`.
+- Ajustado espaciado superior e inferior en hero y secciones para dar más aire entre navbar, contenido y footer.
+
+### 🧩 Modularización de componentes
+- Navbar y footer públicos extraídos a `components/navbar_public.html` y `components/footer_public.html`.
+- Se cargan dinámicamente con `components_public.js`, permitiendo mantener coherencia y simplificar mantenimiento entre páginas.
+
+---
+
 ## [v1.4-detalle-planeacion-supabase] - 2025-06-06
 
 ### 🧾 Visualización detallada de planeaciones
