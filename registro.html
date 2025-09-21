@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro - Planea</title>
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body class="bg-light">
+
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <!-- Registro -->
+  <section class="container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm border-0 p-4">
+        <h2 class="fw-bold text-center mb-4">Crear cuenta</h2>
+        <form>
+          <!-- Nombre -->
+          <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre completo <span class="text-danger">(obligatorio)</span></label>
+            <input type="text" class="form-control" id="nombre" placeholder="Ej. María López" required>
+          </div>
+
+          <!-- Email -->
+          <div class="mb-3">
+            <label for="email" class="form-label">Correo electrónico <span class="text-danger">(obligatorio)</span></label>
+            <input type="email" class="form-control" id="email" placeholder="ejemplo@correo.com" required>
+          </div>
+
+          <!-- Contraseña -->
+          <div class="mb-3">
+            <label for="password" class="form-label">Contraseña <span class="text-danger">(obligatorio)</span></label>
+            <input type="password" class="form-control" id="password" required>
+          </div>
+
+          <!-- Confirmar contraseña -->
+          <div class="mb-4">
+            <label for="confirm-password" class="form-label">Confirmar contraseña <span class="text-danger">(obligatorio)</span></label>
+            <input type="password" class="form-control" id="confirm-password" required>
+          </div>
+
+          <!-- Rol -->
+          <div class="mb-3">
+            <label for="rol" class="form-label">Rol <span class="text-muted">(opcional)</span></label>
+            <select id="rol" class="form-select">
+              <option selected disabled>Selecciona tu rol</option>
+              <option value="docente">Docente</option>
+              <option value="coordinador">Coordinador</option>
+              <option value="institucion">Institución</option>
+            </select>
+          </div>
+
+          <!-- Nivel educativo -->
+          <div class="mb-3">
+            <label for="nivel" class="form-label">Nivel educativo <span class="text-muted">(opcional)</span></label>
+            <select id="nivel" class="form-select">
+              <option selected disabled>Selecciona un nivel</option>
+              <option value="primaria">Primaria</option>
+              <option value="secundaria">Secundaria</option>
+              <option value="preparatoria">Preparatoria</option>
+              <option value="universidad">Universidad</option>
+            </select>
+          </div>
+
+          <!-- Materia principal -->
+          <div class="mb-3">
+            <label for="materia" class="form-label">Materia principal <span class="text-muted">(opcional)</span></label>
+            <input type="text" class="form-control" id="materia" placeholder="Ej. Matemáticas">
+          </div>
+
+          <!-- País / Región -->
+          <div class="mb-4">
+            <label for="pais" class="form-label">País / Región <span class="text-muted">(opcional)</span></label>
+            <select id="pais" class="form-select">
+              <option selected disabled>Selecciona tu país</option>
+              <option value="mx">México</option>
+              <option value="us">Estados Unidos</option>
+              <option value="es">España</option>
+              <option value="ar">Argentina</option>
+              <option value="co">Colombia</option>
+              <option value="cl">Chile</option>
+              <option value="pe">Perú</option>
+              <option value="otros">Otro</option>
+            </select>
+          </div>
+
+          <!-- Nota -->
+          <p class="small text-muted mb-3">Los campos marcados como <span class="text-danger">(obligatorio)</span> son necesarios para crear tu cuenta.</p>
+
+          <!-- Botón -->
+          <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+        </form>
+
+        <!-- Link a login -->
+        <p class="text-center mt-3 mb-0">
+          ¿Ya tienes cuenta? <a href="login.html" class="text-primary">Inicia sesión</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <div id="footer"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/components_public.js"></script>
+</body>
+</html>
