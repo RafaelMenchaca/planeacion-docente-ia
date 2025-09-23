@@ -1,20 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Cargar componentes
-  const loadComponent = (id, path) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    fetch(path)
-      .then(res => res.text())
-      .then(html => {
-        el.innerHTML = html;
-        el.classList.remove('hidden');
-      })
-      .catch(err => console.error(`Error cargando ${path}:`, err));
-  };
-
-  loadComponent('navbar-placeholder', './components/navbar.html');
-  loadComponent('footer-placeholder', './components/footer.html');
-
   cargarPlaneaciones();
 });
 
@@ -31,12 +15,6 @@ async function cargarPlaneaciones(filtros = {}) {
     const payload = await res.json();
     const planeaciones = Array.isArray(payload) ? payload : (payload.items || []);
 
-    if (!Array.isArray(planeaciones)) {
-      container.innerHTML = "<p>Error al cargar planeaciones.</p>";
-      return;
-    }
-
-    // 🔹 Aplicar filtros en cliente
     let filtradas = planeaciones.filter(p => {
       const porMateria = filtros.materia
         ? (p.materia || '').toLowerCase().includes(filtros.materia.toLowerCase())
@@ -51,13 +29,11 @@ async function cargarPlaneaciones(filtros = {}) {
       return porMateria && porFecha;
     });
 
-    // 🔹 Estado vacío
     if (filtradas.length === 0) {
       container.innerHTML = "<p class='text-muted text-center py-3'>No hay planeaciones que coincidan con los filtros.</p>";
       return;
     }
 
-    // 🔹 Construcción de tabla
     const tbody = document.createElement("tbody");
 
     filtradas.forEach((p, index) => {
@@ -76,11 +52,9 @@ async function cargarPlaneaciones(filtros = {}) {
           </button>
         </td>
       `;
-
       tbody.appendChild(tr);
     });
 
-    // 🔹 Estructura de tabla
     container.innerHTML = `
       <table class="table table-hover table-sm align-middle mb-0">
         <thead class="table-light sticky-top">
@@ -101,18 +75,14 @@ async function cargarPlaneaciones(filtros = {}) {
   }
 }
 
-// 🔹 Funciones de filtros
 window.aplicarFiltros = function () {
   const materia = document.getElementById('filtro-materia').value.trim();
   const fecha = document.getElementById('filtro-fecha').value.trim();
 
   cargarPlaneaciones({ materia, fecha });
 
-  // Mantener abierto el dropdown
   const dropdown = bootstrap.Dropdown.getInstance(document.getElementById("filtrosDropdownBtn"));
-  if (dropdown) {
-    dropdown.show();
-  }
+  if (dropdown) dropdown.show();
 };
 
 window.resetearFiltros = function () {
@@ -120,23 +90,16 @@ window.resetearFiltros = function () {
   document.getElementById('filtro-fecha').value = '';
   cargarPlaneaciones();
 
-  // Mantener abierto también al limpiar
   const dropdown = bootstrap.Dropdown.getInstance(document.getElementById("filtrosDropdownBtn"));
-  if (dropdown) {
-    dropdown.show();
-  }
+  if (dropdown) dropdown.show();
 };
 
-// 🔹 Cerrar filtros y limpiar
 window.cerrarFiltros = function () {
-  resetearFiltros(); // limpia también
+  resetearFiltros();
   const dropdown = bootstrap.Dropdown.getInstance(document.getElementById("filtrosDropdownBtn"));
-  if (dropdown) {
-    dropdown.hide();
-  }
+  if (dropdown) dropdown.hide();
 };
 
-// 🔹 Eliminar planeación
 window.eliminarPlaneacion = async function (id, btnEl) {
   const confirmar = confirm('¿Estás seguro de que deseas eliminar esta planeación?');
   if (!confirmar) return;
@@ -152,20 +115,14 @@ window.eliminarPlaneacion = async function (id, btnEl) {
       method: 'DELETE'
     });
 
-    const bodyText = await res.text();
-
-    if (!res.ok) {
-      console.error('❌ DELETE fallo:', res.status, bodyText);
-      alert(`No se pudo eliminar.\n${bodyText || `HTTP ${res.status}`}`);
-      return;
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     alert('Planeación eliminada ✅');
     cargarPlaneaciones();
 
   } catch (err) {
     console.error('❌ Error de red en DELETE:', err);
-    alert('No se pudo eliminar la planeación (error de red).');
+    alert('No se pudo eliminar la planeación.');
   } finally {
     if (btnEl) {
       btnEl.disabled = false;
@@ -173,13 +130,3 @@ window.eliminarPlaneacion = async function (id, btnEl) {
     }
   }
 };
-
-// 🔹 Sanitizar texto
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}

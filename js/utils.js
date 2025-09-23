@@ -1,3 +1,4 @@
+// Escapa HTML para evitar XSS
 function escapeHtml(str) {
     if (str === undefined || str === null) return '';
     return String(str)
@@ -7,3 +8,5 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+
+window.escapeHtml = escapeHtml;
