@@ -22,10 +22,16 @@
 }
 
 section + section {
-  border-top: 1px solid #eaeaea;
+  border-top: none;
 }
 
 /* Pequeños ajustes responsivos opcionales */
 @media (max-width: 576px) {
   .icono-click { width: 56px; }
+}
+
+/* Espaciado uniforme entre secciones */
+.section-spacing {
+  margin-top: 6rem;   /* espacio arriba */
+  margin-bottom: 6rem; /* espacio abajo */
 }
