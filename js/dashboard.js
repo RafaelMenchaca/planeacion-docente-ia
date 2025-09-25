@@ -43,14 +43,17 @@ async function cargarPlaneaciones(filtros = {}) {
         <td>${index + 1}</td>
         <td>${escapeHtml(p.materia || "Sin materia")}</td>
         <td class="text-muted">${p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString("es-MX") : "-"}</td>
-        <td class="text-end">
-          <a href="detalle.html?id=${p.id}" class="btn btn-outline-primary btn-sm me-2">
-            <i class="bi bi-eye"></i> Ver
+        <td>
+        <div class="d-flex flex-wrap justify-content-end gap-2">
+          <a href="detalle.html?id=${p.id}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-eye"></i> <span class="d-none d-sm-inline">Ver</span>
           </a>
           <button onclick="eliminarPlaneacion(${p.id}, this)" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-trash"></i> Eliminar
+            <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
           </button>
-        </td>
+        </div>
+      </td>
+
       `;
       tbody.appendChild(tr);
     });
