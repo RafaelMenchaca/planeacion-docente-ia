@@ -5,97 +5,146 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Generador de Planeaciones Didácticas</title>
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <!-- Global -->
+  <link rel="stylesheet" href="./css/global.css">
+  <!-- Página específica -->
   <link rel="stylesheet" href="./css/planeacion.css">
 </head>
 
-<body>
-  <div class="container">
-    <h1>Generador de Planeaciones Didácticas</h1>
+<body class="d-flex flex-column min-vh-100 bg-light">
+  <!-- Navbar -->
+  <div id="navbar-placeholder"></div>
 
-    <form id="formularioPlaneacion">
-      <div class="form-group">
-        <label for="asignatura">Clase o Asignatura:</label>
-        <input type="text" id="asignatura" name="asignatura" required placeholder="Ej. Informática 3" />
+  <!-- ✅ Contenido principal -->
+  <main class="flex-grow-1 container py-4">
+    <h1 class="mb-4 text-center">Generador de Planeaciones Didácticas</h1>
+
+    <!-- 🔹 Tabla de usuario -->
+    <div class="bg-white p-3 rounded shadow-sm">
+      <table id="planeacionTable" class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Asignatura <small>(usuario)</small></th>
+            <th>Nivel/Grado <small>(usuario)</small></th>
+            <th>Tema <small>(usuario)</small></th>
+            <th>Subtema <small>(usuario)</small></th>
+            <th>Duración (min) <small>(usuario)</small></th>
+            <th>Sesiones <small>(usuario)</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="text" id="asignatura" class="form-control" placeholder="Ej. Matemáticas" required></td>
+            <td>
+              <select id="nivel" class="form-select" required>
+                <option value="">Seleccionar</option>
+                <option>Primaria 1°</option>
+                <option>Primaria 2°</option>
+                <option>Primaria 3°</option>
+                <option>Primaria 4°</option>
+                <option>Primaria 5°</option>
+                <option>Primaria 6°</option>
+                <option>Secundaria 1°</option>
+                <option>Secundaria 2°</option>
+                <option>Secundaria 3°</option>
+                <option>Preparatoria</option>
+                <option>Universidad</option>
+              </select>
+            </td>
+            <td><input type="text" id="tema" class="form-control" placeholder="Ej. Fracciones" required></td>
+            <td><input type="text" id="subtema" class="form-control" placeholder="Ej. Suma de fracciones" required></td>
+            <td><input type="number" id="duracion" class="form-control" min="10" value="50" required></td>
+            <td><input type="number" id="sesiones" class="form-control" min="1" value="1" required></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 🔹 Botones debajo -->
+      <div class="text-center my-3">
+        <button class="btn btn-success me-2" id="btn-generar">
+          <i class="bi bi-magic"></i> Generar Planeación IA
+        </button>
+        <label class="btn btn-outline-secondary mb-0">
+          <i class="bi bi-folder2-open"></i> Subir Excel
+          <input type="file" id="upload-excel" hidden />
+        </label>
       </div>
 
-      <div class="form-group">
-        <label for="nivel">Nivel Educativo:</label>
-        <select id="nivel" name="nivel" required>
-          <option value="">Seleccionar</option>
-          <option>Preescolar</option>
-          <option>Primaria Grado 1°</option>
-          <option>Primaria Grado 2°</option>
-          <option>Primaria Grado 3°</option>
-          <option>Primaria Grado 4°</option>
-          <option>Primaria Grado 5°</option>
-          <option>Primaria Grado 6°</option>
-          <option>Secundaria Grado 1°</option>
-          <option>Secundaria Grado 2°</option>
-          <option>Secundaria Grado 3°</option>
-          <option>Preparatoria semestre 1°</option>
-          <option>Preparatoria semestre 2°</option>
-          <option>Preparatoria semestre 3°</option>
-          <option>Preparatoria semestre 4°</option>
-          <option>Preparatoria semestre 5°</option>
-          <option>Preparatoria semestre 6°</option>
-          <option>Universidad</option>
-        </select>
-      </div>
+      <!-- 🔹 Tabla IA (placeholder por ahora) -->
+      <table id="planeacionIA" class="table table-bordered align-middle text-center mt-4">
+        <thead class="table-light">
+          <tr>
+            <th rowspan="2">Momento</th>
+            <th rowspan="2">Actividades</th>
+            <th rowspan="2">PAEC <small>(IA)</small></th>
+            <th rowspan="2">Tiempo (min) <small>(IA)</small></th>
+            <th rowspan="2">Producto de aprendizaje <small>(IA)</small></th>
+            <th rowspan="2">Instrumento de evaluación <small>(IA)</small></th>
+            <th colspan="2">Evaluación <small>(IA)</small></th>
+          </tr>
+          <tr>
+            <th>Formativa</th>
+            <th>Sumativa</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bg-light fw-bold">Inicio</td>
+            <td class="bg-light fw-bold">Actividad(s) de conocimientos previos</td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+          </tr>
+          <tr>
+            <td class="bg-light fw-bold">Desarrollo</td>
+            <td class="bg-light fw-bold">Actividades de desarrollo</td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+          </tr>
+          <tr>
+            <td class="bg-light fw-bold">Cierre</td>
+            <td class="bg-light fw-bold">Actividades de cierre</td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+            <td class="ia-placeholder"></td>
+          </tr>
+        </tbody>
 
-      <div class="form-group">
-        <label for="tipoPlaneacion">Tipo de Planeación:</label>
-        <select id="tipoPlaneacion">
-          <option value="unidad1">Unidad 1</option>
-          <option value="unidad2">Unidad 2</option>
-          <option value="unidad3">Unidad 3</option>
-          <option value="Parcial1">Parcial 1</option>
-          <option value="Parcial2">Parcial 2</option>
-          <option value="Parcial3">Parcial 3</option>
-        </select>
-      </div>
+      </table>
+    </div>
 
-      <div class="form-group">
-        <label for="tema">Tema:</label>
-        <input type="text" id="tema" />
-      </div>
+    <!-- Resultado / mensajes -->
+    <div id="resultado" class="mt-4"></div>
+  </main>
 
-      <div class="form-group">
-        <label for="subtemas">Subtemas:</label>
+  <!-- Footer -->
+  <div id="footer-placeholder"></div>
 
-        <textarea id="subtemas" rows="5" placeholder="Ejemplo:&#10;Subtema 1&#10;Subtema 2&#10;Subtema 3"></textarea>
-
-      </div>
-
-      <div class="form-group">
-        <label for="duracion">Duración total por subtema (minutos):</label>
-        <input type="number" id="duracion" min="10" value="50" />
-      </div>
-
-      <div class="form-group full-width">
-        <button type="button" onclick="generarSubtemas()">Añadir subtemas</button>
-      </div>
-
-      <div id="subtemasContainer" class="full-width"></div>
-
-      <div class="form-group button-group">
-        <button type="button" onclick="generarPlaneacion()">Generar Planeación</button>
-      
-      </div>
-    </form>
-
-    <div class="output" id="resultado"></div>
-  </div>
-
-  <!-- Scripts -->
+  <!-- ✅ Scripts -->
   <script src="js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="js/supabaseClient.js"></script>
-  <script src="js/auth.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
   <script>
     protegerRuta();
   </script>
-  <script src="js/sanitize.js"></script>
   <script src="js/planeacion.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

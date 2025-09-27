@@ -1,0 +1,55 @@
+/* =========================
+   🌎 Estilos globales
+========================= */
+
+/* Fuente y colores base */
+body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background-color: #f7f9fb;
+  color: #2e2e2e;
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Navbar */
+.navbar-brand {
+  font-weight: 700;
+}
+
+.navbar .btn {
+  font-size: 0.9rem;
+}
+
+/* Footer */
+footer {
+  font-size: 0.85rem;
+  background: #fff;
+  color: #555;
+}
+
+/* Botones de marca */
+.btn-brand {
+  background-color: #0d6efd;
+  color: #fff;
+}
+.btn-brand:hover {
+  background-color: #0b5ed7;
+  color: #fff;
+}
+
+/* Tablas base */
+.table-custom th {
+  background-color: #e0e7ff;
+  color: #1e40af;
+  font-weight: 600;
+}
+.table-custom tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+.table-custom tr:hover {
+  background-color: #dbeafe;
+}
