@@ -2,84 +2,83 @@
    📘 Planeación - Estilos
 ========================= */
 
-/* ---------- Contenedor principal ---------- */
-.planeacion-container {
-  background-color: #ffffff;
-  padding: 40px 50px;
-  border-radius: 10px;
-  max-width: 1100px;
-  margin: 40px auto;
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.05),
-    0 8px 24px rgba(59, 130, 246, 0.1);
-}
-.planeacion-container:hover {
-  box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.08),
-    0 16px 48px rgba(59, 130, 246, 0.15);
+/* ---------- Tabla IA ---------- */
+#planeacionIA {
+  table-layout: fixed; /* ✅ columnas fijas y proporcionales */
+  width: 100%;
 }
 
-/* ---------- Título ---------- */
-h1 {
-  text-align: center;
-  color: #1f2937;
-  font-size: 32px;
-  margin-bottom: 30px;
+/* Distribución proporcional de columnas */
+#planeacionIA th:nth-child(1),
+#planeacionIA td:nth-child(1) {
+  width: 12%;
+}
+#planeacionIA th:nth-child(2),
+#planeacionIA td:nth-child(2) {
+  width: 25%;
+}
+#planeacionIA th:nth-child(3),
+#planeacionIA td:nth-child(3) {
+  width: 7%;
+}
+#planeacionIA th:nth-child(4),
+#planeacionIA td:nth-child(4) {
+  width: 9%;
+}
+#planeacionIA th:nth-child(5),
+#planeacionIA td:nth-child(5) {
+  width: 15%;
+}
+#planeacionIA th:nth-child(6),
+#planeacionIA td:nth-child(6) {
+  width: 11%;
+}
+#planeacionIA th:nth-child(7),
+#planeacionIA td:nth-child(7) {
+  width: 10%;
+}
+#planeacionIA th:nth-child(8),
+#planeacionIA td:nth-child(8) {
+  width: 10%;
 }
 
-/* ---------- Tablas ---------- */
-#planeacionTable th,
+/* Ajustes generales de celdas */
 #planeacionIA th,
-#planeacionTable td,
 #planeacionIA td {
-  white-space: normal;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  text-align: center;
+  vertical-align: middle;
   font-size: 0.85rem;
+  padding: 12px;
+}
+
+/* Primera columna más clara y centrada */
+#planeacionIA td:first-child {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  text-align: center;
   vertical-align: middle;
 }
 
-/* Más altura en columnas "Momento" y "Actividades" */
-#planeacionIA td:first-child,
+/* Actividades más ancha, alineada arriba */
 #planeacionIA td:nth-child(2) {
-  padding-top: 24px;
-  padding-bottom: 24px;
-  background-color: #f8f9fa; /* gris claro */
-  font-weight: 600;
-}
-
-/* Encabezados uniformes */
-#planeacionIA th {
-  background-color: #f8f9fa; /* gris claro uniforme */
-  color: #212529; /* texto normal Bootstrap */
-}
-
-/* ---------- Estados especiales ---------- */
-/* Fondo de celdas IA vacías */
-.ia-placeholder {
-  background-color: #eef6ff !important; /* azul clarito */
-  color: #6c757d; /* gris suave */
-  font-style: italic;
-  text-align: center;
+  text-align: left;
+  vertical-align: top;
 }
 
 /* Efecto highlight verde al generar IA */
 .highlight-green {
-  background-color: #d1fae5 !important; /* verde suave */
+  background-color: #d1fae5 !important;
   transition: background-color 1s ease;
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 768px) {
-  .planeacion-container {
-    padding: 20px;
-    margin: 20px 10px;
-  }
-  h1 {
-    font-size: 24px;
-  }
-  #planeacionTable th,
-  #planeacionTable td {
-    font-size: 12px;
-    padding: 6px;
+/* Responsive: la tabla se hace scrollable en pantallas pequeñas */
+@media (max-width: 992px) {
+  #planeacionIA {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 }

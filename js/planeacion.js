@@ -18,31 +18,28 @@ async function generarPlaneacion() {
     return;
   }
 
-  // 🔹 Estructura fija de IA
+  // 🔹 Estructura de ejemplo IA
   const tablaIA = [
     {
-      momento: "Inicio",
-      actividad: "Actividad(s) de conocimientos previos",
+      actividad: "Discusión guiada",
       paec: "Previo",
       tiempo: 10,
-      producto: "Lluvia de ideas",
+      producto: "Mapa mental",
       instrumento: "Lista de cotejo",
       evaluacion_formativa: "Diagnóstica",
       evaluacion_sumativa: "-"
     },
     {
-      momento: "Desarrollo",
-      actividad: "Actividades de desarrollo",
+      actividad: "Resolución de problemas en equipo",
       paec: "Aplicación",
       tiempo: duracion - 20,
-      producto: "Ejercicios",
+      producto: "Ejercicios resueltos",
       instrumento: "Rúbrica",
       evaluacion_formativa: "Formativa",
       evaluacion_sumativa: "-"
     },
     {
-      momento: "Cierre",
-      actividad: "Actividad de cierre",
+      actividad: "Reflexión grupal",
       paec: "Reflexión",
       tiempo: 10,
       producto: "Conclusión escrita",
@@ -92,21 +89,27 @@ function rellenarTablaIA(tablaIA) {
   const tbody = document.querySelector("#planeacionIA tbody");
   if (!tbody) return;
 
-  tbody.innerHTML = "";
+  const rows = tbody.querySelectorAll("tr");
 
-  tablaIA.forEach(row => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="bg-light fw-bold">${row.momento}</td>
-      <td class="bg-light fw-bold">${row.actividad}</td>
-      <td class="highlight-green">${row.paec}</td>
-      <td class="highlight-green">${row.tiempo}</td>
-      <td class="highlight-green">${row.producto}</td>
-      <td class="highlight-green">${row.instrumento}</td>
-      <td class="highlight-green">${row.evaluacion_formativa}</td>
-      <td class="highlight-green">${row.evaluacion_sumativa}</td>
-    `;
-    tbody.appendChild(tr);
+  tablaIA.forEach((row, index) => {
+    if (rows[index]) {
+      const cells = rows[index].querySelectorAll("td");
+
+      // ❌ Ya no tocamos cells[0] (Tiempo de la sesión)
+      // 🔹 La IA solo rellena desde la columna 2 en adelante
+      cells[1].textContent = row.actividad;
+      cells[2].textContent = row.paec;
+      cells[3].textContent = row.tiempo;
+      cells[4].textContent = row.producto;
+      cells[5].textContent = row.instrumento;
+      cells[6].textContent = row.evaluacion_formativa;
+      cells[7].textContent = row.evaluacion_sumativa;
+
+      // 🔹 Aplica highlight verde SOLO en columnas de IA (2 a 7)
+      for (let i = 1; i < cells.length; i++) {
+        cells[i].classList.add("highlight-green");
+      }
+    }
   });
 
   // 🔹 Quitar highlight verde después de 2s
@@ -119,15 +122,12 @@ function rellenarTablaIA(tablaIA) {
 
 
 
-
 function bloquearFormulario() {
-  // 🔹 Inputs y selects
   document.querySelectorAll("#planeacionTable input, #planeacionTable select").forEach(el => {
     el.setAttribute("readonly", true);
     el.setAttribute("disabled", true);
   });
 
-  // 🔹 Botón de generar
   const btn = document.getElementById("btn-generar");
   if (btn) {
     btn.classList.add("disabled");
@@ -166,48 +166,58 @@ function mostrarResultado(data) {
 }
 
 function resetearFormulario() {
-  // 🔹 Limpiar inputs y habilitarlos
   document.querySelectorAll("#planeacionTable input, #planeacionTable select").forEach(el => {
     el.value = "";
     el.removeAttribute("readonly");
     el.removeAttribute("disabled");
   });
 
-  // 🔹 Restaurar valores por defecto
   document.getElementById("duracion").value = 50;
   document.getElementById("sesiones").value = 1;
 
-  // 🔹 Restaurar tabla IA a placeholders
   const tbody = document.querySelector("#planeacionIA tbody");
   if (tbody) {
     tbody.innerHTML = `
       <tr>
-        <td>Inicio</td>
-        <td>Actividad(s) de conocimientos previos</td>
-        <td colspan="6"><em>Se generará con IA</em></td>
+        <td class="fw-bold">Actividad(s) de conocimientos previos</td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
       </tr>
       <tr>
-        <td>Desarrollo</td>
-        <td>Actividades de desarrollo</td>
-        <td colspan="6"><em>Se generará con IA</em></td>
+        <td class="fw-bold">Actividades de desarrollo</td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
       </tr>
       <tr>
-        <td>Cierre</td>
-        <td>Actividades de cierre</td>
-        <td colspan="6"><em>Se generará con IA</em></td>
+        <td class="fw-bold">Actividades de cierre</td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
+        <td class="ia-placeholder"></td>
       </tr>
     `;
   }
 
-  // 🔹 Reactivar botón
   const btn = document.getElementById("btn-generar");
   if (btn) {
     btn.classList.remove("disabled");
     btn.removeAttribute("disabled");
-    btn.innerHTML = '<i class="bi bi-magic"></i> Guardar planeación';
+    btn.innerHTML = '<i class="bi bi-magic"></i> Generar Planeación IA';
   }
 
-  // 🔹 Limpiar resultado
   const resultado = document.getElementById("resultado");
   if (resultado) resultado.innerHTML = "";
 }
