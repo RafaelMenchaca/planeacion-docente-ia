@@ -53,3 +53,21 @@ footer {
 .table-custom tr:hover {
   background-color: #dbeafe;
 }
+
+
+/* Detalle - tabla IA */
+#tablaDetalleIA th, #tablaDetalleIA td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  font-size: 0.85rem;
+  padding: 10px;
+}
+#tablaDetalleIA td:first-child {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+#tablaDetalleIA td:nth-child(2) {
+  text-align: left;
+  vertical-align: top;
+}

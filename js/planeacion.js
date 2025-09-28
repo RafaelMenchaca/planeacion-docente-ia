@@ -18,59 +18,28 @@ async function generarPlaneacion() {
     return;
   }
 
-  // 🔹 Estructura de ejemplo IA
-  const tablaIA = [
-    {
-      actividad: "Discusión guiada",
-      paec: "Previo",
-      tiempo: 10,
-      producto: "Mapa mental",
-      instrumento: "Lista de cotejo",
-      evaluacion_formativa: "Diagnóstica",
-      evaluacion_sumativa: "-"
-    },
-    {
-      actividad: "Resolución de problemas en equipo",
-      paec: "Aplicación",
-      tiempo: duracion - 20,
-      producto: "Ejercicios resueltos",
-      instrumento: "Rúbrica",
-      evaluacion_formativa: "Formativa",
-      evaluacion_sumativa: "-"
-    },
-    {
-      actividad: "Reflexión grupal",
-      paec: "Reflexión",
-      tiempo: 10,
-      producto: "Conclusión escrita",
-      instrumento: "Lista de cotejo",
-      evaluacion_formativa: "-",
-      evaluacion_sumativa: "Sumativa"
-    }
-  ];
-
   const payload = {
     materia,
     nivel,
     tema,
     subtema,
     duracion,
-    sesiones,
-    tabla_ia: tablaIA
+    sesiones
+    // 👀 Ya no mandamos tabla_ia
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/planeaciones`, {
+    const response = await fetch(`${API_BASE_URL}/api/planeaciones/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) throw new Error("No se pudo guardar la planeación");
+    if (!response.ok) throw new Error("No se pudo generar la planeación");
 
     const data = await response.json();
 
-    // 🔹 Rellenar tabla IA
+    // 🔹 Rellenar tabla IA con lo que devuelve el backend (mock por ahora)
     rellenarTablaIA(data.tabla_ia);
 
     // 🔹 Bloquear inputs + botón
@@ -80,10 +49,11 @@ async function generarPlaneacion() {
     mostrarResultado(data);
 
   } catch (error) {
-    console.error("❌ Error al guardar:", error);
-    alert("❌ Error al guardar la planeación.");
+    console.error("❌ Error al generar:", error);
+    alert("❌ Error al generar la planeación.");
   }
 }
+
 
 function rellenarTablaIA(tablaIA) {
   const tbody = document.querySelector("#planeacionIA tbody");
@@ -95,17 +65,16 @@ function rellenarTablaIA(tablaIA) {
     if (rows[index]) {
       const cells = rows[index].querySelectorAll("td");
 
-      // ❌ Ya no tocamos cells[0] (Tiempo de la sesión)
-      // 🔹 La IA solo rellena desde la columna 2 en adelante
-      cells[1].textContent = row.actividad;
-      cells[2].textContent = row.paec;
-      cells[3].textContent = row.tiempo;
-      cells[4].textContent = row.producto;
-      cells[5].textContent = row.instrumento;
-      cells[6].textContent = row.evaluacion_formativa;
-      cells[7].textContent = row.evaluacion_sumativa;
+      // ❌ No tocamos cells[0] (Tiempo de la sesión ya está fijo en HTML)
+      cells[1].textContent = row.actividades || "";
+      cells[2].textContent = row.paec || "";
+      cells[3].textContent = row.tiempo_min || "";
+      cells[4].textContent = row.producto || "";
+      cells[5].textContent = row.instrumento || "";
+      cells[6].textContent = row.formativa || "";
+      cells[7].textContent = row.sumativa || "";
 
-      // 🔹 Aplica highlight verde SOLO en columnas de IA (2 a 7)
+      // 🔹 Highlight verde en columnas de IA
       for (let i = 1; i < cells.length; i++) {
         cells[i].classList.add("highlight-green");
       }
@@ -119,6 +88,7 @@ function rellenarTablaIA(tablaIA) {
     });
   }, 2000);
 }
+
 
 
 
