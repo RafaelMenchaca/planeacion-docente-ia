@@ -4,7 +4,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Cliente global
 window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ Verifica si hay sesión activa
+// Verifica si hay sesión activa
 async function protegerRuta() {
     const { data, error } = await supabase.auth.getSession();
     if (!data.session) {
@@ -12,7 +12,7 @@ async function protegerRuta() {
     }
 }
 
-// ✅ Escuchar cambios de sesión
+// Escuchar cambios de sesión
 supabase.auth.onAuthStateChange((event, session) => {
     // Solo redirigir si el evento es SIGNED_OUT
     if (event === "SIGNED_OUT") {

@@ -1,10 +1,10 @@
 /* =========================
-   📘 Planeación - Estilos
+    Planeación - Estilos
 ========================= */
 
 /* ---------- Tabla IA ---------- */
 #planeacionIA {
-  table-layout: fixed; /* ✅ columnas fijas y proporcionales */
+  table-layout: fixed; /*  columnas fijas y proporcionales */
   width: 100%;
 }
 

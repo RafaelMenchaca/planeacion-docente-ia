@@ -25,7 +25,7 @@ async function generarPlaneacion() {
     subtema,
     duracion,
     sesiones
-    // 👀 Ya no mandamos tabla_ia
+    //  Ya no mandamos tabla_ia
   };
 
   try {
@@ -65,7 +65,7 @@ function rellenarTablaIA(tablaIA) {
     if (rows[index]) {
       const cells = rows[index].querySelectorAll("td");
 
-      // ❌ No tocamos cells[0] (Tiempo de la sesión ya está fijo en HTML)
+      // No tocamos cells[0] (Tiempo de la sesión ya está fijo en HTML)
       cells[1].textContent = row.actividades || "";
       cells[2].textContent = row.paec || "";
       cells[3].textContent = row.tiempo_min || "";

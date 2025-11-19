@@ -33,7 +33,7 @@ async function cerrarSesion() {
 
 window.cerrarSesion = cerrarSesion;
 
-// 🚀 Auto-carga en todas las páginas internas
+// Auto-carga en todas las páginas internas
 document.addEventListener('DOMContentLoaded', () => {
     loadComponent('navbar-placeholder', './components/navbar.html');
     loadComponent('footer-placeholder', './components/footer.html');
