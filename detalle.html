@@ -58,19 +58,27 @@
       <a href="dashboard.html" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Volver al Dashboard
       </a>
+
       <a href="planeacion.html" class="btn btn-success">
         <i class="bi bi-plus-circle"></i> Nueva Planeación
       </a>
-      <button id="btn-descargar" class="btn btn-primary">
-        <i class="bi bi-download"></i> Descargar (.doc)
+
+      <button id="btn-descargar-doc" class="btn btn-primary" onclick="descargarWord()">
+        <i class="bi bi-file-earmark-word"></i> Descargar (.doc)
+      </button>
+
+      <button id="btn-descargar-excel" class="btn btn-success" onclick="descargarExcelDetalle()">
+        <i class="bi bi-file-earmark-excel"></i> Descargar (.xlsx)
       </button>
     </div>
+
   </main>
 
   <!-- Footer -->
   <div id="footer-placeholder"></div>
 
   <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="js/supabaseClient.js"></script>

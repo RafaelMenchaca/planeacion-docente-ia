@@ -1,3 +1,5 @@
+let PLANEACION_ORIGINAL = null;
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Navbar y footer
   const loadComponent = (id, path) => {
@@ -23,14 +25,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!res.ok) throw new Error("Error al obtener la planeación");
 
     const data = await res.json();
+    PLANEACION_ORIGINAL = data; // 🔹 Guardamos para botones
+
+    // Renderizamos
     renderInfo(data);
     renderTablaIA(data.tabla_ia || []);
 
-    // Descargar Word
-    document.getElementById("btn-descargar").addEventListener("click", () => descargarWord(data));
+    // Botones
+    const btnWord = document.getElementById("btn-descargar");
+    const btnExcel = document.getElementById("btn-descargar-excel");
+
+    if (btnWord) btnWord.addEventListener("click", () => descargarWord(data));
+    if (btnExcel) btnExcel.addEventListener("click", () => descargarExcelDetalle(data));
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error al cargar planeación:", err);
     document.getElementById("detalle-info").innerHTML = `<div class="alert alert-danger">❌ Error al cargar la planeación</div>`;
   }
 });
@@ -51,6 +60,7 @@ function renderInfo(data) {
 
 function renderTablaIA(tablaIA) {
   const tbody = document.querySelector("#tablaDetalleIA tbody");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   tablaIA.forEach(row => {
@@ -70,22 +80,83 @@ function renderTablaIA(tablaIA) {
 }
 
 function descargarWord(data) {
-  const info = document.getElementById("detalle-info").innerHTML;
-  const tabla = document.getElementById("tablaDetalleIA").outerHTML;
+  try {
+    const infoEl = document.getElementById("detalle-info");
+    const tablaEl = document.getElementById("tablaDetalleIA");
 
-  const contenidoHTML = `
-    <html><head><meta charset="UTF-8"></head><body>
-    <h2>Planeación ${data.id}</h2>
-    ${info}
-    ${tabla}
-    </body></html>
-  `;
+    console.log("🧩 Verificando elementos para Word:", { infoEl, tablaEl, data });
 
-  const blob = new Blob([contenidoHTML], { type: "application/msword" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Planeacion_${data.id}.doc`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    if (!infoEl) throw new Error("No se encontró el elemento detalle-info.");
+    if (!tablaEl) throw new Error("No se encontró la tablaDetalleIA.");
+
+    const contenidoHTML = `
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; }
+          h2 { margin-bottom: 10px; }
+          table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+          th, td { border: 1px solid #000; padding: 6px; text-align: center; }
+          th { background-color: #f2f2f2; }
+        </style>
+      </head>
+      <body>
+        <h2>Planeación ${data?.id ?? ""}</h2>
+        ${infoEl.outerHTML}
+        ${tablaEl.outerHTML}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([contenidoHTML], { type: "application/msword;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `Planeacion_${data?.materia || "SinMateria"}_${data?.id || ""}.doc`;
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 1000);
+
+  } catch (err) {
+    console.error("❌ Detalle del error en descargarWord:", err);
+    alert("❌ Error al generar el archivo Word: " + err.message);
+  }
+}
+
+
+
+// ✅ Excel con formato y datos actuales
+function descargarExcelDetalle(data) {
+  const tabla = document.getElementById("tablaDetalleIA");
+  if (!tabla) {
+    alert("⚠️ No se encontró la tabla de planeación para exportar.");
+    return;
+  }
+
+  const wb = XLSX.utils.table_to_book(tabla, { sheet: "Planeación IA" });
+  const ws = wb.Sheets["Planeación IA"];
+
+  // Ajustar ancho de columnas
+  ws["!cols"] = [
+    { wch: 22 },
+    { wch: 45 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 28 },
+    { wch: 28 },
+    { wch: 20 },
+    { wch: 20 }
+  ];
+
+  const nombreArchivo = data
+    ? `Planeacion_${data.materia || "SinMateria"}_${data.id}.xlsx`
+    : `Planeacion_${Date.now()}.xlsx`;
+
+  XLSX.writeFile(wb, nombreArchivo);
 }
