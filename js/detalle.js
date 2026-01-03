@@ -144,13 +144,13 @@ function descargarExcelDetalle(data) {
 
   // Ajustar ancho de columnas
   ws["!cols"] = [
-    { wch: 22 },
-    { wch: 45 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 28 },
-    { wch: 28 },
-    { wch: 20 },
+    { wch: 20 }, // Tiempo de la sesión
+    { wch: 45 }, // Actividades
+    { wch: 10 }, // PAEC
+    { wch: 12 }, // Tiempo (min)
+    { wch: 25 }, // Producto
+    { wch: 25 }, // Instrumento
+    { wch: 20 }, // Formativa
     { wch: 20 }
   ];
 

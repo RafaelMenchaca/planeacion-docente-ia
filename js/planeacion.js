@@ -5,55 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// async function generarPlaneacion() {
-//   const materia = document.getElementById("asignatura").value.trim();
-//   const nivel = document.getElementById("nivel").value.trim();
-//   const tema = document.getElementById("tema").value.trim();
-//   const subtema = document.getElementById("subtema").value.trim();
-//   const duracion = parseInt(document.getElementById("duracion").value);
-//   const sesiones = parseInt(document.getElementById("sesiones").value);
-
-//   if (!materia || !nivel || !tema || !subtema || isNaN(duracion) || duracion < 10 || isNaN(sesiones) || sesiones < 1) {
-//     alert("⚠️ Completa todos los campos correctamente.");
-//     return;
-//   }
-
-//   const payload = {
-//     materia,
-//     nivel,
-//     tema,
-//     subtema,
-//     duracion,
-//     sesiones
-//     //  Ya no mandamos tabla_ia
-//   };
-
-//   try {
-//     const response = await fetch(`${API_BASE_URL}/api/planeaciones/generate`, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify(payload)
-//     });
-
-//     if (!response.ok) throw new Error("No se pudo generar la planeación");
-
-//     const data = await response.json();
-
-//     // 🔹 Rellenar tabla IA con lo que devuelve el backend (mock por ahora)
-//     rellenarTablaIA(data.tabla_ia);
-
-//     // 🔹 Bloquear inputs + botón
-//     bloquearFormulario();
-
-//     // 🔹 Mostrar confirmación
-//     mostrarResultado(data);
-
-//   } catch (error) {
-//     console.error("❌ Error al generar:", error);
-//     alert("❌ Error al generar la planeación.");
-//   }
-// }
-
 
 async function generarPlaneacion() {
   const materia = document.getElementById("asignatura").value.trim();
