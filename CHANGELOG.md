@@ -2,6 +2,34 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
+## [v1.6-IA-Integration-Release] - 2026-01-03
+
+### 🚀 Novedades principales
+- Integración real con **OpenAI GPT-4o-mini** para generación de planeaciones didácticas dinámicas.
+- IA adaptada al contexto educativo mexicano (PAEC, producto, instrumento, evaluación).
+- Mejor distribución de tiempos y lenguaje adecuado por nivel educativo.
+- Backend optimizado con manejo de errores, fallback seguro y logs claros.
+- Frontend totalmente integrado con flujo de IA real y Supabase.
+
+### 🎨 Mejoras visuales
+- Nuevo loader “Generando planeación con IA…” durante el proceso de generación.
+- Botones de descarga **Word (.doc)** y **Excel (.xlsx)** agregados al flujo principal.
+- Tabla de planeación optimizada: sin scroll horizontal, columnas fijas, y diseño profesional Bootstrap.
+
+### 🧰 Funcionalidad completa
+- Flujo completo: frontend → backend → IA → Supabase → visualización → descargas.
+- Exportación a Word y Excel directamente desde `planeacion.html` y `detalle.html`.
+- Mantenimiento de compatibilidad con Supabase JSONB.
+
+### 🐞 Correcciones
+- Corrección del error al cargar planeaciones en `detalle.html`.
+- Botones de descarga conectados con listeners dinámicos para evitar problemas de alcance.
+
+### ⚙️ Próximos pasos
+- Edición libre de planeaciones desde `detalle.html`.
+- Ajuste adaptativo de IA según nivel educativo.
+- Exportaciones profesionales con logo e identidad institucional.
+
 ---
 
 ## [v1.5-public-pages-refactor] - 2025-09-20
