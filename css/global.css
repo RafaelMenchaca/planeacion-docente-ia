@@ -71,3 +71,8 @@ footer {
   text-align: left;
   vertical-align: top;
 }
+
+#tablaDetalleIA td[contenteditable="true"]:focus {
+  outline: 2px solid #0C61F7;
+  background-color: #eef4ff;
+}

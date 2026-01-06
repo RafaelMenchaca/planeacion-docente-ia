@@ -76,8 +76,84 @@ function renderTablaIA(tablaIA) {
       <td>${row.sumativa || ""}</td>
     `;
     tbody.appendChild(tr);
+
+  });
+  // Activar edición inline una vez renderizada
+    activarEdicionInline();
+
+    // Vincular botón de guardado
+    document.getElementById("btn-guardar-cambios").addEventListener("click", async () => {
+      const nuevosDatos = obtenerDatosTablaIA();
+
+      try {
+        const id = PLANEACION_ORIGINAL.id;
+        const response = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tabla_ia: nuevosDatos })
+        });
+
+        if (!response.ok) throw new Error("Error al actualizar la planeación");
+        const data = await response.json();
+
+        mostrarToast("✅ Cambios guardados correctamente", "success");
+        document.getElementById("btn-guardar-cambios").classList.add("d-none");
+        cambiosPendientes = false;
+        PLANEACION_ORIGINAL = data;
+
+      } catch (err) {
+        console.error(err);
+        mostrarToast("❌ Error al guardar cambios", "danger");
+      }
+    });
+
+}
+
+// 🔹 Activar edición inline
+function activarEdicionInline() {
+  const tbody = document.querySelector("#tablaDetalleIA tbody");
+  if (!tbody) return;
+
+  tbody.querySelectorAll("td").forEach(cell => {
+    const isEditable = !cell.classList.contains("fw-bold"); // Evita editar la primera columna (Tiempo de la sesión)
+    if (isEditable) {
+      cell.setAttribute("contenteditable", "true");
+      cell.addEventListener("input", marcarCambios);
+    }
   });
 }
+
+// 🔹 Detectar cambios en la tabla
+let cambiosPendientes = false;
+function marcarCambios() {
+  if (!cambiosPendientes) {
+    cambiosPendientes = true;
+    document.getElementById("btn-guardar-cambios")?.classList.remove("d-none");
+  }
+}
+
+// 🔹 Obtener datos actualizados de la tabla
+function obtenerDatosTablaIA() {
+  const filas = document.querySelectorAll("#tablaDetalleIA tbody tr");
+  const datos = [];
+
+  filas.forEach(fila => {
+    const celdas = fila.querySelectorAll("td");
+    datos.push({
+      tiempo_sesion: celdas[0].innerText.trim(),
+      actividades: celdas[1].innerText.trim(),
+      paec: celdas[2].innerText.trim(),
+      tiempo_min: celdas[3].innerText.trim(),
+      producto: celdas[4].innerText.trim(),
+      instrumento: celdas[5].innerText.trim(),
+      formativa: celdas[6].innerText.trim(),
+      sumativa: celdas[7].innerText.trim()
+    });
+  });
+
+  return datos;
+}
+
 
 function descargarWord(data) {
   try {
