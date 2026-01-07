@@ -1,4 +1,6 @@
 let PLANEACION_ORIGINAL = null;
+let modoEdicion = false;
+let cambiosPendientes = false;
 
 document.addEventListener("DOMContentLoaded", async () => {
   // Navbar y footer
@@ -25,18 +27,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!res.ok) throw new Error("Error al obtener la planeación");
 
     const data = await res.json();
-    PLANEACION_ORIGINAL = data; // 🔹 Guardamos para botones
+    PLANEACION_ORIGINAL = data;
 
-    // Renderizamos
+    // Render
     renderInfo(data);
     renderTablaIA(data.tabla_ia || []);
 
-    // Botones
-    const btnWord = document.getElementById("btn-descargar");
-    const btnExcel = document.getElementById("btn-descargar-excel");
+    // Botones descarga
+    document.getElementById("btn-descargar")?.addEventListener("click", () => descargarWord(data));
+    document.getElementById("btn-descargar-excel")?.addEventListener("click", () => descargarExcelDetalle(data));
 
-    if (btnWord) btnWord.addEventListener("click", () => descargarWord(data));
-    if (btnExcel) btnExcel.addEventListener("click", () => descargarExcelDetalle(data));
+    // Botones edición / guardado
+    document.getElementById("btn-editar")?.addEventListener("click", toggleEdicion);
+    document.getElementById("btn-guardar-cambios")?.addEventListener("click", guardarCambios);
 
   } catch (err) {
     console.error("❌ Error al cargar planeación:", err);
@@ -44,6 +47,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+
+// ---------- Render info principal ----------
 function renderInfo(data) {
   const fecha = data.fecha_creacion ? new Date(data.fecha_creacion).toLocaleDateString("es-MX") : "No disponible";
 
@@ -58,6 +63,8 @@ function renderInfo(data) {
   `;
 }
 
+
+// ---------- Render tabla IA ----------
 function renderTablaIA(tablaIA) {
   const tbody = document.querySelector("#tablaDetalleIA tbody");
   if (!tbody) return;
@@ -76,70 +83,59 @@ function renderTablaIA(tablaIA) {
       <td>${row.sumativa || ""}</td>
     `;
     tbody.appendChild(tr);
-
   });
-  // Activar edición inline una vez renderizada
-    activarEdicionInline();
-
-    // Vincular botón de guardado
-    document.getElementById("btn-guardar-cambios").addEventListener("click", async () => {
-      const nuevosDatos = obtenerDatosTablaIA();
-
-      try {
-        const id = PLANEACION_ORIGINAL.id;
-        const response = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tabla_ia: nuevosDatos })
-        });
-
-        if (!response.ok) throw new Error("Error al actualizar la planeación");
-        const data = await response.json();
-
-        mostrarToast("✅ Cambios guardados correctamente", "success");
-        document.getElementById("btn-guardar-cambios").classList.add("d-none");
-        cambiosPendientes = false;
-        PLANEACION_ORIGINAL = data;
-
-      } catch (err) {
-        console.error(err);
-        mostrarToast("❌ Error al guardar cambios", "danger");
-      }
-    });
-
 }
 
-// 🔹 Activar edición inline
-function activarEdicionInline() {
+
+// ---------- Modo edición ----------
+function toggleEdicion() {
   const tbody = document.querySelector("#tablaDetalleIA tbody");
   if (!tbody) return;
 
-  tbody.querySelectorAll("td").forEach(cell => {
-    const isEditable = !cell.classList.contains("fw-bold"); // Evita editar la primera columna (Tiempo de la sesión)
-    if (isEditable) {
+  modoEdicion = !modoEdicion;
+  const celdas = tbody.querySelectorAll("td:not(.fw-bold)");
+
+  celdas.forEach(cell => {
+    if (modoEdicion) {
       cell.setAttribute("contenteditable", "true");
+      cell.classList.add("editable-cell");
       cell.addEventListener("input", marcarCambios);
+    } else {
+      cell.removeAttribute("contenteditable");
+      cell.classList.remove("editable-cell");
     }
   });
-}
 
-// 🔹 Detectar cambios en la tabla
-let cambiosPendientes = false;
-function marcarCambios() {
-  if (!cambiosPendientes) {
-    cambiosPendientes = true;
-    document.getElementById("btn-guardar-cambios")?.classList.remove("d-none");
+  // Alternar botones
+  document.getElementById("btn-editar").classList.toggle("d-none", modoEdicion);
+  document.getElementById("btn-guardar-cambios").classList.toggle("d-none", !modoEdicion);
+
+  if (!modoEdicion) cambiosPendientes = false;
+  // Cambiar fondo de la tabla según modo
+  const tabla = document.getElementById("tablaDetalleIA");
+  if (modoEdicion) {
+    tabla.classList.remove("tabla-lectura");
+    tabla.classList.add("tabla-edicion");
+  } else {
+    tabla.classList.remove("tabla-edicion");
+    tabla.classList.add("tabla-lectura");
   }
+
 }
 
-// 🔹 Obtener datos actualizados de la tabla
+
+// ---------- Detectar cambios ----------
+function marcarCambios() {
+  cambiosPendientes = true;
+}
+
+
+// ---------- Obtener datos actualizados ----------
 function obtenerDatosTablaIA() {
   const filas = document.querySelectorAll("#tablaDetalleIA tbody tr");
-  const datos = [];
-
-  filas.forEach(fila => {
+  return Array.from(filas).map(fila => {
     const celdas = fila.querySelectorAll("td");
-    datos.push({
+    return {
       tiempo_sesion: celdas[0].innerText.trim(),
       actividades: celdas[1].innerText.trim(),
       paec: celdas[2].innerText.trim(),
@@ -147,23 +143,47 @@ function obtenerDatosTablaIA() {
       producto: celdas[4].innerText.trim(),
       instrumento: celdas[5].innerText.trim(),
       formativa: celdas[6].innerText.trim(),
-      sumativa: celdas[7].innerText.trim()
-    });
+      sumativa: celdas[7].innerText.trim(),
+    };
   });
-
-  return datos;
 }
 
 
+// ---------- Guardar cambios ----------
+async function guardarCambios() {
+  if (!cambiosPendientes) return alert("No hay cambios para guardar.");
+
+  const nuevosDatos = obtenerDatosTablaIA();
+  const id = PLANEACION_ORIGINAL.id;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tabla_ia: nuevosDatos }),
+    });
+
+    if (!res.ok) throw new Error("Error al guardar cambios");
+    const data = await res.json();
+
+    mostrarToast("✅ Cambios guardados correctamente", "success");
+    PLANEACION_ORIGINAL = data;
+    toggleEdicion(); // Vuelve al modo lectura
+
+  } catch (err) {
+    console.error(err);
+    mostrarToast("❌ Error al guardar cambios", "danger");
+  }
+}
+
+
+// ---------- Descargar Word ----------
 function descargarWord(data) {
   try {
     const infoEl = document.getElementById("detalle-info");
     const tablaEl = document.getElementById("tablaDetalleIA");
 
-    console.log("🧩 Verificando elementos para Word:", { infoEl, tablaEl, data });
-
-    if (!infoEl) throw new Error("No se encontró el elemento detalle-info.");
-    if (!tablaEl) throw new Error("No se encontró la tablaDetalleIA.");
+    if (!infoEl || !tablaEl) throw new Error("Elementos no encontrados.");
 
     const contenidoHTML = `
       <html>
@@ -186,48 +206,44 @@ function descargarWord(data) {
     `;
 
     const blob = new Blob([contenidoHTML], { type: "application/msword;charset=utf-8" });
-    const url = window.URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-
     a.href = url;
     a.download = `Planeacion_${data?.materia || "SinMateria"}_${data?.id || ""}.doc`;
     document.body.appendChild(a);
     a.click();
-
     setTimeout(() => {
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
     }, 1000);
 
   } catch (err) {
-    console.error("❌ Detalle del error en descargarWord:", err);
+    console.error("❌ Error en descargarWord:", err);
     alert("❌ Error al generar el archivo Word: " + err.message);
   }
 }
 
 
-
-// ✅ Excel con formato y datos actuales
+// ---------- Descargar Excel ----------
 function descargarExcelDetalle(data) {
   const tabla = document.getElementById("tablaDetalleIA");
   if (!tabla) {
-    alert("⚠️ No se encontró la tabla de planeación para exportar.");
+    alert("⚠️ No se encontró la tabla para exportar.");
     return;
   }
 
   const wb = XLSX.utils.table_to_book(tabla, { sheet: "Planeación IA" });
   const ws = wb.Sheets["Planeación IA"];
 
-  // Ajustar ancho de columnas
   ws["!cols"] = [
-    { wch: 20 }, // Tiempo de la sesión
-    { wch: 45 }, // Actividades
-    { wch: 10 }, // PAEC
-    { wch: 12 }, // Tiempo (min)
-    { wch: 25 }, // Producto
-    { wch: 25 }, // Instrumento
-    { wch: 20 }, // Formativa
-    { wch: 20 }
+    { wch: 20 },
+    { wch: 45 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 25 },
+    { wch: 25 },
+    { wch: 20 },
+    { wch: 20 },
   ];
 
   const nombreArchivo = data
@@ -235,4 +251,20 @@ function descargarExcelDetalle(data) {
     : `Planeacion_${Date.now()}.xlsx`;
 
   XLSX.writeFile(wb, nombreArchivo);
+}
+
+
+// ---------- Toast visual (Bootstrap 5) ----------
+function mostrarToast(mensaje, tipo = "info") {
+  const cont = document.createElement("div");
+  cont.className = `toast align-items-center text-bg-${tipo} border-0 show position-fixed top-0 end-0 m-3`;
+  cont.role = "alert";
+  cont.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${mensaje}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+  document.body.appendChild(cont);
+  setTimeout(() => cont.remove(), 3500);
 }

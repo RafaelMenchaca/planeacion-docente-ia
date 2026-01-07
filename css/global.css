@@ -76,3 +76,161 @@ footer {
   outline: 2px solid #0C61F7;
   background-color: #eef4ff;
 }
+
+/* Estado editable */
+.editable-cell {
+  background-color: #f9fbff;
+  transition: background-color 0.3s ease, outline 0.2s ease;
+  cursor: text;
+}
+
+/* Al pasar el mouse */
+.editable-cell:hover {
+  background-color: #eef4ff;
+}
+
+/* Al editar */
+.editable-cell:focus {
+  outline: 2px solid #0C61F7;
+  background-color: #e8f0fe;
+}
+
+/* Botones */
+#btn-editar, #btn-guardar-cambios {
+  min-width: 200px;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+
+#btn-editar i, #btn-guardar-cambios i {
+  margin-right: 6px;
+}
+
+/* ============================
+   ✨ Estilos generales de la tabla IA
+============================ */
+
+#tablaDetalleIA {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #f5f6f8; /* gris claro por defecto */
+  transition: background-color 0.4s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+#tablaDetalleIA th {
+  background-color: #0C61F7;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #e6e9ee;
+}
+
+#tablaDetalleIA td {
+  border: 1px solid #e5e7eb;
+  text-align: center;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: #2e2e2e;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Filas alternadas */
+#tablaDetalleIA tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* Estado por defecto: tabla gris, sin edición */
+.tabla-lectura {
+  background-color: #f5f6f8 !important;
+  filter: grayscale(15%);
+}
+
+/* Estado editable: más viva y blanca */
+.tabla-edicion {
+  background-color: #ffffff !important;
+  filter: none;
+}
+
+/* Celdas que se pueden editar */
+.editable-cell {
+  background-color: #ffffff;
+  cursor: text;
+  transition: background-color 0.25s ease, outline 0.25s ease;
+}
+
+/* Hover sobre celdas editables */
+.editable-cell:hover {
+  background-color: #eef4ff;
+}
+
+/* Celdas al estar en foco (editando) */
+.editable-cell:focus {
+  outline: 2px solid #0C61F7;
+  background-color: #e8f0fe;
+}
+
+/* Primera columna (no editable) */
+#tablaDetalleIA td.fw-bold {
+  background-color: #f3f4f6;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Bordes redondeados superiores */
+#tablaDetalleIA thead th:first-child {
+  border-top-left-radius: 12px;
+}
+#tablaDetalleIA thead th:last-child {
+  border-top-right-radius: 12px;
+}
+
+/* ============================
+   🟩 Botones
+============================ */
+
+#btn-editar,
+#btn-guardar-cambios {
+  min-width: 220px;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+#btn-editar {
+  border-color: #0C61F7;
+  color: #0C61F7;
+}
+
+#btn-editar:hover {
+  background-color: #0C61F7;
+  color: white;
+  transform: translateY(-2px);
+}
+
+#btn-guardar-cambios {
+  background-color: #198754;
+  color: white;
+  border: none;
+}
+
+#btn-guardar-cambios:hover {
+  background-color: #157347;
+  transform: translateY(-2px);
+}
+
+/* ============================
+   💬 Toast Bootstrap 5
+============================ */
+
+.toast {
+  z-index: 9999;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
