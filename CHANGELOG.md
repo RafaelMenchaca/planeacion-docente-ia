@@ -2,6 +2,21 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
+## [v1.7-Professional-Export-Release] - 2026-01-10
+
+### 🚀 Novedades principales
+- Integración completa de exportación **Excel profesional (.xlsx)** desde backend.
+- Descarga de Excel disponible inmediatamente después de crear una planeación.
+- Exportación desde la vista de detalle con el mismo formato visual que la interfaz web.
+- Flujo de generación de planeaciones más robusto y coherente.
+
+### 🎨 Mejoras visuales
+- Consistencia total entre la planeación mostrada en pantalla y el archivo Excel descargado.
+- Botones de exportación integrados de forma clara en el flujo principal.
+- Eliminación de lógica obsoleta de exportación Excel en frontend.
+- UX más profesional y alineada a un producto listo para uso real en escuelas.
+
+
 ## [v1.6-IA-Integration-Release] - 2026-01-03
 
 ### 🚀 Novedades principales
