@@ -180,3 +180,26 @@
     white-space: nowrap;
   }
 }
+
+/* Por defecto: desktop */
+.user-inputs-mobile {
+  display: none;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .user-inputs-desktop {
+    display: none;
+  }
+
+  .user-inputs-mobile {
+    display: block;
+  }
+}
+
+.user-inputs-mobile input,
+.user-inputs-mobile select {
+  font-size: 1rem;
+  padding: 0.6rem;
+}
+

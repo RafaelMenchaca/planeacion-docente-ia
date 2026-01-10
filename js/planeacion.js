@@ -1,32 +1,49 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const btnGenerar = document.getElementById("btn-generar");
-  if (btnGenerar) {
-    btnGenerar.addEventListener("click", generarPlaneacion);
-  }
+  document.getElementById("btn-generar")?.addEventListener("click", generarPlaneacion);
+  document.getElementById("btn-generar-mobile")?.addEventListener("click", generarPlaneacion);
 });
 
 
-async function generarPlaneacion() {
-  const materia = document.getElementById("asignatura").value.trim();
-  const nivel = document.getElementById("nivel").value.trim();
-  const tema = document.getElementById("tema").value.trim();
-  const subtema = document.getElementById("subtema").value.trim();
-  const duracion = parseInt(document.getElementById("duracion").value);
-  const sesiones = parseInt(document.getElementById("sesiones").value);
 
-  if (!materia || !nivel || !tema || !subtema || isNaN(duracion) || duracion < 10 || isNaN(sesiones) || sesiones < 1) {
+async function generarPlaneacion() {
+  const {
+    materia,
+    nivel,
+    tema,
+    subtema,
+    duracion,
+    sesiones
+  } = obtenerDatosFormulario();
+
+  if (
+    !materia ||
+    !nivel ||
+    !tema ||
+    !subtema ||
+    isNaN(duracion) ||
+    duracion < 10 ||
+    isNaN(sesiones) ||
+    sesiones < 1
+  ) {
     alert("⚠️ Completa todos los campos correctamente.");
     return;
   }
 
   const loader = document.getElementById("ia-loader");
-  loader.style.display = "block"; // 🔹 Mostrar loader
+  loader.style.display = "block";
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/planeaciones/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ materia, nivel, tema, subtema, duracion, sesiones })
+      body: JSON.stringify({
+        materia,
+        nivel,
+        tema,
+        subtema,
+        duracion,
+        sesiones
+      })
     });
 
     if (!response.ok) throw new Error("No se pudo generar la planeación con IA");
@@ -41,9 +58,10 @@ async function generarPlaneacion() {
     console.error("❌ Error al generar:", error);
     alert("❌ Error al generar la planeación con IA.");
   } finally {
-    loader.style.display = "none"; // 🔹 Ocultar loader siempre
+    loader.style.display = "none";
   }
 }
+
 
 
 
@@ -245,3 +263,16 @@ window.descargarWord = function (data) {
     alert("Error al generar el archivo Word.");
   }
 };
+
+function obtenerDatosFormulario() {
+  const isMobile = window.innerWidth <= 768;
+
+  return {
+    materia: document.getElementById(isMobile ? "asignatura-mobile" : "asignatura").value.trim(),
+    nivel: document.getElementById(isMobile ? "nivel-mobile" : "nivel").value.trim(),
+    tema: document.getElementById(isMobile ? "tema-mobile" : "tema").value.trim(),
+    subtema: document.getElementById(isMobile ? "subtema-mobile" : "subtema").value.trim(),
+    duracion: parseInt(document.getElementById(isMobile ? "duracion-mobile" : "duracion").value),
+    sesiones: parseInt(document.getElementById(isMobile ? "sesiones-mobile" : "sesiones").value),
+  };
+}
