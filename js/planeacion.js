@@ -134,7 +134,9 @@ function mostrarResultado(data) {
 
   // ✅ Asignar eventos correctamente después de insertar el HTML
   document.getElementById("btn-word").addEventListener("click", () => descargarWord(data));
-  document.getElementById("btn-excel").addEventListener("click", () => descargarExcel(data));
+  document.getElementById("btn-excel").addEventListener("click", () => {
+    window.location.href = `${API_BASE_URL}/api/planeaciones/${data.id}/export/excel`;
+  });
 }
 
 
@@ -196,29 +198,6 @@ function resetearFormulario() {
 }
 
 
-// Excel
-window.descargarExcel = function (data) {
-  const tabla = document.getElementById("planeacionIA");
-  if (!tabla) {
-    alert("⚠️ No se encontró la tabla de planeación para exportar.");
-    return;
-  }
-
-  try {
-    const wb = XLSX.utils.table_to_book(tabla, { sheet: "Planeación IA" });
-    const ws = wb.Sheets["Planeación IA"];
-    ws["!cols"] = [
-      { wch: 22 }, { wch: 45 }, { wch: 10 }, { wch: 12 },
-      { wch: 28 }, { wch: 28 }, { wch: 20 }, { wch: 20 }
-    ];
-
-    const nombre = `Planeacion_${data.materia || "SinMateria"}_${data.id}.xlsx`;
-    XLSX.writeFile(wb, nombre);
-  } catch (err) {
-    console.error("❌ Error al exportar Excel:", err);
-    alert("Error al generar el archivo Excel.");
-  }
-};
 
 // Word
 window.descargarWord = function (data) {

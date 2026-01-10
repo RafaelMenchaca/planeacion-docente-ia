@@ -224,34 +224,17 @@ function descargarWord(data) {
 }
 
 
-// ---------- Descargar Excel ----------
-function descargarExcelDetalle(data) {
-  const tabla = document.getElementById("tablaDetalleIA");
-  if (!tabla) {
-    alert("⚠️ No se encontró la tabla para exportar.");
+// Botón Exportar Excel (backend)
+document.getElementById("btn-export-excel")?.addEventListener("click", () => {
+  const id = PLANEACION_ORIGINAL?.id;
+  if (!id) {
+    alert("❌ No se pudo obtener el ID de la planeación");
     return;
   }
 
-  const wb = XLSX.utils.table_to_book(tabla, { sheet: "Planeación IA" });
-  const ws = wb.Sheets["Planeación IA"];
+  window.location.href = `${API_BASE_URL}/api/planeaciones/${id}/export/excel`;
+});
 
-  ws["!cols"] = [
-    { wch: 20 },
-    { wch: 45 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 25 },
-    { wch: 25 },
-    { wch: 20 },
-    { wch: 20 },
-  ];
-
-  const nombreArchivo = data
-    ? `Planeacion_${data.materia || "SinMateria"}_${data.id}.xlsx`
-    : `Planeacion_${Date.now()}.xlsx`;
-
-  XLSX.writeFile(wb, nombreArchivo);
-}
 
 
 // ---------- Toast visual (Bootstrap 5) ----------
