@@ -6,11 +6,17 @@ window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Verifica si hay sesión activa
 async function protegerRuta() {
-    const { data, error } = await supabase.auth.getSession();
-    if (!data.session) {
-        window.location.href = 'login.html';
-    }
+  const { data } = await supabase.auth.getSession();
+
+  if (!data.session || !data.session.user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  // opcional: guardar user global
+  window.currentUser = data.session.user;
 }
+
 
 // Escuchar cambios de sesión
 supabase.auth.onAuthStateChange((event, session) => {
