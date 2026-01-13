@@ -33,9 +33,20 @@ async function generarPlaneacion() {
   loader.style.display = "block";
 
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      alert("Sesión no válida. Inicia sesión nuevamente.");
+      window.location.href = "login.html";
+      return;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/planeaciones/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`
+      },
       body: JSON.stringify({
         materia,
         nivel,
@@ -276,3 +287,4 @@ function obtenerDatosFormulario() {
     sesiones: parseInt(document.getElementById(isMobile ? "sesiones-mobile" : "sesiones").value),
   };
 }
+

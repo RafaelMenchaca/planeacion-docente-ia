@@ -9,7 +9,18 @@ async function cargarPlaneaciones(filtros = {}) {
   container.classList.remove('d-none');
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/planeaciones`);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/api/planeaciones`, {
+      headers: {
+        "Authorization": `Bearer ${session.access_token}`
+      }
+    });
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const payload = await res.json();
@@ -44,16 +55,15 @@ async function cargarPlaneaciones(filtros = {}) {
         <td>${escapeHtml(p.materia || "Sin materia")}</td>
         <td class="text-muted">${p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString("es-MX") : "-"}</td>
         <td>
-        <div class="d-flex flex-wrap justify-content-end gap-2">
-          <a href="detalle.html?id=${p.id}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-eye"></i> <span class="d-none d-sm-inline">Ver</span>
-          </a>
-          <button onclick="eliminarPlaneacion(${p.id}, this)" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
-          </button>
-        </div>
-      </td>
-
+          <div class="d-flex flex-wrap justify-content-end gap-2">
+            <a href="detalle.html?id=${p.id}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-eye"></i> <span class="d-none d-sm-inline">Ver</span>
+            </a>
+            <button onclick="eliminarPlaneacion(${p.id}, this)" class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
+            </button>
+          </div>
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -62,10 +72,10 @@ async function cargarPlaneaciones(filtros = {}) {
       <table class="table table-hover table-sm align-middle mb-0">
         <thead class="table-light sticky-top">
           <tr>
-            <th scope="col">#</th>
-            <th scope="col">Asignatura</th>
-            <th scope="col">Fecha</th>
-            <th scope="col" class="text-end">Acciones</th>
+            <th>#</th>
+            <th>Asignatura</th>
+            <th>Fecha</th>
+            <th class="text-end">Acciones</th>
           </tr>
         </thead>
       </table>
@@ -78,58 +88,37 @@ async function cargarPlaneaciones(filtros = {}) {
   }
 }
 
-window.aplicarFiltros = function () {
-  const materia = document.getElementById('filtro-materia').value.trim();
-  const fecha = document.getElementById('filtro-fecha').value.trim();
-
-  cargarPlaneaciones({ materia, fecha });
-
-  const dropdown = bootstrap.Dropdown.getInstance(document.getElementById("filtrosDropdownBtn"));
-  if (dropdown) dropdown.show();
-};
-
-window.resetearFiltros = function () {
-  document.getElementById('filtro-materia').value = '';
-  document.getElementById('filtro-fecha').value = '';
-  cargarPlaneaciones();
-
-  const dropdown = bootstrap.Dropdown.getInstance(document.getElementById("filtrosDropdownBtn"));
-  if (dropdown) dropdown.show();
-};
-
-window.cerrarFiltros = function () {
-  resetearFiltros();
-  const dropdown = bootstrap.Dropdown.getInstance(document.getElementById("filtrosDropdownBtn"));
-  if (dropdown) dropdown.hide();
-};
-
 window.eliminarPlaneacion = async function (id, btnEl) {
   const confirmar = confirm('¿Estás seguro de que deseas eliminar esta planeación?');
   if (!confirmar) return;
 
-  const prevText = btnEl ? btnEl.textContent : null;
-  if (btnEl) {
-    btnEl.disabled = true;
-    btnEl.textContent = 'Eliminando...';
-  }
+  const prevText = btnEl.textContent;
+  btnEl.disabled = true;
+  btnEl.textContent = 'Eliminando...';
 
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = "login.html";
+      return;
+    }
+
     const res = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        "Authorization": `Bearer ${session.access_token}`
+      }
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    alert('Planeación eliminada ✅');
     cargarPlaneaciones();
 
   } catch (err) {
-    console.error('❌ Error de red en DELETE:', err);
+    console.error('❌ Error al eliminar:', err);
     alert('No se pudo eliminar la planeación.');
   } finally {
-    if (btnEl) {
-      btnEl.disabled = false;
-      btnEl.textContent = prevText;
-    }
+    btnEl.disabled = false;
+    btnEl.textContent = prevText;
   }
 };
