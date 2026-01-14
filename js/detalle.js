@@ -39,7 +39,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
-    if (!res.ok) throw new Error("Error al obtener la planeación");
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("STATUS:", res.status);
+      console.error("RESPUESTA:", text);
+      throw new Error("Error al obtener la planeación");
+    }
+
 
     const data = await res.json();
     PLANEACION_ORIGINAL = data;
@@ -207,9 +213,38 @@ document.getElementById("btn-export-excel")?.addEventListener("click", async () 
     return;
   }
 
-  window.location.href =
-    `${API_BASE_URL}/api/planeaciones/${id}/export/excel?token=${session.access_token}`;
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/api/planeaciones/${id}/export/excel`,
+      {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("No se pudo generar el Excel");
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Planeacion_${id}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+  } catch (err) {
+    console.error("❌ Error al exportar Excel:", err);
+    alert("Error al descargar el archivo Excel.");
+  }
 });
+
 
 
 // ---------- Toast ----------
