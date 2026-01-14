@@ -151,7 +151,7 @@ function mostrarResultado(data) {
         <button id="btn-word" class="btn btn-outline-primary">
           <i class="bi bi-file-earmark-word"></i> Descargar Word
         </button>
-        <button id="btn-excel" class="btn btn-outline-success">
+        <button id="btn-excel" data-id="${data.id}" class="btn btn-outline-success">
           <i class="bi bi-file-earmark-excel"></i> Descargar Excel
         </button>
         <button class="btn btn-success" onclick="resetearFormulario()">
@@ -161,11 +161,49 @@ function mostrarResultado(data) {
     </div>
   `;
 
-  // ✅ Asignar eventos correctamente después de insertar el HTML
+  // Asignar eventos correctamente después de insertar el HTML
   document.getElementById("btn-word").addEventListener("click", () => descargarWord(data));
-  document.getElementById("btn-excel").addEventListener("click", () => {
-    window.location.href = `${API_BASE_URL}/api/planeaciones/${data.id}/export/excel`;
+  document.getElementById("btn-excel").addEventListener("click", async () => {
+    console.log("CLICK EXCEL NUEVO");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      console.log("SESSION:", session?.access_token);
+      const res = await fetch(
+        `${API_BASE_URL}/api/planeaciones/${data.id}/export/excel`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("No se pudo generar el Excel");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Planeacion_${data.id}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+      console.error("❌ Error al descargar Excel:", err);
+      alert("Error al descargar el archivo Excel.");
+    }
   });
+
 }
 
 
