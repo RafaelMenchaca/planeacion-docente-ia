@@ -105,7 +105,7 @@ function renderTablaIA(tablaIA) {
     tr.innerHTML = `
       <td class="fw-bold">${row.tiempo_sesion || ""}</td>
       <td>${row.actividades || ""}</td>
-      <td>${row.paec || ""}</td>
+      
       <td>${row.tiempo_min || ""}</td>
       <td>${row.producto || ""}</td>
       <td>${row.instrumento || ""}</td>
@@ -191,7 +191,7 @@ function obtenerDatosTablaIA() {
     return {
       tiempo_sesion: c[0].innerText.trim(),
       actividades: c[1].innerText.trim(),
-      paec: c[2].innerText.trim(),
+      
       tiempo_min: c[3].innerText.trim(),
       producto: c[4].innerText.trim(),
       instrumento: c[5].innerText.trim(),

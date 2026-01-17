@@ -88,12 +88,12 @@ function rellenarTablaIA(tablaIA) {
 
       // No tocamos cells[0] (Tiempo de la sesión ya está fijo en HTML)
       cells[1].textContent = row.actividades || "";
-      cells[2].textContent = row.paec || "";
-      cells[3].textContent = row.tiempo_min || "";
-      cells[4].textContent = row.producto || "";
-      cells[5].textContent = row.instrumento || "";
-      cells[6].textContent = row.formativa || "";
-      cells[7].textContent = row.sumativa || "";
+      // cells[2].textContent = row.paec || "";
+      cells[2].textContent = row.tiempo_min || "";
+      cells[3].textContent = row.producto || "";
+      cells[4].textContent = row.instrumento || "";
+      cells[5].textContent = row.formativa || "";
+      cells[6].textContent = row.sumativa || "";
 
       // Highlight verde en columnas de IA
       for (let i = 1; i < cells.length; i++) {
@@ -228,7 +228,6 @@ function resetearFormulario() {
         <td class="ia-placeholder"></td>
         <td class="ia-placeholder"></td>
         <td class="ia-placeholder"></td>
-        <td class="ia-placeholder"></td>
       </tr>
       <tr>
         <td class="fw-bold">Actividades de desarrollo</td>
@@ -238,11 +237,9 @@ function resetearFormulario() {
         <td class="ia-placeholder"></td>
         <td class="ia-placeholder"></td>
         <td class="ia-placeholder"></td>
-        <td class="ia-placeholder"></td>
       </tr>
       <tr>
         <td class="fw-bold">Actividades de cierre</td>
-        <td class="ia-placeholder"></td>
         <td class="ia-placeholder"></td>
         <td class="ia-placeholder"></td>
         <td class="ia-placeholder"></td>
