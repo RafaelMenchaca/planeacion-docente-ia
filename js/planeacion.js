@@ -162,7 +162,14 @@ function mostrarResultado(data) {
   `;
 
   // Asignar eventos correctamente después de insertar el HTML
-  document.getElementById("btn-word").addEventListener("click", () => descargarWord(data));
+  document.getElementById("btn-word")
+  .addEventListener("click", () => {
+    descargarWord({
+      data,
+      tableId: "planeacionIA",
+    });
+  });
+
   document.getElementById("btn-excel").addEventListener("click", async () => {
     console.log("CLICK EXCEL NUEVO");
     try {
@@ -261,54 +268,6 @@ function resetearFormulario() {
   if (resultado) resultado.innerHTML = "";
 }
 
-
-
-// Word
-window.descargarWord = function (data) {
-  try {
-    const tabla = document.getElementById("planeacionIA");
-    if (!tabla) {
-      alert("⚠️ No se encontró la tabla para exportar.");
-      return;
-    }
-
-    const info = `
-      <p><strong>Asignatura:</strong> ${data.materia}</p>
-      <p><strong>Nivel:</strong> ${data.nivel}</p>
-      <p><strong>Tema:</strong> ${data.tema}</p>
-      <p><strong>Subtema:</strong> ${data.subtema}</p>
-      <p><strong>Duración:</strong> ${data.duracion} min</p>
-      <p><strong>Sesiones:</strong> ${data.sesiones}</p>
-    `;
-
-    const contenidoHTML = `
-      <html><head><meta charset="UTF-8">
-      <style>
-        body { font-family: Arial, sans-serif; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: center; }
-        th { background-color: #f2f2f2; }
-      </style></head><body>
-      <h2>Planeación ${data.id}</h2>
-      ${info}
-      ${tabla.outerHTML}
-      </body></html>
-    `;
-
-    const blob = new Blob([contenidoHTML], { type: "application/msword" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Planeacion_${data.materia || "SinMateria"}_${data.id}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error("❌ Error al exportar Word:", err);
-    alert("Error al generar el archivo Word.");
-  }
-};
 
 function obtenerDatosFormulario() {
   const isMobile = window.innerWidth <= 768;

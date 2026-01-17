@@ -54,9 +54,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderInfo(data);
     renderTablaIA(data.tabla_ia || []);
 
+    console.log("WORD DATA:", PLANEACION_ORIGINAL);
+
+
     // Botones descarga
-    document.getElementById("btn-descargar")
-      ?.addEventListener("click", () => descargarWord(data));
+    document.getElementById("btn-descargar-doc")
+    .addEventListener("click", () => {
+      descargarWord({
+        data: PLANEACION_ORIGINAL,
+        tableId: "tablaDetalleIA",
+      });
+    });
+
+
 
     document.getElementById("btn-descargar-excel")
       ?.addEventListener("click", () => descargarExcelDetalle(data));
@@ -192,11 +202,11 @@ function obtenerDatosTablaIA() {
       tiempo_sesion: c[0].innerText.trim(),
       actividades: c[1].innerText.trim(),
       
-      tiempo_min: c[3].innerText.trim(),
-      producto: c[4].innerText.trim(),
-      instrumento: c[5].innerText.trim(),
-      formativa: c[6].innerText.trim(),
-      sumativa: c[7].innerText.trim(),
+      tiempo_min: c[2].innerText.trim(),
+      producto: c[3].innerText.trim(),
+      instrumento: c[4].innerText.trim(),
+      formativa: c[5].innerText.trim(),
+      sumativa: c[6].innerText.trim(),
     };
   });
 }
