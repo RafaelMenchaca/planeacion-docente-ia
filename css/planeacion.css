@@ -15,31 +15,27 @@
 }
 #planeacionIA th:nth-child(2),
 #planeacionIA td:nth-child(2) {
-  width: 25%;
+  width: 26%;
 }
 #planeacionIA th:nth-child(3),
 #planeacionIA td:nth-child(3) {
-  width: 7%;
+  width: 9%;
 }
 #planeacionIA th:nth-child(4),
 #planeacionIA td:nth-child(4) {
-  width: 9%;
+  width: 15%;
 }
 #planeacionIA th:nth-child(5),
 #planeacionIA td:nth-child(5) {
-  width: 15%;
+  width: 10%;
 }
 #planeacionIA th:nth-child(6),
 #planeacionIA td:nth-child(6) {
-  width: 11%;
+  width: 10%;
 }
 #planeacionIA th:nth-child(7),
 #planeacionIA td:nth-child(7) {
-  width: 10%;
-}
-#planeacionIA th:nth-child(8),
-#planeacionIA td:nth-child(8) {
-  width: 10%;
+  width: 9%;
 }
 
 /* Ajustes generales de celdas */
