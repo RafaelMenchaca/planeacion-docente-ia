@@ -35,15 +35,24 @@
               <tr>
                 <th>Asignatura</th>
                 <th>Nivel/Grado</th>
-                <th>Tema</th>
-                <th>Subtema</th>
-                <th>Duración (min)</th>
-                <th>Sesiones</th>
+                <th>Unidad</th>
+                <th>Temas</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><input type="text" id="asignatura" class="form-control" placeholder="Ej. Matemáticas" required></td>
+                <!-- Asignatura -->
+                <td>
+                  <input
+                    type="text"
+                    id="asignatura"
+                    class="form-control"
+                    placeholder="Ej. Matemáticas"
+                    required
+                  />
+                </td>
+
+                <!-- Nivel -->
                 <td>
                   <select id="nivel" class="form-select" required>
                     <option value="">Seleccionar</option>
@@ -60,13 +69,58 @@
                     <option>Universidad</option>
                   </select>
                 </td>
-                <td><input type="text" id="tema" class="form-control" placeholder="Ej. Fracciones" required></td>
-                <td><input type="text" id="subtema" class="form-control" placeholder="Ej. Suma de fracciones" required></td>
-                <td><input type="number" id="duracion" class="form-control" min="10" value="50" required></td>
-                <td><input type="number" id="sesiones" class="form-control" min="1" value="1" required></td>
+
+                <!-- Unidad -->
+                <td>
+                  <input
+                    type="number"
+                    id="unidad"
+                    class="form-control"
+                    min="1"
+                    value="1"
+                    required
+                  />
+                </td>
+
+                <!-- Temas dinámicos -->
+                <td>
+                  <div id="temas-container">
+                    <div class="d-flex gap-2 mb-2 tema-row">
+                      <input
+                        type="text"
+                        class="form-control tema-input"
+                        placeholder="Tema"
+                        required
+                      />
+                      <input
+                        type="number"
+                        class="form-control duracion-input"
+                        min="10"
+                        value="50"
+                        required
+                        style="max-width: 120px;"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    id="btn-agregar-tema"
+                  >
+                    + Agregar tema
+                  </button>
+                  
+
+                </td>
+
               </tr>
+
             </tbody>
+
           </table>
+              <div id="lista-temas-agregados" class="mt-2"></div>
+
 
           <!-- Botones debajo -->
           <div class="text-center my-3">
@@ -121,37 +175,50 @@
               <option>Universidad</option>
             </select>
           </div>
-
           <div class="mb-3">
-            <label class="form-label">Tema</label>
+            <label class="form-label">Unidad</label>
             <input
-              type="text"
-              id="tema-mobile"
+              type="number"
+              id="unidad-mobile"
               class="form-control"
-              placeholder="Ej. Fracciones"
+              min="1"
+              value="1"
             />
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">Subtema</label>
-            <input
-              type="text"
-              id="subtema-mobile"
-              class="form-control"
-              placeholder="Ej. Suma de fracciones"
-            />
+          <hr>
+
+          <h6>Temas</h6>
+
+          <div id="temas-container-mobile">
+            <div class="mb-2 tema-row">
+              <input
+                type="text"
+                class="form-control tema-input"
+                placeholder="Tema"
+              />
+              <input
+                type="number"
+                class="form-control mt-1 duracion-input"
+                min="10"
+                value="50"
+              />
+            </div>
           </div>
 
-          <div class="row">
-            <div class="col-6">
-              <label class="form-label">Duración (min)</label>
-              <input type="number" id="duracion-mobile" class="form-control" value="50">
-            </div>
-            <div class="col-6">
-              <label class="form-label">Sesiones</label>
-              <input type="number" id="sesiones-mobile" class="form-control" value="1">
-            </div>
-          </div>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm mt-2"
+            id="btn-agregar-tema-mobile"
+          >
+            + Agregar tema
+          </button>
+
+          <div id="lista-temas-agregados-mobile" class="mt-2"></div>
+
+
+
+          
 
           <div class="text-center mt-3">
             <button class="btn btn-success w-100" id="btn-generar-mobile">
