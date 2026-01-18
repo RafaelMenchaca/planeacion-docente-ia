@@ -2,19 +2,47 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
-## [v1.7-Professional-Export-Release] - 2026-01-10
+## [v1.7-Batch-Planeacion-Unidad] - 2026-01-18
 
 ### 🚀 Novedades principales
-- Integración completa de exportación **Excel profesional (.xlsx)** desde backend.
-- Descarga de Excel disponible inmediatamente después de crear una planeación.
-- Exportación desde la vista de detalle con el mismo formato visual que la interfaz web.
-- Flujo de generación de planeaciones más robusto y coherente.
+- Nuevo flujo de planeación por **Unidad** con soporte para **múltiples temas en un solo submit**.
+- Generación de **N planeaciones por N temas**, agrupadas bajo un mismo origen `[materia | nivel | unidad]`.
+- Introducción del concepto **Batch** para agrupar planeaciones creadas juntas.
+- Nueva vista `batch.html` para listar planeaciones generadas en conjunto.
 
-### 🎨 Mejoras visuales
-- Consistencia total entre la planeación mostrada en pantalla y el archivo Excel descargado.
-- Botones de exportación integrados de forma clara en el flujo principal.
-- Eliminación de lógica obsoleta de exportación Excel en frontend.
-- UX más profesional y alineada a un producto listo para uso real en escuelas.
+### 🎨 Mejoras de experiencia (UX)
+- Rediseño completo del formulario de planeación.
+- Eliminación de **Subtema** y **Sesiones** del input.
+- Campo **Unidad** numérico con validación mínima.
+- Agregado dinámico de temas con duración individual.
+- Bloqueo automático de **materia, nivel y unidad** al agregar el primer tema.
+- Sincronización total entre **desktop y mobile** sin pérdida de estado.
+- Feedback visual claro al generar planeaciones (estado de éxito por batch).
+
+### 🧠 Arquitectura Frontend
+- Estado centralizado para planeación (`estadoPlaneacion`).
+- DOM deja de ser la fuente de verdad.
+- Payload enviado al backend alineado 1:1 con el estado real.
+- Navegación clara: `planeacion → batch → detalle`.
+
+### 🧰 Backend y API
+- Endpoint de generación refactorizado para múltiples temas.
+- Inserción de múltiples planeaciones por submit.
+- Nuevo endpoint seguro para listar planeaciones por `batch_id`.
+- Filtrado por usuario con `requireAuth`.
+- Uso consistente de `fecha_creacion` para ordenamiento.
+- Eliminación definitiva de lógica obsoleta (subtema, sesiones).
+
+### 🗄️ Base de datos (Supabase)
+- Nueva columna `batch_id` para agrupar planeaciones.
+- Nueva columna `unidad` integrada al modelo principal.
+- Esquema alineado con el nuevo flujo de planeación.
+- RLS respetado para accesos por usuario.
+
+### ⚙️ Próximos pasos
+- Dashboard agrupado por Unidad / Batch.
+- Exportación de unidades completas.
+- Mejora visual de la vista batch.
 
 
 ## [v1.6-IA-Integration-Release] - 2026-01-03
