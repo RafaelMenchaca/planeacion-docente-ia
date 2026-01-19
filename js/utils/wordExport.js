@@ -31,33 +31,129 @@ window.descargarWord = function ({ data, tableId }) {
 // Diseña el Word como lo necesita un maestro.
 // ===================================================
 
-    const info = `
-      <p><strong>Asignatura:</strong> ${data.materia || ""}</p>
-      <p><strong>Nivel:</strong> ${data.nivel || ""}</p>
-      <p><strong>Tema:</strong> ${data.tema || ""}</p>
-      <p><strong>Subtema:</strong> ${data.subtema || ""}</p>
-      <p><strong>Duración:</strong> ${data.duracion || ""} min</p>
-      <p><strong>Sesiones:</strong> ${data.sesiones || ""}</p>
-    `;
+    // Tabla superior informacion general de la UDI
+const info = `
+  <table style="width:100%; margin-bottom:15px; border-collapse:collapse;">
+    
+    <!-- Fila 1: Asignatura y Nivel -->
+    <tr>
+      <td><strong>Asignatura:</strong> ${data.materia || ""}</td>
+      <td><strong>Nivel:</strong> ${data.nivel || ""}</td>
+    </tr>
 
-    const contenidoHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            body { font-family: Arial, sans-serif; }
-            table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-            th, td { border: 1px solid #000; padding: 8px; text-align: center; }
-            th { background-color: #f2f2f2; }
-          </style>
-        </head>
-        <body>
-          <h2>Planeación didáctica</h2>
-          ${info}
-          ${tabla.outerHTML}
-        </body>
-      </html>
-    `;
+    <!-- Fila 2: Tema y Subtema -->
+    <tr>
+      <td><strong>Tema:</strong> ${data.tema || ""}</td>
+      <td><strong>Subtema:</strong> ${data.subtema || ""}</td>
+    </tr>
+
+    <!-- Fila 3: Duración y número de sesiones -->
+    <tr>
+      <td><strong>Duración:</strong> ${data.duracion || ""} min</td>
+      <td><strong>Sesiones:</strong> ${data.sesiones || ""}</td>
+    </tr>
+
+  </table>
+`;
+// Tabla de informacion por sesion de la UDI
+const contenidoHTML = `
+  <html>
+    <head>
+      <meta charset="UTF-8">
+
+      <!-- NOTA: BLOQUE ESPECIAL PARA WORD 
+           Se coloca DENTRO de <head>.
+           Word SÍ interpreta este XML y permite configurar la página -->
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+          <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+
+      <!-- ESTILOS GENERALES -->
+<style>
+  /* NOTA: ESTO SE AGREGA PARA WORD
+     Define una sección con tamaño horizontal REAL */
+  @page Section1 {
+    size: 29.7cm 21cm; /* A4 horizontal */
+    margin: 2cm;
+  }
+
+  /* NOTA: Clase que activa la sección horizontal */
+  div.Section1 {
+    page: Section1;
+  }
+
+  /* Tipografía base del documento */
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+  }
+
+  /* Título principal */
+  h2 {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  /* Estilo base para todas las tablas */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  /* Encabezados de la tabla principal */
+  th {
+    background-color: #8ca2d2;
+    color: white;
+    border: 1px solid #000;
+    padding: 8px;
+    font-size: 10pt;
+    text-transform: uppercase;
+  }
+
+  /* Celdas normales */
+  td {
+    border: 1px solid #000;
+    padding: 8px;
+    vertical-align: middle;
+    font-size: 10pt;
+  }
+
+  /* Columna izquierda (secciones de la UDI) */
+  .seccion {
+    font-weight: bold;
+    text-align: center;
+    width: 16%;
+  }
+
+  /* Altura mínima de filas (Word-friendly) */
+  .fila-alta td {
+    height: 60px;
+  }
+
+</style>
+    </head>
+
+    <body>
+
+      <!-- NOTA: ESTE DIV SE AGREGA PARA ACTIVAR LA SECCIÓN HORIZONTAL -->
+      <div class="Section1">
+
+        <h2>Planeación didáctica</h2>
+        ${info}
+        ${tabla.outerHTML}
+
+      </div>
+      <!-- FIN DEL DIV DE SECCIÓN -->
+
+    </body>
+  </html>
+`;
 
 
 
