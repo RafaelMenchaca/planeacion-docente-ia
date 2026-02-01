@@ -2,6 +2,50 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
+## [v1.8-Frontend-Refactor-Static-Hosting] - 2026-02-01
+
+### 🚀 Novedades principales
+- Refactor completo del **frontend en JavaScript vanilla modular**, alineado con el backend refactorizado.
+- Consumo estable del backend limpio sin cambios en endpoints existentes.
+- Compatibilidad total con **GitHub Pages (Project Pages)** sin redirecciones ni hacks.
+- Carga consistente del landing page (`index.html`) desde la raíz del proyecto.
+
+### 🎨 Mejoras de experiencia (UX)
+- Navegación pública y privada completamente funcional desde cualquier página.
+- Navbar y footer compartidos cargados dinámicamente sin duplicación de código.
+- Corrección de rutas de navegación para evitar errores por profundidad de carpetas.
+- Flujo de navegación estable tras refresh, acceso directo por URL o deep links.
+
+### 🧠 Arquitectura Frontend
+- Separación clara de responsabilidades:
+  - `api/` → llamadas HTTP al backend
+  - `services/` → lógica de negocio frontend
+  - `ui/` → renderizado y manejo de DOM
+  - `pages/` → controladores por página
+  - `core/` → configuración global y utilidades
+- Introducción de namespaces por página (ej. `window.planeacionPage`) para evitar contaminación global.
+- Eliminación de archivos legacy y duplicados (`planeacion.js`).
+- `main.js` consolidado como orquestador único de inicialización por página.
+
+### 🧩 Hosting estático y rutas
+- Alineación de la estructura del proyecto con las reglas de **GitHub Pages**.
+- Uso de `BASE_PATH` dinámico para soportar despliegue como *Project Page*.
+- Normalización de enlaces internos mediante `data-href` y reescritura dinámica.
+- Desactivación explícita de Jekyll mediante archivo `.nojekyll` para servir archivos estáticos correctamente.
+- Eliminación de comportamientos inconsistentes donde GitHub Pages mostraba `README.md` en la primera carga.
+
+### 🧰 Técnicos
+- Eliminación de dependencias implícitas en rutas relativas (`../`).
+- Código frontend preparado para futura migración a frameworks modernos (React / Next.js) sin reescritura de lógica.
+- Sin cambios destructivos en backend ni base de datos.
+
+### 🧩 Próximos pasos
+- Documentar arquitectura frontend + backend en README técnico.
+- Mejorar UX del flujo batch (estados de carga, errores parciales).
+- Aplicar el mismo patrón de navegación a componentes privados.
+- Evaluar migración futura a stack moderno cuando el producto lo requiera.
+
+
 ## [v1.7-Batch-Planeacion-Unidad] - 2026-01-18
 
 ### 🚀 Novedades principales
