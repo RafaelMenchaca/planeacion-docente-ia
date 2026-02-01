@@ -7,7 +7,7 @@ const loadComponent = (id, path) => {
         .then(html => {
             el.innerHTML = html;
             el.classList.remove('hidden');
-            if (id.includes("navbar")) mostrarUsuario(); // mostrar usuario despuÃ©s de cargar navbar
+            if (id.includes("navbar")) mostrarUsuario(); // mostrar usuario después de cargar navbar
         })
         .catch(err => console.error(`Error cargando ${path}:`, err));
 };
@@ -25,7 +25,7 @@ async function mostrarUsuario() {
     }
 }
 
-// Cerrar sesiÃ³n
+// Cerrar sesión
 async function cerrarSesion() {
     await supabase.auth.signOut();
     window.location.href = "login.html";
@@ -33,8 +33,8 @@ async function cerrarSesion() {
 
 window.cerrarSesion = cerrarSesion;
 
-// Auto-carga en todas las pÃ¡ginas internas
+// Auto-carga en todas las páginas internas
 document.addEventListener('DOMContentLoaded', () => {
-    loadComponent('navbar-placeholder', './components/navbar.html');
-    loadComponent('footer-placeholder', './components/footer.html');
+    loadComponent('navbar-placeholder', '../components/navbar.html');
+    loadComponent('footer-placeholder', '../components/footer.html');
 });

@@ -4,8 +4,8 @@ async function loadComponent(id, file) {
   document.getElementById(id).innerHTML = content;
 }
 
-// Cargar navbar y footer en todas las pÃ¡ginas
+// Cargar navbar y footer en todas las páginas
 document.addEventListener("DOMContentLoaded", () => {
-  loadComponent("navbar", "components/navbar_public.html");
-  loadComponent("footer", "components/footer_public.html");
+  loadComponent("navbar", "../components/navbar_public.html");
+  loadComponent("footer", "../components/footer_public.html");
 });
