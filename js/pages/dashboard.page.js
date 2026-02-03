@@ -1,8 +1,40 @@
 function initDashboardPage() {
-  cargarPlaneaciones();
+  cargarBatches();
 }
 
-async function cargarPlaneaciones(filtros = {}) {
+function buildBatchList(planeaciones) {
+  const map = new Map();
+
+  planeaciones.forEach(p => {
+    const rawBatchId = p.batch_id ?? p.batchId ?? p.batch;
+    const batchId = (rawBatchId !== undefined && rawBatchId !== null && rawBatchId !== "")
+      ? String(rawBatchId)
+      : `single-${p.id}`;
+
+    if (!map.has(batchId)) {
+      map.set(batchId, {
+        batch_id: batchId,
+        materia: p.materia || "",
+        nivel: p.nivel || "",
+        unidad: p.unidad || "",
+        fecha: p.created_at || p.fecha_creacion || "",
+        total: 0
+      });
+    }
+
+    const batch = map.get(batchId);
+    batch.total += 1;
+
+    const candidateFecha = p.created_at || p.fecha_creacion || "";
+    if (candidateFecha && (!batch.fecha || new Date(candidateFecha) > new Date(batch.fecha))) {
+      batch.fecha = candidateFecha;
+    }
+  });
+
+  return Array.from(map.values());
+}
+
+async function cargarBatches(filtros = {}) {
   const container = document.getElementById('plan-list-placeholder');
   if (!container) return;
 
@@ -13,15 +45,16 @@ async function cargarPlaneaciones(filtros = {}) {
     if (!payload) return;
 
     const planeaciones = Array.isArray(payload) ? payload : (payload.items || []);
+    const batches = buildBatchList(planeaciones);
 
-    const filtradas = planeaciones.filter(p => {
+    const filtradas = batches.filter(b => {
       const porMateria = filtros.materia
-        ? (p.materia || '').toLowerCase().includes(filtros.materia.toLowerCase())
+        ? (b.materia || '').toLowerCase().includes(filtros.materia.toLowerCase())
         : true;
 
       const porFecha = filtros.fecha
-        ? (p.fecha_creacion
-            ? new Date(p.fecha_creacion).toISOString().startsWith(filtros.fecha)
+        ? (b.fecha
+            ? new Date(b.fecha).toISOString().startsWith(filtros.fecha)
             : false)
         : true;
 
@@ -29,14 +62,21 @@ async function cargarPlaneaciones(filtros = {}) {
     });
 
     if (filtradas.length === 0) {
-      renderPlaneacionesEmpty(container);
+      renderBatchesEmpty(container);
       return;
     }
 
-    renderPlaneacionesTable(container, filtradas);
+    // ordenar por fecha desc
+    filtradas.sort((a, b) => {
+      const fa = a.fecha ? new Date(a.fecha).getTime() : 0;
+      const fb = b.fecha ? new Date(b.fecha).getTime() : 0;
+      return fb - fa;
+    });
+
+    renderBatchesTable(container, filtradas);
 
   } catch (error) {
-    console.error("? Error al cargar planeaciones:", error);
+    console.error("Error al cargar batches:", error);
     container.innerHTML = "<p>Error al cargar planeaciones.</p>";
   }
 }
@@ -50,7 +90,7 @@ function aplicarFiltros() {
     fecha: fechaInput ? fechaInput.value : ""
   };
 
-  cargarPlaneaciones(filtros);
+  cargarBatches(filtros);
 }
 
 function resetearFiltros() {
@@ -60,7 +100,7 @@ function resetearFiltros() {
   if (materiaInput) materiaInput.value = "";
   if (fechaInput) fechaInput.value = "";
 
-  cargarPlaneaciones();
+  cargarBatches();
 }
 
 function cerrarFiltros() {
@@ -70,31 +110,8 @@ function cerrarFiltros() {
   dropdown.hide();
 }
 
-window.eliminarPlaneacion = async function (id, btnEl) {
-  const confirmar = confirm('¿Estás seguro de que deseas eliminar esta planeación?');
-  if (!confirmar) return;
-
-  const prevText = btnEl.textContent;
-  btnEl.disabled = true;
-  btnEl.textContent = 'Eliminando...';
-
-  try {
-    const res = await eliminarPlaneacionApi(id);
-    if (!res) return;
-
-    cargarPlaneaciones();
-
-  } catch (err) {
-    console.error('? Error al eliminar:', err);
-    alert('No se pudo eliminar la planeación.');
-  } finally {
-    btnEl.disabled = false;
-    btnEl.textContent = prevText;
-  }
-};
-
 window.initDashboardPage = initDashboardPage;
-window.cargarPlaneaciones = cargarPlaneaciones;
+window.cargarBatches = cargarBatches;
 window.aplicarFiltros = aplicarFiltros;
 window.resetearFiltros = resetearFiltros;
 window.cerrarFiltros = cerrarFiltros;

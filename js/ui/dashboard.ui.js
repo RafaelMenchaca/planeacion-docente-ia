@@ -1,22 +1,20 @@
-function renderPlaneacionesTable(container, planeaciones) {
+function renderBatchesTable(container, batches) {
   const tbody = document.createElement("tbody");
 
-  planeaciones.forEach((p, index) => {
+  batches.forEach((b, index) => {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
       <td>${index + 1}</td>
-      <td>${escapeHtml(p.materia || "Sin materia")}</td>
-      <td class="text-muted">${p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString("es-MX") : "-"}</td>
-      <td>
-        <div class="d-flex flex-wrap justify-content-end gap-2">
-          <a href="detalle.html?id=${p.id}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-eye"></i> <span class="d-none d-sm-inline">Ver</span>
-          </a>
-          <button onclick="eliminarPlaneacion(${p.id}, this)" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
-          </button>
-        </div>
+      <td>${escapeHtml(b.materia || "Sin materia")}</td>
+      <td>${escapeHtml(b.nivel || "-")}</td>
+      <td>${b.unidad ? `Unidad ${b.unidad}` : "-"}</td>
+      <td>${b.total || 0}</td>
+      <td class="text-muted">${b.fecha ? new Date(b.fecha).toLocaleDateString("es-MX") : "-"}</td>
+      <td class="text-end">
+        <a href="batch.html?batch_id=${encodeURIComponent(b.batch_id)}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-eye"></i> <span class="d-none d-sm-inline">Ver</span>
+        </a>
       </td>
     `;
     tbody.appendChild(tr);
@@ -28,6 +26,9 @@ function renderPlaneacionesTable(container, planeaciones) {
         <tr>
           <th>#</th>
           <th>Asignatura</th>
+          <th>Nivel</th>
+          <th>Unidad</th>
+          <th>Total</th>
           <th>Fecha</th>
           <th class="text-end">Acciones</th>
         </tr>
@@ -37,9 +38,9 @@ function renderPlaneacionesTable(container, planeaciones) {
   container.querySelector("table").appendChild(tbody);
 }
 
-function renderPlaneacionesEmpty(container) {
+function renderBatchesEmpty(container) {
   container.innerHTML = "<p class='text-muted text-center py-3'>No hay planeaciones que coincidan con los filtros.</p>";
 }
 
-window.renderPlaneacionesTable = renderPlaneacionesTable;
-window.renderPlaneacionesEmpty = renderPlaneacionesEmpty;
+window.renderBatchesTable = renderBatchesTable;
+window.renderBatchesEmpty = renderBatchesEmpty;
