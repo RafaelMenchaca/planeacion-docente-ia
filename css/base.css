@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===============================
+   Base styles
+   =============================== */
+
+@layer base {
+  body {
+    @apply bg-background text-text-main font-sans;
+  }
+}
+
+/* ===============================
+   Components
+   =============================== */
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-text-inverse px-4 py-2 rounded-md font-medium
+           hover:bg-primary-hover transition;
+  }
+
+  .btn-secondary {
+    @apply bg-surface text-text-main border border-slate-300
+           px-4 py-2 rounded-md hover:bg-muted transition;
+  }
+
+  .btn-ghost {
+    @apply text-primary hover:underline font-medium;
+  }
+
+  .card {
+    @apply bg-surface rounded-lg shadow-sm border border-slate-200 p-4;
+  }
+
+  .page-container {
+    @apply max-w-7xl mx-auto px-6 py-6;
+  }
+
+  .section {
+    @apply space-y-4;
+  }
+}
