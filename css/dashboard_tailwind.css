@@ -1,0 +1,15 @@
+/* Dashboard Tailwind experiment styles */
+.dashboard-shell {
+  background-image: radial-gradient(circle at 20% 10%, rgba(2, 132, 199, 0.08), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(13, 148, 136, 0.08), transparent 40%);
+}
+
+.batch-active {
+  border-color: rgb(165 243 252);
+  background-color: rgb(236 254 255);
+}
+
+.batch-inactive {
+  border-color: rgb(226 232 240);
+  background-color: rgb(255 255 255);
+}
