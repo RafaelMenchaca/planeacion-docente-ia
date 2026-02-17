@@ -73,7 +73,7 @@ function renderBatches() {
         <div class="flex items-start justify-between gap-2">
           <div>
             <p class="text-sm font-semibold text-slate-900">${escapeHtml(b.materia)}</p>
-            <p class="text-xs text-slate-600">${escapeHtml(b.nivel)} · Unidad ${escapeHtml(String(b.unidad))}</p>
+            <p class="text-xs text-slate-600">${escapeHtml(b.nivel)} | Unidad ${escapeHtml(String(b.unidad))}</p>
           </div>
           <span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">${b.total}</span>
         </div>
@@ -113,7 +113,7 @@ function renderPlaneaciones() {
     return;
   }
 
-  title.textContent = `${batch.materia} · ${batch.nivel} · Unidad ${batch.unidad}`;
+  title.textContent = `${batch.materia} | ${batch.nivel} | Unidad ${batch.unidad}`;
   meta.textContent = `${planeaciones.length} planeacion(es)`;
 
   panel.innerHTML = `
@@ -192,3 +192,4 @@ async function initDashboardTailwindPage() {
 }
 
 document.addEventListener('DOMContentLoaded', initDashboardTailwindPage);
+
