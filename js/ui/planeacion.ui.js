@@ -1,14 +1,14 @@
 function bloquearFormulario() {
-  document.querySelectorAll("#planeacionTable input, #planeacionTable select").forEach(el => {
+  document.querySelectorAll("#planeacionTable input, #planeacionTable select").forEach((el) => {
     el.setAttribute("readonly", true);
     el.setAttribute("disabled", true);
   });
 
   const btn = document.getElementById("btn-generar");
   if (btn) {
-    btn.classList.add("disabled");
+    btn.classList.add("opacity-70", "cursor-not-allowed");
     btn.setAttribute("disabled", true);
-    btn.innerHTML = '<i class="bi bi-check-circle"></i> Guardado';
+    btn.textContent = "Guardado";
   }
 }
 
@@ -23,32 +23,31 @@ function mostrarResultadoBatch(data) {
   const unidad = planeaciones[0]?.unidad || "";
 
   const temasHtml = planeaciones
-    .map(p => `<li>${p.tema}</li>`)
+    .map((p) => `<li class="text-sm text-slate-700">${escapeHtml(p.tema || "")}</li>`)
     .join("");
 
   resultado.innerHTML = `
-    <div class="alert alert-success mt-4">
-      <h5 class="mb-3">? Se generaron ${total} planeaciones correctamente</h5>
+    <div class="result-card">
+      <h5 class="text-base font-semibold text-emerald-800 mb-3">Se generaron ${total} planeaciones correctamente</h5>
 
-      <div class="card border-success mb-3">
-        <div class="card-body text-center">
-          <strong>${materia}</strong> | ${nivel} | Unidad ${unidad}
-          <br>
-          <a href="batch.html?batch_id=${batch_id}" class="btn btn-outline-success mt-2">
-            <i class="bi bi-eye"></i> Ver
+      <div class="result-subcard mb-3 text-center">
+        <strong class="text-slate-900">${escapeHtml(materia)}</strong> | ${escapeHtml(nivel)} | Unidad ${escapeHtml(String(unidad))}
+        <div class="mt-3">
+          <a href="batch.html?batch_id=${batch_id}" class="inline-flex items-center rounded-lg border border-emerald-300 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">
+            Ver lote
           </a>
         </div>
       </div>
 
-      <p class="fw-semibold mb-1">Temas incluidos:</p>
-      <ul>${temasHtml}</ul>
+      <p class="text-sm font-semibold text-slate-800 mb-1">Temas incluidos:</p>
+      <ul class="list-disc pl-5 space-y-1 mb-4">${temasHtml}</ul>
 
-      <div class="text-center mt-3">
-        <a href="dashboard.html" class="btn btn-outline-secondary me-2">
-          <i class="bi bi-house"></i> Volver al Dashboard
+      <div class="result-actions">
+        <a href="dashboard.html" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Volver al Dashboard
         </a>
-        <button class="btn btn-success" onclick="resetearFormulario()">
-          <i class="bi bi-plus-circle"></i> Nueva planeación
+        <button class="inline-flex items-center rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800" onclick="resetearFormulario()">
+          Nueva planeacion
         </button>
       </div>
     </div>
@@ -61,15 +60,11 @@ function renderTemas(temas) {
     document.getElementById("lista-temas-agregados-mobile")
   ];
 
-  contenedores.forEach(c => {
-    if (!c) return;
+  contenedores.forEach((contenedor) => {
+    if (!contenedor) return;
 
-    c.innerHTML = temas
-      .map(
-        t => `<div class="alert alert-secondary py-1 px-2 mb-1">
-                • ${t.tema} (${t.duracion} min)
-              </div>`
-      )
+    contenedor.innerHTML = temas
+      .map((tema) => `<div class="tema-item">${escapeHtml(tema.tema)} (${tema.duracion} min)</div>`)
       .join("");
   });
 }
@@ -78,7 +73,7 @@ function bloquearCamposGlobales() {
   document.activeElement?.blur();
 
   ["asignatura", "nivel", "unidad", "asignatura-mobile", "nivel-mobile", "unidad-mobile"]
-    .forEach(id => {
+    .forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.disabled = true;
     });

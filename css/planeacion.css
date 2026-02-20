@@ -1,201 +1,36 @@
-/* =========================
-    Planeación - Estilos
-========================= */
-
-/* ---------- Tabla IA ---------- */
-#planeacionIA {
-  table-layout: fixed; /*  columnas fijas y proporcionales */
-  width: 100%;
+/* Planeacion Tailwind styles */
+.planeacion-shell {
+  background-image:
+    radial-gradient(circle at 20% 5%, rgba(2, 132, 199, 0.08), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(13, 148, 136, 0.08), transparent 38%);
 }
 
-/* Distribución proporcional de columnas */
-#planeacionIA th:nth-child(1),
-#planeacionIA td:nth-child(1) {
-  width: 12%;
-}
-#planeacionIA th:nth-child(2),
-#planeacionIA td:nth-child(2) {
-  width: 26%;
-}
-#planeacionIA th:nth-child(3),
-#planeacionIA td:nth-child(3) {
-  width: 9%;
-}
-#planeacionIA th:nth-child(4),
-#planeacionIA td:nth-child(4) {
-  width: 15%;
-}
-#planeacionIA th:nth-child(5),
-#planeacionIA td:nth-child(5) {
-  width: 10%;
-}
-#planeacionIA th:nth-child(6),
-#planeacionIA td:nth-child(6) {
-  width: 10%;
-}
-#planeacionIA th:nth-child(7),
-#planeacionIA td:nth-child(7) {
-  width: 9%;
-}
-
-/* Ajustes generales de celdas */
-#planeacionIA th,
-#planeacionIA td {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
-  text-align: center;
-  vertical-align: middle;
+.tema-item {
+  border: 1px solid rgb(226 232 240);
+  background-color: rgb(248 250 252);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
-  padding: 12px;
+  color: rgb(51 65 85);
 }
 
-/* Primera columna más clara y centrada */
-#planeacionIA td:first-child {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  text-align: center;
-  vertical-align: middle;
+.result-card {
+  border: 1px solid rgb(167 243 208);
+  background: linear-gradient(180deg, rgb(236 253 245) 0%, rgb(240 253 250) 100%);
+  border-radius: 1rem;
+  padding: 1rem;
 }
 
-/* Actividades más ancha, alineada arriba */
-#planeacionIA td:nth-child(2) {
-  text-align: left;
-  vertical-align: top;
+.result-subcard {
+  border: 1px solid rgb(167 243 208);
+  border-radius: 0.85rem;
+  background-color: white;
+  padding: 0.9rem;
 }
 
-/* Efecto highlight verde al generar IA */
-.highlight-green {
-  background-color: #d1fae5 !important;
-  transition: background-color 1s ease;
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
 }
-
-/* === Mejora visual Excel-like Pro === */
-
-#planeacionIA {
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-#planeacionIA th {
-  background: linear-gradient(90deg, #0C61F7 0%, #0047D2 100%);
-  color: #fff;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border-bottom: 2px solid #0047D2;
-  font-size: 0.85rem;
-  text-align: center;
-  padding: 12px 8px;
-}
-
-#planeacionIA td {
-  background-color: #fff;
-  border-bottom: 1px solid #eaeaea;
-  font-size: 0.9rem;
-  text-align: center;
-  padding: 10px 6px;
-  transition: background-color 0.15s ease;
-}
-
-#planeacionIA tr:hover td {
-  background-color: #f8fbff;
-}
-
-#planeacionIA td:first-child {
-  background-color: #f3f4f6;
-  font-weight: 600;
-}
-
-#planeacionIA td:nth-child(2) {
-  text-align: left;
-  vertical-align: top;
-}
-
-/* Sombra ligera y bordes redondeados */
-.card.border-primary {
-  border-color: #0C61F7 !important;
-  border-radius: 10px;
-}
-
-.card-header.bg-primary {
-  background: linear-gradient(90deg, #0C61F7 0%, #0047D2 100%) !important;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-}
-
-/* Loader mejorado (manteniendo tu lógica actual) */
-#loader-ia {
-  display: none;
-  text-align: center;
-  padding: 20px;
-}
-
-#loader-ia.active {
-  display: block;
-}
-
-#loader-ia .spinner-border {
-  width: 3rem;
-  height: 3rem;
-  color: #0C61F7;
-  animation: spin 1.2s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-#loader-ia p {
-  font-weight: 600;
-  color: #0C61F7;
-  margin-top: 10px;
-}
-
-.alert-success {
-  background-color: #e6f4ea;
-  border: 1px solid #b7e2c7;
-  color: #166534;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-
-
-/* Responsive: la tabla se hace scrollable en pantallas pequeñas */
-@media (max-width: 992px) {
-  #planeacionIA {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-}
-
-/* Por defecto: desktop */
-.user-inputs-mobile {
-  display: none;
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .user-inputs-desktop {
-    display: none;
-  }
-
-  .user-inputs-mobile {
-    display: block;
-  }
-}
-
-.user-inputs-mobile input,
-.user-inputs-mobile select {
-  font-size: 1rem;
-  padding: 0.6rem;
-}
-
