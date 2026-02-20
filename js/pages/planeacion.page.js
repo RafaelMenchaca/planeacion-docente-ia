@@ -39,35 +39,35 @@ async function generarPlaneacion() {
   }
 
   const loader = document.getElementById("ia-loader");
-  loader.style.display = "block";
+  if (loader) loader.style.display = "block";
 
   try {
     const data = await generarPlaneacionApi(estadoPlaneacion);
     if (!data) return;
 
-    // aqui mostraremos el resultado batch para poder ver todas las planeaciones generadas
     mostrarResultadoBatch(data);
-
+    if (typeof bloquearFormulario === "function") {
+      bloquearFormulario();
+    }
   } catch (error) {
     console.error("Error al generar:", error);
-    alert("Error al generar la planeaci�n con IA.");
+    alert("Error al generar la planeacion con IA.");
   } finally {
-    loader.style.display = "none";
+    if (loader) loader.style.display = "none";
   }
 }
 
-function inicializarCamposGlobales() {
+function inicializarCamposGlobales({ esMobile }) {
+  const suffix = esMobile ? "-mobile" : "";
+
   estadoPlaneacion.materia =
-    document.getElementById("asignatura")?.value.trim() ||
-    document.getElementById("asignatura-mobile")?.value.trim();
+    document.getElementById(`asignatura${suffix}`)?.value.trim() || "";
 
   estadoPlaneacion.nivel =
-    document.getElementById("nivel")?.value ||
-    document.getElementById("nivel-mobile")?.value;
+    document.getElementById(`nivel${suffix}`)?.value || "";
 
   const unidadRaw =
-    document.getElementById("unidad")?.value ||
-    document.getElementById("unidad-mobile")?.value;
+    document.getElementById(`unidad${suffix}`)?.value || "";
 
   estadoPlaneacion.unidad = parseInt(unidadRaw, 10);
 }
@@ -76,21 +76,24 @@ function agregarTemaDesdeUI({ esMobile }) {
   const container = document.getElementById(
     esMobile ? "temas-container-mobile" : "temas-container"
   );
+  if (!container) return;
 
   const ultimaFila = container.querySelector(".tema-row:last-child");
+  if (!ultimaFila) return;
   const temaInput = ultimaFila.querySelector(".tema-input");
   const duracionInput = ultimaFila.querySelector(".duracion-input");
+  if (!temaInput || !duracionInput) return;
 
   const tema = temaInput.value.trim();
   const duracion = parseInt(duracionInput.value, 10);
 
   if (!tema || !Number.isInteger(duracion) || duracion < 10) {
-    alert("Ingresa un tema v�lido y una duraci�n m�nima de 10 minutos.");
+    alert("Ingresa un tema valido y una duracion minima de 10 minutos.");
     return;
   }
 
   if (estadoPlaneacion.temas.length === 0) {
-    inicializarCamposGlobales();
+    inicializarCamposGlobales({ esMobile });
     bloquearCamposGlobales();
   }
 
