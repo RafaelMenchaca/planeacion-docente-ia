@@ -1,30 +1,13 @@
-<div class="flex items-center justify-between w-full">
+<div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-wider text-cyan-800">Educativo IA</p>
+    <h1 class="text-xl sm:text-2xl font-semibold text-slate-900">Dashboard de planeaciones</h1>
+  </div>
 
-  <!-- Mobile menu button -->
-  <button
-    id="toggle-sidebar"
-    class="md:hidden text-text-main focus:outline-none"
-    aria-label="Abrir menú"
-  >
-    ☰
-  </button>
-
-  <!-- Right actions -->
-  <div class="flex items-center gap-4 ml-auto">
-
-    <span
-      id="user-email"
-      class="text-sm text-text-muted hidden sm:block"
-    >
-      usuario@email.com
-    </span>
-
-    <button
-      id="logout-btn"
-      class="btn-ghost text-sm"
-    >
-      Cerrar sesión
+  <div class="flex items-center gap-3">
+    <span id="dashboard-user-email" class="hidden sm:inline-flex text-sm text-slate-600"></span>
+    <button id="dashboard-logout-btn" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+      Cerrar sesion
     </button>
-
   </div>
 </div>
