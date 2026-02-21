@@ -74,7 +74,7 @@ function renderBatchList() {
   count.textContent = String(list.length);
 
   if (list.length === 0) {
-    container.innerHTML = '<p class="px-3 py-4 text-sm text-slate-500">No hay batches para mostrar.</p>';
+    container.innerHTML = '<p class="px-3 py-4 text-sm text-slate-500">No hay planeaciones para mostrar.</p>';
     return;
   }
 
@@ -116,9 +116,9 @@ function renderPlaneacionesPanel() {
   if (!panel || !title || !meta) return;
 
   if (!dashboardState.selectedBatchId) {
-    title.textContent = 'Selecciona un batch';
+    title.textContent = 'Selecciona una planeacion';
     meta.textContent = '';
-    panel.innerHTML = '<p class="text-sm text-slate-500">Selecciona un batch de la barra lateral para ver sus planeaciones.</p>';
+    panel.innerHTML = '<p class="text-sm text-slate-500">Selecciona una opcion de la barra lateral para ver sus planeaciones.</p>';
     return;
   }
 
@@ -126,9 +126,9 @@ function renderPlaneacionesPanel() {
   const planeaciones = getPlaneacionesByBatch(dashboardState.selectedBatchId);
 
   if (!batch || planeaciones.length === 0) {
-    title.textContent = 'Batch sin datos';
+    title.textContent = 'Planeaciones sin datos';
     meta.textContent = '';
-    panel.innerHTML = '<p class="text-sm text-slate-500">No se encontraron planeaciones para este batch.</p>';
+    panel.innerHTML = '<p class="text-sm text-slate-500">No se encontraron planeaciones para esta seleccion.</p>';
     return;
   }
 
@@ -196,7 +196,7 @@ function renderDataLoadError() {
 
   if (count) count.textContent = '0';
   if (batchList) {
-    batchList.innerHTML = '<p class="px-3 py-4 text-sm text-red-600">Error al cargar batches.</p>';
+    batchList.innerHTML = '<p class="px-3 py-4 text-sm text-red-600">Error al cargar planeaciones.</p>';
   }
   if (selectedTitle) selectedTitle.textContent = 'Error al cargar';
   if (selectedMeta) selectedMeta.textContent = '';

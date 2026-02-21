@@ -25,19 +25,6 @@ function renderInfo(data) {
     { label: "Fecha", value: fechaCreacion },
   ].filter((item) => tieneValor(item.value));
 
-  const badges = [
-    tieneValor(data.id) ? `Planeacion #${escapeHtml(data.id)}` : "",
-    tieneValor(data.batch_id) ? `Batch #${escapeHtml(data.batch_id)}` : "",
-  ].filter(Boolean);
-
-  const badgesHtml = badges.length
-    ? badges
-      .map(
-        (badge) => `<span class="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-800">${badge}</span>`
-      )
-      .join("")
-    : '<span class="text-xs text-slate-500">Sin identificadores disponibles</span>';
-
   const metaHtml = metaCampos.length
     ? metaCampos
       .map(
@@ -52,12 +39,11 @@ function renderInfo(data) {
     : '<p class="text-sm text-slate-500">No hay metadatos disponibles para esta planeacion.</p>';
 
   contenedor.innerHTML = `
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div class="flex flex-col gap-3">
       <div>
         <h2 class="text-lg font-semibold text-slate-900">Resumen de la planeacion</h2>
         <p class="mt-1 text-sm text-slate-600">Visualiza, ajusta y exporta la propuesta generada por IA.</p>
       </div>
-      <div class="flex flex-wrap items-center gap-2">${badgesHtml}</div>
     </div>
     <div class="detalle-meta-grid">${metaHtml}</div>
   `;
