@@ -4,42 +4,44 @@
       <div id="dashboard-header-slot"></div>
     </header>
 
-    <main class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <section class="dashboard-hero rounded-2xl border border-cyan-100 bg-gradient-to-r from-white via-cyan-50 to-white p-5 sm:p-6 shadow-lg">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 class="text-lg sm:text-xl font-semibold text-slate-900">Centro de control</h2>
-            <p class="mt-1 text-sm text-slate-600">Selecciona una agrupacion para abrir sus planeaciones sin cambiar de pagina.</p>
+    <main class="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 lg:px-8 py-6">
+      <section class="dashboard-card overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+        <div class="border-b border-cyan-100 bg-gradient-to-r from-white via-cyan-50 to-white px-5 py-5 sm:px-6">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-lg sm:text-xl font-semibold text-slate-900">Centro de control</h2>
+              <p class="mt-1 text-sm text-slate-600">Selecciona una agrupacion para abrir sus planeaciones sin cambiar de pagina.</p>
+            </div>
+            <a href="planeacion.html" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-800">
+              + Crear nueva planeacion
+            </a>
           </div>
-          <a href="planeacion.html" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-800">
-            + Crear nueva planeacion
-          </a>
         </div>
-      </section>
 
-      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <aside id="dashboard-sidebar-slot" class="lg:col-span-4 xl:col-span-3"></aside>
+        <div class="grid grid-cols-1 lg:grid-cols-12">
+          <aside id="dashboard-sidebar-slot" class="border-b border-slate-200 bg-slate-50/70 lg:col-span-4 lg:border-b-0 lg:border-r xl:col-span-3"></aside>
 
-        <section class="lg:col-span-8 xl:col-span-9 space-y-4">
-          <div class="dashboard-card rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-lg">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p class="text-xs uppercase tracking-wider text-slate-500">Seleccion actual</p>
-                <h3 id="selected-title" class="text-lg font-semibold text-slate-900">Selecciona una planeacion</h3>
+          <section class="lg:col-span-8 xl:col-span-9">
+            <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p class="text-xs uppercase tracking-wider text-slate-500">Seleccion actual</p>
+                  <h3 id="selected-title" class="text-lg font-semibold text-slate-900">Selecciona una planeacion</h3>
+                </div>
+                <div id="selected-meta" class="text-sm text-slate-600"></div>
               </div>
-              <div id="selected-meta" class="text-sm text-slate-600"></div>
             </div>
-          </div>
 
-          <div class="dashboard-card rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-            <div class="border-b border-slate-100 px-4 py-3">
-              <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Lista de planeaciones</h4>
+            <div class="border-t border-slate-100">
+              <div class="border-b border-slate-100 px-4 py-3 sm:px-5">
+                <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Lista de planeaciones</h4>
+              </div>
+              <div id="planeaciones-panel" class="p-4 sm:p-5">
+                <p class="text-sm text-slate-500">Selecciona una opcion de la barra lateral para ver sus planeaciones.</p>
+              </div>
             </div>
-            <div id="planeaciones-panel" class="p-4">
-              <p class="text-sm text-slate-500">Selecciona una opcion de la barra lateral para ver sus planeaciones.</p>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </section>
     </main>
   </div>
