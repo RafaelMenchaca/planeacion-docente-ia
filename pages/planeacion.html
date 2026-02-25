@@ -8,18 +8,7 @@
   <link rel="stylesheet" href="../css/planeacion.css">
 </head>
 <body class="planeacion-shell min-h-screen bg-slate-100 text-slate-900">
-  <header class="border-b border-slate-200 bg-white">
-    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-wider text-cyan-800">Educativo IA</p>
-        <h1 class="text-xl sm:text-2xl font-semibold">Generador de Planeaciones Didacticas</h1>
-      </div>
-      <div class="flex items-center gap-2">
-        <a href="dashboard.html" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Dashboard</a>
-        <a href="batch.html" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Batches</a>
-      </div>
-    </div>
-  </header>
+  <div id="navbar-placeholder"></div>
 
   <main class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     <section class="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -159,6 +148,7 @@
 
     <div id="resultado" class="space-y-4"></div>
   </main>
+  <div id="footer-placeholder"></div>
 
   <script src="../js/core/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -167,6 +157,7 @@
   <script src="../js/core/utils.js"></script>
   <script src="../js/api/planeaciones.api.js"></script>
   <script src="../js/services/planeaciones.service.js"></script>
+  <script src="../js/ui/components.private.js"></script>
   <script src="../js/ui/planeacion.ui.js"></script>
   <script src="../js/pages/planeacion.page.js"></script>
   <script src="../js/main.js"></script>

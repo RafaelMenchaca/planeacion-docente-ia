@@ -1,0 +1,10 @@
+﻿/* Batch page tailwind companion styles */
+.batch-shell {
+  background-image:
+    radial-gradient(circle at 20% 8%, rgba(2, 132, 199, 0.08), transparent 34%),
+    radial-gradient(circle at 82% 0%, rgba(13, 148, 136, 0.08), transparent 40%);
+}
+
+.batch-card {
+  box-shadow: 0 20px 45px -35px rgba(15, 23, 42, 0.7);
+}

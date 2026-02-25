@@ -1,22 +1,32 @@
-<!-- NAVBAR INTERNO -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="dashboard.html">Educativo IA</a>
+﻿<nav class="border-b border-slate-200 bg-white">
+  <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <a href="dashboard.html" class="text-lg font-semibold text-slate-900 sm:text-xl">Educativo IA</a>
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navApp" aria-controls="navApp" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <a href="dashboard.html" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Dashboard</a>
+      <a href="planeacion.html" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Planeaciones</a>
 
-    <div class="collapse navbar-collapse" id="navApp">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="planeacion.html">Planeaciones</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Configuración</a></li>
-      </ul>
+      <div class="relative">
+        <button id="profile-menu-toggle" type="button" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-2 py-1.5 hover:bg-slate-50" aria-label="Abrir menu de perfil" aria-haspopup="true" aria-expanded="false">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-cyan-100 text-cyan-700">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"></path>
+            </svg>
+          </span>
+        </button>
 
-      <div class="d-flex align-items-center gap-2">
-        <span id="usuario-email" class="badge bg-light text-dark px-2 py-1"></span>
-        <button onclick="cerrarSesion()" class="btn btn-sm btn-outline-light">Cerrar sesión</button>
+        <div id="profile-menu" class="hidden absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+          <div class="border-b border-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Perfil</div>
+          <div id="profile-menu-email" class="truncate border-b border-slate-100 px-3 py-2 text-sm font-medium text-slate-700">Mi cuenta</div>
+          <button data-profile-action="perfil" class="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">Ver perfil</button>
+          <button data-profile-action="configuracion" class="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">Configuracion</button>
+          <button data-profile-action="suscripcion" class="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">Suscripcion</button>
+          <button data-profile-action="facturacion" class="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">Facturacion</button>
+          <button data-profile-action="notificaciones" class="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">Notificaciones</button>
+          <div class="border-t border-slate-100"></div>
+          <button data-profile-action="logout" class="w-full px-3 py-2 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50">Cerrar sesion</button>
+        </div>
       </div>
     </div>
   </div>

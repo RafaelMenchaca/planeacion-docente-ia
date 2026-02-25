@@ -1,11 +1,11 @@
-let currentBatchId = null;
+ï»¿let currentBatchId = null;
 
 function initBatchPage() {
   const params = new URLSearchParams(window.location.search);
   const batchId = params.get("batch_id");
 
   if (!batchId) {
-    mostrarError("No se proporcionó un batch_id válido.");
+    mostrarError("No se proporciono un batch_id valido.");
     return;
   }
 
@@ -25,34 +25,32 @@ async function cargarPlaneacionesBatch(batchId) {
       return;
     }
 
-    renderHeader(planeaciones[0]);
+    renderHeader(planeaciones[0], planeaciones.length);
     renderListaPlaneaciones(planeaciones);
-
   } catch (err) {
     console.error(err);
-    mostrarError("Ocurrió un error al cargar la información.");
+    mostrarError("Ocurrio un error al cargar la informacion.");
   }
 }
 
-window.eliminarPlaneacionBatch = async function (id, btnEl) {
-  const confirmar = confirm('¿Estás seguro de que deseas eliminar esta planeación?');
+window.eliminarPlaneacionBatch = async function eliminarPlaneacionBatch(id, btnEl) {
+  const confirmar = confirm("Estas seguro de que deseas eliminar esta planeacion?");
   if (!confirmar) return;
 
   const prevText = btnEl.textContent;
   btnEl.disabled = true;
-  btnEl.textContent = 'Eliminando...';
+  btnEl.textContent = "Eliminando...";
 
   try {
     const res = await eliminarPlaneacionApi(id);
     if (!res) return;
 
     if (currentBatchId) {
-      cargarPlaneacionesBatch(currentBatchId);
+      await cargarPlaneacionesBatch(currentBatchId);
     }
-
   } catch (err) {
-    console.error('Error al eliminar:', err);
-    alert('No se pudo eliminar la planeación.');
+    console.error("Error al eliminar:", err);
+    alert("No se pudo eliminar la planeacion.");
   } finally {
     btnEl.disabled = false;
     btnEl.textContent = prevText;

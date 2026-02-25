@@ -225,28 +225,12 @@ async function hydrateDashboardData() {
   renderPlaneacionesPanel();
 }
 
-async function wireDashboardHeader() {
-  const { data } = await supabase.auth.getUser();
-  const emailEl = document.getElementById('dashboard-user-email');
-  if (emailEl && data.user && data.user.email) {
-    emailEl.textContent = data.user.email;
-  }
-
-  const logoutBtn = document.getElementById('dashboard-logout-btn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      window.location.href = 'login.html';
-    });
-  }
-}
-
 async function initDashboardPage() {
   try {
     await injectComponent('dashboard-layout-root', '../components/layout.html');
     await Promise.all([
-      injectComponent('dashboard-header-slot', '../components/header.html'),
-      injectComponent('dashboard-sidebar-slot', '../components/sidebar.html')
+      injectComponent('dashboard-sidebar-slot', '../components/sidebar.html'),
+      window.initPrivateChrome ? window.initPrivateChrome() : Promise.resolve()
     ]);
   } catch (error) {
     console.error('Error inicializando dashboard:', error);
@@ -255,12 +239,6 @@ async function initDashboardPage() {
       root.innerHTML = '<div class="p-6 text-sm text-red-600">No se pudo cargar el dashboard.</div>';
     }
     return;
-  }
-
-  try {
-    await wireDashboardHeader();
-  } catch (error) {
-    console.error('Error cargando header del dashboard:', error);
   }
 
   try {
