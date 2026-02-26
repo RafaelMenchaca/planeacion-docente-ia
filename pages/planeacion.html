@@ -39,7 +39,7 @@
       <div class="p-5 space-y-4">
         <div class="user-inputs-desktop hidden md:block">
           <div id="planeacionTable" class="space-y-4">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,320px)_160px_160px] sm:items-end">
               <div>
                 <label for="asignatura" class="mb-1 block text-sm font-medium text-slate-700">Asignatura</label>
                 <input type="text" id="asignatura" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Ej. Matematicas" required />
@@ -73,11 +73,16 @@
             </div>
 
             <div class="space-y-3">
-              <label class="block text-sm font-medium text-slate-700">Temas</label>
               <div id="temas-container">
-                <div class="tema-row mb-2 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_160px]">
-                  <input type="text" class="tema-input w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Tema" required />
-                  <input type="number" class="duracion-input w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" min="10" value="50" required />
+                <div class="tema-row mb-2 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,320px)_160px] sm:items-end">
+                  <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Temas</label>
+                    <input type="text" class="tema-input w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Tema" required />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Duracion</label>
+                    <input type="number" class="duracion-input w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" min="10" value="50" required />
+                  </div>
                 </div>
               </div>
               <button type="button" id="btn-agregar-tema" class="inline-flex items-center rounded-lg border border-cyan-300 px-3 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">+ Agregar tema</button>
@@ -128,7 +133,10 @@
               <div id="temas-container-mobile">
                 <div class="tema-row mb-2 grid grid-cols-1 gap-2">
                   <input type="text" class="tema-input w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Tema" />
-                  <input type="number" class="duracion-input w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" min="10" value="50" />
+                  <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700">Duracion</label>
+                    <input type="number" class="duracion-input w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" min="10" value="50" />
+                  </div>
                 </div>
               </div>
               <button type="button" id="btn-agregar-tema-mobile" class="inline-flex items-center rounded-lg border border-cyan-300 px-3 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">+ Agregar tema</button>
