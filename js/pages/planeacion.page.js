@@ -38,12 +38,21 @@ async function generarPlaneacion() {
     }
   }
 
-  const loader = document.getElementById("ia-loader");
-  if (loader) loader.style.display = "block";
+  if (typeof iniciarProgresoPlaneaciones === "function") {
+    iniciarProgresoPlaneaciones(temas);
+  }
 
   try {
-    const data = await generarPlaneacionApi(estadoPlaneacion);
+    const data = await generarPlaneacionApiConProgreso(estadoPlaneacion, (evt) => {
+      if (typeof actualizarProgresoDesdeEvento === "function") {
+        actualizarProgresoDesdeEvento(evt);
+      }
+    });
     if (!data) return;
+
+    if (typeof completarProgresoPlaneaciones === "function") {
+      completarProgresoPlaneaciones(data);
+    }
 
     mostrarResultadoBatch(data);
     if (typeof bloquearFormulario === "function") {
@@ -53,7 +62,9 @@ async function generarPlaneacion() {
     console.error("Error al generar:", error);
     alert("Error al generar la planeacion con IA.");
   } finally {
-    if (loader) loader.style.display = "none";
+    if (typeof ocultarProgresoPlaneaciones === "function") {
+      ocultarProgresoPlaneaciones();
+    }
   }
 }
 
