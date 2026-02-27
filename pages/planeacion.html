@@ -149,9 +149,12 @@
       </div>
     </section>
 
-    <div id="ia-loader" class="rounded-2xl border border-cyan-100 bg-cyan-50 p-6 text-center" style="display:none;">
-      <div class="mx-auto h-10 w-10 rounded-full border-4 border-cyan-200 border-t-cyan-700 animate-spin"></div>
-      <p class="mt-3 text-sm font-semibold text-cyan-800">Generando planeacion con IA...</p>
+    <div id="ia-loader" class="rounded-2xl border border-cyan-100 bg-cyan-50 p-6" style="display:none;">
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-semibold text-cyan-800">Generando planeaciones con IA...</p>
+        <p id="ia-progress-counter" class="text-xs font-medium text-cyan-700">0/0 completadas</p>
+      </div>
+      <div id="ia-progress-list" class="mt-4 space-y-2"></div>
     </div>
 
     <div id="resultado" class="space-y-4"></div>
