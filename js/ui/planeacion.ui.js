@@ -14,7 +14,8 @@ function bloquearFormulario() {
 
 const progresoEstado = {
   total: 0,
-  completadas: 0
+  completadas: 0,
+  contexto: null
 };
 
 function renderItemProgreso(item) {
@@ -49,11 +50,29 @@ function actualizarResumenProgreso() {
   counter.textContent = `${progresoEstado.completadas}/${progresoEstado.total} completadas`;
 }
 
-function iniciarProgresoPlaneaciones(temas) {
+function renderResumenContexto() {
+  const summary = document.getElementById("ia-progress-summary");
+  const ctx = progresoEstado.contexto;
+  if (!summary || !ctx) return;
+
+  summary.innerHTML = `
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Generacion en curso</p>
+        <p class="text-sm font-semibold text-slate-900">${escapeHtml(ctx.materia || "")} | ${escapeHtml(ctx.nivel || "")} | Unidad ${escapeHtml(String(ctx.unidad || ""))}</p>
+      </div>
+      <span class="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">${ctx.total} planeacion(es)</span>
+    </div>
+  `;
+}
+
+function iniciarProgresoPlaneaciones(contexto) {
+  const temas = Array.isArray(contexto?.temas) ? contexto.temas : [];
   const loader = document.getElementById("ia-loader");
   const list = document.getElementById("ia-progress-list");
   const counter = document.getElementById("ia-progress-counter");
-  if (!loader || !list || !counter) return;
+  const final = document.getElementById("ia-progress-final");
+  if (!loader || !list || !counter || !final) return;
 
   const items = temas.map((tema, idx) => ({
     index: idx + 1,
@@ -64,10 +83,22 @@ function iniciarProgresoPlaneaciones(temas) {
 
   progresoEstado.total = items.length;
   progresoEstado.completadas = 0;
+  progresoEstado.contexto = {
+    materia: contexto?.materia || "",
+    nivel: contexto?.nivel || "",
+    unidad: contexto?.unidad || "",
+    total: items.length
+  };
 
   list.innerHTML = items.map(renderItemProgreso).join("");
+  final.innerHTML = "";
+  renderResumenContexto();
   actualizarResumenProgreso();
   loader.style.display = "block";
+
+  requestAnimationFrame(() => {
+    loader.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 function actualizarItemProgreso(index, status, message = "") {
@@ -134,14 +165,21 @@ function completarProgresoPlaneaciones(data) {
   actualizarResumenProgreso();
 }
 
-function ocultarProgresoPlaneaciones() {
-  const loader = document.getElementById("ia-loader");
-  if (loader) loader.style.display = "none";
+function mostrarErrorProgreso(mensaje) {
+  const final = document.getElementById("ia-progress-final");
+  if (!final) return;
+
+  final.innerHTML = `
+    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      ${escapeHtml(mensaje || "Ocurrio un error durante la generacion.")}
+    </div>
+  `;
 }
 
 function mostrarResultadoBatch(data) {
   const resultado = document.getElementById("resultado");
-  if (!resultado) return;
+  const final = document.getElementById("ia-progress-final");
+  if (!final) return;
 
   const { batch_id, total, planeaciones } = data;
 
@@ -149,29 +187,14 @@ function mostrarResultadoBatch(data) {
   const nivel = planeaciones[0]?.nivel || "";
   const unidad = planeaciones[0]?.unidad || "";
 
-  const temasHtml = planeaciones
-    .map((p) => `<li class="text-sm text-slate-700">${escapeHtml(p.tema || "")}</li>`)
-    .join("");
+  final.innerHTML = `
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+      <p class="text-sm font-semibold text-emerald-800">Generacion finalizada correctamente.</p>
+      <p class="mt-1 text-sm text-slate-700">${total} planeacion(es) creadas para <span class="font-semibold">${escapeHtml(materia)}</span> | ${escapeHtml(nivel)} | Unidad ${escapeHtml(String(unidad))}.</p>
 
-  resultado.innerHTML = `
-    <div class="result-card">
-      <h5 class="text-base font-semibold text-emerald-800 mb-3">Se generaron ${total} planeaciones correctamente</h5>
-
-      <div class="result-subcard mb-3 text-center">
-        <strong class="text-slate-900">${escapeHtml(materia)}</strong> | ${escapeHtml(nivel)} | Unidad ${escapeHtml(String(unidad))}
-        <div class="mt-3">
-          <a href="batch.html?batch_id=${batch_id}" class="inline-flex items-center rounded-lg border border-emerald-300 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">
-            Ver lote
-          </a>
-        </div>
-      </div>
-
-      <p class="text-sm font-semibold text-slate-800 mb-1">Temas incluidos:</p>
-      <ul class="list-disc pl-5 space-y-1 mb-4">${temasHtml}</ul>
-
-      <div class="result-actions">
-        <a href="dashboard.html" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Volver al Dashboard
+      <div class="mt-3 flex flex-wrap gap-2">
+        <a href="batch.html?batch_id=${batch_id}" class="inline-flex items-center rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+          Ver lista de planeaciones
         </a>
         <button class="inline-flex items-center rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800" onclick="resetearFormulario()">
           Nueva planeacion
@@ -179,6 +202,15 @@ function mostrarResultadoBatch(data) {
       </div>
     </div>
   `;
+
+  if (resultado) {
+    resultado.innerHTML = "";
+  }
+
+  requestAnimationFrame(() => {
+    const target = final.firstElementChild || final;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
 }
 
 function renderTemas(temas) {
@@ -210,7 +242,7 @@ window.bloquearFormulario = bloquearFormulario;
 window.iniciarProgresoPlaneaciones = iniciarProgresoPlaneaciones;
 window.actualizarProgresoDesdeEvento = actualizarProgresoDesdeEvento;
 window.completarProgresoPlaneaciones = completarProgresoPlaneaciones;
-window.ocultarProgresoPlaneaciones = ocultarProgresoPlaneaciones;
+window.mostrarErrorProgreso = mostrarErrorProgreso;
 window.mostrarResultadoBatch = mostrarResultadoBatch;
 window.renderTemas = renderTemas;
 window.bloquearCamposGlobales = bloquearCamposGlobales;

@@ -39,7 +39,7 @@ async function generarPlaneacion() {
   }
 
   if (typeof iniciarProgresoPlaneaciones === "function") {
-    iniciarProgresoPlaneaciones(temas);
+    iniciarProgresoPlaneaciones({ materia, nivel, unidad, temas });
   }
 
   try {
@@ -60,11 +60,10 @@ async function generarPlaneacion() {
     }
   } catch (error) {
     console.error("Error al generar:", error);
-    alert("Error al generar la planeacion con IA.");
-  } finally {
-    if (typeof ocultarProgresoPlaneaciones === "function") {
-      ocultarProgresoPlaneaciones();
+    if (typeof mostrarErrorProgreso === "function") {
+      mostrarErrorProgreso("No se pudo completar la generacion de planeaciones.");
     }
+    alert("Error al generar la planeacion con IA.");
   }
 }
 
