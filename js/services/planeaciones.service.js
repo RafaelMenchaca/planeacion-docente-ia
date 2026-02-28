@@ -47,6 +47,22 @@ async function obtenerPlaneacionDetalle(id) {
   return apiPlaneacionesGet(id, session.access_token);
 }
 
+function normalizarPlaneacionTemaPayload(payload) {
+  if (!payload) return null;
+  if (Array.isArray(payload)) return payload[0] || null;
+  if (Array.isArray(payload.items)) return payload.items[0] || null;
+  if (payload.planeacion) return payload.planeacion;
+  return payload;
+}
+
+async function obtenerPlaneacionPorTema(temaId) {
+  const session = await window.requireSession();
+  if (!session) return null;
+
+  const payload = await apiPlaneacionesByTema(temaId, session.access_token);
+  return normalizarPlaneacionTemaPayload(payload);
+}
+
 async function actualizarPlaneacion(id, payload) {
   const session = await window.requireSession();
   if (!session) return null;
@@ -65,5 +81,6 @@ window.generarPlaneacionApi = generarPlaneacionApi;
 window.generarPlaneacionApiConProgreso = generarPlaneacionApiConProgreso;
 window.obtenerBatchPlaneaciones = obtenerBatchPlaneaciones;
 window.obtenerPlaneacionDetalle = obtenerPlaneacionDetalle;
+window.obtenerPlaneacionPorTema = obtenerPlaneacionPorTema;
 window.actualizarPlaneacion = actualizarPlaneacion;
 window.exportarPlaneacionExcel = exportarPlaneacionExcel;
