@@ -120,6 +120,38 @@ async function apiPlaneacionesGet(id, accessToken) {
   return res.json();
 }
 
+async function apiPlaneacionesByTema(temaId, accessToken) {
+  const primary = await fetch(`${API_BASE_URL}/api/temas/${encodeURIComponent(temaId)}/planeacion`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  if (primary.status === 404) {
+    const fallback = await fetch(`${API_BASE_URL}/api/planeaciones?tema_id=${encodeURIComponent(temaId)}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+
+    if (fallback.status === 404) {
+      return null;
+    }
+
+    if (!fallback.ok) {
+      throw new Error("Error al obtener la planeacion por tema");
+    }
+
+    return fallback.json();
+  }
+
+  if (!primary.ok) {
+    throw new Error("Error al obtener la planeacion por tema");
+  }
+
+  return primary.json();
+}
+
 async function apiPlaneacionesUpdate(id, payload, accessToken) {
   const res = await fetch(`${API_BASE_URL}/api/planeaciones/${id}`, {
     method: "PUT",
@@ -149,5 +181,6 @@ window.apiPlaneacionesGenerate = apiPlaneacionesGenerate;
 window.apiPlaneacionesGenerateWithProgress = apiPlaneacionesGenerateWithProgress;
 window.apiPlaneacionesBatch = apiPlaneacionesBatch;
 window.apiPlaneacionesGet = apiPlaneacionesGet;
+window.apiPlaneacionesByTema = apiPlaneacionesByTema;
 window.apiPlaneacionesUpdate = apiPlaneacionesUpdate;
 window.apiPlaneacionesExportExcel = apiPlaneacionesExportExcel;

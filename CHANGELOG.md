@@ -2,6 +2,24 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
+## [v1.9-frontend-hierarchy-explorer] - 2026-02-28
+
+### 🚀 Novedades
+- Dashboard convertido en explorador jerárquico multi-plantel:
+  Planteles → Grados → Materias → Unidades → Temas.
+- Vista responsive: árbol colapsable en desktop y navegación tipo carpetas en móvil.
+- Vista de Unidad con flujo completo:
+  agregar temas (staging) + botón separado “Generar planeaciones (N)” con estados por tema.
+- Acceso directo a detalle de planeación usando relación Tema → Planeación (`tema_id`).
+
+### 🧭 UX
+- Onboarding con estados vacíos (sin plantel por defecto): CTA para crear Plantel y continuar jerarquía.
+- Breadcrumbs para contexto y navegación rápida.
+
+### 🧩 Compatibilidad
+- Se mantiene `detalle.html` como editor principal; navegación nueva inicia desde el dashboard jerárquico.
+
+
 ## [v1.8-Frontend-Refactor-Static-Hosting] - 2026-02-01
 
 ### 🚀 Novedades principales

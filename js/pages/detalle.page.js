@@ -18,11 +18,42 @@ function mostrarErrorDetalle(mensaje) {
   }
 }
 
-function initDetallePage() {
+async function resolverPlaneacionIdDesdeParams() {
   const params = new URLSearchParams(window.location.search);
-  const id = parseInt(params.get("id"), 10);
+  const rawId = params.get("id");
+  const temaId = params.get("tema_id");
 
-  if (Number.isNaN(id)) {
+  if (rawId) {
+    const id = parseInt(rawId, 10);
+    if (!Number.isNaN(id)) {
+      return id;
+    }
+  }
+
+  if (!temaId) {
+    return null;
+  }
+
+  const planeacion = await obtenerPlaneacionPorTema(temaId);
+  if (!planeacion || Number.isNaN(Number(planeacion.id))) {
+    return null;
+  }
+
+  return Number(planeacion.id);
+}
+
+async function initDetallePage() {
+  let id = null;
+
+  try {
+    id = await resolverPlaneacionIdDesdeParams();
+  } catch (error) {
+    console.error("Error resolviendo identificador de planeacion:", error);
+    mostrarErrorDetalle("No se pudo resolver la planeacion seleccionada.");
+    return;
+  }
+
+  if (id === null) {
     mostrarErrorDetalle("ID invalido. Regresa al dashboard y abre una planeacion valida.");
     return;
   }

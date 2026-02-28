@@ -1,51 +1,93 @@
-<div class="dashboard-shell min-h-screen bg-slate-100 text-slate-900">
+﻿<div class="explorer-shell min-h-screen bg-slate-100 text-slate-900">
   <div class="min-h-screen flex flex-col">
     <div id="navbar-placeholder" class="dashboard-header border-b border-slate-200 bg-white"></div>
 
     <main class="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section class="dashboard-card overflow-hidden rounded-3xl border border-cyan-100 bg-gradient-to-r from-white via-cyan-50 to-white shadow-xl">
-        <div class="px-5 py-5 sm:px-6">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 class="text-lg sm:text-xl font-semibold text-slate-900">Centro de control</h2>
-              <p class="mt-1 text-sm text-slate-600">Selecciona una agrupacion para abrir sus planeaciones sin cambiar de pagina.</p>
-            </div>
-            <a href="planeacion.html" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-800">
-              + Crear nueva planeacion
-            </a>
+      <section class="explorer-hero overflow-hidden rounded-3xl border border-cyan-100 bg-gradient-to-r from-white via-cyan-50 to-white p-5 shadow-xl sm:p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900 sm:text-xl">Explorador de planeaciones</h2>
+            <p class="mt-1 text-sm text-slate-600">Organiza tu contenido por plantel, grado, materia y unidad. Cada tema genera una planeacion.</p>
           </div>
+          <button id="btn-hero-action" type="button" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-800">
+            + Crear plantel
+          </button>
         </div>
       </section>
 
-      <section class="dashboard-card overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-        <div class="p-4 sm:p-5">
-          <div class="grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 lg:grid-cols-12">
-            <aside id="dashboard-sidebar-slot" class="border-b border-slate-200 bg-slate-50/70 lg:col-span-4 lg:h-[640px] lg:border-b-0 lg:border-r xl:col-span-3"></aside>
+      <section id="explorer-onboarding" class="hidden rounded-3xl border border-cyan-100 bg-white p-8 text-center shadow-xl">
+        <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Primer paso</p>
+        <h3 class="mt-2 text-2xl font-semibold text-slate-900">Crea tu primer plantel</h3>
+        <p class="mx-auto mt-3 max-w-2xl text-sm text-slate-600">Aun no tienes planteles registrados. Crea uno para empezar tu estructura y generar planeaciones por tema.</p>
+        <p id="explorer-onboarding-error" class="hidden mx-auto mt-3 max-w-2xl rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"></p>
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <button id="btn-onboarding-create" type="button" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-800">
+            + Crear plantel
+          </button>
+          <button id="btn-onboarding-retry" type="button" class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Reintentar
+          </button>
+        </div>
+      </section>
 
-            <section class="lg:col-span-8 xl:col-span-9">
-              <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p class="text-xs uppercase tracking-wider text-slate-500">Seleccion actual</p>
-                    <h3 id="selected-title" class="text-lg font-semibold text-slate-900">Selecciona una planeacion</h3>
-                  </div>
-                  <div id="selected-meta" class="text-sm text-slate-600"></div>
-                </div>
-              </div>
+      <section id="explorer-workspace" class="explorer-card overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
+        <div class="grid grid-cols-1 overflow-hidden lg:grid-cols-12">
+          <aside id="dashboard-sidebar-slot" class="hidden border-r border-slate-200 bg-slate-50/60 lg:col-span-4 lg:block xl:col-span-3"></aside>
 
-              <div class="border-t border-slate-100">
-                <div class="border-b border-slate-100 px-4 py-3 sm:px-5">
-                  <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Lista de planeaciones</h4>
+          <section class="lg:col-span-8 xl:col-span-9">
+            <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
+              <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-slate-500">Ruta actual</p>
+                  <div id="explorer-breadcrumbs" class="mt-1 flex flex-wrap items-center gap-2"></div>
                 </div>
-                <div id="planeaciones-panel" class="p-4 sm:p-5">
-                  <p class="text-sm text-slate-500">Selecciona una opcion de la barra lateral para ver sus planeaciones.</p>
-                </div>
+                <div id="context-action-slot" class="flex w-full flex-wrap gap-2 md:w-auto md:justify-end"></div>
               </div>
-            </section>
-          </div>
+              <p id="explorer-subtitle" class="mt-3 text-sm text-slate-600">Selecciona un nivel para continuar.</p>
+            </div>
+
+            <div id="explorer-global-error" class="hidden border-b border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 sm:px-5"></div>
+
+            <div id="explorer-content" class="explorer-content-area p-4 sm:p-5">
+              <p class="text-sm text-slate-500">Cargando explorador...</p>
+            </div>
+          </section>
         </div>
       </section>
     </main>
+
     <div id="footer-placeholder" class="mt-auto"></div>
+  </div>
+
+  <div id="entity-modal" class="hidden fixed inset-0 z-50">
+    <button type="button" data-modal-close class="absolute inset-0 bg-slate-900/50"></button>
+
+    <div class="relative mx-auto mt-24 w-full max-w-md px-4">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
+        <div class="flex items-start justify-between gap-3">
+          <h3 id="entity-modal-title" class="text-lg font-semibold text-slate-900">Nuevo elemento</h3>
+          <button type="button" data-modal-close class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50">x</button>
+        </div>
+
+        <form id="entity-modal-form" class="mt-4 space-y-4">
+          <div>
+            <label for="entity-name-input" class="mb-1 block text-sm font-medium text-slate-700">Nombre</label>
+            <input id="entity-name-input" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" required />
+          </div>
+
+          <div id="entity-order-row" class="hidden">
+            <label for="entity-order-input" class="mb-1 block text-sm font-medium text-slate-700">Orden</label>
+            <input id="entity-order-input" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" />
+          </div>
+
+          <div id="entity-modal-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"></div>
+
+          <div class="flex flex-wrap justify-end gap-2 pt-1">
+            <button type="button" data-modal-close class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+            <button id="entity-modal-submit" type="submit" class="inline-flex items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
