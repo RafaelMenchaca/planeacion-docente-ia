@@ -352,24 +352,23 @@ function renderSubtitle() {
   subtitle.textContent = `Unidad activa: ${unidad?.nombre || "-"}`;
 }
 
-function renderContextAction() {
-  const slot = document.getElementById("context-action-slot");
-  if (!slot) return;
+function renderLevelSectionHeader(title, description, level = explorerState.current.level) {
+  const config = heroActionsByLevel[level] || heroActionsByLevel.root;
 
-  const map = {
-    root: { label: "+ Nuevo Plantel", action: "create-plantel" },
-    plantel: { label: "+ Nuevo Grado", action: "create-grado" },
-    grado: { label: "+ Nueva Materia", action: "create-materia" },
-    materia: { label: "+ Nueva Unidad", action: "create-unidad" },
-    unidad: { label: "+ Agregar Tema", action: "focus-staging" }
-  };
-
-  const config = map[explorerState.current.level] || map.root;
-
-  slot.innerHTML = `
-    <button type="button" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-context-action="${config.action}">
-      ${config.label}
-    </button>
+  return `
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h3 class="text-base font-semibold text-slate-900">${escapeHtml(title)}</h3>
+        <p class="mt-1 text-sm text-slate-600">${escapeHtml(description)}</p>
+      </div>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        data-content-action="${config.action}"
+      >
+        ${escapeHtml(config.label)}
+      </button>
+    </div>
   `;
 }
 
@@ -525,10 +524,7 @@ function renderRootLevel() {
 
   return `
     <div class="space-y-4">
-      <div>
-        <h3 class="text-base font-semibold text-slate-900">Planteles</h3>
-        <p class="mt-1 text-sm text-slate-600">Selecciona un plantel para abrir su estructura academica.</p>
-      </div>
+      ${renderLevelSectionHeader("Planteles", "Selecciona un plantel para abrir su estructura academica.", "root")}
       <div class="explorer-list-grid">
         ${explorerState.planteles
           .map((plantel) => {
@@ -566,10 +562,7 @@ function renderPlantelLevel() {
 
   return `
     <div class="space-y-4">
-      <div>
-        <h3 class="text-base font-semibold text-slate-900">Grados en ${escapeHtml(plantel.nombre)}</h3>
-        <p class="mt-1 text-sm text-slate-600">Entra a un grado para administrar materias.</p>
-      </div>
+      ${renderLevelSectionHeader(`Grados en ${plantel.nombre || "plantel"}`, "Entra a un grado para administrar materias.", "plantel")}
       <div class="explorer-list-grid">
         ${grados
           .map((grado) => {
@@ -608,10 +601,7 @@ function renderGradoLevel() {
 
   return `
     <div class="space-y-4">
-      <div>
-        <h3 class="text-base font-semibold text-slate-900">Materias en ${escapeHtml(grado.nombre)}</h3>
-        <p class="mt-1 text-sm text-slate-600">Entra a una materia para administrar unidades.</p>
-      </div>
+      ${renderLevelSectionHeader(`Materias en ${grado.nombre || "grado"}`, "Entra a una materia para administrar unidades.", "grado")}
       <div class="explorer-list-grid">
         ${materias
           .map((materia) => {
@@ -651,10 +641,7 @@ function renderMateriaLevel() {
 
   return `
     <div class="space-y-4">
-      <div>
-        <h3 class="text-base font-semibold text-slate-900">Unidades en ${escapeHtml(materia.nombre)}</h3>
-        <p class="mt-1 text-sm text-slate-600">Selecciona una unidad para ver temas y generar planeaciones.</p>
-      </div>
+      ${renderLevelSectionHeader(`Unidades en ${materia.nombre || "materia"}`, "Selecciona una unidad para ver temas y generar planeaciones.", "materia")}
       <div class="explorer-list-grid">
         ${unidades
           .map((unidad) => {
@@ -778,6 +765,7 @@ function renderUnidadLevel() {
 
   return `
     <div class="space-y-4">
+      ${renderLevelSectionHeader(`Temas en ${unidad.nombre || "unidad"}`, "Agrega temas pendientes y luego genera planeaciones.", "unidad")}
       <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <section class="rounded-2xl border border-slate-200 bg-white p-4">
           <div class="mb-3 flex items-center justify-between gap-2">
@@ -838,7 +826,6 @@ function renderAll() {
   renderHeroAction();
   renderBreadcrumbs();
   renderSubtitle();
-  renderContextAction();
   renderGlobalError();
   renderSidebarTree();
   renderExplorerContent();
@@ -1349,12 +1336,6 @@ function bindDashboardEvents() {
 
   document.getElementById("explorer-breadcrumbs")?.addEventListener("click", (event) => {
     handleBreadcrumbClick(event).catch((error) => console.error("Error en breadcrumbs:", error));
-  });
-
-  document.getElementById("context-action-slot")?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-context-action]");
-    if (!button) return;
-    handleCreateAction(button.getAttribute("data-context-action")).catch((error) => console.error("Error en accion contextual:", error));
   });
 
   document.getElementById("btn-hero-action")?.addEventListener("click", (event) => {
