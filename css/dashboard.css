@@ -146,7 +146,7 @@
 }
 
 .explorer-content-area {
-  min-height: 520px;
+  min-height: 600px;
 }
 
 .explorer-empty {
@@ -241,7 +241,7 @@
 
 @media (max-width: 767px) {
   .explorer-content-area {
-    min-height: 420px;
+    min-height: 470px;
   }
 
   .explorer-topic-row {

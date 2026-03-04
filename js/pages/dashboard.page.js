@@ -13,6 +13,11 @@
   current: { level: "root", plantelId: null, gradoId: null, materiaId: null, unidadId: null },
   stagingTemas: [],
   progress: { total: 0, completed: 0, items: [], finalMessage: "", finalTone: "info" },
+  quickCreate: {
+    open: false,
+    temas: [],
+    requestVersion: { grado: 0, materia: 0, unidad: 0 }
+  },
   searchQuery: "",
   generating: false,
   modal: { type: null, submitting: false }
@@ -27,6 +32,7 @@ const heroActionsByLevel = {
 };
 
 let isDashboardBound = false;
+const QUICK_CREATE_NEW_VALUE = "__new__";
 
 async function injectComponent(targetId, path) {
   const target = document.getElementById(targetId);
@@ -283,12 +289,10 @@ function renderWorkspaceVisibility() {
 }
 
 function renderHeroAction() {
-  const button = document.getElementById("btn-hero-action");
+  const button = document.getElementById("btn-hero-quick-create");
   if (!button) return;
 
-  const config = heroActionsByLevel[explorerState.current.level] || heroActionsByLevel.root;
-  button.textContent = config.label;
-  button.setAttribute("data-hero-action", config.action);
+  button.textContent = "+ Crear nueva planeacion";
 }
 
 function renderBreadcrumbs() {
@@ -384,6 +388,351 @@ function renderGlobalError() {
 
   box.classList.remove("hidden");
   box.textContent = `Error al cargar planteles: ${explorerState.errors.root}`;
+}
+
+function showQuickCreateError(message) {
+  const errorBox = document.getElementById("quick-create-error");
+  if (!errorBox) return;
+
+  if (!message) {
+    errorBox.classList.add("hidden");
+    errorBox.textContent = "";
+    return;
+  }
+
+  errorBox.classList.remove("hidden");
+  errorBox.textContent = message;
+}
+
+function setQuickPanelVisibility(isOpen) {
+  const panel = document.getElementById("quick-create-panel");
+  if (!panel) return;
+  panel.classList.toggle("hidden", !isOpen);
+}
+
+function setQuickSelectOptions(selectId, items, config = {}) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const {
+    placeholder = "Selecciona una opcion",
+    createLabel = "Crear nuevo",
+    selectedValue = select.value || ""
+  } = config;
+
+  const baseOptions = [];
+  if (placeholder) {
+    baseOptions.push(`<option value="">${escapeHtml(placeholder)}</option>`);
+  }
+
+  const entityOptions = (items || [])
+    .filter((item) => item?.id)
+    .map((item) => `<option value="${escapeHtml(String(item.id))}">${escapeHtml(item.nombre || "Sin nombre")}</option>`);
+
+  baseOptions.push(...entityOptions);
+  baseOptions.push(`<option value="${QUICK_CREATE_NEW_VALUE}">${escapeHtml(createLabel)}</option>`);
+
+  select.innerHTML = baseOptions.join("");
+
+  const validValues = new Set(Array.from(select.options).map((option) => option.value));
+  select.value = validValues.has(selectedValue) ? selectedValue : (validValues.has("") ? "" : QUICK_CREATE_NEW_VALUE);
+}
+
+function getQuickSelectValue(selectId) {
+  const select = document.getElementById(selectId);
+  return select?.value || "";
+}
+
+function getQuickExistingId(selectId) {
+  const value = getQuickSelectValue(selectId);
+  if (!value || value === QUICK_CREATE_NEW_VALUE) return null;
+  return value;
+}
+
+function resetQuickInput(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) input.value = "";
+}
+
+function resetQuickSelect(selectId) {
+  const select = document.getElementById(selectId);
+  if (select) select.value = "";
+}
+
+function toggleQuickRowVisibility(rowId, visible) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  row.classList.toggle("hidden", !visible);
+}
+
+function toggleQuickInputRows() {
+  const showPlantelNew = getQuickSelectValue("quick-plantel-select") === QUICK_CREATE_NEW_VALUE;
+  toggleQuickRowVisibility("quick-plantel-new", showPlantelNew);
+  if (!showPlantelNew) resetQuickInput("quick-plantel-new");
+
+  const showGradoNew = getQuickSelectValue("quick-grado-select") === QUICK_CREATE_NEW_VALUE;
+  toggleQuickRowVisibility("quick-grado-new-row", showGradoNew);
+  if (!showGradoNew) {
+    resetQuickInput("quick-grado-new");
+    resetQuickInput("quick-grado-order");
+  }
+
+  const showMateriaNew = getQuickSelectValue("quick-materia-select") === QUICK_CREATE_NEW_VALUE;
+  toggleQuickRowVisibility("quick-materia-new", showMateriaNew);
+  if (!showMateriaNew) resetQuickInput("quick-materia-new");
+
+  const showUnidadNew = getQuickSelectValue("quick-unidad-select") === QUICK_CREATE_NEW_VALUE;
+  toggleQuickRowVisibility("quick-unidad-new-row", showUnidadNew);
+  if (!showUnidadNew) {
+    resetQuickInput("quick-unidad-new");
+    resetQuickInput("quick-unidad-order");
+  }
+}
+
+function quickListHasId(items, id) {
+  if (!id || !Array.isArray(items)) return false;
+  return items.some((item) => item?.id === id);
+}
+
+function renderQuickTemasList() {
+  const list = document.getElementById("quick-temas-list");
+  if (!list) return;
+
+  if (explorerState.quickCreate.temas.length === 0) {
+    list.innerHTML = '<p class="text-sm text-slate-500">No hay temas agregados aun.</p>';
+    return;
+  }
+
+  list.innerHTML = explorerState.quickCreate.temas
+    .map((tema) => `
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+        <div>
+          <p class="text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
+          <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+        </div>
+        <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-quick-remove-tema="${tema.localId}">
+          Quitar
+        </button>
+      </div>
+    `)
+    .join("");
+}
+
+function clearQuickChildSuggestions(level) {
+  if (level === "plantel") {
+    explorerState.quickCreate.requestVersion.grado += 1;
+    explorerState.quickCreate.requestVersion.materia += 1;
+    explorerState.quickCreate.requestVersion.unidad += 1;
+
+    setQuickSelectOptions("quick-grado-select", [], {
+      placeholder: "Selecciona primero un plantel",
+      createLabel: "Crear nuevo grado",
+      selectedValue: ""
+    });
+    setQuickSelectOptions("quick-materia-select", [], {
+      placeholder: "Selecciona primero un grado",
+      createLabel: "Crear nueva materia",
+      selectedValue: ""
+    });
+    setQuickSelectOptions("quick-unidad-select", [], {
+      placeholder: "Selecciona primero una materia",
+      createLabel: "Crear nueva unidad",
+      selectedValue: ""
+    });
+
+    resetQuickInput("quick-grado-new");
+    resetQuickInput("quick-grado-order");
+    resetQuickInput("quick-materia-new");
+    resetQuickInput("quick-unidad-new");
+    resetQuickInput("quick-unidad-order");
+    toggleQuickInputRows();
+    return;
+  }
+
+  if (level === "grado") {
+    explorerState.quickCreate.requestVersion.materia += 1;
+    explorerState.quickCreate.requestVersion.unidad += 1;
+
+    setQuickSelectOptions("quick-materia-select", [], {
+      placeholder: "Selecciona primero un grado",
+      createLabel: "Crear nueva materia",
+      selectedValue: ""
+    });
+    setQuickSelectOptions("quick-unidad-select", [], {
+      placeholder: "Selecciona primero una materia",
+      createLabel: "Crear nueva unidad",
+      selectedValue: ""
+    });
+
+    resetQuickInput("quick-materia-new");
+    resetQuickInput("quick-unidad-new");
+    resetQuickInput("quick-unidad-order");
+    toggleQuickInputRows();
+    return;
+  }
+
+  if (level === "materia") {
+    explorerState.quickCreate.requestVersion.unidad += 1;
+
+    setQuickSelectOptions("quick-unidad-select", [], {
+      placeholder: "Selecciona primero una materia",
+      createLabel: "Crear nueva unidad",
+      selectedValue: ""
+    });
+    resetQuickInput("quick-unidad-new");
+    resetQuickInput("quick-unidad-order");
+    toggleQuickInputRows();
+  }
+}
+
+async function fillQuickGradoOptions(plantelId = getQuickExistingId("quick-plantel-select")) {
+  const requestId = ++explorerState.quickCreate.requestVersion.grado;
+  let grados = [];
+  if (plantelId) {
+    await ensureGrados(plantelId);
+    grados = explorerState.gradosByPlantel[plantelId] || [];
+  }
+  if (requestId !== explorerState.quickCreate.requestVersion.grado) return;
+  setQuickSelectOptions("quick-grado-select", grados, {
+    placeholder: plantelId ? "Selecciona un grado" : "Selecciona primero un plantel",
+    createLabel: "Crear nuevo grado"
+  });
+  toggleQuickInputRows();
+}
+
+async function fillQuickMateriaOptions(gradoId = getQuickExistingId("quick-grado-select")) {
+  const requestId = ++explorerState.quickCreate.requestVersion.materia;
+  let materias = [];
+  if (gradoId) {
+    await ensureMaterias(gradoId);
+    materias = explorerState.materiasByGrado[gradoId] || [];
+  }
+  if (requestId !== explorerState.quickCreate.requestVersion.materia) return;
+  setQuickSelectOptions("quick-materia-select", materias, {
+    placeholder: gradoId ? "Selecciona una materia" : "Selecciona primero un grado",
+    createLabel: "Crear nueva materia"
+  });
+  toggleQuickInputRows();
+}
+
+async function fillQuickUnidadOptions(materiaId = getQuickExistingId("quick-materia-select")) {
+  const requestId = ++explorerState.quickCreate.requestVersion.unidad;
+  let unidades = [];
+  if (materiaId) {
+    await ensureUnidades(materiaId);
+    unidades = explorerState.unidadesByMateria[materiaId] || [];
+  }
+  if (requestId !== explorerState.quickCreate.requestVersion.unidad) return;
+  setQuickSelectOptions("quick-unidad-select", unidades, {
+    placeholder: materiaId ? "Selecciona una unidad" : "Selecciona primero una materia",
+    createLabel: "Crear nueva unidad"
+  });
+  toggleQuickInputRows();
+}
+
+async function initQuickCreateForm() {
+  explorerState.quickCreate.temas = [];
+  explorerState.quickCreate.requestVersion = { grado: 0, materia: 0, unidad: 0 };
+  showQuickCreateError("");
+  setQuickSelectOptions("quick-plantel-select", explorerState.planteles || [], {
+    placeholder: "Selecciona un plantel",
+    createLabel: "Crear nuevo plantel",
+    selectedValue: ""
+  });
+
+  resetQuickSelect("quick-grado-select");
+  resetQuickSelect("quick-materia-select");
+  resetQuickSelect("quick-unidad-select");
+
+  [
+    "quick-plantel-new",
+    "quick-grado-new",
+    "quick-grado-order",
+    "quick-materia-new",
+    "quick-unidad-new",
+    "quick-unidad-order",
+    "quick-tema-title"
+  ].forEach(resetQuickInput);
+
+  clearQuickChildSuggestions("plantel");
+  renderQuickTemasList();
+  toggleQuickInputRows();
+
+  const durationInput = document.getElementById("quick-tema-duration");
+  if (durationInput) durationInput.value = "50";
+}
+
+async function openQuickCreatePanel() {
+  explorerState.quickCreate.open = true;
+  setQuickPanelVisibility(true);
+  await initQuickCreateForm();
+
+  const input = document.getElementById("quick-plantel-select");
+  if (input) input.focus();
+}
+
+function closeQuickCreatePanel() {
+  explorerState.quickCreate.open = false;
+  setQuickPanelVisibility(false);
+  showQuickCreateError("");
+}
+
+function addQuickTemaFromInputs() {
+  const titleInput = document.getElementById("quick-tema-title");
+  const durationInput = document.getElementById("quick-tema-duration");
+  if (!titleInput || !durationInput) return;
+
+  const titulo = titleInput.value.trim();
+  const duracion = Number(durationInput.value);
+
+  if (!titulo || !Number.isFinite(duracion) || duracion < 10) {
+    showQuickCreateError("Agrega un tema valido y una duracion minima de 10 minutos.");
+    return;
+  }
+
+  explorerState.quickCreate.temas.push({
+    localId: `quick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    titulo,
+    duracion
+  });
+
+  titleInput.value = "";
+  durationInput.value = "50";
+  showQuickCreateError("");
+  renderQuickTemasList();
+  titleInput.focus();
+}
+
+function removeQuickTema(localId) {
+  explorerState.quickCreate.temas = explorerState.quickCreate.temas.filter((tema) => tema.localId !== localId);
+  renderQuickTemasList();
+}
+
+function requireQuickText(inputId, label) {
+  const input = document.getElementById(inputId);
+  const value = input?.value?.trim() || "";
+  if (!value) {
+    throw new Error(`Completa el campo: ${label}.`);
+  }
+  return value;
+}
+
+function requireQuickSelectOrNew(selectId, newInputId, label) {
+  const selected = getQuickSelectValue(selectId);
+  if (!selected) {
+    throw new Error(`Selecciona una opcion para ${label}.`);
+  }
+
+  if (selected === QUICK_CREATE_NEW_VALUE) {
+    return { id: null, nombre: requireQuickText(newInputId, label), isNew: true };
+  }
+
+  return { id: selected, nombre: "", isNew: false };
+}
+
+function optionalQuickOrder(inputId) {
+  const raw = Number(document.getElementById(inputId)?.value);
+  return Number.isFinite(raw) && raw > 0 ? raw : undefined;
 }
 
 function renderUnidadNodes(plantelId, gradoId, materiaId) {
@@ -824,6 +1173,7 @@ function renderExplorerContent() {
 function renderAll() {
   renderWorkspaceVisibility();
   renderHeroAction();
+  setQuickPanelVisibility(explorerState.quickCreate.open);
   renderBreadcrumbs();
   renderSubtitle();
   renderGlobalError();
@@ -1083,6 +1433,102 @@ async function generatePlaneacionesFromStaging() {
   }
 }
 
+async function submitQuickCreateForm(event) {
+  event.preventDefault();
+
+  const submitButton = document.getElementById("quick-create-submit");
+  if (submitButton) submitButton.setAttribute("disabled", "true");
+
+  try {
+    if (explorerState.quickCreate.temas.length === 0) {
+      throw new Error("Agrega al menos un tema antes de crear la planeacion.");
+    }
+
+    showQuickCreateError("");
+
+    const plantelSelection = requireQuickSelectOrNew("quick-plantel-select", "quick-plantel-new", "Plantel");
+    let plantelId = plantelSelection.id;
+    if (plantelId && !quickListHasId(explorerState.planteles, plantelId)) {
+      throw new Error("El plantel seleccionado no es valido.");
+    }
+    if (!plantelId) {
+      const created = await crearPlantel({ nombre: plantelSelection.nombre });
+      plantelId = created?.id;
+      if (!plantelId) throw new Error("No se pudo crear el plantel.");
+      await loadPlanteles();
+    }
+
+    await ensureGrados(plantelId);
+    const gradosDisponibles = explorerState.gradosByPlantel[plantelId] || [];
+    const gradoSelection = requireQuickSelectOrNew("quick-grado-select", "quick-grado-new", "Grado");
+
+    let gradoId = gradoSelection.id;
+    if (gradoId && !quickListHasId(gradosDisponibles, gradoId)) {
+      throw new Error("El grado seleccionado no pertenece al plantel elegido.");
+    }
+    if (!gradoId) {
+      const payload = { nombre: gradoSelection.nombre, plantel_id: plantelId };
+      const orden = optionalQuickOrder("quick-grado-order");
+      if (orden) payload.orden = orden;
+
+      const created = await crearGrado(payload);
+      gradoId = created?.id;
+      if (!gradoId) throw new Error("No se pudo crear el grado.");
+      await ensureGrados(plantelId, { force: true });
+    }
+
+    await ensureMaterias(gradoId);
+    const materiasDisponibles = explorerState.materiasByGrado[gradoId] || [];
+    const materiaSelection = requireQuickSelectOrNew("quick-materia-select", "quick-materia-new", "Materia");
+
+    let materiaId = materiaSelection.id;
+    if (materiaId && !quickListHasId(materiasDisponibles, materiaId)) {
+      throw new Error("La materia seleccionada no pertenece al grado elegido.");
+    }
+    if (!materiaId) {
+      const created = await crearMateria({ nombre: materiaSelection.nombre, grado_id: gradoId });
+      materiaId = created?.id;
+      if (!materiaId) throw new Error("No se pudo crear la materia.");
+      await ensureMaterias(gradoId, { force: true });
+    }
+
+    await ensureUnidades(materiaId);
+    const unidadesDisponibles = explorerState.unidadesByMateria[materiaId] || [];
+    const unidadSelection = requireQuickSelectOrNew("quick-unidad-select", "quick-unidad-new", "Unidad");
+
+    let unidadId = unidadSelection.id;
+    if (unidadId && !quickListHasId(unidadesDisponibles, unidadId)) {
+      throw new Error("La unidad seleccionada no pertenece a la materia elegida.");
+    }
+    if (!unidadId) {
+      const payload = { nombre: unidadSelection.nombre, materia_id: materiaId };
+      const orden = optionalQuickOrder("quick-unidad-order");
+      if (orden) payload.orden = orden;
+
+      const created = await crearUnidad(payload);
+      unidadId = created?.id;
+      if (!unidadId) throw new Error("No se pudo crear la unidad.");
+      await ensureUnidades(materiaId, { force: true });
+    }
+
+    await selectUnidad(plantelId, gradoId, materiaId, unidadId);
+
+    explorerState.stagingTemas = explorerState.quickCreate.temas.map((tema) => ({
+      localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      titulo: tema.titulo,
+      duracion: tema.duracion
+    }));
+
+    explorerState.quickCreate.temas = [];
+    closeQuickCreatePanel();
+    await generatePlaneacionesFromStaging();
+  } catch (error) {
+    showQuickCreateError(formatFetchError(error, "No se pudo completar la creacion rapida."));
+  } finally {
+    if (submitButton) submitButton.removeAttribute("disabled");
+  }
+}
+
 function openModalError(message) {
   const errorEl = document.getElementById("entity-modal-error");
   if (!errorEl) return;
@@ -1338,9 +1784,80 @@ function bindDashboardEvents() {
     handleBreadcrumbClick(event).catch((error) => console.error("Error en breadcrumbs:", error));
   });
 
-  document.getElementById("btn-hero-action")?.addEventListener("click", (event) => {
-    const action = event.currentTarget.getAttribute("data-hero-action");
-    handleCreateAction(action).catch((error) => console.error("Error en accion principal:", error));
+  document.getElementById("btn-hero-quick-create")?.addEventListener("click", () => {
+    openQuickCreatePanel().catch((error) => console.error("Error abriendo creacion rapida:", error));
+  });
+
+  document.getElementById("quick-create-close")?.addEventListener("click", () => {
+    closeQuickCreatePanel();
+  });
+
+  const onQuickPlantelChange = async () => {
+    clearQuickChildSuggestions("plantel");
+    toggleQuickInputRows();
+
+    const plantelId = getQuickExistingId("quick-plantel-select");
+    if (!plantelId) return;
+    await fillQuickGradoOptions(plantelId);
+  };
+
+  const onQuickGradoChange = async () => {
+    clearQuickChildSuggestions("grado");
+    toggleQuickInputRows();
+
+    const gradoId = getQuickExistingId("quick-grado-select");
+    if (!gradoId) return;
+    await fillQuickMateriaOptions(gradoId);
+  };
+
+  const onQuickMateriaChange = async () => {
+    clearQuickChildSuggestions("materia");
+    toggleQuickInputRows();
+
+    const materiaId = getQuickExistingId("quick-materia-select");
+    if (!materiaId) return;
+    await fillQuickUnidadOptions(materiaId);
+  };
+
+  document.getElementById("quick-plantel-select")?.addEventListener("change", () => {
+    onQuickPlantelChange().catch((error) => console.error("Error actualizando grados en creacion rapida:", error));
+  });
+
+  document.getElementById("quick-grado-select")?.addEventListener("change", () => {
+    onQuickGradoChange().catch((error) => console.error("Error actualizando materias en creacion rapida:", error));
+  });
+
+  document.getElementById("quick-materia-select")?.addEventListener("change", () => {
+    onQuickMateriaChange().catch((error) => console.error("Error actualizando unidades en creacion rapida:", error));
+  });
+
+  document.getElementById("quick-unidad-select")?.addEventListener("change", () => {
+    toggleQuickInputRows();
+  });
+
+  document.getElementById("quick-add-tema")?.addEventListener("click", () => {
+    addQuickTemaFromInputs();
+  });
+
+  ["quick-tema-title", "quick-tema-duration"].forEach((fieldId) => {
+    document.getElementById(fieldId)?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      addQuickTemaFromInputs();
+    });
+  });
+
+  document.getElementById("quick-temas-list")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-quick-remove-tema]");
+    if (!button) return;
+    removeQuickTema(button.getAttribute("data-quick-remove-tema"));
+  });
+
+  document.getElementById("quick-create-form")?.addEventListener("submit", (event) => {
+    submitQuickCreateForm(event).catch((error) => {
+      console.error("Error en creacion rapida:", error);
+      showQuickCreateError("No se pudo completar la creacion rapida.");
+    });
   });
 
   document.getElementById("btn-onboarding-create")?.addEventListener("click", () => openEntityModal("plantel"));
