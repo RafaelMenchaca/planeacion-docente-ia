@@ -31,29 +31,33 @@
         <form id="quick-create-form" class="space-y-4 p-4 sm:p-5">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div class="space-y-2">
-              <label for="quick-plantel-input" class="text-sm font-medium text-slate-700">Plantel</label>
-              <input id="quick-plantel-input" list="quick-plantel-list" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Escribe o selecciona plantel" />
-              <datalist id="quick-plantel-list"></datalist>
+              <label for="quick-plantel-select" class="text-sm font-medium text-slate-700">Plantel</label>
+              <select id="quick-plantel-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
+              <input id="quick-plantel-new" type="text" class="hidden w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre del plantel" />
             </div>
 
             <div class="space-y-2">
-              <label for="quick-grado-input" class="text-sm font-medium text-slate-700">Grado</label>
-              <input id="quick-grado-input" list="quick-grado-list" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Escribe o selecciona grado" />
-              <datalist id="quick-grado-list"></datalist>
-              <input id="quick-grado-order" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Orden (opcional si creas nuevo)" />
+              <label for="quick-grado-select" class="text-sm font-medium text-slate-700">Grado</label>
+              <select id="quick-grado-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
+              <div class="hidden grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_110px]" id="quick-grado-new-row">
+                <input id="quick-grado-new" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre del grado" />
+                <input id="quick-grado-order" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Orden" />
+              </div>
             </div>
 
             <div class="space-y-2">
-              <label for="quick-materia-input" class="text-sm font-medium text-slate-700">Materia</label>
-              <input id="quick-materia-input" list="quick-materia-list" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Escribe o selecciona materia" />
-              <datalist id="quick-materia-list"></datalist>
+              <label for="quick-materia-select" class="text-sm font-medium text-slate-700">Materia</label>
+              <select id="quick-materia-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
+              <input id="quick-materia-new" type="text" class="hidden w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre de la materia" />
             </div>
 
             <div class="space-y-2">
-              <label for="quick-unidad-input" class="text-sm font-medium text-slate-700">Unidad</label>
-              <input id="quick-unidad-input" list="quick-unidad-list" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Escribe o selecciona unidad" />
-              <datalist id="quick-unidad-list"></datalist>
-              <input id="quick-unidad-order" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Orden (opcional si creas nueva)" />
+              <label for="quick-unidad-select" class="text-sm font-medium text-slate-700">Unidad</label>
+              <select id="quick-unidad-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
+              <div class="hidden grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_110px]" id="quick-unidad-new-row">
+                <input id="quick-unidad-new" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre de la unidad" />
+                <input id="quick-unidad-order" type="number" min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Orden" />
+              </div>
             </div>
           </div>
 
