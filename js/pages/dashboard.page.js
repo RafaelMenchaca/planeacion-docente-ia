@@ -56,6 +56,19 @@ function sortEntities(items) {
   });
 }
 
+function getNextOrder(items) {
+  const list = Array.isArray(items) ? items : [];
+  const explicitOrders = list
+    .map((item) => Number(item?.orden))
+    .filter((order) => Number.isFinite(order) && order > 0);
+
+  if (explicitOrders.length > 0) {
+    return Math.max(...explicitOrders) + 1;
+  }
+
+  return list.length + 1;
+}
+
 function formatFetchError(error, fallbackMessage) {
   if (!error) return fallbackMessage;
   if (typeof error.message === "string" && error.message.trim()) return error.message;
@@ -408,6 +421,10 @@ function setQuickPanelVisibility(isOpen) {
   const panel = document.getElementById("quick-create-panel");
   if (!panel) return;
   panel.classList.toggle("hidden", !isOpen);
+
+  if (document.body) {
+    document.body.classList.toggle("overflow-hidden", isOpen);
+  }
 }
 
 function setQuickSelectOptions(selectId, items, config = {}) {
@@ -472,10 +489,7 @@ function toggleQuickInputRows() {
 
   const showGradoNew = getQuickSelectValue("quick-grado-select") === QUICK_CREATE_NEW_VALUE;
   toggleQuickRowVisibility("quick-grado-new-row", showGradoNew);
-  if (!showGradoNew) {
-    resetQuickInput("quick-grado-new");
-    resetQuickInput("quick-grado-order");
-  }
+  if (!showGradoNew) resetQuickInput("quick-grado-new");
 
   const showMateriaNew = getQuickSelectValue("quick-materia-select") === QUICK_CREATE_NEW_VALUE;
   toggleQuickRowVisibility("quick-materia-new", showMateriaNew);
@@ -483,10 +497,7 @@ function toggleQuickInputRows() {
 
   const showUnidadNew = getQuickSelectValue("quick-unidad-select") === QUICK_CREATE_NEW_VALUE;
   toggleQuickRowVisibility("quick-unidad-new-row", showUnidadNew);
-  if (!showUnidadNew) {
-    resetQuickInput("quick-unidad-new");
-    resetQuickInput("quick-unidad-order");
-  }
+  if (!showUnidadNew) resetQuickInput("quick-unidad-new");
 }
 
 function quickListHasId(items, id) {
@@ -541,10 +552,8 @@ function clearQuickChildSuggestions(level) {
     });
 
     resetQuickInput("quick-grado-new");
-    resetQuickInput("quick-grado-order");
     resetQuickInput("quick-materia-new");
     resetQuickInput("quick-unidad-new");
-    resetQuickInput("quick-unidad-order");
     toggleQuickInputRows();
     return;
   }
@@ -566,7 +575,6 @@ function clearQuickChildSuggestions(level) {
 
     resetQuickInput("quick-materia-new");
     resetQuickInput("quick-unidad-new");
-    resetQuickInput("quick-unidad-order");
     toggleQuickInputRows();
     return;
   }
@@ -580,7 +588,6 @@ function clearQuickChildSuggestions(level) {
       selectedValue: ""
     });
     resetQuickInput("quick-unidad-new");
-    resetQuickInput("quick-unidad-order");
     toggleQuickInputRows();
   }
 }
@@ -647,10 +654,8 @@ async function initQuickCreateForm() {
   [
     "quick-plantel-new",
     "quick-grado-new",
-    "quick-grado-order",
     "quick-materia-new",
     "quick-unidad-new",
-    "quick-unidad-order",
     "quick-tema-title"
   ].forEach(resetQuickInput);
 
@@ -728,11 +733,6 @@ function requireQuickSelectOrNew(selectId, newInputId, label) {
   }
 
   return { id: selected, nombre: "", isNew: false };
-}
-
-function optionalQuickOrder(inputId) {
-  const raw = Number(document.getElementById(inputId)?.value);
-  return Number.isFinite(raw) && raw > 0 ? raw : undefined;
 }
 
 function renderUnidadNodes(plantelId, gradoId, materiaId) {
@@ -1088,7 +1088,14 @@ function renderUnidadLevel() {
             <p class="text-sm text-slate-600">${escapeHtml(duracion)}</p>
             <div class="flex flex-wrap items-center justify-end gap-2">
               <span class="explorer-status-pill ${status.tone}">${escapeHtml(status.label)}</span>
-              ${planeacion?.id ? `<button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">Abrir planeacion</button>` : ""}
+              ${planeacion?.id ? `
+                <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">
+                  Abrir planeacion
+                </button>
+                <button type="button" class="inline-flex items-center rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50" data-content-action="delete-planeacion" data-planeacion-id="${planeacion.id}" data-tema-id="${tema.id}">
+                  Eliminar
+                </button>
+              ` : ""}
             </div>
           </div>
         `;
@@ -1385,6 +1392,40 @@ function buildLegacyContext() {
   };
 }
 
+async function deletePlaneacionFromDashboard(planeacionId, temaId, buttonEl) {
+  if (!planeacionId || !temaId) return;
+
+  const confirmed = window.confirm("Estas seguro de que deseas eliminar esta planeacion?");
+  if (!confirmed) return;
+
+  const previousLabel = buttonEl?.textContent || "";
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = "Eliminando...";
+  }
+
+  try {
+    const response = await eliminarPlaneacionApi(planeacionId);
+    if (!response) return;
+
+    explorerState.planeacionByTema[temaId] = null;
+
+    if (explorerState.current.unidadId) {
+      await ensureTemas(explorerState.current.unidadId, { force: true });
+    }
+
+    renderExplorerContent();
+  } catch (error) {
+    console.error("Error eliminando planeacion:", error);
+    alert("No se pudo eliminar la planeacion.");
+  } finally {
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = previousLabel;
+    }
+  }
+}
+
 async function generatePlaneacionesFromStaging() {
   const unidadId = explorerState.current.unidadId;
   if (!unidadId) {
@@ -1467,9 +1508,11 @@ async function submitQuickCreateForm(event) {
       throw new Error("El grado seleccionado no pertenece al plantel elegido.");
     }
     if (!gradoId) {
-      const payload = { nombre: gradoSelection.nombre, plantel_id: plantelId };
-      const orden = optionalQuickOrder("quick-grado-order");
-      if (orden) payload.orden = orden;
+      const payload = {
+        nombre: gradoSelection.nombre,
+        plantel_id: plantelId,
+        orden: getNextOrder(gradosDisponibles)
+      };
 
       const created = await crearGrado(payload);
       gradoId = created?.id;
@@ -1501,9 +1544,11 @@ async function submitQuickCreateForm(event) {
       throw new Error("La unidad seleccionada no pertenece a la materia elegida.");
     }
     if (!unidadId) {
-      const payload = { nombre: unidadSelection.nombre, materia_id: materiaId };
-      const orden = optionalQuickOrder("quick-unidad-order");
-      if (orden) payload.orden = orden;
+      const payload = {
+        nombre: unidadSelection.nombre,
+        materia_id: materiaId,
+        orden: getNextOrder(unidadesDisponibles)
+      };
 
       const created = await crearUnidad(payload);
       unidadId = created?.id;
@@ -1552,19 +1597,17 @@ function openEntityModal(type) {
   const modal = document.getElementById("entity-modal");
   const title = document.getElementById("entity-modal-title");
   const nameInput = document.getElementById("entity-name-input");
-  const orderRow = document.getElementById("entity-order-row");
-  const orderInput = document.getElementById("entity-order-input");
   const submit = document.getElementById("entity-modal-submit");
-  if (!modal || !title || !nameInput || !orderRow || !orderInput || !submit) return;
+  if (!modal || !title || !nameInput || !submit) return;
 
   explorerState.modal.type = type;
   explorerState.modal.submitting = false;
 
   const map = {
-    plantel: { title: "Nuevo plantel", submit: "Crear plantel", showOrder: false, placeholder: "Nombre del plantel" },
-    grado: { title: "Nuevo grado", submit: "Crear grado", showOrder: true, placeholder: "Nombre del grado" },
-    materia: { title: "Nueva materia", submit: "Crear materia", showOrder: false, placeholder: "Nombre de la materia" },
-    unidad: { title: "Nueva unidad", submit: "Crear unidad", showOrder: true, placeholder: "Nombre de la unidad" }
+    plantel: { title: "Nuevo plantel", submit: "Crear plantel", placeholder: "Nombre del plantel" },
+    grado: { title: "Nuevo grado", submit: "Crear grado", placeholder: "Nombre del grado" },
+    materia: { title: "Nueva materia", submit: "Crear materia", placeholder: "Nombre de la materia" },
+    unidad: { title: "Nueva unidad", submit: "Crear unidad", placeholder: "Nombre de la unidad" }
   };
 
   const config = map[type] || map.plantel;
@@ -1573,9 +1616,6 @@ function openEntityModal(type) {
   submit.textContent = config.submit;
   nameInput.value = "";
   nameInput.placeholder = config.placeholder;
-  orderInput.value = "";
-
-  orderRow.classList.toggle("hidden", !config.showOrder);
   openModalError("");
   modal.classList.remove("hidden");
   requestAnimationFrame(() => nameInput.focus());
@@ -1586,12 +1626,10 @@ async function submitEntityModal(event) {
   if (explorerState.modal.submitting || !explorerState.modal.type) return;
 
   const nameInput = document.getElementById("entity-name-input");
-  const orderInput = document.getElementById("entity-order-input");
   const submit = document.getElementById("entity-modal-submit");
   if (!nameInput || !submit) return;
 
   const nombre = nameInput.value.trim();
-  const ordenRaw = Number(orderInput?.value);
 
   if (!nombre) {
     openModalError("Ingresa un nombre valido.");
@@ -1614,8 +1652,12 @@ async function submitEntityModal(event) {
       const plantelId = explorerState.current.plantelId;
       if (!plantelId) throw new Error("Selecciona un plantel antes de crear un grado.");
 
-      const payload = { nombre, plantel_id: plantelId };
-      if (Number.isFinite(ordenRaw) && ordenRaw > 0) payload.orden = ordenRaw;
+      await ensureGrados(plantelId);
+      const payload = {
+        nombre,
+        plantel_id: plantelId,
+        orden: getNextOrder(explorerState.gradosByPlantel[plantelId] || [])
+      };
 
       const created = await crearGrado(payload);
       await ensureGrados(plantelId, { force: true });
@@ -1641,8 +1683,12 @@ async function submitEntityModal(event) {
     const materiaId = explorerState.current.materiaId;
     if (!plantelId || !gradoId || !materiaId) throw new Error("Selecciona una materia antes de crear una unidad.");
 
-    const payload = { nombre, materia_id: materiaId };
-    if (Number.isFinite(ordenRaw) && ordenRaw > 0) payload.orden = ordenRaw;
+    await ensureUnidades(materiaId);
+    const payload = {
+      nombre,
+      materia_id: materiaId,
+      orden: getNextOrder(explorerState.unidadesByMateria[materiaId] || [])
+    };
 
     const created = await crearUnidad(payload);
     await ensureUnidades(materiaId, { force: true });
@@ -1755,6 +1801,12 @@ async function handleContentClick(event) {
     return;
   }
 
+  if (action === "delete-planeacion") {
+    const planeacionId = button.getAttribute("data-planeacion-id");
+    const temaId = button.getAttribute("data-tema-id");
+    return deletePlaneacionFromDashboard(planeacionId, temaId, button);
+  }
+
   if (action === "add-staging-tema") return addStagingTemaFromInputs();
   if (action === "remove-staging") return removeStagingTema(button.getAttribute("data-staging-id"));
   if (action === "generate-planeaciones") return generatePlaneacionesFromStaging();
@@ -1789,6 +1841,10 @@ function bindDashboardEvents() {
   });
 
   document.getElementById("quick-create-close")?.addEventListener("click", () => {
+    closeQuickCreatePanel();
+  });
+
+  document.getElementById("quick-create-backdrop")?.addEventListener("click", () => {
     closeQuickCreatePanel();
   });
 
@@ -1872,6 +1928,19 @@ function bindDashboardEvents() {
       console.error("Error guardando modal:", error);
       openModalError("No se pudo guardar el elemento.");
     });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+
+    if (explorerState.quickCreate.open) {
+      closeQuickCreatePanel();
+      return;
+    }
+
+    if (explorerState.modal.type) {
+      closeEntityModal();
+    }
   });
 
   document.getElementById("explorer-content")?.addEventListener("keydown", (event) => {
