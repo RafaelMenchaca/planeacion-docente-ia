@@ -1088,7 +1088,14 @@ function renderUnidadLevel() {
             <p class="text-sm text-slate-600">${escapeHtml(duracion)}</p>
             <div class="flex flex-wrap items-center justify-end gap-2">
               <span class="explorer-status-pill ${status.tone}">${escapeHtml(status.label)}</span>
-              ${planeacion?.id ? `<button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">Abrir planeacion</button>` : ""}
+              ${planeacion?.id ? `
+                <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">
+                  Abrir planeacion
+                </button>
+                <button type="button" class="inline-flex items-center rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50" data-content-action="delete-planeacion" data-planeacion-id="${planeacion.id}" data-tema-id="${tema.id}">
+                  Eliminar
+                </button>
+              ` : ""}
             </div>
           </div>
         `;
@@ -1383,6 +1390,40 @@ function buildLegacyContext() {
     nivel: getCurrentGrado()?.nombre || undefined,
     unidad: getCurrentUnidad()?.nombre || undefined
   };
+}
+
+async function deletePlaneacionFromDashboard(planeacionId, temaId, buttonEl) {
+  if (!planeacionId || !temaId) return;
+
+  const confirmed = window.confirm("Estas seguro de que deseas eliminar esta planeacion?");
+  if (!confirmed) return;
+
+  const previousLabel = buttonEl?.textContent || "";
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = "Eliminando...";
+  }
+
+  try {
+    const response = await eliminarPlaneacionApi(planeacionId);
+    if (!response) return;
+
+    explorerState.planeacionByTema[temaId] = null;
+
+    if (explorerState.current.unidadId) {
+      await ensureTemas(explorerState.current.unidadId, { force: true });
+    }
+
+    renderExplorerContent();
+  } catch (error) {
+    console.error("Error eliminando planeacion:", error);
+    alert("No se pudo eliminar la planeacion.");
+  } finally {
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = previousLabel;
+    }
+  }
 }
 
 async function generatePlaneacionesFromStaging() {
@@ -1758,6 +1799,12 @@ async function handleContentClick(event) {
     const planeacionId = button.getAttribute("data-planeacion-id");
     if (planeacionId) window.location.href = `detalle.html?id=${encodeURIComponent(planeacionId)}`;
     return;
+  }
+
+  if (action === "delete-planeacion") {
+    const planeacionId = button.getAttribute("data-planeacion-id");
+    const temaId = button.getAttribute("data-tema-id");
+    return deletePlaneacionFromDashboard(planeacionId, temaId, button);
   }
 
   if (action === "add-staging-tema") return addStagingTemaFromInputs();
