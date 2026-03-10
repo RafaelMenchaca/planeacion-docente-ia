@@ -33,6 +33,64 @@ const heroActionsByLevel = {
 
 let isDashboardBound = false;
 const QUICK_CREATE_NEW_VALUE = "__new__";
+const DASHBOARD_LOCATION_STORAGE_KEY = "educativo.dashboard.last-location";
+
+function getExplorerStorage() {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+function getPersistedExplorerLocation() {
+  const storage = getExplorerStorage();
+  if (!storage) return null;
+
+  try {
+    const raw = storage.getItem(DASHBOARD_LOCATION_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    const current = parsed?.current;
+    if (!current || typeof current !== "object") return null;
+
+    const allowedLevels = new Set(["root", "plantel", "grado", "materia", "unidad"]);
+    const level = allowedLevels.has(current.level) ? current.level : "root";
+
+    return {
+      level,
+      plantelId: current.plantelId || null,
+      gradoId: current.gradoId || null,
+      materiaId: current.materiaId || null,
+      unidadId: current.unidadId || null
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistExplorerLocation() {
+  const storage = getExplorerStorage();
+  if (!storage) return;
+
+  try {
+    storage.setItem(
+      DASHBOARD_LOCATION_STORAGE_KEY,
+      JSON.stringify({
+        current: {
+          level: explorerState.current.level,
+          plantelId: explorerState.current.plantelId,
+          gradoId: explorerState.current.gradoId,
+          materiaId: explorerState.current.materiaId,
+          unidadId: explorerState.current.unidadId
+        }
+      })
+    );
+  } catch {
+    // Ignore storage write failures.
+  }
+}
 
 async function injectComponent(targetId, path) {
   const target = document.getElementById(targetId);
@@ -104,6 +162,8 @@ function setCurrentLevel(level, ids) {
   if (level !== "unidad") {
     explorerState.stagingTemas = [];
   }
+
+  persistExplorerLocation();
 }
 
 function updateProgressCounters() {
@@ -125,8 +185,9 @@ async function loadPlanteles() {
     explorerState.loading.root = false;
   }
 
+  const hasCurrentPlantel = Boolean(explorerState.current.plantelId);
   const exists = explorerState.planteles.some((item) => item.id === explorerState.current.plantelId);
-  if (!exists) {
+  if (hasCurrentPlantel && !exists) {
     setCurrentLevel("root", { plantelId: null, gradoId: null, materiaId: null, unidadId: null });
   }
 }
@@ -269,6 +330,66 @@ async function selectUnidad(plantelId, gradoId, materiaId, unidadId) {
   setCurrentLevel("unidad", { plantelId, gradoId, materiaId, unidadId });
   await Promise.all([ensureGrados(plantelId), ensureMaterias(gradoId), ensureUnidades(materiaId), ensureTemas(unidadId)]);
   renderAll();
+}
+
+async function restorePersistedExplorerLocation() {
+  const persisted = getPersistedExplorerLocation();
+  if (!persisted) return false;
+
+  if (persisted.level === "root") {
+    await selectRoot();
+    return true;
+  }
+
+  const plantelId = persisted.plantelId;
+  if (!plantelId || !explorerState.planteles.some((item) => item.id === plantelId)) {
+    return false;
+  }
+
+  await ensureGrados(plantelId);
+
+  if (persisted.level === "plantel" || !persisted.gradoId) {
+    await selectPlantel(plantelId);
+    return true;
+  }
+
+  const gradoId = persisted.gradoId;
+  const grados = explorerState.gradosByPlantel[plantelId] || [];
+  if (!grados.some((item) => item.id === gradoId)) {
+    await selectPlantel(plantelId);
+    return true;
+  }
+
+  await ensureMaterias(gradoId);
+
+  if (persisted.level === "grado" || !persisted.materiaId) {
+    await selectGrado(plantelId, gradoId);
+    return true;
+  }
+
+  const materiaId = persisted.materiaId;
+  const materias = explorerState.materiasByGrado[gradoId] || [];
+  if (!materias.some((item) => item.id === materiaId)) {
+    await selectGrado(plantelId, gradoId);
+    return true;
+  }
+
+  await ensureUnidades(materiaId);
+
+  if (persisted.level === "materia" || !persisted.unidadId) {
+    await selectMateria(plantelId, gradoId, materiaId);
+    return true;
+  }
+
+  const unidadId = persisted.unidadId;
+  const unidades = explorerState.unidadesByMateria[materiaId] || [];
+  if (!unidades.some((item) => item.id === unidadId)) {
+    await selectMateria(plantelId, gradoId, materiaId);
+    return true;
+  }
+
+  await selectUnidad(plantelId, gradoId, materiaId, unidadId);
+  return true;
 }
 function renderWorkspaceVisibility() {
   const onboarding = document.getElementById("explorer-onboarding");
@@ -1075,7 +1196,6 @@ function renderUnidadLevel() {
 
     return temas
       .map((tema) => {
-        const status = resolveTemaStatus(tema.id);
         const planeacion = explorerState.planeacionByTema[tema.id];
         const duracion = Number.isFinite(Number(tema.duracion)) ? `${Number(tema.duracion)} min` : "-";
 
@@ -1087,13 +1207,18 @@ function renderUnidadLevel() {
             </div>
             <p class="text-sm text-slate-600">${escapeHtml(duracion)}</p>
             <div class="flex flex-wrap items-center justify-end gap-2">
-              <span class="explorer-status-pill ${status.tone}">${escapeHtml(status.label)}</span>
               ${planeacion?.id ? `
                 <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">
                   Abrir planeacion
                 </button>
-                <button type="button" class="inline-flex items-center rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50" data-content-action="delete-planeacion" data-planeacion-id="${planeacion.id}" data-tema-id="${tema.id}">
-                  Eliminar
+                <button type="button" aria-label="Eliminar planeacion" title="Eliminar planeacion" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50" data-content-action="delete-planeacion" data-planeacion-id="${planeacion.id}" data-tema-id="${tema.id}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6V4.75A1.75 1.75 0 0 1 9.75 3h4.5A1.75 1.75 0 0 1 16 4.75V6"></path>
+                    <path d="M6.5 6l.8 12.2A2 2 0 0 0 9.29 20h5.42a2 2 0 0 0 1.99-1.8L17.5 6"></path>
+                    <path d="M10 10.25v5.5"></path>
+                    <path d="M14 10.25v5.5"></path>
+                  </svg>
                 </button>
               ` : ""}
             </div>
@@ -1959,6 +2084,10 @@ async function hydrateExplorerData() {
 
   if (explorerState.planteles.length === 0) {
     renderAll();
+    return;
+  }
+
+  if (await restorePersistedExplorerLocation()) {
     return;
   }
 
