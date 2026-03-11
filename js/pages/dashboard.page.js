@@ -1712,20 +1712,6 @@ function renderUnidadLevel() {
                 <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">
                   Abrir planeacion
                 </button>
-                ${renderActionButton({
-                  action: "delete-planeacion",
-                  tone: "neutral",
-                  iconOnly: true,
-                  title: "Eliminar solo la planeacion",
-                  attrs: {
-                    "planeacion-id": planeacion.id,
-                    "tema-id": tema.id,
-                    "plantel-id": explorerState.current.plantelId,
-                    "grado-id": explorerState.current.gradoId,
-                    "materia-id": explorerState.current.materiaId,
-                    "unidad-id": explorerState.current.unidadId
-                  }
-                })}
               ` : ""}
               ${renderActionButton({
                 action: "delete-tema",

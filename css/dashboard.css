@@ -5,19 +5,46 @@
 }
 
 #quick-create-backdrop {
-  background:
-    radial-gradient(circle at 18% 12%, rgba(34, 211, 238, 0.08), transparent 32%),
-    radial-gradient(circle at 82% 18%, rgba(20, 184, 166, 0.08), transparent 38%),
-    rgba(15, 23, 42, 0.42);
-  backdrop-filter: blur(8px) saturate(120%) brightness(0.92);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: none;
 }
 
 #delete-confirm-backdrop {
-  background:
-    radial-gradient(circle at 14% 12%, rgba(34, 211, 238, 0.08), transparent 32%),
-    radial-gradient(circle at 86% 18%, rgba(20, 184, 166, 0.08), transparent 38%),
-    rgba(15, 23, 42, 0.46);
-  backdrop-filter: blur(8px) saturate(120%) brightness(0.9);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: none;
+}
+
+.delete-confirm-shell {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.delete-confirm-card {
+  width: min(100%, 34rem);
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.delete-confirm-actions > button {
+  width: 100%;
+}
+
+#delete-confirm-submit {
+  border: 1px solid rgb(253 164 175);
+  background: rgb(255 241 242);
+  color: rgb(190 18 60);
+}
+
+#delete-confirm-submit:hover {
+  border-color: rgb(251 113 133);
+  background: rgb(255 228 230);
 }
 
 #quick-create-close,
@@ -367,6 +394,19 @@
 @media (max-width: 1023px) {
   .explorer-sidebar-scroll {
     max-height: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .delete-confirm-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .delete-confirm-actions > button {
+    width: auto;
+    min-width: 9rem;
   }
 }
 
