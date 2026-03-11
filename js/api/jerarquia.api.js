@@ -59,6 +59,19 @@ async function apiPlantelesCreate(payload, accessToken) {
   );
 }
 
+async function apiPlantelesDelete(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/planteles/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo eliminar el plantel"
+  );
+}
+
 async function apiGradosListByPlantel(plantelId, accessToken) {
   return requestJson(
     `${API_BASE_URL}/api/planteles/${encodeURIComponent(plantelId)}/grados`,
@@ -80,6 +93,19 @@ async function apiGradosCreate(payload, accessToken) {
       body: JSON.stringify(payload)
     },
     "No se pudo crear el grado"
+  );
+}
+
+async function apiGradosDelete(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/grados/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo eliminar el grado"
   );
 }
 
@@ -107,6 +133,19 @@ async function apiMateriasCreate(payload, accessToken) {
   );
 }
 
+async function apiMateriasDelete(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/materias/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo eliminar la materia"
+  );
+}
+
 async function apiUnidadesListByMateria(materiaId, accessToken) {
   return requestJson(
     `${API_BASE_URL}/api/materias/${encodeURIComponent(materiaId)}/unidades`,
@@ -131,6 +170,19 @@ async function apiUnidadesCreate(payload, accessToken) {
   );
 }
 
+async function apiUnidadesDelete(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/unidades/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo eliminar la unidad"
+  );
+}
+
 async function apiTemasListByUnidad(unidadId, accessToken) {
   return requestJson(
     `${API_BASE_URL}/api/unidades/${encodeURIComponent(unidadId)}/temas`,
@@ -152,6 +204,19 @@ async function apiTemasCreate(payload, accessToken) {
       body: JSON.stringify(payload)
     },
     "No se pudieron crear los temas"
+  );
+}
+
+async function apiTemasDelete(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/temas/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo eliminar el tema"
   );
 }
 
@@ -269,14 +334,19 @@ async function apiTemaPlaneacion(temaId, accessToken) {
 
 window.apiPlantelesList = apiPlantelesList;
 window.apiPlantelesCreate = apiPlantelesCreate;
+window.apiPlantelesDelete = apiPlantelesDelete;
 window.apiGradosListByPlantel = apiGradosListByPlantel;
 window.apiGradosCreate = apiGradosCreate;
+window.apiGradosDelete = apiGradosDelete;
 window.apiMateriasListByGrado = apiMateriasListByGrado;
 window.apiMateriasCreate = apiMateriasCreate;
+window.apiMateriasDelete = apiMateriasDelete;
 window.apiUnidadesListByMateria = apiUnidadesListByMateria;
 window.apiUnidadesCreate = apiUnidadesCreate;
+window.apiUnidadesDelete = apiUnidadesDelete;
 window.apiTemasListByUnidad = apiTemasListByUnidad;
 window.apiTemasCreate = apiTemasCreate;
+window.apiTemasDelete = apiTemasDelete;
 window.apiUnidadGenerar = apiUnidadGenerar;
 window.apiUnidadGenerarConProgreso = apiUnidadGenerarConProgreso;
 window.apiTemaPlaneacion = apiTemaPlaneacion;

@@ -44,6 +44,10 @@ async function crearPlantel(payload) {
   });
 }
 
+async function eliminarPlantel(id) {
+  return withSession(async (token) => apiPlantelesDelete(id, token));
+}
+
 async function obtenerGradosPorPlantel(plantelId) {
   return withSession(async (token) => {
     const payload = await apiGradosListByPlantel(plantelId, token);
@@ -56,6 +60,10 @@ async function crearGrado(payload) {
     const response = await apiGradosCreate(payload, token);
     return normalizeEntityPayload(response, ["grado", "item"]);
   });
+}
+
+async function eliminarGrado(id) {
+  return withSession(async (token) => apiGradosDelete(id, token));
 }
 
 async function obtenerMateriasPorGrado(gradoId) {
@@ -72,6 +80,10 @@ async function crearMateria(payload) {
   });
 }
 
+async function eliminarMateria(id) {
+  return withSession(async (token) => apiMateriasDelete(id, token));
+}
+
 async function obtenerUnidadesPorMateria(materiaId) {
   return withSession(async (token) => {
     const payload = await apiUnidadesListByMateria(materiaId, token);
@@ -86,6 +98,10 @@ async function crearUnidad(payload) {
   });
 }
 
+async function eliminarUnidad(id) {
+  return withSession(async (token) => apiUnidadesDelete(id, token));
+}
+
 async function obtenerTemasPorUnidad(unidadId) {
   return withSession(async (token) => {
     const payload = await apiTemasListByUnidad(unidadId, token);
@@ -98,6 +114,10 @@ async function crearTemas(payload) {
     const response = await apiTemasCreate(payload, token);
     return normalizeListPayload(response, ["temas", "items"]);
   });
+}
+
+async function eliminarTema(id) {
+  return withSession(async (token) => apiTemasDelete(id, token));
 }
 
 async function generarPlaneacionesUnidad(payload) {
@@ -139,14 +159,19 @@ async function obtenerPlaneacionTema(temaId) {
 
 window.obtenerPlanteles = obtenerPlanteles;
 window.crearPlantel = crearPlantel;
+window.eliminarPlantel = eliminarPlantel;
 window.obtenerGradosPorPlantel = obtenerGradosPorPlantel;
 window.crearGrado = crearGrado;
+window.eliminarGrado = eliminarGrado;
 window.obtenerMateriasPorGrado = obtenerMateriasPorGrado;
 window.crearMateria = crearMateria;
+window.eliminarMateria = eliminarMateria;
 window.obtenerUnidadesPorMateria = obtenerUnidadesPorMateria;
 window.crearUnidad = crearUnidad;
+window.eliminarUnidad = eliminarUnidad;
 window.obtenerTemasPorUnidad = obtenerTemasPorUnidad;
 window.crearTemas = crearTemas;
+window.eliminarTema = eliminarTema;
 window.generarPlaneacionesUnidad = generarPlaneacionesUnidad;
 window.generarPlaneacionesUnidadConProgreso = generarPlaneacionesUnidadConProgreso;
 window.obtenerPlaneacionTema = obtenerPlaneacionTema;
