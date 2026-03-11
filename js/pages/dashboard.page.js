@@ -20,7 +20,19 @@
   },
   searchQuery: "",
   generating: false,
-  modal: { type: null, submitting: false }
+  modal: { type: null, submitting: false },
+  confirmDelete: {
+    open: false,
+    type: null,
+    id: null,
+    parentIds: {},
+    title: "",
+    message: "",
+    warning: "",
+    error: "",
+    submitLabel: "Si, eliminar",
+    busy: false
+  }
 };
 
 const heroActionsByLevel = {
@@ -92,6 +104,15 @@ function persistExplorerLocation() {
   }
 }
 
+function syncBodyScrollLock() {
+  if (!document.body) return;
+
+  document.body.classList.toggle(
+    "overflow-hidden",
+    explorerState.quickCreate.open || explorerState.confirmDelete.open
+  );
+}
+
 async function injectComponent(targetId, path) {
   const target = document.getElementById(targetId);
   if (!target) throw new Error(`No se encontro el contenedor ${targetId}`);
@@ -150,6 +171,26 @@ function getCurrentMateria() {
 function getCurrentUnidad() {
   const list = explorerState.unidadesByMateria[explorerState.current.materiaId] || [];
   return list.find((item) => item.id === explorerState.current.unidadId) || null;
+}
+
+function findGradoById(plantelId, gradoId) {
+  const list = explorerState.gradosByPlantel[plantelId] || [];
+  return list.find((item) => item.id === gradoId) || null;
+}
+
+function findMateriaById(gradoId, materiaId) {
+  const list = explorerState.materiasByGrado[gradoId] || [];
+  return list.find((item) => item.id === materiaId) || null;
+}
+
+function findUnidadById(materiaId, unidadId) {
+  const list = explorerState.unidadesByMateria[materiaId] || [];
+  return list.find((item) => item.id === unidadId) || null;
+}
+
+function findTemaById(unidadId, temaId) {
+  const list = explorerState.temasByUnidad[unidadId] || [];
+  return list.find((item) => item.id === temaId) || null;
 }
 
 function setCurrentLevel(level, ids) {
@@ -490,8 +531,117 @@ function renderSubtitle() {
   subtitle.textContent = `Unidad activa: ${unidad?.nombre || "-"}`;
 }
 
+function buildDataAttributes(attributes = {}) {
+  return Object.entries(attributes)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => ` data-${key}="${escapeHtml(String(value))}"`)
+    .join("");
+}
+
+function renderTrashIcon() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18"></path>
+      <path d="M8 6V4.75A1.75 1.75 0 0 1 9.75 3h4.5A1.75 1.75 0 0 1 16 4.75V6"></path>
+      <path d="M6.5 6l.8 12.2A2 2 0 0 0 9.29 20h5.42a2 2 0 0 0 1.99-1.8L17.5 6"></path>
+      <path d="M10 10.25v5.5"></path>
+      <path d="M14 10.25v5.5"></path>
+    </svg>
+  `;
+}
+
+function renderActionButton(config) {
+  if (!config?.action) return "";
+
+  const classes = [
+    config.iconOnly
+      ? (config.tone === "danger" ? "explorer-danger-icon-btn" : "explorer-icon-btn")
+      : (config.tone === "danger" ? "explorer-danger-btn" : "explorer-action-btn"),
+    config.className || ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const label = config.label || "";
+  const title = config.title || label;
+  const titleAttrs = title ? ` title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"` : "";
+
+  return `
+    <button
+      type="button"
+      class="${classes}"
+      data-content-action="${escapeHtml(config.action)}"${buildDataAttributes(config.attrs)}${titleAttrs}
+    >
+      ${config.iconOnly ? renderTrashIcon() : escapeHtml(label)}
+    </button>
+  `;
+}
+
+function getLevelHeaderActions(level = explorerState.current.level) {
+  const createAction = heroActionsByLevel[level] || heroActionsByLevel.root;
+  const actions = [];
+
+  if (createAction?.action) {
+    actions.push({
+      label: createAction.label,
+      action: createAction.action,
+      tone: "neutral"
+    });
+  }
+
+  if (level === "plantel" && explorerState.current.plantelId) {
+    actions.push({
+      label: "Eliminar plantel",
+      action: "delete-plantel",
+      tone: "danger",
+      attrs: { "plantel-id": explorerState.current.plantelId }
+    });
+  }
+
+  if (level === "grado" && explorerState.current.plantelId && explorerState.current.gradoId) {
+    actions.push({
+      label: "Eliminar grado",
+      action: "delete-grado",
+      tone: "danger",
+      attrs: {
+        "plantel-id": explorerState.current.plantelId,
+        "grado-id": explorerState.current.gradoId
+      }
+    });
+  }
+
+  if (level === "materia" && explorerState.current.plantelId && explorerState.current.gradoId && explorerState.current.materiaId) {
+    actions.push({
+      label: "Eliminar materia",
+      action: "delete-materia",
+      tone: "danger",
+      attrs: {
+        "plantel-id": explorerState.current.plantelId,
+        "grado-id": explorerState.current.gradoId,
+        "materia-id": explorerState.current.materiaId
+      }
+    });
+  }
+
+  if (level === "unidad" && explorerState.current.plantelId && explorerState.current.gradoId && explorerState.current.materiaId && explorerState.current.unidadId) {
+    actions.push({
+      label: "Eliminar unidad",
+      action: "delete-unidad",
+      tone: "danger",
+      attrs: {
+        "plantel-id": explorerState.current.plantelId,
+        "grado-id": explorerState.current.gradoId,
+        "materia-id": explorerState.current.materiaId,
+        "unidad-id": explorerState.current.unidadId
+      }
+    });
+  }
+
+  return actions;
+}
+
 function renderLevelSectionHeader(title, description, level = explorerState.current.level) {
-  const config = heroActionsByLevel[level] || heroActionsByLevel.root;
+  const actions = getLevelHeaderActions(level);
 
   return `
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -499,13 +649,9 @@ function renderLevelSectionHeader(title, description, level = explorerState.curr
         <h3 class="text-base font-semibold text-slate-900">${escapeHtml(title)}</h3>
         <p class="mt-1 text-sm text-slate-600">${escapeHtml(description)}</p>
       </div>
-      <button
-        type="button"
-        class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-        data-content-action="${config.action}"
-      >
-        ${escapeHtml(config.label)}
-      </button>
+      <div class="explorer-section-actions">
+        ${actions.map((action) => renderActionButton(action)).join("")}
+      </div>
     </div>
   `;
 }
@@ -522,6 +668,345 @@ function renderGlobalError() {
 
   box.classList.remove("hidden");
   box.textContent = `Error al cargar planteles: ${explorerState.errors.root}`;
+}
+
+function renderDeleteConfirmModal() {
+  const modal = document.getElementById("delete-confirm-modal");
+  const title = document.getElementById("delete-confirm-title");
+  const message = document.getElementById("delete-confirm-message");
+  const warning = document.getElementById("delete-confirm-warning");
+  const error = document.getElementById("delete-confirm-error");
+  const submit = document.getElementById("delete-confirm-submit");
+  const cancel = document.getElementById("delete-confirm-cancel");
+  const close = document.getElementById("delete-confirm-close");
+
+  if (!modal || !title || !message || !warning || !error || !submit || !cancel || !close) return;
+
+  const state = explorerState.confirmDelete;
+  modal.classList.toggle("hidden", !state.open);
+  syncBodyScrollLock();
+
+  if (!state.open) {
+    error.classList.add("hidden");
+    warning.classList.add("hidden");
+    error.textContent = "";
+    warning.textContent = "";
+    return;
+  }
+
+  title.textContent = state.title || "Confirmar eliminacion";
+  message.textContent = state.message || "";
+
+  if (state.warning) {
+    warning.classList.remove("hidden");
+    warning.textContent = state.warning;
+  } else {
+    warning.classList.add("hidden");
+    warning.textContent = "";
+  }
+
+  if (state.error) {
+    error.classList.remove("hidden");
+    error.textContent = state.error;
+  } else {
+    error.classList.add("hidden");
+    error.textContent = "";
+  }
+
+  submit.textContent = state.busy ? "Eliminando..." : (state.submitLabel || "Si, eliminar");
+  submit.disabled = state.busy;
+  cancel.disabled = state.busy;
+  close.disabled = state.busy;
+}
+
+function openDeleteConfirm(config) {
+  Object.assign(explorerState.confirmDelete, {
+    open: true,
+    type: config?.type || null,
+    id: config?.id || null,
+    parentIds: { ...(config?.parentIds || {}) },
+    title: config?.title || "Confirmar eliminacion",
+    message: config?.message || "",
+    warning: config?.warning || "",
+    error: "",
+    submitLabel: config?.submitLabel || "Si, eliminar",
+    busy: false
+  });
+
+  renderDeleteConfirmModal();
+}
+
+function closeDeleteConfirm({ force = false } = {}) {
+  if (explorerState.confirmDelete.busy && !force) return;
+
+  Object.assign(explorerState.confirmDelete, {
+    open: false,
+    type: null,
+    id: null,
+    parentIds: {},
+    title: "",
+    message: "",
+    warning: "",
+    error: "",
+    submitLabel: "Si, eliminar",
+    busy: false
+  });
+
+  renderDeleteConfirmModal();
+}
+
+function pruneTemaRecord(unidadId, temaId) {
+  if (!unidadId || !temaId) return;
+
+  if (Array.isArray(explorerState.temasByUnidad[unidadId])) {
+    explorerState.temasByUnidad[unidadId] = explorerState.temasByUnidad[unidadId].filter((tema) => tema.id !== temaId);
+  }
+
+  explorerState.progress.items = explorerState.progress.items.filter((item) => item.temaId !== temaId);
+  delete explorerState.planeacionByTema[temaId];
+  updateProgressCounters();
+}
+
+function pruneUnidadBranch(unidadId) {
+  if (!unidadId) return;
+
+  const temas = explorerState.temasByUnidad[unidadId] || [];
+  temas.forEach((tema) => {
+    if (tema?.id) delete explorerState.planeacionByTema[tema.id];
+  });
+
+  delete explorerState.temasByUnidad[unidadId];
+  delete explorerState.loading.temas[unidadId];
+  delete explorerState.errors.temas[unidadId];
+}
+
+function pruneMateriaBranch(materiaId) {
+  if (!materiaId) return;
+
+  const unidades = explorerState.unidadesByMateria[materiaId] || [];
+  unidades.forEach((unidad) => pruneUnidadBranch(unidad.id));
+
+  explorerState.expandedMaterias.delete(materiaId);
+  delete explorerState.unidadesByMateria[materiaId];
+  delete explorerState.loading.unidades[materiaId];
+  delete explorerState.errors.unidades[materiaId];
+}
+
+function pruneGradoBranch(gradoId) {
+  if (!gradoId) return;
+
+  const materias = explorerState.materiasByGrado[gradoId] || [];
+  materias.forEach((materia) => pruneMateriaBranch(materia.id));
+
+  explorerState.expandedGrados.delete(gradoId);
+  delete explorerState.materiasByGrado[gradoId];
+  delete explorerState.loading.materias[gradoId];
+  delete explorerState.errors.materias[gradoId];
+}
+
+function prunePlantelBranch(plantelId) {
+  if (!plantelId) return;
+
+  const grados = explorerState.gradosByPlantel[plantelId] || [];
+  grados.forEach((grado) => pruneGradoBranch(grado.id));
+
+  explorerState.expandedPlanteles.delete(plantelId);
+  explorerState.planteles = explorerState.planteles.filter((plantel) => plantel.id !== plantelId);
+  delete explorerState.gradosByPlantel[plantelId];
+  delete explorerState.loading.grados[plantelId];
+  delete explorerState.errors.grados[plantelId];
+}
+
+function getDeleteDialogConfig(action, ids) {
+  if (action === "delete-plantel") {
+    const plantel = explorerState.planteles.find((item) => item.id === ids.plantelId) || getCurrentPlantel();
+    const nombre = plantel?.nombre || "este plantel";
+    return {
+      type: "plantel",
+      id: ids.plantelId,
+      parentIds: {},
+      title: "Eliminar plantel",
+      message: `Se eliminara ${nombre}.`,
+      warning: "Se eliminara este plantel y todo su contenido: grados, materias, unidades, temas y planeaciones."
+    };
+  }
+
+  if (action === "delete-grado") {
+    const grado = findGradoById(ids.plantelId, ids.gradoId) || getCurrentGrado();
+    const nombre = grado?.nombre || "este grado";
+    return {
+      type: "grado",
+      id: ids.gradoId,
+      parentIds: { plantelId: ids.plantelId },
+      title: "Eliminar grado",
+      message: `Se eliminara ${nombre}.`,
+      warning: "Se eliminara este grado y todas sus materias, unidades, temas y planeaciones."
+    };
+  }
+
+  if (action === "delete-materia") {
+    const materia = findMateriaById(ids.gradoId, ids.materiaId) || getCurrentMateria();
+    const nombre = materia?.nombre || "esta materia";
+    return {
+      type: "materia",
+      id: ids.materiaId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId
+      },
+      title: "Eliminar materia",
+      message: `Se eliminara ${nombre}.`,
+      warning: "Se eliminara esta materia y todas sus unidades, temas y planeaciones."
+    };
+  }
+
+  if (action === "delete-unidad") {
+    const unidad = findUnidadById(ids.materiaId, ids.unidadId) || getCurrentUnidad();
+    const nombre = unidad?.nombre || "esta unidad";
+    return {
+      type: "unidad",
+      id: ids.unidadId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId,
+        materiaId: ids.materiaId
+      },
+      title: "Eliminar unidad",
+      message: `Se eliminara ${nombre}.`,
+      warning: "Se eliminara esta unidad y todos sus temas y planeaciones."
+    };
+  }
+
+  if (action === "delete-tema") {
+    const tema = findTemaById(ids.unidadId, ids.temaId);
+    const nombre = tema?.titulo || "este tema";
+    return {
+      type: "tema",
+      id: ids.temaId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId,
+        materiaId: ids.materiaId,
+        unidadId: ids.unidadId
+      },
+      title: "Eliminar tema",
+      message: `Se eliminara ${nombre}.`,
+      warning: "Se eliminara este tema y su planeacion asociada, si existe."
+    };
+  }
+
+  if (action === "delete-planeacion") {
+    const tema = findTemaById(ids.unidadId, ids.temaId);
+    const nombre = tema?.titulo || "este tema";
+    return {
+      type: "planeacion",
+      id: ids.planeacionId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId,
+        materiaId: ids.materiaId,
+        unidadId: ids.unidadId,
+        temaId: ids.temaId
+      },
+      title: "Eliminar planeacion",
+      message: `Se eliminara la planeacion asociada a ${nombre}.`,
+      warning: "El tema se conservara."
+    };
+  }
+
+  return null;
+}
+
+function requestDeleteAction(action, ids) {
+  const config = getDeleteDialogConfig(action, ids);
+  if (!config?.id) return;
+  openDeleteConfirm(config);
+}
+
+async function refreshAfterHierarchyDelete(type, context = {}) {
+  if (type === "plantel") {
+    prunePlantelBranch(context.id);
+    await loadPlanteles();
+    await selectRoot();
+    return;
+  }
+
+  if (type === "grado") {
+    pruneGradoBranch(context.id);
+    delete explorerState.gradosByPlantel[context.plantelId];
+    delete explorerState.loading.grados[context.plantelId];
+    delete explorerState.errors.grados[context.plantelId];
+    await selectPlantel(context.plantelId);
+    return;
+  }
+
+  if (type === "materia") {
+    pruneMateriaBranch(context.id);
+    delete explorerState.materiasByGrado[context.gradoId];
+    delete explorerState.loading.materias[context.gradoId];
+    delete explorerState.errors.materias[context.gradoId];
+    await selectGrado(context.plantelId, context.gradoId);
+    return;
+  }
+
+  if (type === "unidad") {
+    pruneUnidadBranch(context.id);
+    delete explorerState.unidadesByMateria[context.materiaId];
+    delete explorerState.loading.unidades[context.materiaId];
+    delete explorerState.errors.unidades[context.materiaId];
+    await selectMateria(context.plantelId, context.gradoId, context.materiaId);
+    return;
+  }
+
+  if (type === "tema") {
+    pruneTemaRecord(context.unidadId, context.id);
+    delete explorerState.temasByUnidad[context.unidadId];
+    delete explorerState.loading.temas[context.unidadId];
+    delete explorerState.errors.temas[context.unidadId];
+    await selectUnidad(context.plantelId, context.gradoId, context.materiaId, context.unidadId);
+    return;
+  }
+
+  if (type === "planeacion") {
+    explorerState.planeacionByTema[context.temaId] = null;
+    delete explorerState.temasByUnidad[context.unidadId];
+    delete explorerState.loading.temas[context.unidadId];
+    delete explorerState.errors.temas[context.unidadId];
+    await selectUnidad(context.plantelId, context.gradoId, context.materiaId, context.unidadId);
+  }
+}
+
+async function submitDeleteConfirm() {
+  if (!explorerState.confirmDelete.open || explorerState.confirmDelete.busy || !explorerState.confirmDelete.type || !explorerState.confirmDelete.id) {
+    return;
+  }
+
+  explorerState.confirmDelete.busy = true;
+  explorerState.confirmDelete.error = "";
+  renderDeleteConfirmModal();
+
+  const { type, id, parentIds } = explorerState.confirmDelete;
+
+  try {
+    if (type === "plantel") await eliminarPlantel(id);
+    else if (type === "grado") await eliminarGrado(id);
+    else if (type === "materia") await eliminarMateria(id);
+    else if (type === "unidad") await eliminarUnidad(id);
+    else if (type === "tema") await eliminarTema(id);
+    else if (type === "planeacion") await eliminarPlaneacionApi(id);
+
+    closeDeleteConfirm({ force: true });
+    try {
+      await refreshAfterHierarchyDelete(type, { id, ...parentIds });
+    } catch (refreshError) {
+      explorerState.errors.root = formatFetchError(refreshError, "La eliminacion se completo, pero no se pudo refrescar el explorador.");
+      renderAll();
+    }
+  } catch (error) {
+    explorerState.confirmDelete.busy = false;
+    explorerState.confirmDelete.error = formatFetchError(error, "No se pudo completar la eliminacion.");
+    renderDeleteConfirmModal();
+  }
 }
 
 function showQuickCreateError(message) {
@@ -542,10 +1027,7 @@ function setQuickPanelVisibility(isOpen) {
   const panel = document.getElementById("quick-create-panel");
   if (!panel) return;
   panel.classList.toggle("hidden", !isOpen);
-
-  if (document.body) {
-    document.body.classList.toggle("overflow-hidden", isOpen);
-  }
+  syncBodyScrollLock();
 }
 
 function setQuickSelectOptions(selectId, items, config = {}) {
@@ -1001,10 +1483,22 @@ function renderRootLevel() {
             const grades = explorerState.gradosByPlantel[plantel.id]?.length;
             const meta = Number.isInteger(grades) ? `${grades} grado(s)` : "Abrir niveles";
             return `
-              <button type="button" class="explorer-list-item" data-content-action="open-plantel" data-plantel-id="${plantel.id}">
-                <p class="explorer-list-item-title">${escapeHtml(plantel.nombre || "Sin nombre")}</p>
-                <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
-              </button>
+              <div class="explorer-list-item explorer-list-item-shell">
+                <button type="button" class="explorer-list-item-open" data-content-action="open-plantel" data-plantel-id="${plantel.id}">
+                  <p class="explorer-list-item-title">${escapeHtml(plantel.nombre || "Sin nombre")}</p>
+                  <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
+                </button>
+                <div class="explorer-list-item-footer">
+                  <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Plantel</span>
+                  ${renderActionButton({
+                    action: "delete-plantel",
+                    tone: "danger",
+                    iconOnly: true,
+                    title: `Eliminar plantel ${plantel.nombre || ""}`.trim(),
+                    attrs: { "plantel-id": plantel.id }
+                  })}
+                </div>
+              </div>
             `;
           })
           .join("")}
@@ -1018,21 +1512,20 @@ function renderPlantelLevel() {
   if (!plantel) return '<p class="text-sm text-slate-500">Selecciona un plantel valido.</p>';
 
   const grados = explorerState.gradosByPlantel[plantel.id] || [];
-  if (explorerState.loading.grados[plantel.id]) return '<p class="text-sm text-slate-500">Cargando grados...</p>';
-  if (explorerState.errors.grados[plantel.id]) return `<div class="explorer-empty text-rose-700">${escapeHtml(explorerState.errors.grados[plantel.id])}</div>`;
+  let content = "";
 
-  if (grados.length === 0) {
-    return `
+  if (explorerState.loading.grados[plantel.id]) {
+    content = '<p class="text-sm text-slate-500">Cargando grados...</p>';
+  } else if (explorerState.errors.grados[plantel.id]) {
+    content = `<div class="explorer-empty text-rose-700">${escapeHtml(explorerState.errors.grados[plantel.id])}</div>`;
+  } else if (grados.length === 0) {
+    content = `
       <div class="explorer-empty">
         <p>No hay grados dentro de este plantel.</p>
-        <button type="button" class="mt-3 inline-flex items-center rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800" data-content-action="create-grado">+ Nuevo grado</button>
       </div>
     `;
-  }
-
-  return `
-    <div class="space-y-4">
-      ${renderLevelSectionHeader(`Grados en ${plantel.nombre || "plantel"}`, "Entra a un grado para administrar materias.", "plantel")}
+  } else {
+    content = `
       <div class="explorer-list-grid">
         ${grados
           .map((grado) => {
@@ -1047,6 +1540,13 @@ function renderPlantelLevel() {
           })
           .join("")}
       </div>
+    `;
+  }
+
+  return `
+    <div class="space-y-4">
+      ${renderLevelSectionHeader(`Grados en ${plantel.nombre || "plantel"}`, "Entra a un grado para administrar materias.", "plantel")}
+      ${content}
     </div>
   `;
 }
@@ -1057,21 +1557,20 @@ function renderGradoLevel() {
   if (!plantel || !grado) return '<p class="text-sm text-slate-500">Selecciona un grado valido.</p>';
 
   const materias = explorerState.materiasByGrado[grado.id] || [];
-  if (explorerState.loading.materias[grado.id]) return '<p class="text-sm text-slate-500">Cargando materias...</p>';
-  if (explorerState.errors.materias[grado.id]) return `<div class="explorer-empty text-rose-700">${escapeHtml(explorerState.errors.materias[grado.id])}</div>`;
+  let content = "";
 
-  if (materias.length === 0) {
-    return `
+  if (explorerState.loading.materias[grado.id]) {
+    content = '<p class="text-sm text-slate-500">Cargando materias...</p>';
+  } else if (explorerState.errors.materias[grado.id]) {
+    content = `<div class="explorer-empty text-rose-700">${escapeHtml(explorerState.errors.materias[grado.id])}</div>`;
+  } else if (materias.length === 0) {
+    content = `
       <div class="explorer-empty">
         <p>No hay materias en este grado.</p>
-        <button type="button" class="mt-3 inline-flex items-center rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800" data-content-action="create-materia">+ Nueva materia</button>
       </div>
     `;
-  }
-
-  return `
-    <div class="space-y-4">
-      ${renderLevelSectionHeader(`Materias en ${grado.nombre || "grado"}`, "Entra a una materia para administrar unidades.", "grado")}
+  } else {
+    content = `
       <div class="explorer-list-grid">
         ${materias
           .map((materia) => {
@@ -1086,6 +1585,13 @@ function renderGradoLevel() {
           })
           .join("")}
       </div>
+    `;
+  }
+
+  return `
+    <div class="space-y-4">
+      ${renderLevelSectionHeader(`Materias en ${grado.nombre || "grado"}`, "Entra a una materia para administrar unidades.", "grado")}
+      ${content}
     </div>
   `;
 }
@@ -1097,21 +1603,20 @@ function renderMateriaLevel() {
   if (!plantel || !grado || !materia) return '<p class="text-sm text-slate-500">Selecciona una materia valida.</p>';
 
   const unidades = explorerState.unidadesByMateria[materia.id] || [];
-  if (explorerState.loading.unidades[materia.id]) return '<p class="text-sm text-slate-500">Cargando unidades...</p>';
-  if (explorerState.errors.unidades[materia.id]) return `<div class="explorer-empty text-rose-700">${escapeHtml(explorerState.errors.unidades[materia.id])}</div>`;
+  let content = "";
 
-  if (unidades.length === 0) {
-    return `
+  if (explorerState.loading.unidades[materia.id]) {
+    content = '<p class="text-sm text-slate-500">Cargando unidades...</p>';
+  } else if (explorerState.errors.unidades[materia.id]) {
+    content = `<div class="explorer-empty text-rose-700">${escapeHtml(explorerState.errors.unidades[materia.id])}</div>`;
+  } else if (unidades.length === 0) {
+    content = `
       <div class="explorer-empty">
         <p>No hay unidades en esta materia.</p>
-        <button type="button" class="mt-3 inline-flex items-center rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800" data-content-action="create-unidad">+ Nueva unidad</button>
       </div>
     `;
-  }
-
-  return `
-    <div class="space-y-4">
-      ${renderLevelSectionHeader(`Unidades en ${materia.nombre || "materia"}`, "Selecciona una unidad para ver temas y generar planeaciones.", "materia")}
+  } else {
+    content = `
       <div class="explorer-list-grid">
         ${unidades
           .map((unidad) => {
@@ -1126,19 +1631,15 @@ function renderMateriaLevel() {
           })
           .join("")}
       </div>
+    `;
+  }
+
+  return `
+    <div class="space-y-4">
+      ${renderLevelSectionHeader(`Unidades en ${materia.nombre || "materia"}`, "Selecciona una unidad para ver temas y generar planeaciones.", "materia")}
+      ${content}
     </div>
   `;
-}
-
-function resolveTemaStatus(temaId) {
-  const planeacion = explorerState.planeacionByTema[temaId];
-  if (!planeacion) return { tone: "pending", label: "Sin planeacion" };
-
-  const status = String(planeacion.status || "ready").toLowerCase();
-  if (status === "ready") return { tone: "ready", label: "Lista" };
-  if (status === "generating") return { tone: "generating", label: "Generando" };
-  if (status === "error") return { tone: "error", label: "Error" };
-  return { tone: "pending", label: "Pendiente" };
 }
 
 function renderProgressSection() {
@@ -1211,16 +1712,34 @@ function renderUnidadLevel() {
                 <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">
                   Abrir planeacion
                 </button>
-                <button type="button" aria-label="Eliminar planeacion" title="Eliminar planeacion" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50" data-content-action="delete-planeacion" data-planeacion-id="${planeacion.id}" data-tema-id="${tema.id}">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 6h18"></path>
-                    <path d="M8 6V4.75A1.75 1.75 0 0 1 9.75 3h4.5A1.75 1.75 0 0 1 16 4.75V6"></path>
-                    <path d="M6.5 6l.8 12.2A2 2 0 0 0 9.29 20h5.42a2 2 0 0 0 1.99-1.8L17.5 6"></path>
-                    <path d="M10 10.25v5.5"></path>
-                    <path d="M14 10.25v5.5"></path>
-                  </svg>
-                </button>
+                ${renderActionButton({
+                  action: "delete-planeacion",
+                  tone: "neutral",
+                  iconOnly: true,
+                  title: "Eliminar solo la planeacion",
+                  attrs: {
+                    "planeacion-id": planeacion.id,
+                    "tema-id": tema.id,
+                    "plantel-id": explorerState.current.plantelId,
+                    "grado-id": explorerState.current.gradoId,
+                    "materia-id": explorerState.current.materiaId,
+                    "unidad-id": explorerState.current.unidadId
+                  }
+                })}
               ` : ""}
+              ${renderActionButton({
+                action: "delete-tema",
+                tone: "danger",
+                iconOnly: true,
+                title: "Eliminar tema y su planeacion",
+                attrs: {
+                  "tema-id": tema.id,
+                  "plantel-id": explorerState.current.plantelId,
+                  "grado-id": explorerState.current.gradoId,
+                  "materia-id": explorerState.current.materiaId,
+                  "unidad-id": explorerState.current.unidadId
+                }
+              })}
             </div>
           </div>
         `;
@@ -1311,6 +1830,7 @@ function renderAll() {
   renderGlobalError();
   renderSidebarTree();
   renderExplorerContent();
+  renderDeleteConfirmModal();
 }
 
 function getNodeIds(element) {
@@ -1318,7 +1838,9 @@ function getNodeIds(element) {
     plantelId: element.getAttribute("data-plantel-id"),
     gradoId: element.getAttribute("data-grado-id"),
     materiaId: element.getAttribute("data-materia-id"),
-    unidadId: element.getAttribute("data-unidad-id")
+    unidadId: element.getAttribute("data-unidad-id"),
+    temaId: element.getAttribute("data-tema-id"),
+    planeacionId: element.getAttribute("data-planeacion-id")
   };
 }
 
@@ -1515,40 +2037,6 @@ function buildLegacyContext() {
     nivel: getCurrentGrado()?.nombre || undefined,
     unidad: getCurrentUnidad()?.nombre || undefined
   };
-}
-
-async function deletePlaneacionFromDashboard(planeacionId, temaId, buttonEl) {
-  if (!planeacionId || !temaId) return;
-
-  const confirmed = window.confirm("Estas seguro de que deseas eliminar esta planeacion?");
-  if (!confirmed) return;
-
-  const previousLabel = buttonEl?.textContent || "";
-  if (buttonEl) {
-    buttonEl.disabled = true;
-    buttonEl.textContent = "Eliminando...";
-  }
-
-  try {
-    const response = await eliminarPlaneacionApi(planeacionId);
-    if (!response) return;
-
-    explorerState.planeacionByTema[temaId] = null;
-
-    if (explorerState.current.unidadId) {
-      await ensureTemas(explorerState.current.unidadId, { force: true });
-    }
-
-    renderExplorerContent();
-  } catch (error) {
-    console.error("Error eliminando planeacion:", error);
-    alert("No se pudo eliminar la planeacion.");
-  } finally {
-    if (buttonEl) {
-      buttonEl.disabled = false;
-      buttonEl.textContent = previousLabel;
-    }
-  }
 }
 
 async function generatePlaneacionesFromStaging() {
@@ -1926,10 +2414,9 @@ async function handleContentClick(event) {
     return;
   }
 
-  if (action === "delete-planeacion") {
-    const planeacionId = button.getAttribute("data-planeacion-id");
-    const temaId = button.getAttribute("data-tema-id");
-    return deletePlaneacionFromDashboard(planeacionId, temaId, button);
+  if (["delete-plantel", "delete-grado", "delete-materia", "delete-unidad", "delete-tema", "delete-planeacion"].includes(action)) {
+    requestDeleteAction(action, ids);
+    return;
   }
 
   if (action === "add-staging-tema") return addStagingTemaFromInputs();
@@ -2055,8 +2542,28 @@ function bindDashboardEvents() {
     });
   });
 
+  ["delete-confirm-backdrop", "delete-confirm-close", "delete-confirm-cancel"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      closeDeleteConfirm();
+    });
+  });
+
+  document.getElementById("delete-confirm-submit")?.addEventListener("click", () => {
+    submitDeleteConfirm().catch((error) => {
+      console.error("Error eliminando recurso:", error);
+      explorerState.confirmDelete.busy = false;
+      explorerState.confirmDelete.error = "No se pudo completar la eliminacion.";
+      renderDeleteConfirmModal();
+    });
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
+
+    if (explorerState.confirmDelete.open) {
+      closeDeleteConfirm();
+      return;
+    }
 
     if (explorerState.quickCreate.open) {
       closeQuickCreatePanel();
