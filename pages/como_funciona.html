@@ -3,129 +3,125 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Educativo IA - Cómo funciona</title>
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <!-- Estilos propios -->
-  <link rel="stylesheet" href="../css/index.css" />
-  <link rel="stylesheet" href="../css/global.css">
+  <title>Cómo funciona | Educativo IA</title>
+  <link rel="stylesheet" href="../css/tailwind.css" />
+  <link rel="stylesheet" href="../css/public.css" />
   <script src="../js/ui/components.public.js" defer></script>
 </head>
-<body>
-
-  <!-- NAVBAR -->
+<body class="public-shell">
   <div id="navbar"></div>
 
-  <!-- HERO - RESUMEN DE PASOS -->
-  <section class="container-fluid bg-light py-7 my-5">
-    <div class="container text-center">
-      <h1 class="display-4 fw-normal text-body-emphasis mb-5">
-        ¿Cómo funciona <span class="text-primary">Educativo IA</span>?
-      </h1>
-      <h3 class="mb-1">Tu Planeación en 4 pasos</h3>
-      <p class="fs-5 text-secondary mb-5">
-        Empieza registrándote gratis y transforma tu manera de planificar clases en solo minutos.
-      </p>
-
-      <!-- Resumen de pasos -->
-      <div class="row g-4 justify-content-center">
-        <div class="col-6 col-md-2 text-center">
-          <h2 class="fw-bold text-primary">1</h2>
-          <p class="text-secondary">Ingresa los datos</p>
-        </div>
-        <div class="col-6 col-md-2 text-center">
-          <h2 class="fw-bold text-primary">2</h2>
-          <p class="text-secondary">Genera con IA</p>
-        </div>
-        <div class="col-6 col-md-2 text-center">
-          <h2 class="fw-bold text-primary">3</h2>
-          <p class="text-secondary">Personaliza</p>
-        </div>
-        <div class="col-6 col-md-2 text-center">
-          <h2 class="fw-bold text-primary">4</h2>
-          <p class="text-secondary">Guarda y Comparte</p>
+  <main class="public-page">
+    <section class="mx-auto w-full max-w-7xl px-4 pb-8 pt-8 sm:px-6 lg:px-8 lg:pb-12">
+      <div class="public-card p-6 sm:p-8 lg:p-10">
+        <span class="public-pill">Flujo de trabajo</span>
+        <div class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.92fr)] lg:items-center">
+          <div>
+            <h1 class="public-display text-4xl font-semibold text-slate-950 sm:text-5xl">El sistema guía la planeación desde la jerarquía hasta la exportación.</h1>
+            <p class="mt-5 text-base leading-8 text-slate-600">
+              No empiezas escribiendo temas al vacío. Primero ubicas el contexto, luego generas por unidad, revisas estados y finalmente editas el detalle antes de descargar.
+            </p>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <article class="public-card-soft p-4">
+              <p class="public-kicker">Tiempo real</p>
+              <p class="mt-2 text-2xl font-extrabold text-slate-950">Estados por tema</p>
+            </article>
+            <article class="public-card-soft p-4">
+              <p class="public-kicker">Resultado</p>
+              <p class="mt-2 text-2xl font-extrabold text-slate-950">Detalle editable</p>
+            </article>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- PASOS COMBINADOS -->
-  <section class="container my-5 py-7">
-
-    <!-- Paso 1 -->
-    <div class="mb-5 py-5">
-      <div class="row g-5 align-items-center">
-        <div class="col-md-6 text-center">
-          <img src="../assets/paso1_v2.png" alt="Registro gratis" class="img-fluid rounded-4 shadow">
+    <section class="mx-auto w-full max-w-7xl space-y-4 px-4 py-4 sm:px-6 lg:px-8">
+      <article class="public-card overflow-hidden p-0">
+        <div class="grid gap-0 lg:grid-cols-2">
+          <div class="p-6 sm:p-8">
+            <span class="public-step-badge">1</span>
+            <p class="public-kicker mt-5">Ubica el contexto</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Abre planteles, grados, materias y unidades.</h2>
+            <p class="mt-4 text-sm leading-7 text-slate-600">
+              El explorador mantiene la ruta actual visible para que nunca pierdas de vista dónde estás trabajando.
+            </p>
+          </div>
+          <div class="min-h-[260px] overflow-hidden bg-slate-100">
+            <img src="../assets/paso1_v2.png" alt="Jerarquía académica en Educativo IA" class="h-full w-full object-cover" />
+          </div>
         </div>
-        <div class="col-md-6 text-center">
-          <h1 class="display-3 fw-bold text-primary mb-3">1</h1>
-          <h4 class="fw-semibold">Ingresa los datos de tu asignatura</h4>
-          <p class="text-secondary fs-5">Completa los campos de asignatura, nivel, tema y subtema para que la IA genere una Planeación adaptada a tus necesidades.</p>
+      </article>
+
+      <article class="public-card overflow-hidden p-0">
+        <div class="grid gap-0 lg:grid-cols-2">
+          <div class="order-2 p-6 sm:p-8 lg:order-1">
+            <div class="min-h-[260px] overflow-hidden rounded-[1.4rem] bg-slate-100">
+              <img src="../assets/paso2.png" alt="Selección de materia y unidad" class="h-full w-full object-cover" />
+            </div>
+          </div>
+          <div class="order-1 p-6 sm:p-8 lg:order-2">
+            <span class="public-step-badge">2</span>
+            <p class="public-kicker mt-5">Prepara la generación</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Agrega temas sólo cuando decides abrir el panel.</h2>
+            <p class="mt-4 text-sm leading-7 text-slate-600">
+              La vista principal de la unidad se mantiene limpia. El panel de staging aparece al hacer clic en “Agregar temas”.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <article class="public-card overflow-hidden p-0">
+        <div class="grid gap-0 lg:grid-cols-2">
+          <div class="p-6 sm:p-8">
+            <span class="public-step-badge">3</span>
+            <p class="public-kicker mt-5">Sigue el progreso</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Observa espera, generación y listo por cada tema.</h2>
+            <p class="mt-4 text-sm leading-7 text-slate-600">
+              El feedback visual aparece hasta que se usa y muestra el estado actual con animación mientras la IA trabaja.
+            </p>
+          </div>
+          <div class="min-h-[260px] overflow-hidden bg-slate-100">
+            <img src="../assets/paso3.png" alt="Estados de generación por tema" class="h-full w-full object-cover" />
+          </div>
+        </div>
+      </article>
+
+      <article class="public-card overflow-hidden p-0">
+        <div class="grid gap-0 lg:grid-cols-2">
+          <div class="order-2 p-6 sm:p-8 lg:order-1">
+            <div class="min-h-[260px] overflow-hidden rounded-[1.4rem] bg-slate-100">
+              <img src="../assets/paso4.png" alt="Detalle editable de planeación" class="h-full w-full object-cover" />
+            </div>
+          </div>
+          <div class="order-1 p-6 sm:p-8 lg:order-2">
+            <span class="public-step-badge">4</span>
+            <p class="public-kicker mt-5">Ajusta el resultado</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Entra al detalle, edita y exporta.</h2>
+            <p class="mt-4 text-sm leading-7 text-slate-600">
+              El detalle muestra la ruta jerárquica de origen, habilita edición con un estado claro y conserva Word/Excel al final del flujo.
+            </p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div class="public-card-strong p-6 sm:p-8">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div class="max-w-2xl">
+            <p class="public-kicker">Verlo en acción</p>
+            <h2 class="public-display mt-3 text-3xl font-semibold text-slate-950">Empieza con el explorador y genera tu primera unidad.</h2>
+          </div>
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <a href="login.html" class="public-cta-primary">Abrir plataforma</a>
+            <a href="precios.html" class="public-cta-secondary">Ver planes</a>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
+  </main>
 
-    <!-- Paso 2 -->
-    <div class="mb-5 py-5">
-      <div class="row g-5 align-items-center flex-md-row-reverse">
-        <div class="col-md-6 text-center">
-          <img src="../assets/paso2.png" alt="Seleccionar asignatura" class="img-fluid rounded-4 shadow">
-        </div>
-        <div class="col-md-6 text-center">
-          <h1 class="display-3 fw-bold text-primary mb-3">2</h1>
-          <h4 class="fw-semibold">Genera con IA</h4>
-          <p class="text-secondary fs-5">La inteligencia artificial construye automáticamente los objetivos, contenidos y actividades. En segundos tendrás una Planeación clara y lista para personalizar.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Paso 3 -->
-    <div class="mb-5 py-5">
-      <div class="row g-5 align-items-center">
-        <div class="col-md-6 text-center">
-          <img src="../assets/paso3.png" alt="Generación automática con IA" class="img-fluid rounded-4 shadow">
-        </div>
-        <div class="col-md-6 text-center">
-          <h1 class="display-3 fw-bold text-primary mb-3">3</h1>
-          <h4 class="fw-semibold">Personaliza tu Planeación</h4>
-          <p class="text-secondary fs-5">Ajusta el contenido según tus métodos de enseñanza. Agrega recursos, edita actividades o cambia el enfoque pedagógico según lo necesites.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Paso 4 -->
-    <div class="mb-5 py-5">
-      <div class="row g-5 align-items-center flex-md-row-reverse">
-        <div class="col-md-6 text-center">
-          <img src="../assets/paso4.png" alt="Personalización" class="img-fluid rounded-4 shadow">
-        </div>
-        <div class="col-md-6 text-center">
-          <h1 class="display-3 fw-bold text-primary mb-3">4</h1>
-          <h4 class="fw-semibold">Guarda y comparte</h4>
-          <p class="text-secondary fs-5">Exporta tu Planeación en formatos listos para usar. Guárdala en la nube y compártela fácilmente con colegas o alumnos, accesible en cualquier momento y desde cualquier dispositivo.</p>
-        </div>
-      </div>
-    </div>
-
-  </section>
-
-  <!-- CTA -->
-  <section class="container-fluid bg-light py-7 my-5">
-    <div class="container text-center">
-      <h2 class="fw-bold mb-4">Empieza hoy mismo</h2>
-      <p class="lead text-secondary mb-4">Explora todas las funciones de Educativo IA y descubre cómo mejorar tu planificación docente.</p>
-      <a href="login.html" class="btn btn-primary btn-lg">Probar ahora</a>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
   <div id="footer"></div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-

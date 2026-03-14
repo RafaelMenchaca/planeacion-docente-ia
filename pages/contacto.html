@@ -1,82 +1,105 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Contacto - Educativo IA</title>
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-
-  <!-- Estilos propios -->
-  <link rel="stylesheet" href="../css/index.css" />
-  <link rel="stylesheet" href="../css/global.css">
+  <title>Contacto | Educativo IA</title>
+  <link rel="stylesheet" href="../css/tailwind.css" />
+  <link rel="stylesheet" href="../css/public.css" />
+  <script src="../js/ui/components.public.js" defer></script>
 </head>
-
-<body>
-  <!-- Incluir Navbar -->
+<body class="public-shell">
   <div id="navbar"></div>
 
-  <!-- CONTACTO -->
-  <section class="container py-5 mt-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <div class="text-center mb-5">
-          <h2 class="fw-bold"><span class="text-primary">Contáctanos</span></h2>
-          <p class="text-secondary fs-5">
-            ¿Tienes preguntas sobre nuestros planes, dudas técnicas o comentarios?
-            Escríbenos y nuestro equipo se pondrá en contacto contigo lo antes posible.
-          </p>
-        </div>
-
-        <!-- Formulario -->
-        <div class="card shadow-sm border-0 p-4">
-          <form>
-            <!-- Nombre -->
-            <div class="mb-3">
-              <label for="nombre" class="form-label">Nombre completo</label>
-              <input type="text" class="form-control" id="nombre" placeholder="Ej. María López" required>
-            </div>
-
-            <!-- Email -->
-            <div class="mb-3">
-              <label for="email" class="form-label">Correo electrónico</label>
-              <input type="email" class="form-control" id="email" placeholder="ejemplo@correo.com" required>
-            </div>
-
-            <!-- Asunto -->
-            <div class="mb-3">
-              <label for="asunto" class="form-label">Asunto</label>
-              <input type="text" class="form-control" id="asunto" placeholder="Motivo de tu consulta" required>
-            </div>
-
-            <!-- Mensaje -->
-            <div class="mb-3">
-              <label for="mensaje" class="form-label">Mensaje</label>
-              <textarea class="form-control" id="mensaje" rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
-            </div>
-
-            <!-- Botón -->
-            <div class="text-center">
-              <button type="submit" class="btn btn-primary btn-lg">
-                <i class="bi bi-send me-2"></i>Enviar mensaje
-              </button>
-            </div>
-          </form>
+  <main class="public-page">
+    <section class="mx-auto w-full max-w-7xl px-4 pb-8 pt-8 sm:px-6 lg:px-8 lg:pb-12">
+      <div class="public-card p-6 sm:p-8 lg:p-10">
+        <span class="public-pill">Contacto y demo</span>
+        <div class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.92fr)] lg:items-center">
+          <div>
+            <h1 class="public-display text-4xl font-semibold text-slate-950 sm:text-5xl">Si tu equipo ya trabaja por jerarquías, conversemos.</h1>
+            <p class="mt-5 text-base leading-8 text-slate-600">
+              Podemos ayudarte a validar el flujo, revisar tu estructura académica actual y definir cómo aterrizar la creación de planeaciones dentro de tu operación.
+            </p>
+          </div>
+          <div class="grid gap-3">
+            <article class="public-card-soft p-4">
+              <p class="public-kicker">Correo</p>
+              <p class="mt-2 text-lg font-bold text-slate-950">soporte@educativo-ia.com</p>
+            </article>
+            <article class="public-card-soft p-4">
+              <p class="public-kicker">Horario</p>
+              <p class="mt-2 text-lg font-bold text-slate-950">Lunes a viernes, 9:00 a 18:00</p>
+            </article>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Incluir Footer -->
+    <section class="mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:px-8">
+      <div class="grid gap-4">
+        <article class="public-card p-6">
+          <p class="public-kicker">Casos ideales</p>
+          <h2 class="mt-3 text-2xl font-bold text-slate-950">Te conviene contactarnos si necesitas:</h2>
+          <div class="mt-6 space-y-4 text-sm text-slate-700">
+            <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Organizar varias materias o academias bajo una misma lógica.</span></div>
+            <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Definir un flujo institucional para generar y revisar planeaciones.</span></div>
+            <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Evaluar un despliegue con docentes, coordinadores o planteles completos.</span></div>
+          </div>
+        </article>
+
+        <article class="public-card-soft p-6">
+          <p class="public-kicker">Respuesta esperada</p>
+          <h3 class="mt-3 text-xl font-bold text-slate-950">Te respondemos con el siguiente paso concreto.</h3>
+          <p class="mt-3 text-sm leading-7 text-slate-600">
+            No enviamos respuestas genéricas. Si escribes con contexto sobre tu estructura, te contestamos con la mejor forma de validar el sistema.
+          </p>
+        </article>
+      </div>
+
+      <div class="public-card p-6 sm:p-8">
+        <h2 class="text-2xl font-bold text-slate-950">Escríbenos</h2>
+        <p class="mt-2 text-sm leading-7 text-slate-600">Cuéntanos qué nivel manejas, cómo organizan sus planeaciones y qué esperan automatizar.</p>
+
+        <form class="mt-6 space-y-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="nombre" class="mb-2 block text-sm font-semibold text-slate-700">Nombre</label>
+              <input id="nombre" type="text" class="public-input" placeholder="Nombre completo" />
+            </div>
+            <div>
+              <label for="institucion" class="mb-2 block text-sm font-semibold text-slate-700">Institución</label>
+              <input id="institucion" type="text" class="public-input" placeholder="Escuela o coordinación" />
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Correo</label>
+              <input id="email" type="email" class="public-input" placeholder="correo@institucion.edu" />
+            </div>
+            <div>
+              <label for="motivo" class="mb-2 block text-sm font-semibold text-slate-700">Motivo</label>
+              <select id="motivo" class="public-select">
+                <option value="" selected disabled hidden>Selecciona un motivo</option>
+                <option value="demo">Quiero una demo</option>
+                <option value="institucion">Necesito propuesta institucional</option>
+                <option value="soporte">Tengo una duda técnica</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label for="mensaje" class="mb-2 block text-sm font-semibold text-slate-700">Mensaje</label>
+            <textarea id="mensaje" rows="6" class="public-textarea" placeholder="Describe tu estructura actual y qué parte del flujo deseas mejorar."></textarea>
+          </div>
+
+          <button type="submit" class="public-cta-primary">Enviar mensaje</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
   <div id="footer"></div>
-
-  <!-- Bootstrap bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="../js/ui/components.public.js"></script>
 </body>
-
 </html>
-
-

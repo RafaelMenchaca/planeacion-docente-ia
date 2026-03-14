@@ -3,115 +3,109 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Registro - Educativo IA</title>
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="../css/index.css" />
-  <link rel="stylesheet" href="../css/global.css">
+  <title>Crear cuenta | Educativo IA</title>
+  <link rel="stylesheet" href="../css/tailwind.css" />
+  <link rel="stylesheet" href="../css/public.css" />
+  <script src="../js/ui/components.public.js" defer></script>
 </head>
-<body class="bg-light">
-
-  <!-- NAVBAR -->
+<body class="public-shell">
   <div id="navbar"></div>
 
-  <!-- Registro -->
-  <section class="container d-flex align-items-center justify-content-center min-vh-100">
-    <div class="col-md-8 col-lg-6">
-      <div class="card shadow-sm border-0 p-4">
-        <h2 class="fw-bold text-center mb-4">Crear cuenta</h2>
-        <form>
-          <!-- Nombre -->
-          <div class="mb-3">
-            <label for="nombre" class="form-label">Nombre completo <span class="text-danger">(obligatorio)</span></label>
-            <input type="text" class="form-control" id="nombre" placeholder="Ej. María López" required>
+  <main class="public-page">
+    <section class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(440px,1.1fr)]">
+        <article class="public-card-strong bg-gradient-to-br from-slate-950 via-cyan-900 to-cyan-800 p-8 text-white sm:p-10">
+          <span class="public-pill border-white/20 bg-white/10 text-white before:bg-white before:shadow-none">Alta rápida</span>
+          <h1 class="public-display mt-6 text-4xl font-semibold leading-tight sm:text-5xl">Empieza a construir tu estructura y genera desde la primera unidad.</h1>
+          <p class="mt-5 max-w-xl text-sm leading-7 text-cyan-50/90 sm:text-base">
+            Crea tu acceso para organizar planteles, grados, materias y unidades. Después podrás agregar temas y disparar la generación en lote.
+          </p>
+        </article>
+
+        <article class="public-card p-6 sm:p-8">
+          <div>
+            <p class="public-kicker">Crear cuenta</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Configura tu acceso inicial</h2>
           </div>
 
-          <!-- Email -->
-          <div class="mb-3">
-            <label for="email" class="form-label">Correo electrónico <span class="text-danger">(obligatorio)</span></label>
-            <input type="email" class="form-control" id="email" placeholder="ejemplo@correo.com" required>
-          </div>
+          <form class="mt-8 space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="nombre" class="mb-2 block text-sm font-semibold text-slate-700">Nombre completo</label>
+                <input id="nombre" type="text" class="public-input" placeholder="María López" required />
+              </div>
+              <div>
+                <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Correo electrónico</label>
+                <input id="email" type="email" class="public-input" placeholder="docente@escuela.edu" required />
+              </div>
+            </div>
 
-          <!-- Contraseña -->
-          <div class="mb-3">
-            <label for="password" class="form-label">Contraseña <span class="text-danger">(obligatorio)</span></label>
-            <input type="password" class="form-control" id="password" required>
-          </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="password" class="mb-2 block text-sm font-semibold text-slate-700">Contraseña</label>
+                <input id="password" type="password" class="public-input" required />
+              </div>
+              <div>
+                <label for="confirm-password" class="mb-2 block text-sm font-semibold text-slate-700">Confirmar contraseña</label>
+                <input id="confirm-password" type="password" class="public-input" required />
+              </div>
+            </div>
 
-          <!-- Confirmar contraseña -->
-          <div class="mb-4">
-            <label for="confirm-password" class="form-label">Confirmar contraseña <span class="text-danger">(obligatorio)</span></label>
-            <input type="password" class="form-control" id="confirm-password" required>
-          </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="rol" class="mb-2 block text-sm font-semibold text-slate-700">Rol</label>
+                <select id="rol" class="public-select">
+                  <option value="" selected disabled hidden>Selecciona tu rol</option>
+                  <option value="docente">Docente</option>
+                  <option value="coordinador">Coordinador</option>
+                  <option value="institucion">Institución</option>
+                </select>
+              </div>
+              <div>
+                <label for="nivel" class="mb-2 block text-sm font-semibold text-slate-700">Nivel educativo</label>
+                <select id="nivel" class="public-select">
+                  <option value="" selected disabled hidden>Selecciona un nivel</option>
+                  <option value="primaria">Primaria</option>
+                  <option value="secundaria">Secundaria</option>
+                  <option value="preparatoria">Preparatoria</option>
+                  <option value="universidad">Universidad</option>
+                </select>
+              </div>
+            </div>
 
-          <!-- Rol -->
-          <div class="mb-3">
-            <label for="rol" class="form-label">Rol <span class="text-muted">(opcional)</span></label>
-            <select id="rol" class="form-select">
-              <option selected disabled>Selecciona tu rol</option>
-              <option value="docente">Docente</option>
-              <option value="coordinador">Coordinador</option>
-              <option value="institucion">Institución</option>
-            </select>
-          </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="materia" class="mb-2 block text-sm font-semibold text-slate-700">Materia principal</label>
+                <input id="materia" type="text" class="public-input" placeholder="Matemáticas" />
+              </div>
+              <div>
+                <label for="pais" class="mb-2 block text-sm font-semibold text-slate-700">País / región</label>
+                <select id="pais" class="public-select">
+                  <option value="" selected disabled hidden>Selecciona tu país</option>
+                  <option value="mx">México</option>
+                  <option value="us">Estados Unidos</option>
+                  <option value="es">España</option>
+                  <option value="ar">Argentina</option>
+                  <option value="co">Colombia</option>
+                  <option value="cl">Chile</option>
+                  <option value="pe">Perú</option>
+                  <option value="otros">Otro</option>
+                </select>
+              </div>
+            </div>
 
-          <!-- Nivel educativo -->
-          <div class="mb-3">
-            <label for="nivel" class="form-label">Nivel educativo <span class="text-muted">(opcional)</span></label>
-            <select id="nivel" class="form-select">
-              <option selected disabled>Selecciona un nivel</option>
-              <option value="primaria">Primaria</option>
-              <option value="secundaria">Secundaria</option>
-              <option value="preparatoria">Preparatoria</option>
-              <option value="universidad">Universidad</option>
-            </select>
-          </div>
+            <button type="submit" class="public-cta-primary w-full">Crear cuenta</button>
+          </form>
 
-          <!-- Materia principal -->
-          <div class="mb-3">
-            <label for="materia" class="form-label">Materia principal <span class="text-muted">(opcional)</span></label>
-            <input type="text" class="form-control" id="materia" placeholder="Ej. Matemáticas">
-          </div>
-
-          <!-- País / Región -->
-          <div class="mb-4">
-            <label for="pais" class="form-label">País / Región <span class="text-muted">(opcional)</span></label>
-            <select id="pais" class="form-select">
-              <option selected disabled>Selecciona tu país</option>
-              <option value="mx">México</option>
-              <option value="us">Estados Unidos</option>
-              <option value="es">España</option>
-              <option value="ar">Argentina</option>
-              <option value="co">Colombia</option>
-              <option value="cl">Chile</option>
-              <option value="pe">Perú</option>
-              <option value="otros">Otro</option>
-            </select>
-          </div>
-
-          <!-- Nota -->
-          <p class="small text-muted mb-3">Los campos marcados como <span class="text-danger">(obligatorio)</span> son necesarios para crear tu cuenta.</p>
-
-          <!-- Botón -->
-          <button type="submit" class="btn btn-primary w-100">Registrarse</button>
-        </form>
-
-        <!-- Link a login -->
-        <p class="text-center mt-3 mb-0">
-          ¿Ya tienes cuenta? <a href="login.html" class="text-primary">Inicia sesión</a>
-        </p>
+          <p class="mt-6 text-sm text-slate-600">
+            ¿Ya tienes acceso?
+            <a href="login.html" class="font-semibold text-cyan-800">Inicia sesión</a>
+          </p>
+        </article>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
-  <!-- FOOTER -->
   <div id="footer"></div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="../js/ui/components.public.js"></script>
 </body>
 </html>
-
-

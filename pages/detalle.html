@@ -3,33 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Detalle de Planeacion</title>
-  <link rel="stylesheet" href="../css/tailwind.css">
-  <link rel="stylesheet" href="../css/detalle.css">
+  <title>Detalle de planeación</title>
+  <link rel="stylesheet" href="../css/tailwind.css" />
+  <link rel="stylesheet" href="../css/detalle.css" />
 </head>
 <body class="detalle-shell min-h-screen bg-slate-100 text-slate-900">
   <div id="navbar-placeholder"></div>
 
   <main class="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-    <section id="detalle-info" class="detalle-card rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-      <p class="text-sm text-slate-500">Cargando informacion...</p>
+    <section id="detalle-info" class="detalle-card rounded-3xl border border-slate-200 bg-white p-5 sm:p-6">
+      <p class="text-sm text-slate-500">Cargando información...</p>
     </section>
 
-    <section class="detalle-card overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div class="border-b border-slate-200 px-5 py-4">
-        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Propuesta de la IA</h2>
+    <section class="detalle-card overflow-hidden rounded-3xl border border-slate-200 bg-white">
+      <div class="border-b border-slate-200 px-5 py-4 sm:px-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-800">Planeación editable</p>
+            <h2 class="mt-2 text-lg font-semibold text-slate-900 sm:text-xl">Propuesta generada por IA</h2>
+            <p id="detalle-edit-subtitle" class="mt-1 text-sm text-slate-600">Modo lectura activo. Revisa el contenido antes de editar.</p>
+          </div>
+
+          <div class="flex flex-wrap gap-3 lg:justify-end">
+            <button id="btn-editar" class="inline-flex min-w-44 items-center justify-center rounded-xl border border-cyan-300 px-4 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">
+              Editar planeación
+            </button>
+            <button id="btn-cancelar-edicion" class="hidden inline-flex min-w-44 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              Cancelar edición
+            </button>
+            <button id="btn-guardar-cambios" class="hidden inline-flex min-w-44 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+
+        <div id="detalle-edit-banner" class="detalle-edit-banner hidden mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm font-semibold text-cyan-900">Edición activada. Ahora puedes escribir en las celdas de contenido.</p>
+            <span id="detalle-edit-status" class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-cyan-700">Sin cambios aún</span>
+          </div>
+        </div>
       </div>
 
       <div class="p-4 sm:p-6">
-        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table id="tablaDetalleIA" class="min-w-full table-custom text-center">
+        <div id="detalle-table-shell" class="detalle-table-shell rounded-2xl border border-slate-200 bg-white">
+          <table id="tablaDetalleIA" class="table-custom text-center">
             <thead>
               <tr>
-                <th>Tiempo de la sesion</th>
+                <th>Tiempo de la sesión</th>
                 <th>Actividades</th>
                 <th>Tiempo (min)</th>
                 <th>Producto de aprendizaje</th>
-                <th>Instrumento de evaluacion</th>
+                <th>Instrumento de evaluación</th>
                 <th>Formativa</th>
                 <th>Sumativa</th>
               </tr>
@@ -37,35 +62,21 @@
             <tbody></tbody>
           </table>
         </div>
-
-        <div class="mt-5 flex flex-wrap justify-center gap-3">
-          <button id="btn-editar" class="inline-flex min-w-44 items-center justify-center rounded-lg border border-cyan-300 px-4 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">
-            Editar planeacion
-          </button>
-          <button id="btn-guardar-cambios" class="hidden inline-flex min-w-44 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
-            Guardar cambios
-          </button>
-        </div>
       </div>
     </section>
 
-    <section class="detalle-card rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <section class="detalle-card rounded-3xl border border-slate-200 bg-white p-4 sm:p-5">
       <div class="flex flex-wrap justify-center gap-3">
-        <a href="dashboard.html" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Volver al Dashboard
-        </a>
-        <a href="dashboard.html" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Ir al explorador
-        </a>
-        <button id="btn-descargar-doc" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Descargar (.doc)
+        <button id="btn-descargar-doc" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          Descargar Word
         </button>
-        <button id="btn-export-excel" class="inline-flex items-center justify-center rounded-lg bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
-          Exportar a Excel
+        <button id="btn-export-excel" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
+          Descargar Excel
         </button>
       </div>
     </section>
   </main>
+
   <div id="footer-placeholder"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>

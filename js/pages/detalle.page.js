@@ -6,7 +6,7 @@ function mostrarErrorDetalle(mensaje) {
   const info = document.getElementById("detalle-info");
   if (info) {
     info.innerHTML = `
-      <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
+      <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700">
         ${escapeHtml(mensaje)}
       </div>
     `;
@@ -16,6 +16,38 @@ function mostrarErrorDetalle(mensaje) {
   if (tbody) {
     tbody.innerHTML = '<tr><td colspan="7" class="py-5 text-sm text-slate-500">Sin datos para mostrar.</td></tr>';
   }
+}
+
+function syncDetalleEdicionUI() {
+  setDetalleModoEdicion(modoEdicion);
+  actualizarEstadoEdicion(cambiosPendientes);
+}
+
+function salirEdicion({ restaurarOriginal = false } = {}) {
+  if (restaurarOriginal && PLANEACION_ORIGINAL) {
+    renderTablaIA(PLANEACION_ORIGINAL.tabla_ia || []);
+  }
+
+  modoEdicion = false;
+  cambiosPendientes = false;
+  syncDetalleEdicionUI();
+}
+
+function entrarEdicion() {
+  if (!PLANEACION_ORIGINAL) return;
+  modoEdicion = true;
+  cambiosPendientes = false;
+  syncDetalleEdicionUI();
+}
+
+function manejarInputTabla(event) {
+  if (!modoEdicion) return;
+  const cell = event.target.closest("td.editable-cell");
+  if (!cell) return;
+
+  cambiosPendientes = true;
+  marcarCeldaComoEditada(cell);
+  actualizarEstadoEdicion(cambiosPendientes);
 }
 
 async function resolverPlaneacionIdDesdeParams() {
@@ -48,31 +80,36 @@ async function initDetallePage() {
   try {
     id = await resolverPlaneacionIdDesdeParams();
   } catch (error) {
-    console.error("Error resolviendo identificador de planeacion:", error);
-    mostrarErrorDetalle("No se pudo resolver la planeacion seleccionada.");
+    console.error("Error resolviendo identificador de planeación:", error);
+    mostrarErrorDetalle("No se pudo resolver la planeación seleccionada.");
     return;
   }
 
   if (id === null) {
-    mostrarErrorDetalle("ID invalido. Regresa al dashboard y abre una planeacion valida.");
+    mostrarErrorDetalle("ID inválido. Regresa al dashboard y abre una planeación válida.");
     return;
   }
 
   document.getElementById("btn-descargar-doc")?.addEventListener("click", () => {
     if (!PLANEACION_ORIGINAL) {
-      mostrarToast("No hay informacion lista para exportar.", "danger");
+      mostrarToast("No hay información lista para exportar.", "danger");
       return;
     }
 
     descargarWord({
       data: PLANEACION_ORIGINAL,
-      tableId: "tablaDetalleIA",
+      tableId: "tablaDetalleIA"
     });
   });
 
   document.getElementById("btn-export-excel")?.addEventListener("click", exportarExcelActual);
-  document.getElementById("btn-editar")?.addEventListener("click", toggleEdicion);
+  document.getElementById("btn-editar")?.addEventListener("click", entrarEdicion);
+  document.getElementById("btn-cancelar-edicion")?.addEventListener("click", () => {
+    salirEdicion({ restaurarOriginal: true });
+    mostrarToast("Edición cancelada.");
+  });
   document.getElementById("btn-guardar-cambios")?.addEventListener("click", guardarCambios);
+  document.getElementById("tablaDetalleIA")?.addEventListener("input", manejarInputTabla);
 
   cargarDetallePlaneacion(id);
 }
@@ -81,19 +118,20 @@ async function cargarDetallePlaneacion(id) {
   try {
     const data = await obtenerPlaneacionDetalle(id);
     if (!data) {
-      mostrarErrorDetalle("No se pudo cargar la planeacion.");
+      mostrarErrorDetalle("No se pudo cargar la planeación.");
       return;
     }
 
     PLANEACION_ORIGINAL = data;
-    cambiosPendientes = false;
     modoEdicion = false;
+    cambiosPendientes = false;
 
     renderInfo(data);
     renderTablaIA(data.tabla_ia || []);
+    syncDetalleEdicionUI();
   } catch (err) {
-    console.error("Error al cargar planeacion:", err);
-    mostrarErrorDetalle("Error al cargar la planeacion.");
+    console.error("Error al cargar planeación:", err);
+    mostrarErrorDetalle("Error al cargar la planeación.");
   }
 }
 
@@ -113,14 +151,10 @@ async function guardarCambios() {
     if (!data) return;
 
     PLANEACION_ORIGINAL = data;
-    cambiosPendientes = false;
-
-    if (modoEdicion) {
-      toggleEdicion();
-    }
-
     renderInfo(data);
     renderTablaIA(data.tabla_ia || []);
+    animarGuardadoCeldas();
+    salirEdicion();
     mostrarToast("Cambios guardados correctamente.", "success");
   } catch (err) {
     console.error("Error al guardar cambios:", err);
@@ -131,7 +165,7 @@ async function guardarCambios() {
 async function exportarExcelActual() {
   const id = PLANEACION_ORIGINAL?.id;
   if (!id) {
-    mostrarToast("No hay informacion lista para exportar.", "danger");
+    mostrarToast("No hay información lista para exportar.", "danger");
     return;
   }
 
