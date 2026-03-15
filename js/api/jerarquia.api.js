@@ -23,6 +23,10 @@ function createApiError(message, status, payload) {
   return error;
 }
 
+function debugPlaneacionRequest(label, payload) {
+  console.log(`[planeacion-debug] ${label}`, payload);
+}
+
 async function requestJson(url, options, fallbackMessage) {
   const response = await fetch(url, options);
   const payload = await parseApiJson(response);
@@ -221,7 +225,9 @@ async function apiTemasDelete(id, accessToken) {
 }
 
 async function apiUnidadGenerar(unidadId, payload, accessToken) {
-  return requestJson(
+  debugPlaneacionRequest(`request POST /api/unidades/${unidadId}/generar`, payload);
+
+  const responsePayload = await requestJson(
     `${API_BASE_URL}/api/unidades/${encodeURIComponent(unidadId)}/generar`,
     {
       method: "POST",
@@ -230,9 +236,14 @@ async function apiUnidadGenerar(unidadId, payload, accessToken) {
     },
     "No se pudieron generar las planeaciones"
   );
+
+  debugPlaneacionRequest(`response POST /api/unidades/${unidadId}/generar`, responsePayload);
+  return responsePayload;
 }
 
 async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEvent) {
+  debugPlaneacionRequest(`request POST /api/unidades/${unidadId}/generar?stream=1`, payload);
+
   const response = await fetch(`${API_BASE_URL}/api/unidades/${encodeURIComponent(unidadId)}/generar?stream=1`, {
     method: "POST",
     headers: {
@@ -250,7 +261,9 @@ async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEve
 
   const contentType = (response.headers.get("content-type") || "").toLowerCase();
   if (contentType.includes("application/json")) {
-    return parseApiJson(response);
+    const responsePayload = await parseApiJson(response);
+    debugPlaneacionRequest(`response POST /api/unidades/${unidadId}/generar?stream=1`, responsePayload);
+    return responsePayload;
   }
 
   if (!response.body) {
@@ -261,6 +274,7 @@ async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEve
   const decoder = new TextDecoder();
   let buffer = "";
   let donePayload = null;
+  let streamError = null;
 
   while (true) {
     const { value, done } = await reader.read();
@@ -279,12 +293,19 @@ async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEve
 
       try {
         const evt = JSON.parse(payloadLine);
-        if (typeof onEvent === "function") {
-          onEvent(evt);
-        }
-
         if (evt.type === "done") {
           donePayload = evt.data || evt.payload || null;
+          return;
+        }
+
+        if (evt.type === "error") {
+          const message = evt.error || evt.message || "No se pudieron generar las planeaciones";
+          streamError = createApiError(message, response.status, evt);
+          return;
+        }
+
+        if (typeof onEvent === "function") {
+          onEvent(evt);
         }
       } catch {
         // Ignore malformed event chunks.
@@ -292,6 +313,11 @@ async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEve
     });
   }
 
+  if (streamError) {
+    throw streamError;
+  }
+
+  debugPlaneacionRequest(`response POST /api/unidades/${unidadId}/generar?stream=1`, donePayload);
   return donePayload;
 }
 

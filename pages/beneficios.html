@@ -3,203 +3,129 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Educativo IA - Beneficios</title>
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <!-- Estilos propios -->
-  <link rel="stylesheet" href="../css/index.css" />
+  <title>Beneficios | Educativo IA</title>
+  <link rel="stylesheet" href="../css/tailwind.css" />
+  <link rel="stylesheet" href="../css/public.css" />
   <script src="../js/ui/components.public.js" defer></script>
 </head>
-<body>
-
-  <!-- NAVBAR -->
+<body class="public-shell">
   <div id="navbar"></div>
 
-<!-- HERO -->
-  <div class="pricing-header p-3 pb-md-4 mx-auto text-center mt-5">
-    <h1 class="display-4 fw-normal text-body-emphasis mb-3">
-      Todos los beneficios de <span class="text-primary">Educativo IA</span>
-    </h1>
-    <p class="fs-5 text-body-secondary">
-      Descubre cómo transformar tu forma de planificar clases con inteligencia artificial.
-    </p>
-  </div>
+  <main class="public-page">
+    <section class="mx-auto w-full max-w-7xl px-4 pb-8 pt-8 sm:px-6 lg:px-8 lg:pb-12">
+      <div class="public-card p-6 sm:p-8 lg:p-10">
+        <span class="public-pill">Beneficios operativos</span>
+        <div class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)] lg:items-center">
+          <div>
+            <h1 class="public-display text-4xl font-semibold text-slate-950 sm:text-5xl">Todo el valor está en combinar orden, generación y edición.</h1>
+            <p class="mt-5 text-base leading-8 text-slate-600">
+              Educativo IA no sólo produce contenido con IA. Construye un flujo donde la estructura académica, el seguimiento de estados y la edición posterior trabajan juntos.
+            </p>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <article class="public-card-soft p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Contexto</p>
+              <p class="mt-2 text-2xl font-extrabold text-slate-950">Siempre visible</p>
+              <p class="mt-2 text-sm text-slate-600">Cada detalle muestra la ruta jerárquica de origen.</p>
+            </article>
+            <article class="public-card-soft p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Feedback</p>
+              <p class="mt-2 text-2xl font-extrabold text-slate-950">En tiempo real</p>
+              <p class="mt-2 text-sm text-slate-600">Ves estados de espera, generación y listo por tema.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <section class="mx-auto grid w-full max-w-7xl gap-4 px-4 py-8 sm:px-6 lg:grid-cols-2 lg:px-8">
+      <article class="public-card p-6">
+        <div class="public-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16"></path>
+            <path d="M4 12h10"></path>
+            <path d="M4 18h7"></path>
+          </svg>
+        </div>
+        <h2 class="mt-5 text-2xl font-bold text-slate-950">Jerarquía académica real</h2>
+        <p class="mt-3 text-sm leading-7 text-slate-600">Trabajas desde planteles, grados, materias y unidades; no desde listas sueltas ni formularios aislados.</p>
+      </article>
 
-  <!-- BENEFICIOS DETALLADOS -->
-  <section class="container py-7 my-5">
-    <div class="row g-4">
-      <!-- Card 1 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-lightning-fill fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Planeaciones rápidas</h5>
-            <p class="card-text text-secondary">
-              Genera Planeaciones completas en minutos. La IA crea objetivos,
-              contenidos y actividades de forma automática, ahorrándote largas horas de trabajo.
-            </p>
-          </div>
+      <article class="public-card p-6">
+        <div class="public-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16v16H4z"></path>
+            <path d="M8 4v16"></path>
+            <path d="M4 9h16"></path>
+          </svg>
         </div>
-      </div>
-      <!-- Card 2 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-people-fill fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Enfoque en la enseñanza</h5>
-            <p class="card-text text-secondary">
-              Dedica más tiempo a tus alumnos y menos a tareas administrativas. Educativo IA organiza lo técnico
-              para que tú puedas enfocarte en enseñar.
-            </p>
-          </div>
-        </div>
-      </div>
-      <!-- Card 3 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-sliders fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Personalización flexible</h5>
-            <p class="card-text text-secondary">
-              Ajusta cada Planeación según tus necesidades: agrega recursos, actividades
-              y adapta el estilo de enseñanza a tu institución.
-            </p>
-          </div>
-        </div>
-      </div>
-      <!-- Card 4 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-graph-up fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Seguimiento del progreso</h5>
-            <p class="card-text text-secondary">
-              Monitorea el avance de tus clases y evalúa fácilmente qué tan efectivas son tus Planeaciones,
-              con métricas claras y útiles.
-            </p>
-          </div>
-        </div>
-      </div>
-      <!-- Card 5 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-laptop fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Acceso desde cualquier lugar</h5>
-            <p class="card-text text-secondary">
-              Educativo IA está disponible en la nube: accede desde tu computadora, tableta o celular sin necesidad de instalaciones.
-            </p>
-          </div>
-        </div>
-      </div>
-      <!-- Card 6 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-shield-lock fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Seguridad garantizada</h5>
-            <p class="card-text text-secondary">
-              Tus datos y Planeaciones están protegidos con estándares de seguridad de nivel empresarial,
-              para que trabajes con tranquilidad.
-            </p>
-          </div>
-        </div>
-      </div>
+        <h2 class="mt-5 text-2xl font-bold text-slate-950">Edición controlada</h2>
+        <p class="mt-3 text-sm leading-7 text-slate-600">Activas edición cuando quieres intervenir y cancelas aunque no hayas hecho cambios todavía.</p>
+      </article>
 
-          <!-- Card 7 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-cloud-arrow-down fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Copias en la nube</h5>
-            <p class="card-text text-secondary">
-              Guarda automáticamente tus Planeaciones en la nube y accede a ellas en cualquier momento,
-              sin preocuparte por perder tu trabajo.
-            </p>
+      <article class="public-card p-6">
+        <div class="public-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 6h12"></path>
+            <path d="M6 12h8"></path>
+            <path d="M6 18h12"></path>
+            <path d="M17 10l2 2 3-3"></path>
+          </svg>
+        </div>
+        <h2 class="mt-5 text-2xl font-bold text-slate-950">Generación por lotes con estados</h2>
+        <p class="mt-3 text-sm leading-7 text-slate-600">Agregas varios temas en una unidad y el sistema reporta qué está en espera, generando o listo.</p>
+      </article>
+
+      <article class="public-card p-6">
+        <div class="public-feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 4v16"></path>
+            <path d="M16 4v16"></path>
+            <path d="M4 9h16"></path>
+            <path d="M4 15h16"></path>
+          </svg>
+        </div>
+        <h2 class="mt-5 text-2xl font-bold text-slate-950">Exportación inmediata</h2>
+        <p class="mt-3 text-sm leading-7 text-slate-600">Conservas la tabla Excel-like y bajas Word o Excel sin rehacer el contenido en otra herramienta.</p>
+      </article>
+    </section>
+
+    <section class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div class="grid gap-4 lg:grid-cols-3">
+        <article class="public-card-soft p-6">
+          <p class="public-kicker">Menos fricción</p>
+          <h3 class="mt-3 text-xl font-bold text-slate-950">El panel correcto aparece cuando lo necesitas.</h3>
+          <p class="mt-3 text-sm leading-7 text-slate-600">La unidad puede concentrarse en temas guardados y abrir el staging sólo cuando inicias una nueva generación.</p>
+        </article>
+        <article class="public-card-soft p-6">
+          <p class="public-kicker">Más claridad</p>
+          <h3 class="mt-3 text-xl font-bold text-slate-950">Los selectores comunican sin contaminar el menú.</h3>
+          <p class="mt-3 text-sm leading-7 text-slate-600">Las descripciones se muestran como placeholder visible, pero ya no aparecen como opción al desplegar.</p>
+        </article>
+        <article class="public-card-soft p-6">
+          <p class="public-kicker">Más usable en móvil</p>
+          <h3 class="mt-3 text-xl font-bold text-slate-950">La tabla conserva proporciones.</h3>
+          <p class="mt-3 text-sm leading-7 text-slate-600">En celular el usuario recorre la tabla con scroll horizontal y vertical, sin deformarla.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div class="public-card-strong p-6 sm:p-8">
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)] lg:items-center">
+          <div>
+            <p class="public-kicker">Siguiente paso</p>
+            <h2 class="public-display mt-3 text-3xl font-semibold text-slate-950">Si la estructura ya importa en tu operación, también debe importar en tu software.</h2>
+          </div>
+          <div class="flex flex-col gap-3 sm:flex-row lg:justify-end">
+            <a href="login.html" class="public-cta-primary">Entrar al sistema</a>
+            <a href="contacto.html" class="public-cta-secondary">Hablar con el equipo</a>
           </div>
         </div>
       </div>
+    </section>
+  </main>
 
-      <!-- Card 8 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-award fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Calidad académica</h5>
-            <p class="card-text text-secondary">
-              Diseñado siguiendo estándares educativos, garantizando Planeaciones que cumplen con los
-              lineamientos pedagógicos más utilizados.
-            </p>
-          </div>
-        </div>
-      </div>
-
-            <!-- Card 9 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-gear-wide-connected fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Integración sencilla</h5>
-            <p class="card-text text-secondary">
-              Conecta fácilmente Educativo IA con otras herramientas digitales que uses en tu institución,
-              mejorando la productividad.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 10 -->
-      <div class="col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body text-center p-4">
-            <div class="mb-3 text-primary">
-              <i class="bi bi-emoji-smile fs-1"></i>
-            </div>
-            <h5 class="card-title fw-bold">Facilidad de uso</h5>
-            <p class="card-text text-secondary">
-              Una interfaz clara y amigable pensada para que cualquier docente pueda comenzar a usarla sin complicaciones.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="container-fluid bg-light py-7 my-5">
-    <div class="container text-center">
-      <h2 class="fw-bold mb-4">¿Listo para empezar a planificar mejor?</h2>
-      <p class="lead text-secondary mb-4">Únete hoy mismo y transforma la forma en que organizas tus clases.</p>
-      <a href="login.html" class="btn btn-primary btn-lg">Empieza ahora</a>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
   <div id="footer"></div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-

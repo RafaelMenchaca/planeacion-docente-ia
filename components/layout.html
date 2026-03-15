@@ -85,8 +85,15 @@
               <div class="space-y-2">
                 <label for="quick-grado-select" class="text-sm font-medium text-slate-700">Grado</label>
                 <select id="quick-grado-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
-                <div class="hidden" id="quick-grado-new-row">
-                  <input id="quick-grado-new" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre del grado" />
+                <div class="hidden space-y-2" id="quick-grado-new-row">
+                  <select id="quick-grado-base-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none">
+                    <option value="" selected disabled hidden>Selecciona nivel base</option>
+                    <option value="primaria">Primaria</option>
+                    <option value="secundaria">Secundaria</option>
+                    <option value="preparatoria">Preparatoria</option>
+                    <option value="universidad">Universidad</option>
+                  </select>
+                  <input id="quick-grado-new" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre visible del grado, ej. 5B" />
                 </div>
               </div>
 
@@ -145,8 +152,19 @@
         </div>
 
         <form id="entity-modal-form" class="mt-4 space-y-4">
+          <div id="entity-level-row" class="hidden">
+            <label for="entity-level-select" class="mb-1 block text-sm font-medium text-slate-700">Nivel base para IA</label>
+            <select id="entity-level-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none">
+              <option value="" selected disabled hidden>Selecciona nivel base</option>
+              <option value="primaria">Primaria</option>
+              <option value="secundaria">Secundaria</option>
+              <option value="preparatoria">Preparatoria</option>
+              <option value="universidad">Universidad</option>
+            </select>
+          </div>
+
           <div>
-            <label for="entity-name-input" class="mb-1 block text-sm font-medium text-slate-700">Nombre</label>
+            <label id="entity-name-label" for="entity-name-input" class="mb-1 block text-sm font-medium text-slate-700">Nombre</label>
             <input id="entity-name-input" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" required />
           </div>
 

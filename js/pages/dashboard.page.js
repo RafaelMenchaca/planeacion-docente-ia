@@ -12,6 +12,7 @@
   expandedMaterias: new Set(),
   current: { level: "root", plantelId: null, gradoId: null, materiaId: null, unidadId: null },
   stagingTemas: [],
+  stagingPanelOpen: false,
   progress: { total: 0, completed: 0, items: [], finalMessage: "", finalTone: "info" },
   quickCreate: {
     open: false,
@@ -40,12 +41,13 @@ const heroActionsByLevel = {
   plantel: { label: "+ Nuevo grado", action: "create-grado" },
   grado: { label: "+ Nueva materia", action: "create-materia" },
   materia: { label: "+ Nueva unidad", action: "create-unidad" },
-  unidad: { label: "+ Agregar tema", action: "focus-staging" }
+  unidad: { label: "+ Agregar temas", action: "focus-staging" }
 };
 
 let isDashboardBound = false;
 const QUICK_CREATE_NEW_VALUE = "__new__";
 const DASHBOARD_LOCATION_STORAGE_KEY = "educativo.dashboard.last-location";
+const GRADO_NIVEL_OPTIONS = new Set(["primaria", "secundaria", "preparatoria", "universidad"]);
 
 function getExplorerStorage() {
   try {
@@ -194,14 +196,21 @@ function findTemaById(unidadId, temaId) {
 }
 
 function setCurrentLevel(level, ids) {
+  const previousUnitId = explorerState.current.unidadId;
   explorerState.current.level = level;
   explorerState.current.plantelId = ids.plantelId ?? null;
   explorerState.current.gradoId = ids.gradoId ?? null;
   explorerState.current.materiaId = ids.materiaId ?? null;
   explorerState.current.unidadId = ids.unidadId ?? null;
 
-  if (level !== "unidad") {
+  const unitChanged = level === "unidad" && previousUnitId && previousUnitId !== explorerState.current.unidadId;
+
+  if (level !== "unidad" || unitChanged) {
     explorerState.stagingTemas = [];
+    explorerState.stagingPanelOpen = false;
+    if (!explorerState.generating) {
+      explorerState.progress = { total: 0, completed: 0, items: [], finalMessage: "", finalTone: "info" };
+    }
   }
 
   persistExplorerLocation();
@@ -210,6 +219,28 @@ function setCurrentLevel(level, ids) {
 function updateProgressCounters() {
   explorerState.progress.total = explorerState.progress.items.length;
   explorerState.progress.completed = explorerState.progress.items.filter((item) => item.status === "ready").length;
+}
+
+function isDuplicateTemaMessage(message) {
+  const normalized = String(message || "").trim().toLowerCase();
+  if (!normalized) return false;
+
+  return (
+    normalized.includes("temas_unidad_id_titulo_key") ||
+    normalized.includes("duplicate key value") ||
+    normalized.includes("ya existe en la unidad")
+  );
+}
+
+function friendlyProgressMessage(message) {
+  const raw = typeof message === "string" ? message.trim() : "";
+  if (!raw) return "";
+  if (isDuplicateTemaMessage(raw)) return "Este tema ya existe en la unidad. Intenta con otro tema.";
+  return raw;
+}
+
+function shouldShowUnitProgress() {
+  return explorerState.generating || explorerState.progress.items.length > 0 || Boolean(explorerState.progress.finalMessage);
 }
 
 async function loadPlanteles() {
@@ -586,54 +617,6 @@ function getLevelHeaderActions(level = explorerState.current.level) {
       label: createAction.label,
       action: createAction.action,
       tone: "neutral"
-    });
-  }
-
-  if (level === "plantel" && explorerState.current.plantelId) {
-    actions.push({
-      label: "Eliminar plantel",
-      action: "delete-plantel",
-      tone: "danger",
-      attrs: { "plantel-id": explorerState.current.plantelId }
-    });
-  }
-
-  if (level === "grado" && explorerState.current.plantelId && explorerState.current.gradoId) {
-    actions.push({
-      label: "Eliminar grado",
-      action: "delete-grado",
-      tone: "danger",
-      attrs: {
-        "plantel-id": explorerState.current.plantelId,
-        "grado-id": explorerState.current.gradoId
-      }
-    });
-  }
-
-  if (level === "materia" && explorerState.current.plantelId && explorerState.current.gradoId && explorerState.current.materiaId) {
-    actions.push({
-      label: "Eliminar materia",
-      action: "delete-materia",
-      tone: "danger",
-      attrs: {
-        "plantel-id": explorerState.current.plantelId,
-        "grado-id": explorerState.current.gradoId,
-        "materia-id": explorerState.current.materiaId
-      }
-    });
-  }
-
-  if (level === "unidad" && explorerState.current.plantelId && explorerState.current.gradoId && explorerState.current.materiaId && explorerState.current.unidadId) {
-    actions.push({
-      label: "Eliminar unidad",
-      action: "delete-unidad",
-      tone: "danger",
-      attrs: {
-        "plantel-id": explorerState.current.plantelId,
-        "grado-id": explorerState.current.gradoId,
-        "materia-id": explorerState.current.materiaId,
-        "unidad-id": explorerState.current.unidadId
-      }
     });
   }
 
@@ -1030,6 +1013,15 @@ function setQuickPanelVisibility(isOpen) {
   syncBodyScrollLock();
 }
 
+function syncQuickSelectVisualState(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const hasValue = Boolean(select.value);
+  select.classList.toggle("text-slate-400", !hasValue);
+  select.classList.toggle("text-slate-900", hasValue);
+}
+
 function setQuickSelectOptions(selectId, items, config = {}) {
   const select = document.getElementById(selectId);
   if (!select) return;
@@ -1042,7 +1034,7 @@ function setQuickSelectOptions(selectId, items, config = {}) {
 
   const baseOptions = [];
   if (placeholder) {
-    baseOptions.push(`<option value="">${escapeHtml(placeholder)}</option>`);
+    baseOptions.push(`<option value="" disabled hidden>${escapeHtml(placeholder)}</option>`);
   }
 
   const entityOptions = (items || [])
@@ -1056,6 +1048,14 @@ function setQuickSelectOptions(selectId, items, config = {}) {
 
   const validValues = new Set(Array.from(select.options).map((option) => option.value));
   select.value = validValues.has(selectedValue) ? selectedValue : (validValues.has("") ? "" : QUICK_CREATE_NEW_VALUE);
+
+  Array.from(select.options).forEach((option) => {
+    const isPlaceholder = option.value === "";
+    option.style.color = isPlaceholder ? "rgb(148 163 184)" : "rgb(15 23 42)";
+    option.style.backgroundColor = "rgb(255 255 255)";
+  });
+
+  syncQuickSelectVisualState(selectId);
 }
 
 function getQuickSelectValue(selectId) {
@@ -1076,7 +1076,10 @@ function resetQuickInput(inputId) {
 
 function resetQuickSelect(selectId) {
   const select = document.getElementById(selectId);
-  if (select) select.value = "";
+  if (select) {
+    select.value = "";
+    syncQuickSelectVisualState(selectId);
+  }
 }
 
 function toggleQuickRowVisibility(rowId, visible) {
@@ -1092,7 +1095,12 @@ function toggleQuickInputRows() {
 
   const showGradoNew = getQuickSelectValue("quick-grado-select") === QUICK_CREATE_NEW_VALUE;
   toggleQuickRowVisibility("quick-grado-new-row", showGradoNew);
-  if (!showGradoNew) resetQuickInput("quick-grado-new");
+  if (!showGradoNew) {
+    resetQuickInput("quick-grado-new");
+    resetQuickSelect("quick-grado-base-select");
+  } else {
+    syncQuickSelectVisualState("quick-grado-base-select");
+  }
 
   const showMateriaNew = getQuickSelectValue("quick-materia-select") === QUICK_CREATE_NEW_VALUE;
   toggleQuickRowVisibility("quick-materia-new", showMateriaNew);
@@ -1155,6 +1163,7 @@ function clearQuickChildSuggestions(level) {
     });
 
     resetQuickInput("quick-grado-new");
+    resetQuickSelect("quick-grado-base-select");
     resetQuickInput("quick-materia-new");
     resetQuickInput("quick-unidad-new");
     toggleQuickInputRows();
@@ -1253,6 +1262,7 @@ async function initQuickCreateForm() {
   resetQuickSelect("quick-grado-select");
   resetQuickSelect("quick-materia-select");
   resetQuickSelect("quick-unidad-select");
+  resetQuickSelect("quick-grado-base-select");
 
   [
     "quick-plantel-new",
@@ -1325,6 +1335,17 @@ function requireQuickText(inputId, label) {
   return value;
 }
 
+function requireNivelBaseValue(selectId, label) {
+  const select = document.getElementById(selectId);
+  const value = typeof select?.value === "string" ? select.value.trim().toLowerCase() : "";
+
+  if (!GRADO_NIVEL_OPTIONS.has(value)) {
+    throw new Error(`Selecciona una opcion para ${label}.`);
+  }
+
+  return value;
+}
+
 function requireQuickSelectOrNew(selectId, newInputId, label) {
   const selected = getQuickSelectValue(selectId);
   if (!selected) {
@@ -1336,6 +1357,16 @@ function requireQuickSelectOrNew(selectId, newInputId, label) {
   }
 
   return { id: selected, nombre: "", isNew: false };
+}
+
+function requireQuickGradoSelection() {
+  const selection = requireQuickSelectOrNew("quick-grado-select", "quick-grado-new", "Grado");
+
+  if (selection.isNew) {
+    selection.nivelBase = requireNivelBaseValue("quick-grado-base-select", "Nivel base del grado");
+  }
+
+  return selection;
 }
 
 function renderUnidadNodes(plantelId, gradoId, materiaId) {
@@ -1532,10 +1563,25 @@ function renderPlantelLevel() {
             const subjects = explorerState.materiasByGrado[grado.id]?.length;
             const meta = Number.isInteger(subjects) ? `${subjects} materia(s)` : "Abrir materias";
             return `
-              <button type="button" class="explorer-list-item" data-content-action="open-grado" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}">
-                <p class="explorer-list-item-title">${escapeHtml(grado.nombre || "Sin nombre")}</p>
-                <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
-              </button>
+              <div class="explorer-list-item explorer-list-item-shell">
+                <button type="button" class="explorer-list-item-open" data-content-action="open-grado" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}">
+                  <p class="explorer-list-item-title">${escapeHtml(grado.nombre || "Sin nombre")}</p>
+                  <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
+                </button>
+                <div class="explorer-list-item-footer">
+                  <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Grado</span>
+                  ${renderActionButton({
+                    action: "delete-grado",
+                    tone: "danger",
+                    iconOnly: true,
+                    title: `Eliminar grado ${grado.nombre || ""}`.trim(),
+                    attrs: {
+                      "plantel-id": plantel.id,
+                      "grado-id": grado.id
+                    }
+                  })}
+                </div>
+              </div>
             `;
           })
           .join("")}
@@ -1577,10 +1623,26 @@ function renderGradoLevel() {
             const units = explorerState.unidadesByMateria[materia.id]?.length;
             const meta = Number.isInteger(units) ? `${units} unidad(es)` : "Abrir unidades";
             return `
-              <button type="button" class="explorer-list-item" data-content-action="open-materia" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}" data-materia-id="${materia.id}">
-                <p class="explorer-list-item-title">${escapeHtml(materia.nombre || "Sin nombre")}</p>
-                <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
-              </button>
+              <div class="explorer-list-item explorer-list-item-shell">
+                <button type="button" class="explorer-list-item-open" data-content-action="open-materia" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}" data-materia-id="${materia.id}">
+                  <p class="explorer-list-item-title">${escapeHtml(materia.nombre || "Sin nombre")}</p>
+                  <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
+                </button>
+                <div class="explorer-list-item-footer">
+                  <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Materia</span>
+                  ${renderActionButton({
+                    action: "delete-materia",
+                    tone: "danger",
+                    iconOnly: true,
+                    title: `Eliminar materia ${materia.nombre || ""}`.trim(),
+                    attrs: {
+                      "plantel-id": plantel.id,
+                      "grado-id": grado.id,
+                      "materia-id": materia.id
+                    }
+                  })}
+                </div>
+              </div>
             `;
           })
           .join("")}
@@ -1623,10 +1685,27 @@ function renderMateriaLevel() {
             const topics = explorerState.temasByUnidad[unidad.id]?.length;
             const meta = Number.isInteger(topics) ? `${topics} tema(s)` : "Abrir temas";
             return `
-              <button type="button" class="explorer-list-item" data-content-action="open-unidad" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}" data-materia-id="${materia.id}" data-unidad-id="${unidad.id}">
-                <p class="explorer-list-item-title">${escapeHtml(unidad.nombre || "Sin nombre")}</p>
-                <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
-              </button>
+              <div class="explorer-list-item explorer-list-item-shell">
+                <button type="button" class="explorer-list-item-open" data-content-action="open-unidad" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}" data-materia-id="${materia.id}" data-unidad-id="${unidad.id}">
+                  <p class="explorer-list-item-title">${escapeHtml(unidad.nombre || "Sin nombre")}</p>
+                  <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
+                </button>
+                <div class="explorer-list-item-footer">
+                  <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Unidad</span>
+                  ${renderActionButton({
+                    action: "delete-unidad",
+                    tone: "danger",
+                    iconOnly: true,
+                    title: `Eliminar unidad ${unidad.nombre || ""}`.trim(),
+                    attrs: {
+                      "plantel-id": plantel.id,
+                      "grado-id": grado.id,
+                      "materia-id": materia.id,
+                      "unidad-id": unidad.id
+                    }
+                  })}
+                </div>
+              </div>
             `;
           })
           .join("")}
@@ -1642,24 +1721,35 @@ function renderMateriaLevel() {
   `;
 }
 
+function renderProgressPill(status, label = statusLabelFromTone(status)) {
+  const safeLabel = escapeHtml(label || statusLabelFromTone(status));
+
+  return `
+    <span class="explorer-status-pill ${status}">
+      <span class="explorer-status-indicator ${status}" aria-hidden="true"></span>
+      <span>${safeLabel}</span>
+      ${status === "generating" ? '<span class="explorer-ellipsis" aria-hidden="true">...</span>' : ""}
+    </span>
+  `;
+}
+
 function renderProgressSection() {
   const progress = explorerState.progress;
-  const list = progress.items.length === 0
-    ? '<p class="text-sm text-slate-500">Cuando generes planeaciones, veras el estado en tiempo real aqui.</p>'
-    : progress.items
-        .map((item) => `
-          <div class="explorer-progress-item ${item.status}">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <p class="font-semibold">${escapeHtml(item.titulo || "Tema")}</p>
-              <span class="explorer-status-pill ${item.status}">${escapeHtml(item.statusLabel || "Pendiente")}</span>
-            </div>
-            ${item.message ? `<p class="mt-1 text-xs">${escapeHtml(item.message)}</p>` : ""}
-          </div>
-        `)
-        .join("");
+  const list = progress.items
+    .map((item) => `
+      <div class="explorer-progress-item ${item.status}">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="font-semibold">${escapeHtml(item.titulo || "Tema")}</p>
+          ${renderProgressPill(item.status, item.statusLabel)}
+        </div>
+        ${item.message ? `<p class="mt-1 text-xs">${escapeHtml(item.message)}</p>` : ""}
+      </div>
+    `)
+    .join("");
 
   const toneMap = {
     success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    warning: "border-amber-200 bg-amber-50 text-amber-800",
     danger: "border-rose-200 bg-rose-50 text-rose-700",
     info: "border-slate-200 bg-white text-slate-700"
   };
@@ -1672,12 +1762,12 @@ function renderProgressSection() {
     <section id="unit-progress-anchor" class="rounded-2xl border border-slate-200 bg-white p-4">
       <div class="flex items-center justify-between gap-2">
         <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Estado de generacion</h4>
-        <span class="text-xs text-slate-500">Tiempo real</span>
+        <span class="text-xs text-slate-500">${explorerState.generating ? "Tiempo real" : "Ultima ejecucion"}</span>
       </div>
       <div class="mt-3 space-y-3">
         <div class="flex flex-col gap-2 rounded-xl border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900 sm:flex-row sm:items-center sm:justify-between">
-          <p><span class="font-semibold">Progreso:</span> ${progress.completed}/${progress.total} completadas</p>
-          <p class="text-xs text-cyan-800">${progress.total} tema(s) en proceso</p>
+          <p><span class="font-semibold">Progreso:</span> ${progress.completed}/${progress.total} creadas</p>
+          <p class="text-xs text-cyan-800">${explorerState.generating ? "Procesando temas..." : `${progress.total} tema(s) procesados`}</p>
         </div>
         ${list}
         ${finalHtml}
@@ -1748,11 +1838,16 @@ function renderUnidadLevel() {
         .join("");
 
   const disableGenerate = explorerState.stagingTemas.length === 0 || explorerState.generating;
+  const showStagingPanel = explorerState.stagingPanelOpen || explorerState.stagingTemas.length > 0 || explorerState.generating;
+  const layoutClasses = showStagingPanel
+    ? "grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(340px,0.88fr)]"
+    : "grid grid-cols-1 gap-4";
+  const progressHtml = shouldShowUnitProgress() ? renderProgressSection() : "";
 
   return `
     <div class="space-y-4">
       ${renderLevelSectionHeader(`Temas en ${unidad.nombre || "unidad"}`, "Agrega temas pendientes y luego genera planeaciones.", "unidad")}
-      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div class="${layoutClasses}">
         <section class="rounded-2xl border border-slate-200 bg-white p-4">
           <div class="mb-3 flex items-center justify-between gap-2">
             <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Temas guardados</h4>
@@ -1761,31 +1856,38 @@ function renderUnidadLevel() {
           <div class="space-y-2">${temasHtml}</div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-4">
-          <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Agregar temas</h4>
-          <p class="mt-1 text-sm text-slate-600">Agrega temas en staging y luego genera N planeaciones (1 tema = 1 planeacion).</p>
+        ${showStagingPanel ? `
+          <section class="explorer-staging-panel rounded-2xl border border-slate-200 bg-white p-4">
+            <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Agregar temas</h4>
+            <p class="mt-1 text-sm text-slate-600">Agrega temas en staging y luego genera N planeaciones (1 tema = 1 planeacion).</p>
 
-          <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto] md:items-end">
-            <div>
-              <label for="staging-tema-titulo" class="mb-1 block text-sm font-medium text-slate-700">Titulo del tema</label>
-              <input id="staging-tema-titulo" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Ej. Fracciones equivalentes" />
+            <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto] md:items-end">
+              <div>
+                <label for="staging-tema-titulo" class="mb-1 block text-sm font-medium text-slate-700">Titulo del tema</label>
+                <input id="staging-tema-titulo" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Ej. Fracciones equivalentes" />
+              </div>
+              <div>
+                <label for="staging-tema-duracion" class="mb-1 block text-sm font-medium text-slate-700">Duracion</label>
+                <input id="staging-tema-duracion" type="number" min="10" value="50" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" />
+              </div>
+              <button type="button" class="inline-flex items-center justify-center rounded-lg border border-cyan-300 px-3 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="add-staging-tema">Agregar tema</button>
             </div>
-            <div>
-              <label for="staging-tema-duracion" class="mb-1 block text-sm font-medium text-slate-700">Duracion</label>
-              <input id="staging-tema-duracion" type="number" min="10" value="50" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" />
+
+            <div class="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">${stagingList}</div>
+
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+              <button type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 ${explorerState.generating ? "opacity-70" : ""}" data-content-action="cancel-staging" ${explorerState.generating ? "disabled" : ""}>
+                Cancelar
+              </button>
+              <button type="button" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-800 ${disableGenerate ? "opacity-70" : ""}" data-content-action="generate-planeaciones" ${disableGenerate ? "disabled" : ""}>
+                ${explorerState.generating ? "Generando..." : `Generar planeaciones (${explorerState.stagingTemas.length})`}
+              </button>
             </div>
-            <button type="button" class="inline-flex items-center justify-center rounded-lg border border-cyan-300 px-3 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="add-staging-tema">Agregar tema</button>
-          </div>
-
-          <div class="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">${stagingList}</div>
-
-          <button type="button" class="mt-4 inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-800 ${disableGenerate ? "opacity-70" : ""}" data-content-action="generate-planeaciones" ${disableGenerate ? "disabled" : ""}>
-            ${explorerState.generating ? "Generando..." : `Generar planeaciones (${explorerState.stagingTemas.length})`}
-          </button>
-        </section>
+          </section>
+        ` : ""}
       </div>
 
-      ${renderProgressSection()}
+      ${progressHtml}
     </div>
   `;
 }
@@ -1878,19 +1980,29 @@ function addStagingTemaFromInputs() {
   focusStagingInput();
 }
 
+function cancelStagingPanel() {
+  if (explorerState.generating) return;
+
+  explorerState.stagingTemas = [];
+  explorerState.stagingPanelOpen = false;
+  renderExplorerContent();
+}
+
 function removeStagingTema(localId) {
   explorerState.stagingTemas = explorerState.stagingTemas.filter((item) => item.localId !== localId);
   renderExplorerContent();
 }
 
 function statusLabelFromTone(status) {
-  if (status === "ready") return "Completado";
+  if (status === "ready") return "Listo";
   if (status === "generating") return "Generando";
+  if (status === "skipped") return "No realizado";
   if (status === "error") return "Error";
-  return "Pendiente";
+  return "En espera";
 }
 
 function initProgressFromStaging() {
+  explorerState.stagingPanelOpen = true;
   explorerState.progress.items = explorerState.stagingTemas.map((tema, index) => ({
     index: index + 1,
     localId: tema.localId,
@@ -1969,7 +2081,9 @@ function updateProgressFromEvent(evt) {
     item.status = update.status;
     item.statusLabel = statusLabelFromTone(update.status);
   }
-  if (update.message) item.message = update.message;
+  if (typeof update.message === "string") {
+    item.message = friendlyProgressMessage(update.message);
+  }
 
   updateProgressCounters();
 }
@@ -1977,11 +2091,18 @@ function updateProgressFromEvent(evt) {
 function applyGenerateResult(result) {
   const records = [];
   if (Array.isArray(result?.resultados)) records.push(...result.resultados);
+  else if (Array.isArray(result?.results)) records.push(...result.results);
   if (Array.isArray(result?.items)) records.push(...result.items);
   if (Array.isArray(result?.temas)) records.push(...result.temas);
-  if (Array.isArray(result?.planeaciones)) {
+  if (records.length === 0 && Array.isArray(result?.planeaciones)) {
     result.planeaciones.forEach((planeacion, index) => {
-      records.push({ index: index + 1, tema_id: planeacion.tema_id, planeacion_id: planeacion.id, status: planeacion.status || "ready" });
+      records.push({
+        index: index + 1,
+        tema_id: planeacion.tema_id,
+        planeacion_id: planeacion.id,
+        status: planeacion.status || "ready",
+        titulo: planeacion.tema
+      });
     });
   }
 
@@ -1996,21 +2117,20 @@ function applyGenerateResult(result) {
     });
   });
 
-  explorerState.progress.items.forEach((item) => {
-    if (item.status === "pending") {
-      item.status = "ready";
-      item.statusLabel = statusLabelFromTone("ready");
-    }
-  });
-
   updateProgressCounters();
 
   const readyCount = explorerState.progress.items.filter((item) => item.status === "ready").length;
+  const skippedCount = explorerState.progress.items.filter((item) => item.status === "skipped").length;
   const errorCount = explorerState.progress.items.filter((item) => item.status === "error").length;
 
   if (errorCount > 0) {
     explorerState.progress.finalTone = "danger";
-    explorerState.progress.finalMessage = `Proceso finalizado con ${readyCount} completadas y ${errorCount} con error.`;
+    explorerState.progress.finalMessage = skippedCount > 0
+      ? `Proceso finalizado con ${readyCount} creadas, ${skippedCount} no realizadas y ${errorCount} con error.`
+      : `Proceso finalizado con ${readyCount} creadas y ${errorCount} con error.`;
+  } else if (skippedCount > 0) {
+    explorerState.progress.finalTone = "warning";
+    explorerState.progress.finalMessage = `Proceso finalizado con ${readyCount} creadas y ${skippedCount} no realizadas.`;
   } else {
     explorerState.progress.finalTone = "success";
     explorerState.progress.finalMessage = `Proceso finalizado. ${readyCount} planeacion(es) creadas correctamente.`;
@@ -2020,7 +2140,7 @@ function applyGenerateResult(result) {
 function buildLegacyContext() {
   return {
     materia: getCurrentMateria()?.nombre || undefined,
-    nivel: getCurrentGrado()?.nombre || undefined,
+    nivel: getCurrentGrado()?.nivel_base || undefined,
     unidad: getCurrentUnidad()?.nombre || undefined
   };
 }
@@ -2062,8 +2182,20 @@ async function generatePlaneacionesFromStaging() {
     renderExplorerContent();
     scrollToProgressFinal();
   } catch (error) {
-    explorerState.progress.finalTone = "danger";
-    explorerState.progress.finalMessage = formatFetchError(error, "No se pudieron generar las planeaciones.");
+    const message = friendlyProgressMessage(formatFetchError(error, "No se pudieron generar las planeaciones."));
+    const fallbackStatus = isDuplicateTemaMessage(message) ? "skipped" : "error";
+
+    explorerState.progress.items.forEach((item) => {
+      if (item.status === "pending" || item.status === "generating") {
+        item.status = fallbackStatus;
+        item.statusLabel = statusLabelFromTone(fallbackStatus);
+        item.message = message;
+      }
+    });
+
+    explorerState.progress.finalTone = fallbackStatus === "skipped" ? "warning" : "danger";
+    explorerState.progress.finalMessage = message;
+    updateProgressCounters();
     renderExplorerContent();
     scrollToProgressFinal();
   } finally {
@@ -2100,7 +2232,7 @@ async function submitQuickCreateForm(event) {
 
     await ensureGrados(plantelId);
     const gradosDisponibles = explorerState.gradosByPlantel[plantelId] || [];
-    const gradoSelection = requireQuickSelectOrNew("quick-grado-select", "quick-grado-new", "Grado");
+    const gradoSelection = requireQuickGradoSelection();
 
     let gradoId = gradoSelection.id;
     if (gradoId && !quickListHasId(gradosDisponibles, gradoId)) {
@@ -2109,6 +2241,7 @@ async function submitQuickCreateForm(event) {
     if (!gradoId) {
       const payload = {
         nombre: gradoSelection.nombre,
+        nivel_base: gradoSelection.nivelBase,
         plantel_id: plantelId,
         orden: getNextOrder(gradosDisponibles)
       };
@@ -2192,10 +2325,32 @@ function closeEntityModal() {
   openModalError("");
 }
 
+function configureEntityModalFields(type) {
+  const levelRow = document.getElementById("entity-level-row");
+  const levelSelect = document.getElementById("entity-level-select");
+  const nameLabel = document.getElementById("entity-name-label");
+  const isGrado = type === "grado";
+
+  if (levelRow) {
+    levelRow.classList.toggle("hidden", !isGrado);
+  }
+
+  if (levelSelect) {
+    levelSelect.value = "";
+    levelSelect.required = isGrado;
+    syncQuickSelectVisualState("entity-level-select");
+  }
+
+  if (nameLabel) {
+    nameLabel.textContent = isGrado ? "Nombre visible del grado" : "Nombre";
+  }
+}
+
 function openEntityModal(type) {
   const modal = document.getElementById("entity-modal");
   const title = document.getElementById("entity-modal-title");
   const nameInput = document.getElementById("entity-name-input");
+  const levelSelect = document.getElementById("entity-level-select");
   const submit = document.getElementById("entity-modal-submit");
   if (!modal || !title || !nameInput || !submit) return;
 
@@ -2204,7 +2359,7 @@ function openEntityModal(type) {
 
   const map = {
     plantel: { title: "Nuevo plantel", submit: "Crear plantel", placeholder: "Nombre del plantel" },
-    grado: { title: "Nuevo grado", submit: "Crear grado", placeholder: "Nombre del grado" },
+    grado: { title: "Nuevo grado", submit: "Crear grado", placeholder: "Ej. 5B" },
     materia: { title: "Nueva materia", submit: "Crear materia", placeholder: "Nombre de la materia" },
     unidad: { title: "Nueva unidad", submit: "Crear unidad", placeholder: "Nombre de la unidad" }
   };
@@ -2215,9 +2370,16 @@ function openEntityModal(type) {
   submit.textContent = config.submit;
   nameInput.value = "";
   nameInput.placeholder = config.placeholder;
+  configureEntityModalFields(type);
   openModalError("");
   modal.classList.remove("hidden");
-  requestAnimationFrame(() => nameInput.focus());
+  requestAnimationFrame(() => {
+    if (type === "grado" && levelSelect) {
+      levelSelect.focus();
+      return;
+    }
+    nameInput.focus();
+  });
 }
 
 async function submitEntityModal(event) {
@@ -2250,10 +2412,12 @@ async function submitEntityModal(event) {
     if (explorerState.modal.type === "grado") {
       const plantelId = explorerState.current.plantelId;
       if (!plantelId) throw new Error("Selecciona un plantel antes de crear un grado.");
+      const nivelBase = requireNivelBaseValue("entity-level-select", "Nivel base del grado");
 
       await ensureGrados(plantelId);
       const payload = {
         nombre,
+        nivel_base: nivelBase,
         plantel_id: plantelId,
         orden: getNextOrder(explorerState.gradosByPlantel[plantelId] || [])
       };
@@ -2318,6 +2482,8 @@ async function handleCreateAction(action) {
 
   if (action === "focus-staging") {
     if (explorerState.current.level !== "unidad") return alert("Selecciona una unidad para agregar temas.");
+    explorerState.stagingPanelOpen = true;
+    renderExplorerContent();
     focusStagingInput();
   }
 }
@@ -2406,6 +2572,7 @@ async function handleContentClick(event) {
   }
 
   if (action === "add-staging-tema") return addStagingTemaFromInputs();
+  if (action === "cancel-staging") return cancelStagingPanel();
   if (action === "remove-staging") return removeStagingTema(button.getAttribute("data-staging-id"));
   if (action === "generate-planeaciones") return generatePlaneacionesFromStaging();
 
@@ -2474,18 +2641,26 @@ function bindDashboardEvents() {
   };
 
   document.getElementById("quick-plantel-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("quick-plantel-select");
     onQuickPlantelChange().catch((error) => console.error("Error actualizando grados en creacion rapida:", error));
   });
 
   document.getElementById("quick-grado-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("quick-grado-select");
     onQuickGradoChange().catch((error) => console.error("Error actualizando materias en creacion rapida:", error));
   });
 
+  document.getElementById("quick-grado-base-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("quick-grado-base-select");
+  });
+
   document.getElementById("quick-materia-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("quick-materia-select");
     onQuickMateriaChange().catch((error) => console.error("Error actualizando unidades en creacion rapida:", error));
   });
 
   document.getElementById("quick-unidad-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("quick-unidad-select");
     toggleQuickInputRows();
   });
 
@@ -2526,6 +2701,10 @@ function bindDashboardEvents() {
       console.error("Error guardando modal:", error);
       openModalError("No se pudo guardar el elemento.");
     });
+  });
+
+  document.getElementById("entity-level-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("entity-level-select");
   });
 
   ["delete-confirm-backdrop", "delete-confirm-close", "delete-confirm-cancel"].forEach((id) => {
