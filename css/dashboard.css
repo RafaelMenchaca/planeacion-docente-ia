@@ -220,11 +220,28 @@
   text-align: left;
 }
 
+.explorer-list-item-open:focus-visible {
+  outline: none;
+}
+
 .explorer-list-item-open:hover .explorer-list-item-title {
   color: rgb(14 116 144);
 }
 
+.explorer-list-item-open:hover .explorer-list-item-cue,
+.explorer-list-item-open:focus-visible .explorer-list-item-cue {
+  opacity: 1;
+  transform: translateX(0);
+}
+
 .explorer-list-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.explorer-list-item-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -235,6 +252,20 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: rgb(15 23 42);
+}
+
+.explorer-list-item-cue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  color: rgb(8 145 178);
+  font-size: 0.95rem;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateX(-0.35rem);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  flex: none;
 }
 
 .explorer-list-item-meta {

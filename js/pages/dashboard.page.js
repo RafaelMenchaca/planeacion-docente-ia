@@ -1516,7 +1516,7 @@ function renderRootLevel() {
             return `
               <div class="explorer-list-item explorer-list-item-shell">
                 <button type="button" class="explorer-list-item-open" data-content-action="open-plantel" data-plantel-id="${plantel.id}">
-                  <p class="explorer-list-item-title">${escapeHtml(plantel.nombre || "Sin nombre")}</p>
+                  ${renderNavigableCardTitle(plantel.nombre)}
                   <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
                 </button>
                 <div class="explorer-list-item-footer">
@@ -1565,7 +1565,7 @@ function renderPlantelLevel() {
             return `
               <div class="explorer-list-item explorer-list-item-shell">
                 <button type="button" class="explorer-list-item-open" data-content-action="open-grado" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}">
-                  <p class="explorer-list-item-title">${escapeHtml(grado.nombre || "Sin nombre")}</p>
+                  ${renderNavigableCardTitle(grado.nombre)}
                   <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
                 </button>
                 <div class="explorer-list-item-footer">
@@ -1625,7 +1625,7 @@ function renderGradoLevel() {
             return `
               <div class="explorer-list-item explorer-list-item-shell">
                 <button type="button" class="explorer-list-item-open" data-content-action="open-materia" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}" data-materia-id="${materia.id}">
-                  <p class="explorer-list-item-title">${escapeHtml(materia.nombre || "Sin nombre")}</p>
+                  ${renderNavigableCardTitle(materia.nombre)}
                   <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
                 </button>
                 <div class="explorer-list-item-footer">
@@ -1687,7 +1687,7 @@ function renderMateriaLevel() {
             return `
               <div class="explorer-list-item explorer-list-item-shell">
                 <button type="button" class="explorer-list-item-open" data-content-action="open-unidad" data-plantel-id="${plantel.id}" data-grado-id="${grado.id}" data-materia-id="${materia.id}" data-unidad-id="${unidad.id}">
-                  <p class="explorer-list-item-title">${escapeHtml(unidad.nombre || "Sin nombre")}</p>
+                  ${renderNavigableCardTitle(unidad.nombre)}
                   <p class="explorer-list-item-meta">${escapeHtml(meta)}</p>
                 </button>
                 <div class="explorer-list-item-footer">
@@ -1729,6 +1729,15 @@ function renderProgressPill(status, label = statusLabelFromTone(status)) {
       <span class="explorer-status-indicator ${status}" aria-hidden="true"></span>
       <span>${safeLabel}</span>
       ${status === "generating" ? '<span class="explorer-ellipsis" aria-hidden="true">...</span>' : ""}
+    </span>
+  `;
+}
+
+function renderNavigableCardTitle(title) {
+  return `
+    <span class="explorer-list-item-title-row">
+      <span class="explorer-list-item-title">${escapeHtml(title || "Sin nombre")}</span>
+      <span class="explorer-list-item-cue" aria-hidden="true">&rarr;</span>
     </span>
   `;
 }
