@@ -383,6 +383,12 @@
   background: rgb(248 250 252);
 }
 
+.explorer-status-pill.skipped {
+  border-color: rgb(253 230 138);
+  color: rgb(146 64 14);
+  background: rgb(255 251 235);
+}
+
 .explorer-status-pill.error {
   border-color: rgb(253 164 175);
   color: rgb(190 18 60);
@@ -419,6 +425,12 @@
   border-color: rgb(134 239 172);
   background: rgb(240 253 244);
   color: rgb(22 101 52);
+}
+
+.explorer-progress-item.skipped {
+  border-color: rgb(253 230 138);
+  background: rgb(255 251 235);
+  color: rgb(146 64 14);
 }
 
 .explorer-progress-item.error {

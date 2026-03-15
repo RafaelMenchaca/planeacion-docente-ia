@@ -221,6 +221,24 @@ function updateProgressCounters() {
   explorerState.progress.completed = explorerState.progress.items.filter((item) => item.status === "ready").length;
 }
 
+function isDuplicateTemaMessage(message) {
+  const normalized = String(message || "").trim().toLowerCase();
+  if (!normalized) return false;
+
+  return (
+    normalized.includes("temas_unidad_id_titulo_key") ||
+    normalized.includes("duplicate key value") ||
+    normalized.includes("ya existe en la unidad")
+  );
+}
+
+function friendlyProgressMessage(message) {
+  const raw = typeof message === "string" ? message.trim() : "";
+  if (!raw) return "";
+  if (isDuplicateTemaMessage(raw)) return "Este tema ya existe en la unidad. Intenta con otro tema.";
+  return raw;
+}
+
 function shouldShowUnitProgress() {
   return explorerState.generating || explorerState.progress.items.length > 0 || Boolean(explorerState.progress.finalMessage);
 }
@@ -1731,6 +1749,7 @@ function renderProgressSection() {
 
   const toneMap = {
     success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    warning: "border-amber-200 bg-amber-50 text-amber-800",
     danger: "border-rose-200 bg-rose-50 text-rose-700",
     info: "border-slate-200 bg-white text-slate-700"
   };
@@ -1747,7 +1766,7 @@ function renderProgressSection() {
       </div>
       <div class="mt-3 space-y-3">
         <div class="flex flex-col gap-2 rounded-xl border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900 sm:flex-row sm:items-center sm:justify-between">
-          <p><span class="font-semibold">Progreso:</span> ${progress.completed}/${progress.total} completadas</p>
+          <p><span class="font-semibold">Progreso:</span> ${progress.completed}/${progress.total} creadas</p>
           <p class="text-xs text-cyan-800">${explorerState.generating ? "Procesando temas..." : `${progress.total} tema(s) procesados`}</p>
         </div>
         ${list}
@@ -1977,6 +1996,7 @@ function removeStagingTema(localId) {
 function statusLabelFromTone(status) {
   if (status === "ready") return "Listo";
   if (status === "generating") return "Generando";
+  if (status === "skipped") return "No realizado";
   if (status === "error") return "Error";
   return "En espera";
 }
@@ -2061,7 +2081,9 @@ function updateProgressFromEvent(evt) {
     item.status = update.status;
     item.statusLabel = statusLabelFromTone(update.status);
   }
-  if (update.message) item.message = update.message;
+  if (typeof update.message === "string") {
+    item.message = friendlyProgressMessage(update.message);
+  }
 
   updateProgressCounters();
 }
@@ -2069,11 +2091,18 @@ function updateProgressFromEvent(evt) {
 function applyGenerateResult(result) {
   const records = [];
   if (Array.isArray(result?.resultados)) records.push(...result.resultados);
+  else if (Array.isArray(result?.results)) records.push(...result.results);
   if (Array.isArray(result?.items)) records.push(...result.items);
   if (Array.isArray(result?.temas)) records.push(...result.temas);
-  if (Array.isArray(result?.planeaciones)) {
+  if (records.length === 0 && Array.isArray(result?.planeaciones)) {
     result.planeaciones.forEach((planeacion, index) => {
-      records.push({ index: index + 1, tema_id: planeacion.tema_id, planeacion_id: planeacion.id, status: planeacion.status || "ready" });
+      records.push({
+        index: index + 1,
+        tema_id: planeacion.tema_id,
+        planeacion_id: planeacion.id,
+        status: planeacion.status || "ready",
+        titulo: planeacion.tema
+      });
     });
   }
 
@@ -2088,21 +2117,20 @@ function applyGenerateResult(result) {
     });
   });
 
-  explorerState.progress.items.forEach((item) => {
-    if (item.status === "pending") {
-      item.status = "ready";
-      item.statusLabel = statusLabelFromTone("ready");
-    }
-  });
-
   updateProgressCounters();
 
   const readyCount = explorerState.progress.items.filter((item) => item.status === "ready").length;
+  const skippedCount = explorerState.progress.items.filter((item) => item.status === "skipped").length;
   const errorCount = explorerState.progress.items.filter((item) => item.status === "error").length;
 
   if (errorCount > 0) {
     explorerState.progress.finalTone = "danger";
-    explorerState.progress.finalMessage = `Proceso finalizado con ${readyCount} completadas y ${errorCount} con error.`;
+    explorerState.progress.finalMessage = skippedCount > 0
+      ? `Proceso finalizado con ${readyCount} creadas, ${skippedCount} no realizadas y ${errorCount} con error.`
+      : `Proceso finalizado con ${readyCount} creadas y ${errorCount} con error.`;
+  } else if (skippedCount > 0) {
+    explorerState.progress.finalTone = "warning";
+    explorerState.progress.finalMessage = `Proceso finalizado con ${readyCount} creadas y ${skippedCount} no realizadas.`;
   } else {
     explorerState.progress.finalTone = "success";
     explorerState.progress.finalMessage = `Proceso finalizado. ${readyCount} planeacion(es) creadas correctamente.`;
@@ -2154,8 +2182,20 @@ async function generatePlaneacionesFromStaging() {
     renderExplorerContent();
     scrollToProgressFinal();
   } catch (error) {
-    explorerState.progress.finalTone = "danger";
-    explorerState.progress.finalMessage = formatFetchError(error, "No se pudieron generar las planeaciones.");
+    const message = friendlyProgressMessage(formatFetchError(error, "No se pudieron generar las planeaciones."));
+    const fallbackStatus = isDuplicateTemaMessage(message) ? "skipped" : "error";
+
+    explorerState.progress.items.forEach((item) => {
+      if (item.status === "pending" || item.status === "generating") {
+        item.status = fallbackStatus;
+        item.statusLabel = statusLabelFromTone(fallbackStatus);
+        item.message = message;
+      }
+    });
+
+    explorerState.progress.finalTone = fallbackStatus === "skipped" ? "warning" : "danger";
+    explorerState.progress.finalMessage = message;
+    updateProgressCounters();
     renderExplorerContent();
     scrollToProgressFinal();
   } finally {
