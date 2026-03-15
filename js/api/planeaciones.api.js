@@ -20,6 +20,8 @@ async function apiPlaneacionesDelete(id, accessToken) {
 }
 
 async function apiPlaneacionesGenerate(payload, accessToken) {
+  console.log("[planeacion-debug] request POST /api/planeaciones/generate", payload);
+
   const res = await fetch(`${API_BASE_URL}/api/planeaciones/generate`, {
     method: "POST",
     headers: {
@@ -29,10 +31,14 @@ async function apiPlaneacionesGenerate(payload, accessToken) {
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error("No se pudo generar la planeacion con IA");
-  return res.json();
+  const responsePayload = await res.json();
+  console.log("[planeacion-debug] response POST /api/planeaciones/generate", responsePayload);
+  return responsePayload;
 }
 
 async function apiPlaneacionesGenerateWithProgress(payload, accessToken, onEvent) {
+  console.log("[planeacion-debug] request POST /api/planeaciones/generate?stream=1", payload);
+
   const res = await fetch(`${API_BASE_URL}/api/planeaciones/generate?stream=1`, {
     method: "POST",
     headers: {
@@ -49,7 +55,9 @@ async function apiPlaneacionesGenerateWithProgress(payload, accessToken, onEvent
   const contentType = (res.headers.get("content-type") || "").toLowerCase();
 
   if (contentType.includes("application/json")) {
-    return res.json();
+    const responsePayload = await res.json();
+    console.log("[planeacion-debug] response POST /api/planeaciones/generate?stream=1", responsePayload);
+    return responsePayload;
   }
 
   if (!res.body) {
@@ -90,7 +98,10 @@ async function apiPlaneacionesGenerateWithProgress(payload, accessToken, onEvent
     });
   }
 
-  if (donePayload) return donePayload;
+  if (donePayload) {
+    console.log("[planeacion-debug] response POST /api/planeaciones/generate?stream=1", donePayload);
+    return donePayload;
+  }
   return null;
 }
 

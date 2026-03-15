@@ -47,6 +47,7 @@ const heroActionsByLevel = {
 let isDashboardBound = false;
 const QUICK_CREATE_NEW_VALUE = "__new__";
 const DASHBOARD_LOCATION_STORAGE_KEY = "educativo.dashboard.last-location";
+const GRADO_NIVEL_OPTIONS = new Set(["primaria", "secundaria", "preparatoria", "universidad"]);
 
 function getExplorerStorage() {
   try {
@@ -1076,7 +1077,12 @@ function toggleQuickInputRows() {
 
   const showGradoNew = getQuickSelectValue("quick-grado-select") === QUICK_CREATE_NEW_VALUE;
   toggleQuickRowVisibility("quick-grado-new-row", showGradoNew);
-  if (!showGradoNew) resetQuickInput("quick-grado-new");
+  if (!showGradoNew) {
+    resetQuickInput("quick-grado-new");
+    resetQuickSelect("quick-grado-base-select");
+  } else {
+    syncQuickSelectVisualState("quick-grado-base-select");
+  }
 
   const showMateriaNew = getQuickSelectValue("quick-materia-select") === QUICK_CREATE_NEW_VALUE;
   toggleQuickRowVisibility("quick-materia-new", showMateriaNew);
@@ -1139,6 +1145,7 @@ function clearQuickChildSuggestions(level) {
     });
 
     resetQuickInput("quick-grado-new");
+    resetQuickSelect("quick-grado-base-select");
     resetQuickInput("quick-materia-new");
     resetQuickInput("quick-unidad-new");
     toggleQuickInputRows();
@@ -1237,6 +1244,7 @@ async function initQuickCreateForm() {
   resetQuickSelect("quick-grado-select");
   resetQuickSelect("quick-materia-select");
   resetQuickSelect("quick-unidad-select");
+  resetQuickSelect("quick-grado-base-select");
 
   [
     "quick-plantel-new",
@@ -1309,6 +1317,17 @@ function requireQuickText(inputId, label) {
   return value;
 }
 
+function requireNivelBaseValue(selectId, label) {
+  const select = document.getElementById(selectId);
+  const value = typeof select?.value === "string" ? select.value.trim().toLowerCase() : "";
+
+  if (!GRADO_NIVEL_OPTIONS.has(value)) {
+    throw new Error(`Selecciona una opcion para ${label}.`);
+  }
+
+  return value;
+}
+
 function requireQuickSelectOrNew(selectId, newInputId, label) {
   const selected = getQuickSelectValue(selectId);
   if (!selected) {
@@ -1320,6 +1339,16 @@ function requireQuickSelectOrNew(selectId, newInputId, label) {
   }
 
   return { id: selected, nombre: "", isNew: false };
+}
+
+function requireQuickGradoSelection() {
+  const selection = requireQuickSelectOrNew("quick-grado-select", "quick-grado-new", "Grado");
+
+  if (selection.isNew) {
+    selection.nivelBase = requireNivelBaseValue("quick-grado-base-select", "Nivel base del grado");
+  }
+
+  return selection;
 }
 
 function renderUnidadNodes(plantelId, gradoId, materiaId) {
@@ -2083,7 +2112,7 @@ function applyGenerateResult(result) {
 function buildLegacyContext() {
   return {
     materia: getCurrentMateria()?.nombre || undefined,
-    nivel: getCurrentGrado()?.nombre || undefined,
+    nivel: getCurrentGrado()?.nivel_base || undefined,
     unidad: getCurrentUnidad()?.nombre || undefined
   };
 }
@@ -2163,7 +2192,7 @@ async function submitQuickCreateForm(event) {
 
     await ensureGrados(plantelId);
     const gradosDisponibles = explorerState.gradosByPlantel[plantelId] || [];
-    const gradoSelection = requireQuickSelectOrNew("quick-grado-select", "quick-grado-new", "Grado");
+    const gradoSelection = requireQuickGradoSelection();
 
     let gradoId = gradoSelection.id;
     if (gradoId && !quickListHasId(gradosDisponibles, gradoId)) {
@@ -2172,6 +2201,7 @@ async function submitQuickCreateForm(event) {
     if (!gradoId) {
       const payload = {
         nombre: gradoSelection.nombre,
+        nivel_base: gradoSelection.nivelBase,
         plantel_id: plantelId,
         orden: getNextOrder(gradosDisponibles)
       };
@@ -2255,10 +2285,32 @@ function closeEntityModal() {
   openModalError("");
 }
 
+function configureEntityModalFields(type) {
+  const levelRow = document.getElementById("entity-level-row");
+  const levelSelect = document.getElementById("entity-level-select");
+  const nameLabel = document.getElementById("entity-name-label");
+  const isGrado = type === "grado";
+
+  if (levelRow) {
+    levelRow.classList.toggle("hidden", !isGrado);
+  }
+
+  if (levelSelect) {
+    levelSelect.value = "";
+    levelSelect.required = isGrado;
+    syncQuickSelectVisualState("entity-level-select");
+  }
+
+  if (nameLabel) {
+    nameLabel.textContent = isGrado ? "Nombre visible del grado" : "Nombre";
+  }
+}
+
 function openEntityModal(type) {
   const modal = document.getElementById("entity-modal");
   const title = document.getElementById("entity-modal-title");
   const nameInput = document.getElementById("entity-name-input");
+  const levelSelect = document.getElementById("entity-level-select");
   const submit = document.getElementById("entity-modal-submit");
   if (!modal || !title || !nameInput || !submit) return;
 
@@ -2267,7 +2319,7 @@ function openEntityModal(type) {
 
   const map = {
     plantel: { title: "Nuevo plantel", submit: "Crear plantel", placeholder: "Nombre del plantel" },
-    grado: { title: "Nuevo grado", submit: "Crear grado", placeholder: "Nombre del grado" },
+    grado: { title: "Nuevo grado", submit: "Crear grado", placeholder: "Ej. 5B" },
     materia: { title: "Nueva materia", submit: "Crear materia", placeholder: "Nombre de la materia" },
     unidad: { title: "Nueva unidad", submit: "Crear unidad", placeholder: "Nombre de la unidad" }
   };
@@ -2278,9 +2330,16 @@ function openEntityModal(type) {
   submit.textContent = config.submit;
   nameInput.value = "";
   nameInput.placeholder = config.placeholder;
+  configureEntityModalFields(type);
   openModalError("");
   modal.classList.remove("hidden");
-  requestAnimationFrame(() => nameInput.focus());
+  requestAnimationFrame(() => {
+    if (type === "grado" && levelSelect) {
+      levelSelect.focus();
+      return;
+    }
+    nameInput.focus();
+  });
 }
 
 async function submitEntityModal(event) {
@@ -2313,10 +2372,12 @@ async function submitEntityModal(event) {
     if (explorerState.modal.type === "grado") {
       const plantelId = explorerState.current.plantelId;
       if (!plantelId) throw new Error("Selecciona un plantel antes de crear un grado.");
+      const nivelBase = requireNivelBaseValue("entity-level-select", "Nivel base del grado");
 
       await ensureGrados(plantelId);
       const payload = {
         nombre,
+        nivel_base: nivelBase,
         plantel_id: plantelId,
         orden: getNextOrder(explorerState.gradosByPlantel[plantelId] || [])
       };
@@ -2549,6 +2610,10 @@ function bindDashboardEvents() {
     onQuickGradoChange().catch((error) => console.error("Error actualizando materias en creacion rapida:", error));
   });
 
+  document.getElementById("quick-grado-base-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("quick-grado-base-select");
+  });
+
   document.getElementById("quick-materia-select")?.addEventListener("change", () => {
     syncQuickSelectVisualState("quick-materia-select");
     onQuickMateriaChange().catch((error) => console.error("Error actualizando unidades en creacion rapida:", error));
@@ -2596,6 +2661,10 @@ function bindDashboardEvents() {
       console.error("Error guardando modal:", error);
       openModalError("No se pudo guardar el elemento.");
     });
+  });
+
+  document.getElementById("entity-level-select")?.addEventListener("change", () => {
+    syncQuickSelectVisualState("entity-level-select");
   });
 
   ["delete-confirm-backdrop", "delete-confirm-close", "delete-confirm-cancel"].forEach((id) => {
