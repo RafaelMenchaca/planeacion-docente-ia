@@ -63,6 +63,31 @@ async function apiPlantelesCreate(payload, accessToken) {
   );
 }
 
+async function apiPlantelesUpdate(id, payload, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/planteles/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: buildJsonHeaders(accessToken),
+      body: JSON.stringify(payload)
+    },
+    "No se pudo actualizar el plantel"
+  );
+}
+
+async function apiPlantelesArchive(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/planteles/${encodeURIComponent(id)}/archive`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudieron archivar las planeaciones del plantel"
+  );
+}
+
 async function apiPlantelesDelete(id, accessToken) {
   return requestJson(
     `${API_BASE_URL}/api/planteles/${encodeURIComponent(id)}`,
@@ -97,6 +122,31 @@ async function apiGradosCreate(payload, accessToken) {
       body: JSON.stringify(payload)
     },
     "No se pudo crear el grado"
+  );
+}
+
+async function apiGradosUpdate(id, payload, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/grados/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: buildJsonHeaders(accessToken),
+      body: JSON.stringify(payload)
+    },
+    "No se pudo actualizar el grado"
+  );
+}
+
+async function apiGradosArchive(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/grados/${encodeURIComponent(id)}/archive`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudieron archivar las planeaciones del grado"
   );
 }
 
@@ -137,6 +187,19 @@ async function apiMateriasCreate(payload, accessToken) {
   );
 }
 
+async function apiMateriasArchive(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/materias/${encodeURIComponent(id)}/archive`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudieron archivar las planeaciones de la materia"
+  );
+}
+
 async function apiMateriasDelete(id, accessToken) {
   return requestJson(
     `${API_BASE_URL}/api/materias/${encodeURIComponent(id)}`,
@@ -171,6 +234,31 @@ async function apiUnidadesCreate(payload, accessToken) {
       body: JSON.stringify(payload)
     },
     "No se pudo crear la unidad"
+  );
+}
+
+async function apiUnidadesUpdate(id, payload, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/unidades/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: buildJsonHeaders(accessToken),
+      body: JSON.stringify(payload)
+    },
+    "No se pudo actualizar la unidad"
+  );
+}
+
+async function apiUnidadesArchive(id, accessToken) {
+  return requestJson(
+    `${API_BASE_URL}/api/unidades/${encodeURIComponent(id)}/archive`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudieron archivar las planeaciones de la unidad"
   );
 }
 

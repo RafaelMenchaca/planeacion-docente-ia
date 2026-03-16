@@ -21,17 +21,21 @@
   },
   searchQuery: "",
   generating: false,
-  modal: { type: null, submitting: false },
+  modal: { type: null, mode: "create", entityId: null, submitting: false },
   confirmDelete: {
     open: false,
     type: null,
     id: null,
     parentIds: {},
+    eyebrow: "Accion permanente",
     title: "",
     message: "",
     warning: "",
     error: "",
     submitLabel: "Si, eliminar",
+    busyLabel: "Eliminando...",
+    submitTone: "danger",
+    warningTone: "danger",
     busy: false
   }
 };
@@ -108,10 +112,11 @@ function persistExplorerLocation() {
 
 function syncBodyScrollLock() {
   if (!document.body) return;
+  const entityModalOpen = !document.getElementById("entity-modal")?.classList.contains("hidden");
 
   document.body.classList.toggle(
     "overflow-hidden",
-    explorerState.quickCreate.open || explorerState.confirmDelete.open
+    explorerState.quickCreate.open || explorerState.confirmDelete.open || entityModalOpen
   );
 }
 
@@ -156,6 +161,15 @@ function formatFetchError(error, fallbackMessage) {
   return fallbackMessage;
 }
 
+function filterArchivedHierarchyItems(level, items) {
+  const list = Array.isArray(items) ? items : [];
+  if (typeof window.isArchivedHierarchyScopeHidden !== "function") {
+    return list;
+  }
+
+  return list.filter((item) => !window.isArchivedHierarchyScopeHidden(level, item?.id));
+}
+
 function getCurrentPlantel() {
   return explorerState.planteles.find((item) => item.id === explorerState.current.plantelId) || null;
 }
@@ -193,6 +207,11 @@ function findUnidadById(materiaId, unidadId) {
 function findTemaById(unidadId, temaId) {
   const list = explorerState.temasByUnidad[unidadId] || [];
   return list.find((item) => item.id === temaId) || null;
+}
+
+function getVisibleTemasByUnidad(unidadId) {
+  const temas = explorerState.temasByUnidad[unidadId] || [];
+  return temas.filter((tema) => Boolean(explorerState.planeacionByTema[tema.id]?.id));
 }
 
 function setCurrentLevel(level, ids) {
@@ -249,7 +268,10 @@ async function loadPlanteles() {
 
   try {
     const items = await obtenerPlanteles();
-    explorerState.planteles = sortEntities(items || []);
+    explorerState.planteles = filterArchivedHierarchyItems(
+      "plantel",
+      sortEntities(items || [])
+    );
   } catch (error) {
     explorerState.planteles = [];
     explorerState.errors.root = formatFetchError(error, "No se pudieron cargar los planteles.");
@@ -273,7 +295,10 @@ async function ensureGrados(plantelId, { force = false } = {}) {
 
   try {
     const items = await obtenerGradosPorPlantel(plantelId);
-    explorerState.gradosByPlantel[plantelId] = sortEntities(items || []);
+    explorerState.gradosByPlantel[plantelId] = filterArchivedHierarchyItems(
+      "grado",
+      sortEntities(items || [])
+    );
   } catch (error) {
     explorerState.gradosByPlantel[plantelId] = [];
     explorerState.errors.grados[plantelId] = formatFetchError(error, "No se pudieron cargar los grados.");
@@ -291,7 +316,10 @@ async function ensureMaterias(gradoId, { force = false } = {}) {
 
   try {
     const items = await obtenerMateriasPorGrado(gradoId);
-    explorerState.materiasByGrado[gradoId] = sortEntities(items || []);
+    explorerState.materiasByGrado[gradoId] = filterArchivedHierarchyItems(
+      "materia",
+      sortEntities(items || [])
+    );
   } catch (error) {
     explorerState.materiasByGrado[gradoId] = [];
     explorerState.errors.materias[gradoId] = formatFetchError(error, "No se pudieron cargar las materias.");
@@ -309,7 +337,10 @@ async function ensureUnidades(materiaId, { force = false } = {}) {
 
   try {
     const items = await obtenerUnidadesPorMateria(materiaId);
-    explorerState.unidadesByMateria[materiaId] = sortEntities(items || []);
+    explorerState.unidadesByMateria[materiaId] = filterArchivedHierarchyItems(
+      "unidad",
+      sortEntities(items || [])
+    );
   } catch (error) {
     explorerState.unidadesByMateria[materiaId] = [];
     explorerState.errors.unidades[materiaId] = formatFetchError(error, "No se pudieron cargar las unidades.");
@@ -340,7 +371,12 @@ async function hydratePlaneacionesForTemas(temas, { force = false } = {}) {
 
 async function ensureTemas(unidadId, { force = false } = {}) {
   if (!unidadId) return;
-  if (!force && explorerState.temasByUnidad[unidadId]) return;
+  if (!force && explorerState.temasByUnidad[unidadId]) {
+    await hydratePlaneacionesForTemas(explorerState.temasByUnidad[unidadId], {
+      force: false
+    });
+    return;
+  }
 
   explorerState.loading.temas[unidadId] = true;
   delete explorerState.errors.temas[unidadId];
@@ -581,13 +617,42 @@ function renderTrashIcon() {
   `;
 }
 
+function renderArchiveIcon() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7.5h16"></path>
+      <path d="M5.5 7.5h13l-1 10.5A2 2 0 0 1 15.51 20h-7.02a2 2 0 0 1-1.99-1.8L5.5 7.5Z"></path>
+      <path d="M9 11.5h6"></path>
+      <path d="M12 10v5"></path>
+      <path d="M6 4h12l1.5 3.5h-15Z"></path>
+    </svg>
+  `;
+}
+
+function renderActionIcon(iconName) {
+  if (iconName === "trash") return renderTrashIcon();
+  return renderArchiveIcon();
+}
+
 function renderActionButton(config) {
   if (!config?.action) return "";
 
+  const tone = config.tone || "neutral";
+  const iconClassMap = {
+    danger: "explorer-danger-icon-btn",
+    archive: "explorer-archive-icon-btn",
+    neutral: "explorer-icon-btn"
+  };
+  const buttonClassMap = {
+    danger: "explorer-danger-btn",
+    archive: "explorer-archive-btn",
+    neutral: "explorer-action-btn"
+  };
+
   const classes = [
     config.iconOnly
-      ? (config.tone === "danger" ? "explorer-danger-icon-btn" : "explorer-icon-btn")
-      : (config.tone === "danger" ? "explorer-danger-btn" : "explorer-action-btn"),
+      ? (iconClassMap[tone] || iconClassMap.neutral)
+      : (buttonClassMap[tone] || buttonClassMap.neutral),
     config.className || ""
   ]
     .filter(Boolean)
@@ -603,9 +668,25 @@ function renderActionButton(config) {
       class="${classes}"
       data-content-action="${escapeHtml(config.action)}"${buildDataAttributes(config.attrs)}${titleAttrs}
     >
-      ${config.iconOnly ? renderTrashIcon() : escapeHtml(label)}
+      ${config.iconOnly ? renderActionIcon(config.icon || (tone === "danger" ? "trash" : "archive")) : escapeHtml(label)}
     </button>
   `;
+}
+
+function getEditActionForLevel(level = explorerState.current.level) {
+  if (level === "plantel" && getCurrentPlantel()?.id) {
+    return { label: "Editar plantel", action: "edit-plantel", tone: "neutral" };
+  }
+
+  if (level === "grado" && getCurrentGrado()?.id) {
+    return { label: "Editar grado", action: "edit-grado", tone: "neutral" };
+  }
+
+  if (level === "unidad" && getCurrentUnidad()?.id) {
+    return { label: "Editar unidad", action: "edit-unidad", tone: "neutral" };
+  }
+
+  return null;
 }
 
 function getLevelHeaderActions(level = explorerState.current.level) {
@@ -618,6 +699,11 @@ function getLevelHeaderActions(level = explorerState.current.level) {
       action: createAction.action,
       tone: "neutral"
     });
+  }
+
+  const editAction = getEditActionForLevel(level);
+  if (editAction) {
+    actions.push(editAction);
   }
 
   return actions;
@@ -655,6 +741,7 @@ function renderGlobalError() {
 
 function renderDeleteConfirmModal() {
   const modal = document.getElementById("delete-confirm-modal");
+  const eyebrow = document.getElementById("delete-confirm-eyebrow");
   const title = document.getElementById("delete-confirm-title");
   const message = document.getElementById("delete-confirm-message");
   const warning = document.getElementById("delete-confirm-warning");
@@ -663,7 +750,7 @@ function renderDeleteConfirmModal() {
   const cancel = document.getElementById("delete-confirm-cancel");
   const close = document.getElementById("delete-confirm-close");
 
-  if (!modal || !title || !message || !warning || !error || !submit || !cancel || !close) return;
+  if (!modal || !eyebrow || !title || !message || !warning || !error || !submit || !cancel || !close) return;
 
   const state = explorerState.confirmDelete;
   modal.classList.toggle("hidden", !state.open);
@@ -679,6 +766,8 @@ function renderDeleteConfirmModal() {
 
   title.textContent = state.title || "Confirmar eliminacion";
   message.textContent = state.message || "";
+  eyebrow.textContent = state.eyebrow || "Accion permanente";
+  eyebrow.dataset.tone = state.submitTone || "danger";
 
   if (state.warning) {
     warning.classList.remove("hidden");
@@ -696,7 +785,11 @@ function renderDeleteConfirmModal() {
     error.textContent = "";
   }
 
-  submit.textContent = state.busy ? "Eliminando..." : (state.submitLabel || "Si, eliminar");
+  warning.dataset.tone = state.warningTone || state.submitTone || "danger";
+  submit.dataset.tone = state.submitTone || "danger";
+  submit.textContent = state.busy
+    ? (state.busyLabel || "Procesando...")
+    : (state.submitLabel || "Si, eliminar");
   submit.disabled = state.busy;
   cancel.disabled = state.busy;
   close.disabled = state.busy;
@@ -708,11 +801,15 @@ function openDeleteConfirm(config) {
     type: config?.type || null,
     id: config?.id || null,
     parentIds: { ...(config?.parentIds || {}) },
+    eyebrow: config?.eyebrow || "Accion permanente",
     title: config?.title || "Confirmar eliminacion",
     message: config?.message || "",
     warning: config?.warning || "",
     error: "",
     submitLabel: config?.submitLabel || "Si, eliminar",
+    busyLabel: config?.busyLabel || "Eliminando...",
+    submitTone: config?.submitTone || "danger",
+    warningTone: config?.warningTone || config?.submitTone || "danger",
     busy: false
   });
 
@@ -727,11 +824,15 @@ function closeDeleteConfirm({ force = false } = {}) {
     type: null,
     id: null,
     parentIds: {},
+    eyebrow: "Accion permanente",
     title: "",
     message: "",
     warning: "",
     error: "",
     submitLabel: "Si, eliminar",
+    busyLabel: "Eliminando...",
+    submitTone: "danger",
+    warningTone: "danger",
     busy: false
   });
 
@@ -798,6 +899,42 @@ function prunePlantelBranch(plantelId) {
   delete explorerState.gradosByPlantel[plantelId];
   delete explorerState.loading.grados[plantelId];
   delete explorerState.errors.grados[plantelId];
+}
+
+function removeGradoRecord(plantelId, gradoId) {
+  if (!plantelId || !gradoId) return;
+
+  pruneGradoBranch(gradoId);
+
+  if (Array.isArray(explorerState.gradosByPlantel[plantelId])) {
+    explorerState.gradosByPlantel[plantelId] = explorerState.gradosByPlantel[plantelId].filter(
+      (grado) => grado.id !== gradoId
+    );
+  }
+}
+
+function removeMateriaRecord(gradoId, materiaId) {
+  if (!gradoId || !materiaId) return;
+
+  pruneMateriaBranch(materiaId);
+
+  if (Array.isArray(explorerState.materiasByGrado[gradoId])) {
+    explorerState.materiasByGrado[gradoId] = explorerState.materiasByGrado[gradoId].filter(
+      (materia) => materia.id !== materiaId
+    );
+  }
+}
+
+function removeUnidadRecord(materiaId, unidadId) {
+  if (!materiaId || !unidadId) return;
+
+  pruneUnidadBranch(unidadId);
+
+  if (Array.isArray(explorerState.unidadesByMateria[materiaId])) {
+    explorerState.unidadesByMateria[materiaId] = explorerState.unidadesByMateria[materiaId].filter(
+      (unidad) => unidad.id !== unidadId
+    );
+  }
 }
 
 function getDeleteDialogConfig(action, ids) {
@@ -906,6 +1043,146 @@ function requestDeleteAction(action, ids) {
   openDeleteConfirm(config);
 }
 
+function getArchiveDialogConfig(action, ids) {
+  if (action === "archive-plantel") {
+    const plantel = explorerState.planteles.find((item) => item.id === ids.plantelId) || getCurrentPlantel();
+    const nombre = plantel?.nombre || "este plantel";
+    return {
+      type: "archive-plantel",
+      id: ids.plantelId,
+      parentIds: { plantelId: ids.plantelId },
+      eyebrow: "Mover a Archivados",
+      title: "¿Archivar elemento?",
+      message: `Las planeaciones activas de ${nombre} se moveran a Archivados y podras restaurarlas despues.`,
+      warning: "La estructura del plantel se conservara. Solo se archivaran las planeaciones activas dentro de esta rama.",
+      submitLabel: "Si, archivar",
+      busyLabel: "Archivando...",
+      submitTone: "archive",
+      warningTone: "archive"
+    };
+  }
+
+  if (action === "archive-grado") {
+    const grado = findGradoById(ids.plantelId, ids.gradoId) || getCurrentGrado();
+    const nombre = grado?.nombre || "este grado";
+    return {
+      type: "archive-grado",
+      id: ids.gradoId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId
+      },
+      eyebrow: "Mover a Archivados",
+      title: "¿Archivar elemento?",
+      message: `Las planeaciones activas de ${nombre} se moveran a Archivados y podras restaurarlas despues.`,
+      warning: "La estructura del grado se conservara. Solo se archivaran las planeaciones activas dentro de esta rama.",
+      submitLabel: "Si, archivar",
+      busyLabel: "Archivando...",
+      submitTone: "archive",
+      warningTone: "archive"
+    };
+  }
+
+  if (action === "archive-materia") {
+    const materia = findMateriaById(ids.gradoId, ids.materiaId) || getCurrentMateria();
+    const nombre = materia?.nombre || "esta materia";
+    return {
+      type: "archive-materia",
+      id: ids.materiaId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId,
+        materiaId: ids.materiaId
+      },
+      eyebrow: "Mover a Archivados",
+      title: "¿Archivar elemento?",
+      message: `Las planeaciones activas de ${nombre} se moveran a Archivados y podras restaurarlas despues.`,
+      warning: "La estructura de la materia se conservara. Solo se archivaran las planeaciones activas dentro de esta rama.",
+      submitLabel: "Si, archivar",
+      busyLabel: "Archivando...",
+      submitTone: "archive",
+      warningTone: "archive"
+    };
+  }
+
+  if (action === "archive-unidad") {
+    const unidad = findUnidadById(ids.materiaId, ids.unidadId) || getCurrentUnidad();
+    const nombre = unidad?.nombre || "esta unidad";
+    return {
+      type: "archive-unidad",
+      id: ids.unidadId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId,
+        materiaId: ids.materiaId,
+        unidadId: ids.unidadId
+      },
+      eyebrow: "Mover a Archivados",
+      title: "¿Archivar elemento?",
+      message: `Las planeaciones activas de ${nombre} se moveran a Archivados y podras restaurarlas despues.`,
+      warning: "La estructura de la unidad se conservara. Solo se archivaran las planeaciones activas dentro de esta rama.",
+      submitLabel: "Si, archivar",
+      busyLabel: "Archivando...",
+      submitTone: "archive",
+      warningTone: "archive"
+    };
+  }
+
+  if (action === "archive-planeacion") {
+    return {
+      type: "archive-planeacion",
+      id: ids.planeacionId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId,
+        materiaId: ids.materiaId,
+        unidadId: ids.unidadId,
+        temaId: ids.temaId,
+        batchId: ids.batchId
+      },
+      eyebrow: "Mover a Archivados",
+      title: "¿Archivar elemento?",
+      message: "Este elemento se movera a Archivados y podras restaurarlo despues.",
+      warning: "La planeacion dejara de aparecer en tus vistas activas.",
+      submitLabel: "Si, archivar",
+      busyLabel: "Archivando...",
+      submitTone: "archive",
+      warningTone: "archive"
+    };
+  }
+
+  if (action === "archive-batch") {
+    return {
+      type: "archive-batch",
+      id: ids.batchId,
+      parentIds: {
+        plantelId: ids.plantelId,
+        gradoId: ids.gradoId,
+        materiaId: ids.materiaId,
+        unidadId: ids.unidadId,
+        temaId: ids.temaId,
+        batchId: ids.batchId
+      },
+      eyebrow: "Mover a Archivados",
+      title: "¿Archivar elemento?",
+      message: "Este elemento se movera a Archivados y podras restaurarlo despues.",
+      warning: "Se archivaran todas las planeaciones que compartan esta ruta por batch_id.",
+      submitLabel: "Si, archivar",
+      busyLabel: "Archivando...",
+      submitTone: "archive",
+      warningTone: "archive"
+    };
+  }
+
+  return null;
+}
+
+function requestArchiveAction(action, ids) {
+  const config = getArchiveDialogConfig(action, ids);
+  if (!config?.id) return;
+  openDeleteConfirm(config);
+}
+
 async function refreshAfterHierarchyDelete(type, context = {}) {
   if (type === "plantel") {
     prunePlantelBranch(context.id);
@@ -959,6 +1236,65 @@ async function refreshAfterHierarchyDelete(type, context = {}) {
   }
 }
 
+async function refreshAfterPlaneacionArchive(context = {}) {
+  if (context.temaId) {
+    pruneTemaRecord(context.unidadId, context.temaId);
+    delete explorerState.planeacionByTema[context.temaId];
+  }
+
+  renderAll();
+
+  if (
+    context.unidadId &&
+    explorerState.current.level === "unidad" &&
+    explorerState.current.unidadId === context.unidadId
+  ) {
+    await ensureTemas(context.unidadId, { force: true });
+    renderAll();
+    return;
+  }
+}
+
+async function refreshAfterHierarchyArchive(type, context = {}) {
+  if (type === "archive-plantel") {
+    prunePlantelBranch(context.plantelId || context.id);
+    renderAll();
+    return;
+  }
+
+  if (type === "archive-grado") {
+    removeGradoRecord(context.plantelId, context.gradoId || context.id);
+    if (explorerState.current.level === "grado" && explorerState.current.gradoId === (context.gradoId || context.id)) {
+      await selectPlantel(context.plantelId);
+      return;
+    }
+    renderAll();
+    return;
+  }
+
+  if (type === "archive-materia") {
+    removeMateriaRecord(context.gradoId, context.materiaId || context.id);
+    if (explorerState.current.level === "materia" && explorerState.current.materiaId === (context.materiaId || context.id)) {
+      await selectGrado(context.plantelId, context.gradoId);
+      return;
+    }
+    renderAll();
+    return;
+  }
+
+  if (type === "archive-unidad") {
+    removeUnidadRecord(context.materiaId, context.unidadId || context.id);
+    if (explorerState.current.level === "unidad" && explorerState.current.unidadId === (context.unidadId || context.id)) {
+      await selectMateria(context.plantelId, context.gradoId, context.materiaId);
+      return;
+    }
+    renderAll();
+    return;
+  }
+
+  renderAll();
+}
+
 async function submitDeleteConfirm() {
   if (!explorerState.confirmDelete.open || explorerState.confirmDelete.busy || !explorerState.confirmDelete.type || !explorerState.confirmDelete.id) {
     return;
@@ -969,6 +1305,15 @@ async function submitDeleteConfirm() {
   renderDeleteConfirmModal();
 
   const { type, id, parentIds } = explorerState.confirmDelete;
+  const archiveTypes = new Set([
+    "archive-plantel",
+    "archive-grado",
+    "archive-materia",
+    "archive-unidad",
+    "archive-planeacion",
+    "archive-batch"
+  ]);
+  let responsePayload = null;
 
   try {
     if (type === "plantel") await eliminarPlantel(id);
@@ -977,17 +1322,52 @@ async function submitDeleteConfirm() {
     else if (type === "unidad") await eliminarUnidad(id);
     else if (type === "tema") await eliminarTema(id);
     else if (type === "planeacion") await eliminarPlaneacionApi(id);
+    else if (type === "archive-plantel") responsePayload = await archivarPlantel(id);
+    else if (type === "archive-grado") responsePayload = await archivarGrado(id);
+    else if (type === "archive-materia") responsePayload = await archivarMateria(id);
+    else if (type === "archive-unidad") responsePayload = await archivarUnidad(id);
+    else if (type === "archive-planeacion") responsePayload = await archivarPlaneacionApi(id);
+    else if (type === "archive-batch") responsePayload = await archivarRutaBatchApi(id);
+
+    if (
+      ["archive-plantel", "archive-grado", "archive-materia", "archive-unidad"].includes(type) &&
+      typeof window.registerArchivedHierarchyScope === "function"
+    ) {
+      const archivedPayload = responsePayload?.archived || {};
+      window.registerArchivedHierarchyScope(
+        {
+          type: archivedPayload.type || type,
+          id: archivedPayload.id || id
+        },
+        {
+          planeacionIds: archivedPayload.planeacion_ids || [],
+          batchIds: archivedPayload.batch_ids || []
+        }
+      );
+    }
 
     closeDeleteConfirm({ force: true });
     try {
-      await refreshAfterHierarchyDelete(type, { id, ...parentIds });
+      if (type === "archive-planeacion" || type === "archive-batch") {
+        await refreshAfterPlaneacionArchive({ id, ...parentIds });
+      } else if (archiveTypes.has(type)) {
+        await refreshAfterHierarchyArchive(type, { id, ...parentIds });
+      } else {
+        await refreshAfterHierarchyDelete(type, { id, ...parentIds });
+      }
     } catch (refreshError) {
-      explorerState.errors.root = formatFetchError(refreshError, "La eliminacion se completo, pero no se pudo refrescar el explorador.");
+      const fallbackMessage = archiveTypes.has(type)
+        ? "El archivado se completo, pero no se pudo refrescar el explorador."
+        : "La eliminacion se completo, pero no se pudo refrescar el explorador.";
+      explorerState.errors.root = formatFetchError(refreshError, fallbackMessage);
       renderAll();
     }
   } catch (error) {
     explorerState.confirmDelete.busy = false;
-    explorerState.confirmDelete.error = formatFetchError(error, "No se pudo completar la eliminacion.");
+    const fallbackMessage = archiveTypes.has(type)
+      ? "No se pudo completar el archivado."
+      : "No se pudo completar la eliminacion.";
+    explorerState.confirmDelete.error = formatFetchError(error, fallbackMessage);
     renderDeleteConfirmModal();
   }
 }
@@ -1522,10 +1902,10 @@ function renderRootLevel() {
                 <div class="explorer-list-item-footer">
                   <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Plantel</span>
                   ${renderActionButton({
-                    action: "delete-plantel",
-                    tone: "danger",
+                    action: "archive-plantel",
+                    tone: "archive",
                     iconOnly: true,
-                    title: `Eliminar plantel ${plantel.nombre || ""}`.trim(),
+                    title: `Archivar planeaciones de ${plantel.nombre || ""}`.trim(),
                     attrs: { "plantel-id": plantel.id }
                   })}
                 </div>
@@ -1571,10 +1951,10 @@ function renderPlantelLevel() {
                 <div class="explorer-list-item-footer">
                   <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Grado</span>
                   ${renderActionButton({
-                    action: "delete-grado",
-                    tone: "danger",
+                    action: "archive-grado",
+                    tone: "archive",
                     iconOnly: true,
-                    title: `Eliminar grado ${grado.nombre || ""}`.trim(),
+                    title: `Archivar planeaciones de ${grado.nombre || ""}`.trim(),
                     attrs: {
                       "plantel-id": plantel.id,
                       "grado-id": grado.id
@@ -1631,10 +2011,10 @@ function renderGradoLevel() {
                 <div class="explorer-list-item-footer">
                   <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Materia</span>
                   ${renderActionButton({
-                    action: "delete-materia",
-                    tone: "danger",
+                    action: "archive-materia",
+                    tone: "archive",
                     iconOnly: true,
-                    title: `Eliminar materia ${materia.nombre || ""}`.trim(),
+                    title: `Archivar planeaciones de ${materia.nombre || ""}`.trim(),
                     attrs: {
                       "plantel-id": plantel.id,
                       "grado-id": grado.id,
@@ -1682,7 +2062,9 @@ function renderMateriaLevel() {
       <div class="explorer-list-grid">
         ${unidades
           .map((unidad) => {
-            const topics = explorerState.temasByUnidad[unidad.id]?.length;
+            const topics = explorerState.temasByUnidad[unidad.id]
+              ? getVisibleTemasByUnidad(unidad.id).length
+              : null;
             const meta = Number.isInteger(topics) ? `${topics} tema(s)` : "Abrir temas";
             return `
               <div class="explorer-list-item explorer-list-item-shell">
@@ -1693,10 +2075,10 @@ function renderMateriaLevel() {
                 <div class="explorer-list-item-footer">
                   <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Unidad</span>
                   ${renderActionButton({
-                    action: "delete-unidad",
-                    tone: "danger",
+                    action: "archive-unidad",
+                    tone: "archive",
                     iconOnly: true,
-                    title: `Eliminar unidad ${unidad.nombre || ""}`.trim(),
+                    title: `Archivar planeaciones de ${unidad.nombre || ""}`.trim(),
                     attrs: {
                       "plantel-id": plantel.id,
                       "grado-id": grado.id,
@@ -1788,11 +2170,11 @@ function renderUnidadLevel() {
   const unidad = getCurrentUnidad();
   if (!unidad) return '<p class="text-sm text-slate-500">Selecciona una unidad valida.</p>';
 
-  const temas = explorerState.temasByUnidad[unidad.id] || [];
+  const temas = getVisibleTemasByUnidad(unidad.id);
   const temasHtml = (() => {
     if (explorerState.loading.temas[unidad.id]) return '<p class="text-sm text-slate-500">Cargando temas...</p>';
     if (explorerState.errors.temas[unidad.id]) return `<div class="explorer-empty text-rose-700">${escapeHtml(explorerState.errors.temas[unidad.id])}</div>`;
-    if (temas.length === 0) return '<div class="explorer-empty">Todavia no hay temas guardados para esta unidad.</div>';
+    if (temas.length === 0) return '<div class="explorer-empty">No hay planeaciones activas guardadas para esta unidad.</div>';
 
     return temas
       .map((tema) => {
@@ -1811,20 +2193,10 @@ function renderUnidadLevel() {
                 <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">
                   Abrir planeacion
                 </button>
+                <button type="button" class="inline-flex items-center rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50" data-content-action="archive-planeacion" data-planeacion-id="${planeacion.id}" data-batch-id="${escapeHtml(String(planeacion.batch_id || ""))}" data-tema-id="${tema.id}" data-plantel-id="${explorerState.current.plantelId}" data-grado-id="${explorerState.current.gradoId}" data-materia-id="${explorerState.current.materiaId}" data-unidad-id="${explorerState.current.unidadId}">
+                  Archivar
+                </button>
               ` : ""}
-              ${renderActionButton({
-                action: "delete-tema",
-                tone: "danger",
-                iconOnly: true,
-                title: "Eliminar tema y su planeacion",
-                attrs: {
-                  "tema-id": tema.id,
-                  "plantel-id": explorerState.current.plantelId,
-                  "grado-id": explorerState.current.gradoId,
-                  "materia-id": explorerState.current.materiaId,
-                  "unidad-id": explorerState.current.unidadId
-                }
-              })}
             </div>
           </div>
         `;
@@ -1937,7 +2309,8 @@ function getNodeIds(element) {
     materiaId: element.getAttribute("data-materia-id"),
     unidadId: element.getAttribute("data-unidad-id"),
     temaId: element.getAttribute("data-tema-id"),
-    planeacionId: element.getAttribute("data-planeacion-id")
+    planeacionId: element.getAttribute("data-planeacion-id"),
+    batchId: element.getAttribute("data-batch-id")
   };
 }
 
@@ -2330,32 +2703,37 @@ function openModalError(message) {
 function closeEntityModal() {
   document.getElementById("entity-modal")?.classList.add("hidden");
   explorerState.modal.type = null;
+  explorerState.modal.mode = "create";
+  explorerState.modal.entityId = null;
   explorerState.modal.submitting = false;
   openModalError("");
+  syncBodyScrollLock();
 }
 
-function configureEntityModalFields(type) {
+function configureEntityModalFields(type, mode = "create") {
   const levelRow = document.getElementById("entity-level-row");
   const levelSelect = document.getElementById("entity-level-select");
   const nameLabel = document.getElementById("entity-name-label");
-  const isGrado = type === "grado";
+  const requiresLevelSelection = type === "grado" && mode === "create";
 
   if (levelRow) {
-    levelRow.classList.toggle("hidden", !isGrado);
+    levelRow.classList.toggle("hidden", !requiresLevelSelection);
   }
 
   if (levelSelect) {
-    levelSelect.value = "";
-    levelSelect.required = isGrado;
+    if (mode === "create") {
+      levelSelect.value = "";
+    }
+    levelSelect.required = requiresLevelSelection;
     syncQuickSelectVisualState("entity-level-select");
   }
 
   if (nameLabel) {
-    nameLabel.textContent = isGrado ? "Nombre visible del grado" : "Nombre";
+    nameLabel.textContent = type === "grado" ? "Nombre visible del grado" : "Nombre";
   }
 }
 
-function openEntityModal(type) {
+function openEntityModal(type, { mode = "create" } = {}) {
   const modal = document.getElementById("entity-modal");
   const title = document.getElementById("entity-modal-title");
   const nameInput = document.getElementById("entity-name-input");
@@ -2363,27 +2741,60 @@ function openEntityModal(type) {
   const submit = document.getElementById("entity-modal-submit");
   if (!modal || !title || !nameInput || !submit) return;
 
+  const currentEntity = {
+    plantel: getCurrentPlantel(),
+    grado: getCurrentGrado(),
+    unidad: getCurrentUnidad()
+  }[type] || null;
+
+  if (mode === "edit" && !currentEntity?.id) {
+    alert("No hay un elemento seleccionado para editar.");
+    return;
+  }
+
   explorerState.modal.type = type;
+  explorerState.modal.mode = mode;
   explorerState.modal.submitting = false;
+  explorerState.modal.entityId = null;
 
   const map = {
-    plantel: { title: "Nuevo plantel", submit: "Crear plantel", placeholder: "Nombre del plantel" },
-    grado: { title: "Nuevo grado", submit: "Crear grado", placeholder: "Ej. 5B" },
-    materia: { title: "Nueva materia", submit: "Crear materia", placeholder: "Nombre de la materia" },
-    unidad: { title: "Nueva unidad", submit: "Crear unidad", placeholder: "Nombre de la unidad" }
+    plantel: {
+      create: { title: "Nuevo plantel", submit: "Crear plantel", placeholder: "Nombre del plantel" },
+      edit: { title: "Editar plantel", submit: "Guardar cambios", placeholder: "Nombre del plantel" }
+    },
+    grado: {
+      create: { title: "Nuevo grado", submit: "Crear grado", placeholder: "Ej. 5B" },
+      edit: { title: "Editar grado", submit: "Guardar cambios", placeholder: "Ej. 5B" }
+    },
+    materia: {
+      create: { title: "Nueva materia", submit: "Crear materia", placeholder: "Nombre de la materia" }
+    },
+    unidad: {
+      create: { title: "Nueva unidad", submit: "Crear unidad", placeholder: "Nombre de la unidad" },
+      edit: { title: "Editar unidad", submit: "Guardar cambios", placeholder: "Nombre de la unidad" }
+    }
   };
 
-  const config = map[type] || map.plantel;
+  const config = map[type]?.[mode] || map.plantel.create;
 
   title.textContent = config.title;
   submit.textContent = config.submit;
-  nameInput.value = "";
+  nameInput.value = mode === "edit"
+    ? String(currentEntity?.grado_nombre || currentEntity?.nombre || "").trim()
+    : "";
   nameInput.placeholder = config.placeholder;
-  configureEntityModalFields(type);
+  configureEntityModalFields(type, mode);
+  explorerState.modal.entityId = currentEntity?.id || null;
+
+  if (levelSelect && type === "grado" && currentEntity?.nivel_base) {
+    levelSelect.value = currentEntity.nivel_base;
+    syncQuickSelectVisualState("entity-level-select");
+  }
   openModalError("");
   modal.classList.remove("hidden");
+  syncBodyScrollLock();
   requestAnimationFrame(() => {
-    if (type === "grado" && levelSelect) {
+    if (type === "grado" && mode === "create" && levelSelect) {
       levelSelect.focus();
       return;
     }
@@ -2410,6 +2821,44 @@ async function submitEntityModal(event) {
   submit.setAttribute("disabled", "true");
 
   try {
+    if (explorerState.modal.mode === "edit") {
+      if (explorerState.modal.type === "plantel") {
+        const plantelId = explorerState.modal.entityId || explorerState.current.plantelId;
+        if (!plantelId) throw new Error("Selecciona un plantel antes de editar.");
+        await actualizarPlantel({ id: plantelId, nombre });
+        await loadPlanteles();
+        await selectPlantel(plantelId);
+        closeEntityModal();
+        return;
+      }
+
+      if (explorerState.modal.type === "grado") {
+        const plantelId = explorerState.current.plantelId;
+        const gradoId = explorerState.modal.entityId || explorerState.current.gradoId;
+        if (!plantelId || !gradoId) throw new Error("Selecciona un grado antes de editar.");
+        await actualizarGrado({ id: gradoId, nombre });
+        await ensureGrados(plantelId, { force: true });
+        await selectGrado(plantelId, gradoId);
+        closeEntityModal();
+        return;
+      }
+
+      if (explorerState.modal.type === "unidad") {
+        const plantelId = explorerState.current.plantelId;
+        const gradoId = explorerState.current.gradoId;
+        const materiaId = explorerState.current.materiaId;
+        const unidadId = explorerState.modal.entityId || explorerState.current.unidadId;
+        if (!plantelId || !gradoId || !materiaId || !unidadId) {
+          throw new Error("Selecciona una unidad antes de editar.");
+        }
+        await actualizarUnidad({ id: unidadId, nombre });
+        await ensureUnidades(materiaId, { force: true });
+        await selectUnidad(plantelId, gradoId, materiaId, unidadId);
+        closeEntityModal();
+        return;
+      }
+    }
+
     if (explorerState.modal.type === "plantel") {
       const created = await crearPlantel({ nombre });
       await loadPlanteles();
@@ -2476,9 +2925,17 @@ async function submitEntityModal(event) {
 
 async function handleCreateAction(action) {
   if (action === "create-plantel") return openEntityModal("plantel");
+  if (action === "edit-plantel") {
+    if (!explorerState.current.plantelId) return alert("Selecciona un plantel primero.");
+    return openEntityModal("plantel", { mode: "edit" });
+  }
   if (action === "create-grado") {
     if (!explorerState.current.plantelId) return alert("Selecciona un plantel primero.");
     return openEntityModal("grado");
+  }
+  if (action === "edit-grado") {
+    if (!explorerState.current.gradoId) return alert("Selecciona un grado primero.");
+    return openEntityModal("grado", { mode: "edit" });
   }
   if (action === "create-materia") {
     if (!explorerState.current.gradoId) return alert("Selecciona un grado primero.");
@@ -2487,6 +2944,10 @@ async function handleCreateAction(action) {
   if (action === "create-unidad") {
     if (!explorerState.current.materiaId) return alert("Selecciona una materia primero.");
     return openEntityModal("unidad");
+  }
+  if (action === "edit-unidad") {
+    if (!explorerState.current.unidadId) return alert("Selecciona una unidad primero.");
+    return openEntityModal("unidad", { mode: "edit" });
   }
 
   if (action === "focus-staging") {
@@ -2575,6 +3036,11 @@ async function handleContentClick(event) {
     return;
   }
 
+  if (["archive-plantel", "archive-grado", "archive-materia", "archive-unidad", "archive-planeacion", "archive-batch"].includes(action)) {
+    requestArchiveAction(action, ids);
+    return;
+  }
+
   if (["delete-plantel", "delete-grado", "delete-materia", "delete-unidad", "delete-tema", "delete-planeacion"].includes(action)) {
     requestDeleteAction(action, ids);
     return;
@@ -2585,7 +3051,7 @@ async function handleContentClick(event) {
   if (action === "remove-staging") return removeStagingTema(button.getAttribute("data-staging-id"));
   if (action === "generate-planeaciones") return generatePlaneacionesFromStaging();
 
-  if (action.startsWith("create-") || action === "focus-staging") {
+  if (action.startsWith("create-") || action.startsWith("edit-") || action === "focus-staging") {
     return handleCreateAction(action);
   }
 }

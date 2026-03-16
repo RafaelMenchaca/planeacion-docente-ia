@@ -44,6 +44,17 @@ async function crearPlantel(payload) {
   });
 }
 
+async function actualizarPlantel(payload) {
+  return withSession(async (token) => {
+    const response = await apiPlantelesUpdate(payload.id, { nombre: payload.nombre }, token);
+    return normalizeEntityPayload(response, ["plantel", "item"]);
+  });
+}
+
+async function archivarPlantel(id) {
+  return withSession(async (token) => apiPlantelesArchive(id, token));
+}
+
 async function eliminarPlantel(id) {
   return withSession(async (token) => apiPlantelesDelete(id, token));
 }
@@ -60,6 +71,17 @@ async function crearGrado(payload) {
     const response = await apiGradosCreate(payload, token);
     return normalizeEntityPayload(response, ["grado", "item"]);
   });
+}
+
+async function actualizarGrado(payload) {
+  return withSession(async (token) => {
+    const response = await apiGradosUpdate(payload.id, { nombre: payload.nombre }, token);
+    return normalizeEntityPayload(response, ["grado", "item"]);
+  });
+}
+
+async function archivarGrado(id) {
+  return withSession(async (token) => apiGradosArchive(id, token));
 }
 
 async function eliminarGrado(id) {
@@ -80,6 +102,10 @@ async function crearMateria(payload) {
   });
 }
 
+async function archivarMateria(id) {
+  return withSession(async (token) => apiMateriasArchive(id, token));
+}
+
 async function eliminarMateria(id) {
   return withSession(async (token) => apiMateriasDelete(id, token));
 }
@@ -96,6 +122,17 @@ async function crearUnidad(payload) {
     const response = await apiUnidadesCreate(payload, token);
     return normalizeEntityPayload(response, ["unidad", "item"]);
   });
+}
+
+async function actualizarUnidad(payload) {
+  return withSession(async (token) => {
+    const response = await apiUnidadesUpdate(payload.id, { nombre: payload.nombre }, token);
+    return normalizeEntityPayload(response, ["unidad", "item"]);
+  });
+}
+
+async function archivarUnidad(id) {
+  return withSession(async (token) => apiUnidadesArchive(id, token));
 }
 
 async function eliminarUnidad(id) {
@@ -159,15 +196,22 @@ async function obtenerPlaneacionTema(temaId) {
 
 window.obtenerPlanteles = obtenerPlanteles;
 window.crearPlantel = crearPlantel;
+window.actualizarPlantel = actualizarPlantel;
+window.archivarPlantel = archivarPlantel;
 window.eliminarPlantel = eliminarPlantel;
 window.obtenerGradosPorPlantel = obtenerGradosPorPlantel;
 window.crearGrado = crearGrado;
+window.actualizarGrado = actualizarGrado;
+window.archivarGrado = archivarGrado;
 window.eliminarGrado = eliminarGrado;
 window.obtenerMateriasPorGrado = obtenerMateriasPorGrado;
 window.crearMateria = crearMateria;
+window.archivarMateria = archivarMateria;
 window.eliminarMateria = eliminarMateria;
 window.obtenerUnidadesPorMateria = obtenerUnidadesPorMateria;
 window.crearUnidad = crearUnidad;
+window.actualizarUnidad = actualizarUnidad;
+window.archivarUnidad = archivarUnidad;
 window.eliminarUnidad = eliminarUnidad;
 window.obtenerTemasPorUnidad = obtenerTemasPorUnidad;
 window.crearTemas = crearTemas;

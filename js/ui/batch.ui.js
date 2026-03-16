@@ -45,7 +45,7 @@ function renderListaPlaneaciones(planeaciones) {
                   <td class="px-3 py-3">
                     <div class="flex flex-wrap items-center justify-end gap-2">
                       <a href="detalle.html?id=${p.id}" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50">Ver planeacion</a>
-                      <button onclick="eliminarPlaneacionBatch(${p.id}, this)" class="inline-flex items-center rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50">Eliminar</button>
+                      <button onclick="archivarPlaneacionBatch(${p.id}, this)" class="inline-flex items-center rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50">Archivar</button>
                     </div>
                   </td>
                 </tr>

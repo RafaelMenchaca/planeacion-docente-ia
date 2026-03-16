@@ -4,7 +4,7 @@ function getCurrentPage() {
 }
 
 function isPrivatePage(page) {
-  return ["dashboard.html", "planeacion.html", "detalle.html", "batch.html"].includes(page);
+  return ["dashboard.html", "planeacion.html", "detalle.html", "batch.html", "archivados.html"].includes(page);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "planeacion.html": window.planeacionPage?.init,
     "detalle.html": window.initDetallePage,
     "batch.html": window.initBatchPage,
+    "archivados.html": window.initArchivadosPage,
     "login.html": window.initLoginPage,
   };
 

@@ -33,24 +33,24 @@ async function cargarPlaneacionesBatch(batchId) {
   }
 }
 
-window.eliminarPlaneacionBatch = async function eliminarPlaneacionBatch(id, btnEl) {
-  const confirmar = confirm("Estas seguro de que deseas eliminar esta planeacion?");
+window.archivarPlaneacionBatch = async function archivarPlaneacionBatch(id, btnEl) {
+  const confirmar = confirm("Este elemento se movera a Archivados y podras restaurarlo despues. ¿Deseas continuar?");
   if (!confirmar) return;
 
   const prevText = btnEl.textContent;
   btnEl.disabled = true;
-  btnEl.textContent = "Eliminando...";
+  btnEl.textContent = "Archivando...";
 
   try {
-    const res = await eliminarPlaneacionApi(id);
+    const res = await archivarPlaneacionApi(id);
     if (!res) return;
 
     if (currentBatchId) {
       await cargarPlaneacionesBatch(currentBatchId);
     }
   } catch (err) {
-    console.error("Error al eliminar:", err);
-    alert("No se pudo eliminar la planeacion.");
+    console.error("Error al archivar:", err);
+    alert("No se pudo archivar la planeacion.");
   } finally {
     btnEl.disabled = false;
     btnEl.textContent = prevText;

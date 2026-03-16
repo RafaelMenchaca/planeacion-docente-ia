@@ -1,0 +1,309 @@
+.archivados-sidebar-card {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.archivados-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.archivados-tab {
+  border: 1px solid rgb(203 213 225);
+  border-radius: 9999px;
+  background: #ffffff;
+  color: rgb(71 85 105);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+.archivados-tab.is-active {
+  border-color: rgb(245 158 11);
+  background: rgb(255 251 235);
+  color: rgb(146 64 14);
+}
+
+.archivados-filter-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.archivados-input,
+.archivados-select {
+  width: 100%;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 0.85rem;
+  background: #ffffff;
+  color: rgb(15 23 42);
+  font-size: 0.92rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.archivados-summary-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.archivados-summary-item {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.95rem;
+  background: rgb(248 250 252);
+  padding: 0.85rem;
+}
+
+.archivados-summary-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.archivados-summary-value {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.archivados-section + .archivados-section {
+  margin-top: 1.25rem;
+}
+
+.archivados-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.archivados-list {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.archivados-card {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1.25rem;
+  background: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 22px 45px -36px rgba(15, 23, 42, 0.75);
+}
+
+.archivados-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.archivados-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(253 230 138);
+  background: rgb(255 251 235);
+  color: rgb(146 64 14);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.65rem;
+}
+
+.archivados-card-title {
+  margin-top: 0.55rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.archivados-card-copy {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: rgb(71 85 105);
+}
+
+.archivados-meta-grid {
+  margin-top: 0.95rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.archivados-meta-item {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.95rem;
+  background: rgb(248 250 252);
+  padding: 0.8rem 0.9rem;
+}
+
+.archivados-meta-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(100 116 139);
+}
+
+.archivados-meta-value {
+  display: block;
+  margin-top: 0.35rem;
+  color: rgb(30 41 59);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.archivados-actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.archivados-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  border: 1px solid rgb(203 213 225);
+  background: #ffffff;
+  color: rgb(51 65 85);
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0.65rem 0.95rem;
+}
+
+.archivados-btn.restore {
+  border-color: rgb(167 243 208);
+  background: rgb(236 253 245);
+  color: rgb(6 95 70);
+}
+
+.archivados-btn.permanent {
+  border-color: rgb(253 164 175);
+  background: rgb(255 241 242);
+  color: rgb(190 18 60);
+}
+
+.archivados-route-items {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.archivados-route-item {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1rem;
+  background: rgb(248 250 252);
+  padding: 0.85rem 0.95rem;
+}
+
+.archivados-tree-shell {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.archivados-tree-node {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1rem;
+  background: rgb(248 250 252);
+  padding: 0.85rem 0.95rem;
+}
+
+.archivados-tree-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.archivados-tree-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(203 213 225);
+  background: #ffffff;
+  color: rgb(71 85 105);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+}
+
+.archivados-tree-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgb(15 23 42);
+}
+
+.archivados-tree-children {
+  margin-top: 0.85rem;
+  margin-left: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  border-left: 1px dashed rgb(203 213 225);
+  padding-left: 0.9rem;
+}
+
+.archivados-leaf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+  border: 1px solid rgb(209 250 229);
+  border-radius: 1rem;
+  background: rgb(236 253 245);
+  padding: 0.85rem 0.95rem;
+}
+
+.archivados-leaf-title {
+  margin-top: 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgb(6 78 59);
+}
+
+.archivados-leaf-copy {
+  margin-top: 0.2rem;
+  font-size: 0.84rem;
+  color: rgb(6 95 70);
+}
+
+.archivados-empty {
+  border: 1px dashed rgb(203 213 225);
+  border-radius: 1.25rem;
+  background: rgb(248 250 252);
+  padding: 1.75rem 1.2rem;
+  text-align: center;
+  color: rgb(71 85 105);
+}
+
+@media (max-width: 767px) {
+  .archivados-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .archivados-tree-children {
+    margin-left: 0.4rem;
+    padding-left: 0.75rem;
+  }
+}
