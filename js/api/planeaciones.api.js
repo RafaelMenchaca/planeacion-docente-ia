@@ -1,11 +1,44 @@
-﻿async function apiPlaneacionesList(accessToken) {
-  const res = await fetch(`${API_BASE_URL}/api/planeaciones`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+async function parsePlaneacionesJson(response) {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function createPlaneacionesApiError(message, status, payload) {
+  const error = new Error(message);
+  error.status = status;
+  error.payload = payload;
+  return error;
+}
+
+async function requestPlaneacionesJson(url, options, fallbackMessage) {
+  const response = await fetch(url, options);
+  const payload = await parsePlaneacionesJson(response);
+
+  if (!response.ok) {
+    const message =
+      payload?.error || payload?.message || fallbackMessage || `HTTP ${response.status}`;
+    throw createPlaneacionesApiError(message, response.status, payload);
+  }
+
+  return payload;
+}
+
+async function apiPlaneacionesList(accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "Error al obtener planeaciones"
+  );
 }
 
 async function apiPlaneacionesDelete(id, accessToken) {
@@ -17,6 +50,96 @@ async function apiPlaneacionesDelete(id, accessToken) {
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res;
+}
+
+async function apiPlaneacionesArchive(id, accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/${encodeURIComponent(id)}/archive`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo archivar la planeacion"
+  );
+}
+
+async function apiPlaneacionesRestore(id, accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/${encodeURIComponent(id)}/restore`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo restaurar la planeacion"
+  );
+}
+
+async function apiPlaneacionesArchiveBatch(batchId, accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/batch/${encodeURIComponent(batchId)}/archive`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo archivar la ruta"
+  );
+}
+
+async function apiPlaneacionesRestoreBatch(batchId, accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/batch/${encodeURIComponent(batchId)}/restore`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo restaurar la ruta"
+  );
+}
+
+async function apiPlaneacionesArchived(accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/archived`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudieron obtener los archivados"
+  );
+}
+
+async function apiPlaneacionesPermanentDelete(id, accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/${encodeURIComponent(id)}/permanent`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo eliminar permanentemente la planeacion"
+  );
+}
+
+async function apiPlaneacionesPermanentDeleteBatch(batchId, accessToken) {
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/batch/${encodeURIComponent(batchId)}/permanent`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "No se pudo eliminar permanentemente la ruta"
+  );
 }
 
 async function apiPlaneacionesGenerate(payload, accessToken) {
@@ -106,14 +229,16 @@ async function apiPlaneacionesGenerateWithProgress(payload, accessToken, onEvent
 }
 
 async function apiPlaneacionesBatch(batchId, accessToken) {
-  const res = await fetch(`${API_BASE_URL}/api/planeaciones/batch/${batchId}`, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
-  if (!res.ok) throw new Error("Error al obtener planeaciones");
-  return res.json();
+  return requestPlaneacionesJson(
+    `${API_BASE_URL}/api/planeaciones/batch/${encodeURIComponent(batchId)}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    "Error al obtener planeaciones"
+  );
 }
 
 async function apiPlaneacionesGet(id, accessToken) {
@@ -132,18 +257,24 @@ async function apiPlaneacionesGet(id, accessToken) {
 }
 
 async function apiPlaneacionesByTema(temaId, accessToken) {
-  const primary = await fetch(`${API_BASE_URL}/api/temas/${encodeURIComponent(temaId)}/planeacion`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
-
-  if (primary.status === 404) {
-    const fallback = await fetch(`${API_BASE_URL}/api/planeaciones?tema_id=${encodeURIComponent(temaId)}`, {
+  const primary = await fetch(
+    `${API_BASE_URL}/api/temas/${encodeURIComponent(temaId)}/planeacion`,
+    {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
-    });
+    }
+  );
+
+  if (primary.status === 404) {
+    const fallback = await fetch(
+      `${API_BASE_URL}/api/planeaciones?tema_id=${encodeURIComponent(temaId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    );
 
     if (fallback.status === 404) {
       return null;
@@ -188,6 +319,13 @@ async function apiPlaneacionesExportExcel(id, accessToken) {
 
 window.apiPlaneacionesList = apiPlaneacionesList;
 window.apiPlaneacionesDelete = apiPlaneacionesDelete;
+window.apiPlaneacionesArchive = apiPlaneacionesArchive;
+window.apiPlaneacionesRestore = apiPlaneacionesRestore;
+window.apiPlaneacionesArchiveBatch = apiPlaneacionesArchiveBatch;
+window.apiPlaneacionesRestoreBatch = apiPlaneacionesRestoreBatch;
+window.apiPlaneacionesArchived = apiPlaneacionesArchived;
+window.apiPlaneacionesPermanentDelete = apiPlaneacionesPermanentDelete;
+window.apiPlaneacionesPermanentDeleteBatch = apiPlaneacionesPermanentDeleteBatch;
 window.apiPlaneacionesGenerate = apiPlaneacionesGenerate;
 window.apiPlaneacionesGenerateWithProgress = apiPlaneacionesGenerateWithProgress;
 window.apiPlaneacionesBatch = apiPlaneacionesBatch;
