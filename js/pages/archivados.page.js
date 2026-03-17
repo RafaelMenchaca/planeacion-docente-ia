@@ -112,8 +112,53 @@ function getArchivedRegistrySnapshot() {
       materias: [],
       unidades: []
     },
+    scopes: {},
     planeaciones: {},
     batches: {}
+  };
+}
+
+function buildArchivedScopeKey(scope) {
+  const type = normalizeArchivedText(scope?.type).toLowerCase();
+  const id = normalizeArchivedText(scope?.id);
+  if (!type || !id) return "";
+  return `${type}:${id}`;
+}
+
+function getArchivedScopeRecord(scope, registry) {
+  const scopeKey = buildArchivedScopeKey(scope);
+  if (!scopeKey) return null;
+
+  const scopes = registry?.scopes && typeof registry.scopes === "object"
+    ? registry.scopes
+    : {};
+
+  return scopes[scopeKey] || null;
+}
+
+function buildScopeDescriptorFromRecord(record) {
+  const type = normalizeArchivedText(record?.type).toLowerCase();
+  const id = normalizeArchivedText(record?.id);
+
+  if (!ARCHIVED_LEVEL_LABELS[type] || !id || type === "planeacion") {
+    return null;
+  }
+
+  const label =
+    normalizeArchivedText(record?.label) ||
+    normalizeArchivedText(record?.[`${type}_nombre`]) ||
+    ARCHIVED_LEVEL_LABELS[type];
+
+  return {
+    key: `scope:${type}:${id}`,
+    kind: "scope",
+    root: {
+      type,
+      id,
+      label
+    },
+    title: label,
+    meta: record
   };
 }
 
@@ -153,10 +198,15 @@ function getHighestHiddenScope(item, registry) {
     const hiddenIds = Array.isArray(hidden?.[collectionKey]) ? hidden[collectionKey] : [];
 
     if (id && hiddenIds.includes(id)) {
+      const scopeRecord = getArchivedScopeRecord({ type: level, id }, registry);
       return {
         type: level,
         id,
-        label: normalizeArchivedText(item?.[`${level}_nombre`]) || ARCHIVED_LEVEL_LABELS[level]
+        label:
+          normalizeArchivedText(scopeRecord?.label) ||
+          normalizeArchivedText(item?.[`${level}_nombre`]) ||
+          ARCHIVED_LEVEL_LABELS[level],
+        meta: scopeRecord || null
       };
     }
   }
@@ -172,7 +222,8 @@ function buildBranchDescriptor(item, registry, batchCounts) {
       key: `scope:${hiddenScope.type}:${hiddenScope.id}`,
       kind: "scope",
       root: hiddenScope,
-      title: hiddenScope.label || ARCHIVED_LEVEL_LABELS[hiddenScope.type]
+      title: hiddenScope.label || ARCHIVED_LEVEL_LABELS[hiddenScope.type],
+      meta: hiddenScope.meta || null
     };
   }
 
@@ -217,6 +268,7 @@ function createBranchState(descriptor) {
     root: descriptor.root,
     title: descriptor.title,
     batch_id: descriptor.batchId || null,
+    meta: descriptor.meta || null,
     archived_at: null,
     items: [],
     planeacionIds: [],
@@ -316,6 +368,10 @@ function buildBranchCopy(branch) {
     return `Batch ${branch.batch_id || "-"} con ${branch.items.length} planeacion(es) archivadas.`;
   }
 
+  if (branch.kind === "scope" && branch.items.length === 0) {
+    return "Rama archivada sin planeaciones hijas registradas.";
+  }
+
   if (branch.root.type === "plantel") {
     return `${countDistinctItems(branch.items, "grado_id")} grado(s) y ${branch.items.length} planeacion(es) archivadas en este plantel.`;
   }
@@ -342,6 +398,16 @@ function buildBranchSearchText(branch) {
     buildBranchCopy(branch)
   ];
 
+  if (branch.meta) {
+    parts.push(
+      branch.meta.plantel_nombre,
+      branch.meta.grado_nombre,
+      branch.meta.materia_nombre,
+      branch.meta.unidad_nombre,
+      branch.meta.label
+    );
+  }
+
   branch.items.forEach((item) => {
     parts.push(
       buildArchivedTitle(item),
@@ -362,7 +428,9 @@ function finalizeBranch(branch) {
   branch.archived_at = [...branch.items]
     .map((item) => item?.archived_at)
     .filter(Boolean)
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || null;
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ||
+    branch.meta?.archived_at ||
+    null;
   branch.planeacionIds = [...new Set(branch.items.map((item) => String(item.id)).filter(Boolean))];
   branch.copy = buildBranchCopy(branch);
   branch.searchText = buildBranchSearchText(branch);
@@ -388,6 +456,21 @@ function buildArchivedBranches(items) {
     if (branch.kind !== "planeacion") {
       addItemToBranchTree(branch, item);
     }
+  });
+
+  Object.values(registry?.scopes || {}).forEach((scopeRecord) => {
+    const descriptor = buildScopeDescriptorFromRecord(scopeRecord);
+    if (!descriptor) return;
+
+    if (!branchMap.has(descriptor.key)) {
+      branchMap.set(descriptor.key, createBranchState(descriptor));
+      return;
+    }
+
+    const branch = branchMap.get(descriptor.key);
+    branch.meta = descriptor.meta || branch.meta;
+    branch.root = descriptor.root || branch.root;
+    branch.title = descriptor.title || branch.title;
   });
 
   return [...branchMap.values()]
@@ -530,6 +613,16 @@ function renderBranchTree(branch) {
   if (branch.kind === "planeacion") {
     const item = branch.items[0] || null;
     return item ? renderTreeLeaf(item) : "";
+  }
+
+  if (!Array.isArray(branch.tree) || branch.tree.length === 0) {
+    return `
+      <div class="archivados-tree-shell">
+        <div class="archivados-tree-empty">
+          Esta rama no tiene planeaciones archivadas dentro.
+        </div>
+      </div>
+    `;
   }
 
   return `
@@ -788,12 +881,17 @@ function getConfirmConfig(action, element) {
   }
 
   if (action === "restore-branch" && branch) {
+    const warning =
+      branch.items.length > 0
+        ? `Se restauraran ${branch.items.length} planeacion(es) archivadas dentro de esta rama.`
+        : "La rama archivada volvera a mostrarse en tus vistas activas.";
+
     return {
       action,
       id: branch.key,
       title: "Restaurar elemento?",
       message: "La rama volvera a aparecer en tus vistas activas.",
-      warning: `Se restauraran ${branch.items.length} planeacion(es) archivadas dentro de esta rama.`,
+      warning,
       submitLabel: "Si, restaurar",
       busyLabel: "Restaurando...",
       submitTone: "restore"
@@ -813,12 +911,19 @@ function getConfirmConfig(action, element) {
   }
 
   if (action === "permanent-branch" && branch) {
+    const warning =
+      branch.kind === "scope"
+        ? branch.items.length > 0
+          ? `Se eliminara definitivamente esta rama y ${branch.items.length} planeacion(es) hijas en la base de datos.`
+          : "Se eliminara definitivamente esta rama de la base de datos."
+        : `Se eliminaran definitivamente ${branch.items.length} planeacion(es) de esta rama.`;
+
     return {
       action,
       id: branch.key,
       title: "Eliminar permanentemente?",
       message: "Esta accion no se puede deshacer.",
-      warning: `Se eliminaran definitivamente ${branch.items.length} planeacion(es) de esta rama.`,
+      warning,
       submitLabel: "Si, eliminar",
       busyLabel: "Eliminando...",
       submitTone: "danger"
@@ -838,9 +943,12 @@ async function loadArchivedData() {
     const payload = await obtenerArchivadosPlaneaciones();
     const items = flattenArchivedPayload(payload);
     const branches = buildArchivedBranches(items);
+    const scopeOnlyCount = branches.filter(
+      (branch) => branch.kind === "scope" && branch.items.length === 0
+    ).length;
 
     archivedState.data = {
-      total: items.length,
+      total: items.length + scopeOnlyCount,
       total_routes: branches.filter((branch) => branch.kind !== "planeacion").length,
       total_planeaciones: branches.filter((branch) => branch.kind === "planeacion").length,
       branches
@@ -862,6 +970,37 @@ async function runPlaneacionAction(items, actionFn) {
     if (!id || seen.has(id)) continue;
     seen.add(id);
     await actionFn(id);
+  }
+}
+
+async function permanentDeleteHierarchyBranch(branch) {
+  const scopeType = normalizeArchivedText(branch?.root?.type).toLowerCase();
+  const scopeId = normalizeArchivedText(branch?.root?.id);
+
+  if (!scopeType || !scopeId) {
+    throw new Error("No se pudo identificar la rama a eliminar.");
+  }
+
+  if (scopeType === "plantel" && typeof eliminarPlantel === "function") {
+    await eliminarPlantel(scopeId);
+  } else if (scopeType === "grado" && typeof eliminarGrado === "function") {
+    await eliminarGrado(scopeId);
+  } else if (scopeType === "materia" && typeof eliminarMateria === "function") {
+    await eliminarMateria(scopeId);
+  } else if (scopeType === "unidad" && typeof eliminarUnidad === "function") {
+    await eliminarUnidad(scopeId);
+  } else {
+    throw new Error("No se pudo eliminar la rama jerarquica seleccionada.");
+  }
+
+  if (typeof window.restoreArchivedHierarchyBranch === "function") {
+    window.restoreArchivedHierarchyBranch(
+      {
+        type: scopeType,
+        id: scopeId
+      },
+      branch.items
+    );
   }
 }
 
@@ -894,6 +1033,14 @@ async function permanentDeleteBranch(branch) {
 
   if (branch.kind === "batch" && branch.batch_id) {
     await eliminarRutaBatchPermanentementeApi(branch.batch_id);
+    if (typeof window.restoreArchivedHierarchyScopeByBatchId === "function") {
+      window.restoreArchivedHierarchyScopeByBatchId(branch.batch_id);
+    }
+    return;
+  }
+
+  if (branch.kind === "scope") {
+    await permanentDeleteHierarchyBranch(branch);
     return;
   }
 
@@ -922,6 +1069,9 @@ async function submitConfirm() {
       setArchivadosFeedback("La rama fue restaurada correctamente.", "success");
     } else if (archivedState.confirm.action === "permanent-planeacion") {
       await eliminarPlaneacionPermanentementeApi(archivedState.confirm.id);
+      if (typeof window.restoreArchivedHierarchyScopeByPlaneacionId === "function") {
+        window.restoreArchivedHierarchyScopeByPlaneacionId(archivedState.confirm.id);
+      }
       setArchivadosFeedback("La planeacion fue eliminada definitivamente.", "success");
     } else if (archivedState.confirm.action === "permanent-branch") {
       const branch = findBranchByKey(archivedState.confirm.id);

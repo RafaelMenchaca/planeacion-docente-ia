@@ -23,6 +23,7 @@ function buildEmptyArchivedHierarchyRegistry() {
       materias: [],
       unidades: []
     },
+    scopes: {},
     planeaciones: {},
     batches: {}
   };
@@ -37,6 +38,143 @@ function normalizeArchivedHierarchyScope(scope) {
   }
 
   return { type, id };
+}
+
+function buildArchivedHierarchyScopeKey(scope) {
+  const normalizedScope = normalizeArchivedHierarchyScope(scope);
+  if (!normalizedScope) return "";
+  return `${normalizedScope.type}:${normalizedScope.id}`;
+}
+
+function normalizeArchivedHierarchyText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeArchivedHierarchyId(value) {
+  if (value === undefined || value === null) return "";
+  return String(value).trim();
+}
+
+function normalizeArchivedHierarchyScopeRecord(scope, metadata = {}) {
+  const normalizedScope = normalizeArchivedHierarchyScope(scope);
+  if (!normalizedScope) return null;
+
+  const source = metadata && typeof metadata === "object" ? metadata : {};
+  const rootNameKey = `${normalizedScope.type}_nombre`;
+  const rootLabel =
+    normalizeArchivedHierarchyText(source.label) ||
+    normalizeArchivedHierarchyText(source[rootNameKey]) ||
+    normalizedScope.type;
+
+  const record = {
+    type: normalizedScope.type,
+    id: normalizedScope.id,
+    label: rootLabel,
+    archived_at: normalizeArchivedHierarchyText(source.archived_at) || new Date().toISOString()
+  };
+
+  ARCHIVED_HIERARCHY_LEVEL_ORDER.forEach((level) => {
+    const idKey = `${level}_id`;
+    const nameKey = `${level}_nombre`;
+    const safeId =
+      level === normalizedScope.type
+        ? normalizedScope.id
+        : normalizeArchivedHierarchyId(source[idKey]);
+    const safeName =
+      level === normalizedScope.type
+        ? rootLabel
+        : normalizeArchivedHierarchyText(source[nameKey]);
+
+    if (safeId) {
+      record[idKey] = safeId;
+    }
+
+    if (safeName) {
+      record[nameKey] = safeName;
+    }
+  });
+
+  const gradoNivelBase = normalizeArchivedHierarchyText(source.grado_nivel_base);
+  if (gradoNivelBase) {
+    record.grado_nivel_base = gradoNivelBase;
+  }
+
+  return record;
+}
+
+function isArchivedHierarchyScopeWithinScope(candidateScope, parentScope, candidateRecord = null) {
+  const normalizedCandidate = normalizeArchivedHierarchyScope(candidateScope);
+  const normalizedParent = normalizeArchivedHierarchyScope(parentScope);
+
+  if (!normalizedCandidate || !normalizedParent) return false;
+
+  const parentIndex = ARCHIVED_HIERARCHY_LEVEL_ORDER.indexOf(normalizedParent.type);
+  const candidateIndex = ARCHIVED_HIERARCHY_LEVEL_ORDER.indexOf(normalizedCandidate.type);
+
+  if (parentIndex < 0 || candidateIndex < 0 || candidateIndex < parentIndex) {
+    return false;
+  }
+
+  if (normalizedCandidate.type === normalizedParent.type) {
+    return normalizedCandidate.id === normalizedParent.id;
+  }
+
+  const record = candidateRecord && typeof candidateRecord === "object" ? candidateRecord : {};
+  return normalizeArchivedHierarchyId(record[`${normalizedParent.type}_id`]) === normalizedParent.id;
+}
+
+function pruneArchivedHierarchyRegistry(registry, scope, items = []) {
+  const normalizedScope = normalizeArchivedHierarchyScope(scope);
+  if (!normalizedScope) return;
+
+  const startIndex = ARCHIVED_HIERARCHY_LEVEL_ORDER.indexOf(normalizedScope.type);
+  const levelsToClear =
+    startIndex >= 0
+      ? ARCHIVED_HIERARCHY_LEVEL_ORDER.slice(startIndex)
+      : ARCHIVED_HIERARCHY_LEVEL_ORDER;
+  const idsByLevel = new Map(levelsToClear.map((level) => [level, new Set()]));
+
+  if (idsByLevel.has(normalizedScope.type)) {
+    idsByLevel.get(normalizedScope.type).add(normalizedScope.id);
+  }
+
+  (Array.isArray(items) ? items : []).forEach((item) => {
+    levelsToClear.forEach((level) => {
+      const safeId = normalizeArchivedHierarchyId(item?.[`${level}_id`]);
+      if (safeId && idsByLevel.has(level)) {
+        idsByLevel.get(level).add(safeId);
+      }
+    });
+  });
+
+  idsByLevel.forEach((ids, level) => {
+    const hiddenKey = ARCHIVED_HIERARCHY_LEVEL_KEYS[level];
+    registry.hidden[hiddenKey] = (registry.hidden[hiddenKey] || []).filter(
+      (value) => !ids.has(value)
+    );
+  });
+
+  const scopeEntries =
+    registry.scopes && typeof registry.scopes === "object" ? registry.scopes : {};
+  const scopeEntriesSnapshot = { ...scopeEntries };
+
+  Object.entries(scopeEntries).forEach(([key, value]) => {
+    if (isArchivedHierarchyScopeWithinScope(value, normalizedScope, value)) {
+      delete registry.scopes[key];
+    }
+  });
+
+  [["planeaciones", registry.planeaciones], ["batches", registry.batches]].forEach(
+    ([, collection]) => {
+      Object.entries(collection || {}).forEach(([id, value]) => {
+        const scopeKey = buildArchivedHierarchyScopeKey(value);
+        const scopeRecord = scopeEntriesSnapshot[scopeKey] || value;
+        if (isArchivedHierarchyScopeWithinScope(value, normalizedScope, scopeRecord)) {
+          delete collection[id];
+        }
+      });
+    }
+  );
 }
 
 function normalizeArchivedHierarchyRegistry(raw) {
@@ -61,6 +199,15 @@ function normalizeArchivedHierarchyRegistry(raw) {
       target[String(id).trim()] = normalizedScope;
     });
   }
+
+  const sourceScopes = source.scopes && typeof source.scopes === "object" ? source.scopes : {};
+  Object.values(sourceScopes).forEach((value) => {
+    const normalizedRecord = normalizeArchivedHierarchyScopeRecord(value, value);
+    const scopeKey = buildArchivedHierarchyScopeKey(normalizedRecord);
+    if (normalizedRecord && scopeKey) {
+      base.scopes[scopeKey] = normalizedRecord;
+    }
+  });
 
   return base;
 }
@@ -91,16 +238,23 @@ function writeArchivedHierarchyRegistry(registry) {
   }
 }
 
-function registerArchivedHierarchyScope(scope, references = {}) {
+function registerArchivedHierarchyScope(scope, references = {}, metadata = {}) {
   const normalizedScope = normalizeArchivedHierarchyScope(scope);
   if (!normalizedScope) return;
 
   const registry = readArchivedHierarchyRegistry();
+  pruneArchivedHierarchyRegistry(registry, normalizedScope);
   const hiddenKey = ARCHIVED_HIERARCHY_LEVEL_KEYS[normalizedScope.type];
 
   registry.hidden[hiddenKey] = [
     ...new Set([...(registry.hidden[hiddenKey] || []), normalizedScope.id])
   ];
+
+  const scopeRecord = normalizeArchivedHierarchyScopeRecord(normalizedScope, metadata);
+  const scopeKey = buildArchivedHierarchyScopeKey(normalizedScope);
+  if (scopeRecord && scopeKey) {
+    registry.scopes[scopeKey] = scopeRecord;
+  }
 
   (Array.isArray(references?.planeacionIds) ? references.planeacionIds : []).forEach((id) => {
     const safeId = String(id || "").trim();
@@ -124,12 +278,7 @@ function restoreArchivedHierarchyScope(scope) {
   if (!normalizedScope) return;
 
   const registry = readArchivedHierarchyRegistry();
-  const hiddenKey = ARCHIVED_HIERARCHY_LEVEL_KEYS[normalizedScope.type];
-
-  registry.hidden[hiddenKey] = (registry.hidden[hiddenKey] || []).filter(
-    (value) => value !== normalizedScope.id
-  );
-
+  pruneArchivedHierarchyRegistry(registry, normalizedScope);
   writeArchivedHierarchyRegistry(registry);
 }
 
@@ -141,11 +290,7 @@ function restoreArchivedHierarchyScopeByPlaneacionId(id) {
   const scope = registry.planeaciones[safeId];
   if (!scope) return;
 
-  delete registry.planeaciones[safeId];
-  const hiddenKey = ARCHIVED_HIERARCHY_LEVEL_KEYS[scope.type];
-  registry.hidden[hiddenKey] = (registry.hidden[hiddenKey] || []).filter(
-    (value) => value !== scope.id
-  );
+  pruneArchivedHierarchyRegistry(registry, scope);
   writeArchivedHierarchyRegistry(registry);
 }
 
@@ -157,11 +302,7 @@ function restoreArchivedHierarchyScopeByBatchId(id) {
   const scope = registry.batches[safeId];
   if (!scope) return;
 
-  delete registry.batches[safeId];
-  const hiddenKey = ARCHIVED_HIERARCHY_LEVEL_KEYS[scope.type];
-  registry.hidden[hiddenKey] = (registry.hidden[hiddenKey] || []).filter(
-    (value) => value !== scope.id
-  );
+  pruneArchivedHierarchyRegistry(registry, scope);
   writeArchivedHierarchyRegistry(registry);
 }
 
@@ -183,58 +324,7 @@ function restoreArchivedHierarchyBranch(scope, items = []) {
   if (!normalizedScope) return;
 
   const registry = readArchivedHierarchyRegistry();
-  const startIndex = ARCHIVED_HIERARCHY_LEVEL_ORDER.indexOf(normalizedScope.type);
-  const levelsToClear =
-    startIndex >= 0
-      ? ARCHIVED_HIERARCHY_LEVEL_ORDER.slice(startIndex)
-      : ARCHIVED_HIERARCHY_LEVEL_ORDER;
-
-  const idsByLevel = new Map(levelsToClear.map((level) => [level, new Set()]));
-
-  if (idsByLevel.has(normalizedScope.type)) {
-    idsByLevel.get(normalizedScope.type).add(normalizedScope.id);
-  }
-
-  (Array.isArray(items) ? items : []).forEach((item) => {
-    levelsToClear.forEach((level) => {
-      const value = item?.[`${level}_id`];
-      const safeId = value === undefined || value === null ? "" : String(value).trim();
-      if (safeId && idsByLevel.has(level)) {
-        idsByLevel.get(level).add(safeId);
-      }
-    });
-  });
-
-  idsByLevel.forEach((ids, level) => {
-    const hiddenKey = ARCHIVED_HIERARCHY_LEVEL_KEYS[level];
-    registry.hidden[hiddenKey] = (registry.hidden[hiddenKey] || []).filter(
-      (value) => !ids.has(value)
-    );
-  });
-
-  const planeacionIds = new Set(
-    (Array.isArray(items) ? items : [])
-      .map((item) => String(item?.id || "").trim())
-      .filter(Boolean)
-  );
-  const batchIds = new Set(
-    (Array.isArray(items) ? items : [])
-      .map((item) => String(item?.batch_id || "").trim())
-      .filter(Boolean)
-  );
-
-  Object.keys(registry.planeaciones).forEach((id) => {
-    if (planeacionIds.has(id)) {
-      delete registry.planeaciones[id];
-    }
-  });
-
-  Object.keys(registry.batches).forEach((id) => {
-    if (batchIds.has(id)) {
-      delete registry.batches[id];
-    }
-  });
-
+  pruneArchivedHierarchyRegistry(registry, normalizedScope, items);
   writeArchivedHierarchyRegistry(registry);
 }
 
