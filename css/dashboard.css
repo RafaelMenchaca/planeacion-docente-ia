@@ -112,22 +112,91 @@
   background: rgb(255 228 230);
 }
 
-#quick-create-panel select {
-  color: rgb(15 23 42);
-  background-color: rgb(255 255 255);
+#quick-create-shell {
+  padding-top: 6.75rem;
+  padding-bottom: 1rem;
+  overflow-y: auto;
 }
 
-#quick-create-panel select.text-slate-400 {
+#quick-create-card {
+  display: flex;
+  max-height: calc(100vh - 7.75rem);
+  flex-direction: column;
+}
+
+#quick-create-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#quick-create-tema-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px 112px;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+#quick-tema-duration {
+  min-width: 0;
+}
+
+#quick-add-tema {
+  min-height: 42px;
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+#quick-temas-list {
+  max-height: 11.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+#quick-create-panel select,
+#entity-modal select {
+  color: rgb(15 23 42);
+  background-color: rgb(255 255 255);
+  font-weight: 500;
+}
+
+#quick-create-panel select.text-slate-400,
+#entity-modal select.text-slate-400 {
   color: rgb(148 163 184);
 }
 
-#quick-create-panel select option {
-  color: rgb(15 23 42);
+#quick-create-panel select option,
+#entity-modal select option {
+  color: rgb(15 23 42) !important;
   background-color: rgb(255 255 255);
+  font-weight: 500;
 }
 
-#quick-create-panel select option[value=""] {
-  color: rgb(148 163 184);
+#quick-create-panel select option[value=""],
+#entity-modal select option[value=""] {
+  color: rgb(148 163 184) !important;
+}
+
+@media (min-width: 640px) {
+  #quick-create-shell {
+    padding-top: 7.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  #quick-create-card {
+    max-height: calc(100vh - 8.5rem);
+  }
+
+  #quick-create-tema-row {
+    grid-template-columns: minmax(0, 1fr) 96px 128px;
+  }
+
+  #quick-add-tema {
+    font-size: 0.84rem;
+  }
 }
 
 .dashboard-header {
@@ -334,6 +403,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.explorer-section-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.explorer-section-title-row .explorer-icon-btn {
+  width: 2.1rem;
+  height: 2.1rem;
 }
 
 .explorer-action-btn,

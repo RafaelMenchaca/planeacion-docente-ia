@@ -221,6 +221,16 @@
   gap: 0.85rem;
 }
 
+.archivados-tree-empty {
+  border: 1px dashed rgb(203 213 225);
+  border-radius: 1rem;
+  background: rgb(248 250 252);
+  color: rgb(100 116 139);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  padding: 1rem;
+}
+
 .archivados-tree-node {
   border: 1px solid rgb(226 232 240);
   border-radius: 1rem;

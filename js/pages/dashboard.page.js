@@ -174,6 +174,10 @@ function getCurrentPlantel() {
   return explorerState.planteles.find((item) => item.id === explorerState.current.plantelId) || null;
 }
 
+function findPlantelById(plantelId) {
+  return explorerState.planteles.find((item) => item.id === plantelId) || null;
+}
+
 function getCurrentGrado() {
   const list = explorerState.gradosByPlantel[explorerState.current.plantelId] || [];
   return list.find((item) => item.id === explorerState.current.gradoId) || null;
@@ -207,6 +211,67 @@ function findUnidadById(materiaId, unidadId) {
 function findTemaById(unidadId, temaId) {
   const list = explorerState.temasByUnidad[unidadId] || [];
   return list.find((item) => item.id === temaId) || null;
+}
+
+function buildArchivedHierarchyScopeMetadata(type, id, parentIds = {}) {
+  const scopeType = String(type || "").replace(/^archive-/, "").trim().toLowerCase();
+  if (!id || !["plantel", "grado", "materia", "unidad"].includes(scopeType)) {
+    return {};
+  }
+
+  const resolvedIds = {
+    plantelId:
+      scopeType === "plantel"
+        ? id
+        : parentIds.plantelId || explorerState.current.plantelId || null,
+    gradoId:
+      scopeType === "grado"
+        ? id
+        : parentIds.gradoId || explorerState.current.gradoId || null,
+    materiaId:
+      scopeType === "materia"
+        ? id
+        : parentIds.materiaId || explorerState.current.materiaId || null,
+    unidadId:
+      scopeType === "unidad"
+        ? id
+        : parentIds.unidadId || explorerState.current.unidadId || null
+  };
+
+  const plantel = resolvedIds.plantelId ? findPlantelById(resolvedIds.plantelId) : null;
+  const grado =
+    resolvedIds.plantelId && resolvedIds.gradoId
+      ? findGradoById(resolvedIds.plantelId, resolvedIds.gradoId)
+      : null;
+  const materia =
+    resolvedIds.gradoId && resolvedIds.materiaId
+      ? findMateriaById(resolvedIds.gradoId, resolvedIds.materiaId)
+      : null;
+  const unidad =
+    resolvedIds.materiaId && resolvedIds.unidadId
+      ? findUnidadById(resolvedIds.materiaId, resolvedIds.unidadId)
+      : null;
+
+  const rootLabelByType = {
+    plantel: plantel?.nombre,
+    grado: grado?.grado_nombre || grado?.nombre,
+    materia: materia?.nombre,
+    unidad: unidad?.nombre
+  };
+
+  return {
+    archived_at: new Date().toISOString(),
+    label: rootLabelByType[scopeType] || scopeType,
+    plantel_id: plantel?.id || null,
+    plantel_nombre: plantel?.nombre || "",
+    grado_id: grado?.id || null,
+    grado_nombre: grado?.grado_nombre || grado?.nombre || "",
+    grado_nivel_base: grado?.nivel_base || "",
+    materia_id: materia?.id || null,
+    materia_nombre: materia?.nombre || "",
+    unidad_id: unidad?.id || null,
+    unidad_nombre: unidad?.nombre || ""
+  };
 }
 
 function getVisibleTemasByUnidad(unidadId) {
@@ -440,7 +505,7 @@ async function selectUnidad(plantelId, gradoId, materiaId, unidadId) {
   renderAll();
 }
 
-async function restorePersistedExplorerLocation() {
+async function restorePersistedExplorerLocation({ force = false } = {}) {
   const persisted = getPersistedExplorerLocation();
   if (!persisted) return false;
 
@@ -454,7 +519,7 @@ async function restorePersistedExplorerLocation() {
     return false;
   }
 
-  await ensureGrados(plantelId);
+  await ensureGrados(plantelId, { force });
 
   if (persisted.level === "plantel" || !persisted.gradoId) {
     await selectPlantel(plantelId);
@@ -468,7 +533,7 @@ async function restorePersistedExplorerLocation() {
     return true;
   }
 
-  await ensureMaterias(gradoId);
+  await ensureMaterias(gradoId, { force });
 
   if (persisted.level === "grado" || !persisted.materiaId) {
     await selectGrado(plantelId, gradoId);
@@ -482,7 +547,7 @@ async function restorePersistedExplorerLocation() {
     return true;
   }
 
-  await ensureUnidades(materiaId);
+  await ensureUnidades(materiaId, { force });
 
   if (persisted.level === "materia" || !persisted.unidadId) {
     await selectMateria(plantelId, gradoId, materiaId);
@@ -496,8 +561,27 @@ async function restorePersistedExplorerLocation() {
     return true;
   }
 
+  if (force) {
+    await ensureTemas(unidadId, { force: true });
+  }
+
   await selectUnidad(plantelId, gradoId, materiaId, unidadId);
   return true;
+}
+
+async function refreshExplorerAfterReturn() {
+  await loadPlanteles();
+
+  if (explorerState.planteles.length === 0) {
+    renderAll();
+    return;
+  }
+
+  if (await restorePersistedExplorerLocation({ force: true })) {
+    return;
+  }
+
+  renderAll();
 }
 function renderWorkspaceVisibility() {
   const onboarding = document.getElementById("explorer-onboarding");
@@ -629,8 +713,18 @@ function renderArchiveIcon() {
   `;
 }
 
+function renderPencilIcon() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m4 20 4.2-1 9.7-9.7a2 2 0 0 0 0-2.8l-.4-.4a2 2 0 0 0-2.8 0L5 15.8 4 20Z"></path>
+      <path d="m13.5 7.5 3 3"></path>
+    </svg>
+  `;
+}
+
 function renderActionIcon(iconName) {
   if (iconName === "trash") return renderTrashIcon();
+  if (iconName === "pencil") return renderPencilIcon();
   return renderArchiveIcon();
 }
 
@@ -675,15 +769,15 @@ function renderActionButton(config) {
 
 function getEditActionForLevel(level = explorerState.current.level) {
   if (level === "plantel" && getCurrentPlantel()?.id) {
-    return { label: "Editar plantel", action: "edit-plantel", tone: "neutral" };
+    return { action: "edit-plantel", tone: "neutral", iconOnly: true, icon: "pencil", title: "Editar nombre del plantel" };
   }
 
   if (level === "grado" && getCurrentGrado()?.id) {
-    return { label: "Editar grado", action: "edit-grado", tone: "neutral" };
+    return { action: "edit-grado", tone: "neutral", iconOnly: true, icon: "pencil", title: "Editar nombre del grado" };
   }
 
   if (level === "unidad" && getCurrentUnidad()?.id) {
-    return { label: "Editar unidad", action: "edit-unidad", tone: "neutral" };
+    return { action: "edit-unidad", tone: "neutral", iconOnly: true, icon: "pencil", title: "Editar nombre de la unidad" };
   }
 
   return null;
@@ -691,31 +785,28 @@ function getEditActionForLevel(level = explorerState.current.level) {
 
 function getLevelHeaderActions(level = explorerState.current.level) {
   const createAction = heroActionsByLevel[level] || heroActionsByLevel.root;
-  const actions = [];
+  if (!createAction?.action) return [];
 
-  if (createAction?.action) {
-    actions.push({
+  return [
+    {
       label: createAction.label,
       action: createAction.action,
       tone: "neutral"
-    });
-  }
-
-  const editAction = getEditActionForLevel(level);
-  if (editAction) {
-    actions.push(editAction);
-  }
-
-  return actions;
+    }
+  ];
 }
 
 function renderLevelSectionHeader(title, description, level = explorerState.current.level) {
   const actions = getLevelHeaderActions(level);
+  const editAction = getEditActionForLevel(level);
 
   return `
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h3 class="text-base font-semibold text-slate-900">${escapeHtml(title)}</h3>
+        <div class="explorer-section-title-row">
+          <h3 class="text-base font-semibold text-slate-900">${escapeHtml(title)}</h3>
+          ${editAction ? renderActionButton(editAction) : ""}
+        </div>
         <p class="mt-1 text-sm text-slate-600">${escapeHtml(description)}</p>
       </div>
       <div class="explorer-section-actions">
@@ -1334,6 +1425,7 @@ async function submitDeleteConfirm() {
       typeof window.registerArchivedHierarchyScope === "function"
     ) {
       const archivedPayload = responsePayload?.archived || {};
+      const archiveMetadata = buildArchivedHierarchyScopeMetadata(type, archivedPayload.id || id, parentIds);
       window.registerArchivedHierarchyScope(
         {
           type: archivedPayload.type || type,
@@ -1342,7 +1434,8 @@ async function submitDeleteConfirm() {
         {
           planeacionIds: archivedPayload.planeacion_ids || [],
           batchIds: archivedPayload.batch_ids || []
-        }
+        },
+        archiveMetadata
       );
     }
 
@@ -2193,9 +2286,21 @@ function renderUnidadLevel() {
                 <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="open-planeacion" data-planeacion-id="${planeacion.id}">
                   Abrir planeacion
                 </button>
-                <button type="button" class="inline-flex items-center rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50" data-content-action="archive-planeacion" data-planeacion-id="${planeacion.id}" data-batch-id="${escapeHtml(String(planeacion.batch_id || ""))}" data-tema-id="${tema.id}" data-plantel-id="${explorerState.current.plantelId}" data-grado-id="${explorerState.current.gradoId}" data-materia-id="${explorerState.current.materiaId}" data-unidad-id="${explorerState.current.unidadId}">
-                  Archivar
-                </button>
+                ${renderActionButton({
+                  action: "archive-planeacion",
+                  tone: "archive",
+                  iconOnly: true,
+                  title: `Archivar planeacion de ${tema.titulo || "tema"}`.trim(),
+                  attrs: {
+                    "planeacion-id": planeacion.id,
+                    "batch-id": String(planeacion.batch_id || ""),
+                    "tema-id": tema.id,
+                    "plantel-id": explorerState.current.plantelId,
+                    "grado-id": explorerState.current.gradoId,
+                    "materia-id": explorerState.current.materiaId,
+                    "unidad-id": explorerState.current.unidadId
+                  }
+                })}
               ` : ""}
             </div>
           </div>
@@ -2242,7 +2347,7 @@ function renderUnidadLevel() {
             <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Agregar temas</h4>
             <p class="mt-1 text-sm text-slate-600">Agrega temas en staging y luego genera N planeaciones (1 tema = 1 planeacion).</p>
 
-            <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto] md:items-end">
+            <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1.35fr)_96px_auto] md:items-end">
               <div>
                 <label for="staging-tema-titulo" class="mb-1 block text-sm font-medium text-slate-700">Titulo del tema</label>
                 <input id="staging-tema-titulo" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Ej. Fracciones equivalentes" />
@@ -3221,6 +3326,16 @@ function bindDashboardEvents() {
       event.preventDefault();
       addStagingTemaFromInputs();
     }
+  });
+
+  window.addEventListener("pageshow", (event) => {
+    const navigationEntry = window.performance?.getEntriesByType?.("navigation")?.[0];
+    const isBackForward = Boolean(event.persisted) || navigationEntry?.type === "back_forward";
+    if (!isBackForward) return;
+
+    refreshExplorerAfterReturn().catch((error) => {
+      console.error("Error rehidratando explorador al volver:", error);
+    });
   });
 
   isDashboardBound = true;

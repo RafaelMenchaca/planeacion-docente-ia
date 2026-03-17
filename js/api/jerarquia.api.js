@@ -28,7 +28,14 @@ function debugPlaneacionRequest(label, payload) {
 }
 
 async function requestJson(url, options, fallbackMessage) {
-  const response = await fetch(url, options);
+  const requestOptions = { ...(options || {}) };
+  const method = String(requestOptions.method || "GET").toUpperCase();
+
+  if (method === "GET" && !requestOptions.cache) {
+    requestOptions.cache = "no-store";
+  }
+
+  const response = await fetch(url, requestOptions);
   const payload = await parseApiJson(response);
 
   if (!response.ok) {
