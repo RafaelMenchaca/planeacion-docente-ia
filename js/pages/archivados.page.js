@@ -273,7 +273,10 @@ function createBranchState(descriptor) {
     items: [],
     planeacionIds: [],
     treeRoot: createTreeContainer(),
-    searchText: ""
+    searchText: "",
+    structureLoaded: descriptor.kind !== "scope",
+    structureLoading: false,
+    structureError: ""
   };
 }
 
@@ -299,6 +302,138 @@ function ensureTreeChild(parent, entry) {
   }
 
   return parent.childMap.get(key);
+}
+
+function createTreeContainerFromNodes(nodes = []) {
+  const container = createTreeContainer();
+
+  (Array.isArray(nodes) ? nodes : []).forEach((node) => {
+    if (!node?.key) return;
+
+    if (!(node.childMap instanceof Map)) {
+      node.childMap = new Map(
+        (Array.isArray(node.children) ? node.children : []).map((child) => [child.key, child])
+      );
+    }
+
+    container.childMap.set(node.key, node);
+    container.children.push(node);
+  });
+
+  return container;
+}
+
+function mergeStructureNodesIntoParent(parent, nodes = []) {
+  (Array.isArray(nodes) ? nodes : []).forEach((node) => {
+    const merged = ensureTreeChild(parent, {
+      type: node.type,
+      id: node.id,
+      label: node.label
+    });
+
+    mergeStructureNodesIntoParent(merged, node.children || []);
+  });
+}
+
+function sortArchivedHierarchyNodes(items) {
+  return [...(Array.isArray(items) ? items : [])].sort((a, b) => {
+    const orderA = Number.isFinite(Number(a?.orden)) ? Number(a.orden) : 999999;
+    const orderB = Number.isFinite(Number(b?.orden)) ? Number(b.orden) : 999999;
+    if (orderA !== orderB) return orderA - orderB;
+
+    const nameA = normalizeArchivedText(a?.grado_nombre || a?.nombre || a?.titulo).toLowerCase();
+    const nameB = normalizeArchivedText(b?.grado_nombre || b?.nombre || b?.titulo).toLowerCase();
+    return nameA.localeCompare(nameB, "es");
+  });
+}
+
+async function loadArchivedMateriaStructure(materiaId) {
+  const unidades = sortArchivedHierarchyNodes(await obtenerUnidadesPorMateria(materiaId));
+
+  return unidades.map((unidad) => ({
+    type: "unidad",
+    id: unidad.id,
+    label: normalizeArchivedText(unidad?.nombre) || "Unidad",
+    children: []
+  }));
+}
+
+async function loadArchivedGradoStructure(gradoId) {
+  const materias = sortArchivedHierarchyNodes(await obtenerMateriasPorGrado(gradoId));
+  const nodes = [];
+
+  for (const materia of materias) {
+    nodes.push({
+      type: "materia",
+      id: materia.id,
+      label: normalizeArchivedText(materia?.nombre) || "Materia",
+      children: await loadArchivedMateriaStructure(materia.id)
+    });
+  }
+
+  return nodes;
+}
+
+async function loadArchivedPlantelStructure(plantelId) {
+  const grados = sortArchivedHierarchyNodes(await obtenerGradosPorPlantel(plantelId));
+  const nodes = [];
+
+  for (const grado of grados) {
+    nodes.push({
+      type: "grado",
+      id: grado.id,
+      label: normalizeArchivedText(grado?.grado_nombre || grado?.nombre) || "Grado",
+      children: await loadArchivedGradoStructure(grado.id)
+    });
+  }
+
+  return nodes;
+}
+
+async function loadScopeStructureNodes(branch) {
+  const scopeType = normalizeArchivedText(branch?.root?.type).toLowerCase();
+  const scopeId = normalizeArchivedText(branch?.root?.id);
+
+  if (!scopeType || !scopeId) {
+    return [];
+  }
+
+  if (scopeType === "plantel") {
+    return loadArchivedPlantelStructure(scopeId);
+  }
+
+  if (scopeType === "grado") {
+    return loadArchivedGradoStructure(scopeId);
+  }
+
+  if (scopeType === "materia") {
+    return loadArchivedMateriaStructure(scopeId);
+  }
+
+  return [];
+}
+
+async function ensureBranchStructure(branch) {
+  if (!branch || branch.kind !== "scope" || branch.structureLoaded || branch.structureLoading) {
+    return;
+  }
+
+  branch.structureLoading = true;
+  branch.structureError = "";
+  renderArchivadosContent();
+
+  try {
+    const nodes = await loadScopeStructureNodes(branch);
+    const root = createTreeContainerFromNodes(branch.tree || []);
+    mergeStructureNodesIntoParent(root, nodes);
+    branch.tree = root.children;
+    branch.structureLoaded = true;
+  } catch (error) {
+    branch.structureError = error?.message || "No se pudo cargar el contenido de la rama.";
+  } finally {
+    branch.structureLoading = false;
+    renderArchivadosContent();
+  }
 }
 
 function buildTreeEntriesForBranch(branch, item) {
@@ -615,6 +750,26 @@ function renderBranchTree(branch) {
     return item ? renderTreeLeaf(item) : "";
   }
 
+  if (branch.structureLoading && (!Array.isArray(branch.tree) || branch.tree.length === 0)) {
+    return `
+      <div class="archivados-tree-shell">
+        <div class="archivados-tree-empty">
+          Cargando contenido de la rama...
+        </div>
+      </div>
+    `;
+  }
+
+  if (branch.structureError && (!Array.isArray(branch.tree) || branch.tree.length === 0)) {
+    return `
+      <div class="archivados-tree-shell">
+        <div class="archivados-tree-empty">
+          ${escapeHtml(branch.structureError)}
+        </div>
+      </div>
+    `;
+  }
+
   if (!Array.isArray(branch.tree) || branch.tree.length === 0) {
     return `
       <div class="archivados-tree-shell">
@@ -654,7 +809,7 @@ function renderBranchActions(branch) {
   return `
     <div class="archivados-actions">
       <button type="button" class="archivados-btn" data-action="toggle-branch" data-branch-key="${escapeHtml(branch.key)}">
-        ${expanded ? "Ocultar contenido" : "Ver contenido"}
+        ${branch.structureLoading ? "Cargando..." : expanded ? "Ocultar contenido" : "Ver contenido"}
       </button>
       <button type="button" class="archivados-btn restore" data-action="restore-branch" data-branch-key="${escapeHtml(branch.key)}">
         Restaurar rama
@@ -1104,7 +1259,7 @@ function handleArchivadosSidebarInput(event) {
   }
 }
 
-function handleArchivadosClick(event) {
+async function handleArchivadosClick(event) {
   const button = event.target.closest("[data-archived-filter], [data-action]");
   if (!button) return;
 
@@ -1122,10 +1277,14 @@ function handleArchivadosClick(event) {
   if (action === "toggle-branch") {
     const branchKey = button.getAttribute("data-branch-key");
     if (!branchKey) return;
+    const branch = findBranchByKey(branchKey);
 
     if (archivedState.expandedBranches.has(branchKey)) {
       archivedState.expandedBranches.delete(branchKey);
     } else {
+      if (branch?.kind === "scope") {
+        await ensureBranchStructure(branch);
+      }
       archivedState.expandedBranches.add(branchKey);
     }
 
@@ -1141,10 +1300,20 @@ function handleArchivadosClick(event) {
 function bindArchivadosEvents() {
   if (isArchivadosBound) return;
 
-  document.getElementById("archivados-sidebar")?.addEventListener("click", handleArchivadosClick);
+  document.getElementById("archivados-sidebar")?.addEventListener("click", (event) => {
+    handleArchivadosClick(event).catch((error) => {
+      console.error("Error en Archivados:", error);
+      setArchivadosFeedback("No se pudo completar la accion.", "danger");
+    });
+  });
   document.getElementById("archivados-sidebar")?.addEventListener("input", handleArchivadosSidebarInput);
   document.getElementById("archivados-sidebar")?.addEventListener("change", handleArchivadosSidebarInput);
-  document.getElementById("archivados-content")?.addEventListener("click", handleArchivadosClick);
+  document.getElementById("archivados-content")?.addEventListener("click", (event) => {
+    handleArchivadosClick(event).catch((error) => {
+      console.error("Error en Archivados:", error);
+      setArchivadosFeedback("No se pudo completar la accion.", "danger");
+    });
+  });
 
   ["delete-confirm-backdrop", "delete-confirm-close", "delete-confirm-cancel"].forEach((id) => {
     document.getElementById(id)?.addEventListener("click", () => {
