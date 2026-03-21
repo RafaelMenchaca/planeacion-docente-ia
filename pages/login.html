@@ -14,21 +14,21 @@
   <main class="public-page">
     <section class="public-auth-shell mx-auto flex w-full max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
       <div class="grid w-full gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(420px,0.88fr)]">
-        <article class="public-card-strong public-auth-panel bg-gradient-to-br from-cyan-900 via-cyan-800 to-slate-900 p-8 text-white sm:p-10">
-          <span class="public-pill border-white/20 bg-white/10 text-white before:bg-white before:shadow-none">Acceso docente</span>
-          <h1 class="public-display mt-6 text-4xl font-semibold leading-tight sm:text-5xl">Entra al explorador y retoma tu jerarquía donde la dejaste.</h1>
-          <p class="mt-5 max-w-xl text-sm leading-7 text-cyan-50/90 sm:text-base">
+        <article class="public-card-strong public-auth-panel p-8 text-slate-900 sm:p-10">
+          <span class="public-pill">Acceso</span>
+          <h1 class="public-display mt-6 text-4xl font-semibold leading-tight text-slate-950 sm:text-5xl">Entra al explorador y retoma tu jerarquía donde la dejaste.</h1>
+          <p class="mt-5 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
             Abre tu panel, continúa en la unidad activa, revisa las planeaciones listas y ajusta el detalle cuando haga falta.
           </p>
 
           <div class="mt-8 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-[1.4rem] border border-white/15 bg-white/10 p-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Lo nuevo</p>
-              <p class="mt-2 text-lg font-bold">Ruta visible en el detalle</p>
+            <div class="rounded-[1.4rem] border border-slate-200 bg-white p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Lo nuevo</p>
+              <p class="mt-2 text-lg font-bold text-slate-900">Ruta visible en el detalle</p>
             </div>
-            <div class="rounded-[1.4rem] border border-white/15 bg-white/10 p-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">Flujo</p>
-              <p class="mt-2 text-lg font-bold">Edición y cancelación claras</p>
+            <div class="rounded-[1.4rem] border border-slate-200 bg-white p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Flujo</p>
+              <p class="mt-2 text-lg font-bold text-slate-900">Edición y cancelación claras</p>
             </div>
           </div>
         </article>
@@ -47,11 +47,9 @@
             </div>
 
             <div>
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <label for="password" class="block text-sm font-semibold text-slate-700">Contraseña</label>
-                <a href="recuperar.html" class="text-sm font-semibold text-cyan-800">¿Olvidaste tu contraseña?</a>
-              </div>
+              <label for="password" class="mb-2 block text-sm font-semibold text-slate-700">Contraseña</label>
               <input id="password" name="password" type="password" class="public-input" placeholder="••••••••" required />
+              <a href="recuperar.html" class="mt-2 inline-block text-sm font-semibold text-cyan-800">¿Olvidaste tu contraseña?</a>
             </div>
 
             <button type="submit" class="public-cta-primary w-full">Iniciar sesión</button>
