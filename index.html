@@ -222,29 +222,20 @@
               <div class="p-6 sm:p-7">
                 <span class="public-step-badge">1</span>
                 <p class="public-kicker mt-5">Contexto</p>
-                <h3 class="mt-3 text-2xl font-bold text-slate-950">Ubicas la unidad correcta antes de generar.</h3>
+                <h3 class="mt-3 text-2xl font-bold text-slate-950">Exploras la jerarquía antes de crear.</h3>
                 <p class="mt-4 text-sm leading-7 text-slate-600">
-                  El flujo empieza seleccionando plantel, grado, materia y unidad. Así cada planeación nace desde la ruta académica correcta.
+                  La app parte de una estructura real. Entras por plantel, bajas a grado, abres la materia y terminas en la unidad donde vas a trabajar.
                 </p>
               </div>
 
               <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Plantel</p>
-                    <p class="mt-2 text-sm font-semibold text-slate-900">Secundaria Norte</p>
-                  </div>
-                  <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Grado</p>
-                    <p class="mt-2 text-sm font-semibold text-slate-900">2° B</p>
-                  </div>
-                  <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Materia</p>
-                    <p class="mt-2 text-sm font-semibold text-slate-900">Matemáticas</p>
-                  </div>
-                  <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Unidad</p>
-                    <p class="mt-2 text-sm font-semibold text-slate-900">Unidad 3</p>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Jerarquía académica</p>
+                  <div class="mt-4 space-y-2 text-sm text-slate-700">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-900">Secundaria Norte</div>
+                    <div class="ml-3 rounded-xl border border-slate-200 bg-white px-3 py-2">2° B</div>
+                    <div class="ml-6 rounded-xl border border-slate-200 bg-white px-3 py-2">Matemáticas</div>
+                    <div class="ml-9 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 font-semibold text-cyan-900">Unidad 3</div>
                   </div>
                 </div>
               </div>
@@ -255,27 +246,41 @@
             <div class="grid gap-0 lg:grid-cols-[minmax(220px,0.86fr)_minmax(0,1.14fr)]">
               <div class="p-6 sm:p-7">
                 <span class="public-step-badge">2</span>
-                <p class="public-kicker mt-5">Generación</p>
-                <h3 class="mt-3 text-2xl font-bold text-slate-950">Agregas temas y disparas varias planeaciones.</h3>
+                <p class="public-kicker mt-5">Creación</p>
+                <h3 class="mt-3 text-2xl font-bold text-slate-950">Creas varias planeaciones desde la unidad.</h3>
                 <p class="mt-4 text-sm leading-7 text-slate-600">
-                  El staging reúne los temas pendientes en la unidad. Cada tema genera una planeación y el sistema muestra el avance sin salir del flujo.
+                  La unidad abre el panel de creación. Agregas tema, duración y disparas la generación por lote sin perder el contexto.
                 </p>
               </div>
 
               <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Temas en staging</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Creación de planeaciones</p>
                     <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">2 temas</span>
                   </div>
 
-                  <div class="mt-4 space-y-2">
+                  <div class="mt-4 flex items-stretch gap-2">
+                    <div class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Tema</p>
+                      <p class="mt-1 truncate text-xs font-medium text-slate-800">Fracciones equivalentes</p>
+                    </div>
+                    <div class="w-20 shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Duración</p>
+                      <p class="mt-1 text-xs font-medium text-slate-800">50 min</p>
+                    </div>
+                    <div class="inline-flex w-28 shrink-0 items-center justify-center rounded-xl border border-cyan-300 bg-white px-3 py-2 text-xs font-semibold text-cyan-700">
+                      Agregar tema
+                    </div>
+                  </div>
+
+                  <div class="mt-3 space-y-2">
                     <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                       <div>
                         <p class="text-sm font-medium text-slate-800">Fracciones equivalentes</p>
                         <p class="text-xs text-slate-500">50 min</p>
                       </div>
-                      <span class="text-xs font-semibold text-slate-500">Generando</span>
+                      <span class="text-xs font-semibold text-slate-500">Pendiente</span>
                     </div>
                     <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                       <div>
@@ -298,32 +303,38 @@
             <div class="grid gap-0 lg:grid-cols-[minmax(220px,0.86fr)_minmax(0,1.14fr)]">
               <div class="p-6 sm:p-7">
                 <span class="public-step-badge">3</span>
-                <p class="public-kicker mt-5">Detalle final</p>
-                <h3 class="mt-3 text-2xl font-bold text-slate-950">Revisas el contenido y exportas.</h3>
+                <p class="public-kicker mt-5">Planeación final</p>
+                <h3 class="mt-3 text-2xl font-bold text-slate-950">Abres la planeación en formato tipo tabla.</h3>
                 <p class="mt-4 text-sm leading-7 text-slate-600">
-                  La planeación abre con su contexto visible, activas edición cuando hace falta y al final exportas en Word o Excel.
+                  El detalle conserva una vista estilo Excel para revisar actividades, productos y evaluación antes de exportar.
                 </p>
               </div>
 
               <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Detalle editable</p>
-                    <span class="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-800">Modo edición</span>
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Planeación tipo tabla</p>
+                    <span class="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-800">Excel like</span>
                   </div>
 
                   <div class="mt-4 overflow-hidden rounded-xl border border-slate-200">
-                    <div class="grid grid-cols-[110px_minmax(0,1fr)] bg-slate-100 px-3 py-2 text-[11px] font-semibold text-slate-600">
+                    <div class="grid grid-cols-4 bg-slate-100 px-3 py-2 text-[10px] font-semibold text-slate-600">
                       <span>Tiempo</span>
-                      <span>Actividades</span>
+                      <span>Actividad</span>
+                      <span>Producto</span>
+                      <span>Evaluación</span>
                     </div>
-                    <div class="grid grid-cols-[110px_minmax(0,1fr)] border-t border-slate-200 px-3 py-2 text-xs text-slate-700">
+                    <div class="grid grid-cols-4 border-t border-slate-200 px-3 py-2 text-[10px] text-slate-700">
                       <span>Inicio</span>
-                      <span>Resolver ejercicios guiados</span>
+                      <span>Ejercicios guiados</span>
+                      <span>Bitácora</span>
+                      <span>Formativa</span>
                     </div>
-                    <div class="grid grid-cols-[110px_minmax(0,1fr)] border-t border-slate-200 px-3 py-2 text-xs text-slate-700">
+                    <div class="grid grid-cols-4 border-t border-slate-200 px-3 py-2 text-[10px] text-slate-700">
                       <span>Cierre</span>
-                      <span>Producto de aprendizaje y evaluación</span>
+                      <span>Producto final</span>
+                      <span>Entrega</span>
+                      <span>Sumativa</span>
                     </div>
                   </div>
 
@@ -334,7 +345,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </article>
         </div>
       </div>
     </section>
@@ -344,35 +355,102 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div class="max-w-3xl">
             <p class="public-kicker">Precios</p>
-            <h2 class="public-display mt-3 text-3xl font-semibold text-slate-950 sm:text-4xl">Empieza gratis y escala cuando tu operación lo pida.</h2>
+            <h2 class="public-display mt-3 text-3xl font-semibold text-slate-950 sm:text-4xl">Planes pensados para empezar rápido y escalar con orden.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
-              Las tres opciones comparten la misma base: jerarquía completa, generación por unidad y detalle editable.
+              Todas las opciones comparten la misma base del producto: jerarquía académica, generación por unidad y revisión final antes de exportar.
             </p>
           </div>
           <a href="pages/precios.html" class="public-cta-primary">Ver precios</a>
         </div>
 
-        <div class="mt-8 grid gap-4 md:grid-cols-3">
-          <article class="public-card-soft p-5">
-            <p class="text-sm font-semibold text-slate-900">Gratis</p>
-            <p class="mt-3 text-3xl font-extrabold text-slate-950">Validación</p>
-            <p class="mt-3 text-sm leading-7 text-slate-600">Para probar la estructura, cargar tu primera unidad y validar el flujo completo.</p>
+        <div class="mt-8 grid gap-4 xl:grid-cols-3">
+          <article class="public-card-soft flex min-h-[430px] flex-col p-6 sm:p-7">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-slate-900">Inicio</p>
+                <p class="mt-1 text-sm text-slate-500">Para validar el flujo completo</p>
+              </div>
+              <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">Gratis</span>
+            </div>
+
+            <div class="mt-6">
+              <p class="text-4xl font-extrabold text-slate-950">$0</p>
+              <p class="mt-2 text-sm leading-7 text-slate-600">
+                Ideal para conocer la estructura, crear tu primera unidad y confirmar si el flujo se adapta a tu operación.
+              </p>
+            </div>
+
+            <div class="mt-6 space-y-3 text-sm text-slate-700">
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Hasta 3 planeaciones al mes.</span></div>
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Jerarquía académica completa.</span></div>
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Detalle editable y exportación final.</span></div>
+            </div>
+
+            <div class="mt-auto border-t border-slate-200 pt-6">
+              <a href="pages/registro.html" class="public-cta-secondary w-full">Crear cuenta gratis</a>
+            </div>
           </article>
-          <article class="public-card-soft public-pricing-accent p-5">
-            <p class="text-sm font-semibold text-slate-900">Pro</p>
-            <p class="mt-3 text-3xl font-extrabold text-slate-950">Uso continuo</p>
-            <p class="mt-3 text-sm leading-7 text-slate-600">Para docentes que generan con frecuencia, editan el detalle y exportan entregables.</p>
+
+          <article class="public-card-soft public-pricing-accent relative flex min-h-[430px] flex-col p-6 sm:p-7">
+            <div class="absolute right-5 top-5 inline-flex items-center rounded-full bg-cyan-900 px-3 py-1 text-xs font-semibold text-white">Más elegido</div>
+
+            <div class="pr-24">
+              <p class="text-sm font-semibold text-slate-900">Pro docente</p>
+              <p class="mt-1 text-sm text-slate-600">Para uso continuo</p>
+            </div>
+
+            <div class="mt-6">
+              <div class="flex items-end gap-2">
+                <p class="text-4xl font-extrabold text-slate-950">$150</p>
+                <span class="pb-1 text-sm font-medium text-slate-500">/ mes</span>
+              </div>
+              <p class="mt-2 text-sm leading-7 text-slate-600">
+                Pensado para docentes que generan con frecuencia, corrigen el detalle y necesitan un flujo más ágil para operar semana a semana.
+              </p>
+            </div>
+
+            <div class="mt-6 space-y-3 text-sm text-slate-700">
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Planeaciones ilimitadas por tema.</span></div>
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Generación por lote con progreso visible.</span></div>
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Word y Excel incluidos al final del flujo.</span></div>
+            </div>
+
+            <div class="mt-auto border-t border-slate-200/70 pt-6">
+              <a href="pages/precios.html" class="public-cta-primary w-full">Ver plan Pro</a>
+            </div>
           </article>
-          <article class="public-card-soft p-5">
-            <p class="text-sm font-semibold text-slate-900">Institución</p>
-            <p class="mt-3 text-3xl font-extrabold text-slate-950">Escala operativa</p>
-            <p class="mt-3 text-sm leading-7 text-slate-600">Para coordinaciones, academias o despliegues por plantel con acompañamiento.</p>
+
+          <article class="public-card-soft flex min-h-[430px] flex-col p-6 sm:p-7">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-slate-900">Institución</p>
+                <p class="mt-1 text-sm text-slate-500">Para coordinación y despliegue</p>
+              </div>
+              <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">A medida</span>
+            </div>
+
+            <div class="mt-6">
+              <p class="text-4xl font-extrabold text-slate-950">Custom</p>
+              <p class="mt-2 text-sm leading-7 text-slate-600">
+                Diseñado para academias, coordinaciones o planteles que necesitan más volumen, más orden y acompañamiento en la implementación.
+              </p>
+            </div>
+
+            <div class="mt-6 space-y-3 text-sm text-slate-700">
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Escalado por materias, grados o planteles.</span></div>
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Acompañamiento para operación institucional.</span></div>
+              <div class="flex items-start gap-3"><span class="public-list-check">+</span><span>Configuración según estructura y volumen real.</span></div>
+            </div>
+
+            <div class="mt-auto border-t border-slate-200 pt-6">
+              <a href="pages/contacto.html" class="public-cta-secondary w-full">Contactar ventas</a>
+            </div>
           </article>
         </div>
 
         <div class="mt-6 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
           <p class="text-sm leading-7 text-slate-600">
-            Empieza con una cuenta individual y cambia de nivel cuando necesites más volumen, coordinación o acompañamiento institucional.
+            Puedes comenzar solo, validar el flujo y después escalar a un uso continuo o institucional sin cambiar la lógica base del producto.
           </p>
         </div>
       </div>
