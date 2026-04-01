@@ -52,6 +52,32 @@ let isDashboardBound = false;
 const QUICK_CREATE_NEW_VALUE = "__new__";
 const DASHBOARD_LOCATION_STORAGE_KEY = "educativo.dashboard.last-location";
 const GRADO_NIVEL_OPTIONS = new Set(["primaria", "secundaria", "preparatoria", "universidad"]);
+const ACTIVIDAD_CIERRE_REQUERIDA_MESSAGE = "Cada tema debe tener una actividad de cierre seleccionada antes de generar la planeación.";
+const ACTIVIDADES_CIERRE = [
+  { nombre: "Juegos de mesa educativos", descripcion: "Fomenta la lógica" },
+  { nombre: "Debate en clase", descripcion: "Pensamiento crítico" },
+  { nombre: "Proyectos de investigación", descripcion: "Fomenta la curiosidad" },
+  { nombre: "Aprendizaje basado en proyectos", descripcion: "Problemas reales" },
+  { nombre: "Simulación", descripcion: "Experiencia práctica" },
+  { nombre: "Trabajo en equipo", descripcion: "Colaboración efectiva" },
+  { nombre: "Taller de escritura creativa", descripcion: "Estimula la creatividad" },
+  { nombre: "Laboratorios científicos", descripcion: "Experimentos prácticos" },
+  { nombre: "Estudio de caso", descripcion: "Análisis realista" },
+  { nombre: "Augmented learning", descripcion: "Revisión en casa" },
+  { nombre: "Excursiones educativas", descripcion: "Exploración curricular" },
+  { nombre: "Presentaciones multimedia", descripcion: "Comunicación visual" },
+  { nombre: "Aprendizaje cooperativo", descripcion: "Trabajo en grupos" },
+  { nombre: "Encuestas y entrevistas", descripcion: "Recopilación de datos" },
+  { nombre: "Juegos de rol", descripcion: "Perspectivas diferentes" },
+  { nombre: "Preguntas de reflexión", descripcion: "Estimula el pensamiento" },
+  { nombre: "Proyectos de arte", descripcion: "Expresión artística" },
+  { nombre: "Mapas conceptuales", descripcion: "Organización visual" },
+  { nombre: "Podcasts educativos", descripcion: "Comunicación oral" },
+  { nombre: "Tareas interdisciplinarias", descripcion: "Conexión de materias" }
+];
+const ACTIVIDADES_CIERRE_MAP = new Map(
+  ACTIVIDADES_CIERRE.map((actividad) => [actividad.nombre, actividad.descripcion])
+);
 
 function getExplorerStorage() {
   try {
@@ -108,6 +134,58 @@ function persistExplorerLocation() {
   } catch {
     // Ignore storage write failures.
   }
+}
+
+function normalizeActividadCierre(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function isActividadCierreValida(value) {
+  return ACTIVIDADES_CIERRE_MAP.has(normalizeActividadCierre(value));
+}
+
+function getActividadCierreDescripcion(value) {
+  return ACTIVIDADES_CIERRE_MAP.get(normalizeActividadCierre(value)) || "";
+}
+
+function hasTemasSinActividadCierre(temas = []) {
+  return (temas || []).some((tema) => !isActividadCierreValida(tema?.actividad_cierre));
+}
+
+function buildActividadCierreOptions(selectedValue) {
+  const normalized = normalizeActividadCierre(selectedValue);
+  const options = ['<option value="">Actividad</option>'];
+
+  ACTIVIDADES_CIERRE.forEach((actividad) => {
+    const isSelected = normalized === actividad.nombre ? " selected" : "";
+    const label = `${actividad.nombre} - ${actividad.descripcion}`;
+    options.push(`<option value="${escapeHtml(actividad.nombre)}"${isSelected}>${escapeHtml(label)}</option>`);
+  });
+
+  return options.join("");
+}
+
+function renderActividadCierreStatus(actividadCierre) {
+  return "";
+}
+
+function renderActividadCierreControl({ scope, localId, actividadCierre }) {
+  const safeScope = scope === "quick" ? "quick" : "staging";
+  const selectId = `${safeScope}-actividad-cierre-${escapeHtml(String(localId))}`;
+  const dataAttribute = safeScope === "quick"
+    ? `data-quick-actividad-select="${escapeHtml(String(localId))}"`
+    : `data-staging-actividad-select="${escapeHtml(String(localId))}"`;
+
+  return `
+    <select
+      id="${selectId}"
+      class="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:outline-none"
+      style="width: 118px; min-width: 118px; max-width: 118px;"
+      ${dataAttribute}
+    >
+      ${buildActividadCierreOptions(actividadCierre)}
+    </select>
+  `;
 }
 
 function syncBodyScrollLock() {
@@ -1600,13 +1678,20 @@ function renderQuickTemasList() {
 
   list.innerHTML = explorerState.quickCreate.temas
     .map((tema) => `
-      <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-        <div>
-          <p class="text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
-          <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+      <div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-3 py-3">
+        <div class="min-w-0 flex flex-1 items-center gap-4">
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
+            <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+          </div>
+          ${renderActividadCierreControl({
+            scope: "quick",
+            localId: tema.localId,
+            actividadCierre: tema.actividad_cierre
+          })}
         </div>
-        <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-quick-remove-tema="${tema.localId}">
-          Quitar
+        <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-quick-remove-tema="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
+          ${renderTrashIcon()}
         </button>
       </div>
     `)
@@ -1784,7 +1869,8 @@ function addQuickTemaFromInputs() {
   explorerState.quickCreate.temas.push({
     localId: `quick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     titulo,
-    duracion
+    duracion,
+    actividad_cierre: ""
   });
 
   titleInput.value = "";
@@ -1796,6 +1882,26 @@ function addQuickTemaFromInputs() {
 
 function removeQuickTema(localId) {
   explorerState.quickCreate.temas = explorerState.quickCreate.temas.filter((tema) => tema.localId !== localId);
+  if (!hasTemasSinActividadCierre(explorerState.quickCreate.temas)) {
+    showQuickCreateError("");
+  }
+  renderQuickTemasList();
+}
+
+function updateQuickTemaActividad(localId, actividadCierre) {
+  const actividadNormalizada = normalizeActividadCierre(actividadCierre);
+  explorerState.quickCreate.temas = explorerState.quickCreate.temas.map((tema) => {
+    if (tema.localId !== localId) return tema;
+    return {
+      ...tema,
+      actividad_cierre: actividadNormalizada
+    };
+  });
+
+  if (!hasTemasSinActividadCierre(explorerState.quickCreate.temas)) {
+    showQuickCreateError("");
+  }
+
   renderQuickTemasList();
 }
 
@@ -2313,12 +2419,21 @@ function renderUnidadLevel() {
     ? '<p class="text-sm text-slate-500">No hay temas pendientes.</p>'
     : explorerState.stagingTemas
         .map((tema) => `
-          <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-            <div>
-              <p class="text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
-              <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+          <div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-3 py-3">
+            <div class="min-w-0 flex flex-1 items-center gap-4">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
+                <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+              </div>
+              ${renderActividadCierreControl({
+                scope: "staging",
+                localId: tema.localId,
+                actividadCierre: tema.actividad_cierre
+              })}
             </div>
-            <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="remove-staging" data-staging-id="${tema.localId}">Quitar</button>
+            <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-content-action="remove-staging" data-staging-id="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
+              ${renderTrashIcon()}
+            </button>
           </div>
         `)
         .join("");
@@ -2458,7 +2573,8 @@ function addStagingTemaFromInputs() {
   explorerState.stagingTemas.push({
     localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     titulo,
-    duracion
+    duracion,
+    actividad_cierre: ""
   });
 
   titleInput.value = "";
@@ -2477,6 +2593,19 @@ function cancelStagingPanel() {
 
 function removeStagingTema(localId) {
   explorerState.stagingTemas = explorerState.stagingTemas.filter((item) => item.localId !== localId);
+  renderExplorerContent();
+}
+
+function updateStagingTemaActividad(localId, actividadCierre) {
+  const actividadNormalizada = normalizeActividadCierre(actividadCierre);
+  explorerState.stagingTemas = explorerState.stagingTemas.map((tema) => {
+    if (tema.localId !== localId) return tema;
+    return {
+      ...tema,
+      actividad_cierre: actividadNormalizada
+    };
+  });
+
   renderExplorerContent();
 }
 
@@ -2644,6 +2773,11 @@ async function generatePlaneacionesFromStaging() {
     return;
   }
 
+  if (hasTemasSinActividadCierre(explorerState.stagingTemas)) {
+    alert(ACTIVIDAD_CIERRE_REQUERIDA_MESSAGE);
+    return;
+  }
+
   if (explorerState.generating) return;
 
   explorerState.generating = true;
@@ -2652,7 +2786,12 @@ async function generatePlaneacionesFromStaging() {
   scrollToProgress();
 
   const body = {
-    temas: explorerState.stagingTemas.map((tema, index) => ({ titulo: tema.titulo, duracion: tema.duracion, orden: index + 1 })),
+    temas: explorerState.stagingTemas.map((tema, index) => ({
+      titulo: tema.titulo,
+      duracion: tema.duracion,
+      actividad_cierre: tema.actividad_cierre,
+      orden: index + 1
+    })),
     ...buildLegacyContext()
   };
 
@@ -2701,6 +2840,10 @@ async function submitQuickCreateForm(event) {
   try {
     if (explorerState.quickCreate.temas.length === 0) {
       throw new Error("Agrega al menos un tema antes de crear la planeacion.");
+    }
+
+    if (hasTemasSinActividadCierre(explorerState.quickCreate.temas)) {
+      throw new Error(ACTIVIDAD_CIERRE_REQUERIDA_MESSAGE);
     }
 
     showQuickCreateError("");
@@ -2780,7 +2923,8 @@ async function submitQuickCreateForm(event) {
     explorerState.stagingTemas = explorerState.quickCreate.temas.map((tema) => ({
       localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       titulo: tema.titulo,
-      duracion: tema.duracion
+      duracion: tema.duracion,
+      actividad_cierre: tema.actividad_cierre
     }));
 
     explorerState.quickCreate.temas = [];
@@ -3177,6 +3321,12 @@ function bindDashboardEvents() {
     handleContentClick(event).catch((error) => console.error("Error en contenido:", error));
   });
 
+  document.getElementById("explorer-content")?.addEventListener("change", (event) => {
+    const select = event.target.closest?.("[data-staging-actividad-select]");
+    if (!select) return;
+    updateStagingTemaActividad(select.getAttribute("data-staging-actividad-select"), select.value);
+  });
+
   document.getElementById("explorer-breadcrumbs")?.addEventListener("click", (event) => {
     handleBreadcrumbClick(event).catch((error) => console.error("Error en breadcrumbs:", error));
   });
@@ -3260,6 +3410,12 @@ function bindDashboardEvents() {
     const button = event.target.closest("[data-quick-remove-tema]");
     if (!button) return;
     removeQuickTema(button.getAttribute("data-quick-remove-tema"));
+  });
+
+  document.getElementById("quick-temas-list")?.addEventListener("change", (event) => {
+    const select = event.target.closest?.("[data-quick-actividad-select]");
+    if (!select) return;
+    updateQuickTemaActividad(select.getAttribute("data-quick-actividad-select"), select.value);
   });
 
   document.getElementById("quick-create-form")?.addEventListener("submit", (event) => {
