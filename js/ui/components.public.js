@@ -1,28 +1,40 @@
-function getBasePath() {
-  const { pathname, protocol } = window.location;
-
-  if (protocol === "file:") {
-    return "";
+function getCurrentPublicScript() {
+  if (document.currentScript?.src) {
+    return document.currentScript;
   }
 
-  const segments = pathname.split("/").filter(Boolean);
-  const first = segments[0] || "";
-  const localFolders = new Set(["pages", "components", "css", "js", "assets"]);
-
-  if (!first || localFolders.has(first) || first.includes(".")) {
-    return "";
-  }
-
-  return `/${first}`;
+  return Array.from(document.scripts).find(
+    (script) => script.src && script.src.includes("/js/ui/components.public.js")
+  ) || null;
 }
 
-window.BASE_PATH = getBasePath();
+function getPublicAppBaseUrl() {
+  const script = getCurrentPublicScript();
+
+  if (script?.src) {
+    return new URL("../../", script.src);
+  }
+
+  const isNestedPublicPage = window.location.pathname.includes("/pages/");
+  return new URL(isNestedPublicPage ? "../" : "./", window.location.href);
+}
+
+const PUBLIC_APP_BASE_URL = getPublicAppBaseUrl();
+
+window.BASE_PATH = PUBLIC_APP_BASE_URL.protocol === "file:"
+  ? ""
+  : PUBLIC_APP_BASE_URL.pathname.replace(/\/$/, "");
+
+function resolvePublicUrl(path = "") {
+  const normalizedPath = String(path).replace(/^\/+/, "");
+  return new URL(normalizedPath, PUBLIC_APP_BASE_URL).href;
+}
 
 function fixLinks(scope = document) {
   scope.querySelectorAll("[data-href]").forEach((link) => {
     const path = link.getAttribute("data-href");
     if (!path) return;
-    link.setAttribute("href", `${window.BASE_PATH}${path}`);
+    link.setAttribute("href", resolvePublicUrl(path));
   });
 }
 
@@ -37,15 +49,21 @@ function bindPublicMenu(scope = document) {
 
   const closeMenu = () => {
     menu.classList.add("hidden");
+    menu.classList.remove("is-open");
     toggle.setAttribute("aria-expanded", "false");
   };
 
   const syncDesktopState = () => {
     if (window.innerWidth >= 1024) {
       menu.classList.remove("hidden");
+      menu.classList.remove("is-open");
       toggle.setAttribute("aria-expanded", "true");
-    } else if (toggle.getAttribute("aria-expanded") !== "true") {
+    } else if (toggle.getAttribute("aria-expanded") === "true") {
+      menu.classList.remove("hidden");
+      menu.classList.add("is-open");
+    } else {
       menu.classList.add("hidden");
+      menu.classList.remove("is-open");
     }
   };
 
@@ -53,6 +71,7 @@ function bindPublicMenu(scope = document) {
     const isOpen = toggle.getAttribute("aria-expanded") === "true";
     toggle.setAttribute("aria-expanded", String(!isOpen));
     menu.classList.toggle("hidden", isOpen);
+    menu.classList.toggle("is-open", !isOpen);
   });
 
   menu.querySelectorAll("a").forEach((link) => {
@@ -129,11 +148,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tasks = [];
 
   if (document.getElementById("navbar")) {
-    tasks.push(loadComponent("navbar", `${window.BASE_PATH}/components/navbar_public.html`));
+    tasks.push(loadComponent("navbar", resolvePublicUrl("components/navbar_public.html")));
   }
 
   if (document.getElementById("footer")) {
-    tasks.push(loadComponent("footer", `${window.BASE_PATH}/components/footer_public.html`));
+    tasks.push(loadComponent("footer", resolvePublicUrl("components/footer_public.html")));
   }
 
   try {
