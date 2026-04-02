@@ -1,4 +1,4 @@
-﻿let isProfileMenuBound = false;
+let isPrivateChromeGlobalBound = false;
 
 async function loadPrivateComponent(targetId, path) {
   const target = document.getElementById(targetId);
@@ -22,6 +22,35 @@ function closeProfileMenu() {
 
   menu.classList.add("hidden");
   toggle.setAttribute("aria-expanded", "false");
+}
+
+function closePrivateNavMenu() {
+  const menu = document.getElementById("private-nav-menu");
+  const toggle = document.getElementById("private-nav-toggle");
+  if (!menu || !toggle) return;
+
+  menu.classList.add("hidden");
+  toggle.setAttribute("aria-expanded", "false");
+}
+
+function toggleProfileMenu() {
+  const menu = document.getElementById("profile-menu");
+  const toggle = document.getElementById("profile-menu-toggle");
+  if (!menu || !toggle) return;
+
+  const isOpen = !menu.classList.contains("hidden");
+  menu.classList.toggle("hidden", isOpen);
+  toggle.setAttribute("aria-expanded", String(!isOpen));
+}
+
+function togglePrivateNavMenu() {
+  const menu = document.getElementById("private-nav-menu");
+  const toggle = document.getElementById("private-nav-toggle");
+  if (!menu || !toggle) return;
+
+  const isOpen = !menu.classList.contains("hidden");
+  menu.classList.toggle("hidden", isOpen);
+  toggle.setAttribute("aria-expanded", String(!isOpen));
 }
 
 function showProfileNotice(message, tone = "info") {
@@ -76,48 +105,118 @@ async function handleProfileAction(action) {
   showProfileNotice(`${labels[action] || "Esta opcion"} estara disponible pronto.`, "info");
 }
 
+function highlightCurrentPrivateNavLink() {
+  const currentPage = window.location.pathname.split("/").pop() || "dashboard.html";
+
+  document.querySelectorAll("[data-private-nav-link]").forEach((link) => {
+    const target = link.getAttribute("data-private-nav-link");
+    const isActive = target === currentPage;
+    link.classList.toggle("bg-cyan-50", isActive);
+    link.classList.toggle("text-cyan-700", isActive);
+    link.classList.toggle("font-semibold", isActive);
+    link.classList.toggle("text-slate-700", !isActive);
+  });
+}
+
+function bindPrivateNavMenu() {
+  const toggle = document.getElementById("private-nav-toggle");
+  const menu = document.getElementById("private-nav-menu");
+  if (!toggle || !menu) return;
+
+  highlightCurrentPrivateNavLink();
+
+  if (toggle.dataset.bound !== "1") {
+    toggle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeProfileMenu();
+      togglePrivateNavMenu();
+    });
+    toggle.dataset.bound = "1";
+  }
+
+  if (menu.dataset.bound !== "1") {
+    menu.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    menu.querySelectorAll("a[data-private-nav-link]").forEach((link) => {
+      link.addEventListener("click", () => {
+        closePrivateNavMenu();
+      });
+    });
+
+    menu.dataset.bound = "1";
+  }
+}
+
 function bindProfileMenu() {
   const toggle = document.getElementById("profile-menu-toggle");
   const menu = document.getElementById("profile-menu");
   if (!toggle || !menu) return;
 
-  if (!toggle.dataset.bound) {
+  if (toggle.dataset.bound !== "1") {
     toggle.addEventListener("click", (event) => {
+      event.preventDefault();
       event.stopPropagation();
-      const isOpen = !menu.classList.contains("hidden");
-      menu.classList.toggle("hidden", isOpen);
-      toggle.setAttribute("aria-expanded", String(!isOpen));
+      closePrivateNavMenu();
+      toggleProfileMenu();
     });
     toggle.dataset.bound = "1";
   }
 
-  if (!menu.dataset.bound) {
+  if (menu.dataset.bound !== "1") {
+    menu.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
     menu.querySelectorAll("button[data-profile-action]").forEach((button) => {
       button.addEventListener("click", async () => {
         closeProfileMenu();
         await handleProfileAction(button.getAttribute("data-profile-action"));
       });
     });
+
     menu.dataset.bound = "1";
   }
+}
 
-  if (!isProfileMenuBound) {
-    document.addEventListener("click", (event) => {
-      if (menu.classList.contains("hidden")) return;
+function bindPrivateChromeGlobalClose() {
+  if (isPrivateChromeGlobalBound) return;
 
-      if (!menu.contains(event.target) && !toggle.contains(event.target)) {
-        closeProfileMenu();
-      }
-    });
+  document.addEventListener("click", (event) => {
+    const profileMenu = document.getElementById("profile-menu");
+    const profileToggle = document.getElementById("profile-menu-toggle");
+    const privateNavMenu = document.getElementById("private-nav-menu");
+    const privateNavToggle = document.getElementById("private-nav-toggle");
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        closeProfileMenu();
-      }
-    });
+    if (
+      profileMenu &&
+      !profileMenu.classList.contains("hidden") &&
+      !profileMenu.contains(event.target) &&
+      !profileToggle?.contains(event.target)
+    ) {
+      closeProfileMenu();
+    }
 
-    isProfileMenuBound = true;
-  }
+    if (
+      privateNavMenu &&
+      !privateNavMenu.classList.contains("hidden") &&
+      !privateNavMenu.contains(event.target) &&
+      !privateNavToggle?.contains(event.target)
+    ) {
+      closePrivateNavMenu();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeProfileMenu();
+      closePrivateNavMenu();
+    }
+  });
+
+  isPrivateChromeGlobalBound = true;
 }
 
 async function initPrivateChrome() {
@@ -131,7 +230,9 @@ async function initPrivateChrome() {
   }
 
   await hydrateNavbarUser();
+  bindPrivateNavMenu();
   bindProfileMenu();
+  bindPrivateChromeGlobalClose();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -140,3 +241,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.initPrivateChrome = initPrivateChrome;
 window.closeProfileMenu = closeProfileMenu;
+window.closePrivateNavMenu = closePrivateNavMenu;

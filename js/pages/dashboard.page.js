@@ -158,8 +158,7 @@ function buildActividadCierreOptions(selectedValue) {
 
   ACTIVIDADES_CIERRE.forEach((actividad) => {
     const isSelected = normalized === actividad.nombre ? " selected" : "";
-    const label = `${actividad.nombre} - ${actividad.descripcion}`;
-    options.push(`<option value="${escapeHtml(actividad.nombre)}"${isSelected}>${escapeHtml(label)}</option>`);
+    options.push(`<option value="${escapeHtml(actividad.nombre)}"${isSelected}>${escapeHtml(actividad.nombre)}</option>`);
   });
 
   return options.join("");
@@ -169,18 +168,35 @@ function renderActividadCierreStatus(actividadCierre) {
   return "";
 }
 
+function getActividadCierreSelectLabel(actividadCierre) {
+  return isActividadCierreValida(actividadCierre)
+    ? normalizeActividadCierre(actividadCierre)
+    : "Actividad";
+}
+
+function getActividadCierreSelectWidth(actividadCierre) {
+  const label = getActividadCierreSelectLabel(actividadCierre);
+  const widthCh = Math.min(Math.max(label.length + 3, 11), 28);
+  return `${widthCh}ch`;
+}
+
 function renderActividadCierreControl({ scope, localId, actividadCierre }) {
   const safeScope = scope === "quick" ? "quick" : "staging";
   const selectId = `${safeScope}-actividad-cierre-${escapeHtml(String(localId))}`;
   const dataAttribute = safeScope === "quick"
     ? `data-quick-actividad-select="${escapeHtml(String(localId))}"`
     : `data-staging-actividad-select="${escapeHtml(String(localId))}"`;
+  const descripcion = getActividadCierreDescripcion(actividadCierre);
+  const title = isActividadCierreValida(actividadCierre)
+    ? `${normalizeActividadCierre(actividadCierre)}${descripcion ? ` - ${descripcion}` : ""}`
+    : "Actividad";
 
   return `
     <select
       id="${selectId}"
-      class="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-cyan-600 focus:outline-none"
-      style="width: 118px; min-width: 118px; max-width: 118px;"
+      class="actividad-cierre-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none ${isActividadCierreValida(actividadCierre) ? "is-filled" : ""}"
+      style="width: ${getActividadCierreSelectWidth(actividadCierre)}; min-width: 118px; max-width: 240px;"
+      title="${escapeHtml(title)}"
       ${dataAttribute}
     >
       ${buildActividadCierreOptions(actividadCierre)}

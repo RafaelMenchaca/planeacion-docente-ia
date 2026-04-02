@@ -1,11 +1,32 @@
-﻿<nav class="border-b border-slate-200 bg-white">
+<nav class="relative z-40 border-b border-slate-200 bg-white">
   <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
     <a href="dashboard.html" class="text-base font-semibold text-slate-900 sm:text-lg">Educativo IA</a>
 
     <div class="flex items-center gap-2 sm:gap-3">
-      <a href="dashboard.html" class="inline-flex items-center rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 sm:text-sm">Dashboard</a>
-      <a href="dashboard.html#explorador" class="inline-flex items-center rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 sm:text-sm">Planeaciones</a>
-      <a href="archivados.html" class="inline-flex items-center rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 sm:text-sm">Archivados</a>
+      <div class="relative">
+        <button
+          id="private-nav-toggle"
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          aria-label="Abrir menu de navegacion"
+          aria-haspopup="true"
+          aria-controls="private-nav-menu"
+          aria-expanded="false"
+        >
+          <span>Menu</span>
+          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M4 7h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 17h16"></path>
+          </svg>
+        </button>
+
+        <div id="private-nav-menu" class="hidden absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+          <div class="border-b border-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Navegacion</div>
+          <a href="dashboard.html" data-private-nav-link="dashboard.html" class="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Inicio</a>
+          <a href="archivados.html" data-private-nav-link="archivados.html" class="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Archivados</a>
+        </div>
+      </div>
 
       <div class="relative">
         <button id="profile-menu-toggle" type="button" class="inline-flex items-center rounded-lg border border-slate-300 bg-white p-1.5 hover:bg-slate-50" aria-label="Abrir menu de perfil" aria-haspopup="true" aria-expanded="false">
