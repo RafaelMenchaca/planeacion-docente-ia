@@ -154,7 +154,7 @@ function renderActividadImagenes(actividadesImagenes, { modoEdicion = false, row
       const previewUrl = typeof imagen?.preview_url === "string" ? imagen.preview_url : "";
       const previewHtml = previewUrl
         ? `<img src="${escapeHtml(previewUrl)}" alt="${imageName}" class="detalle-actividad-image-thumb" />`
-        : `<div class="detalle-actividad-image-thumb detalle-actividad-image-thumb-fallback">${imageName}</div>`;
+        : `<div class="detalle-actividad-image-thumb detalle-actividad-image-thumb-fallback">Imagen</div>`;
       const removeHtml = modoEdicion
         ? `<button type="button" class="detalle-actividad-image-remove" data-remove-actividad-imagen="${imageId}" data-row-index="${rowIndex}">Quitar</button>`
         : "";
@@ -162,7 +162,6 @@ function renderActividadImagenes(actividadesImagenes, { modoEdicion = false, row
       return `
         <div class="detalle-actividad-image-item">
           <div class="detalle-actividad-image-preview">${previewHtml}</div>
-          <div class="detalle-actividad-image-name" title="${imageName}">${imageName}</div>
           ${removeHtml}
         </div>
       `;
