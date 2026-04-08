@@ -4,9 +4,11 @@
   materiasByGrado: {},
   unidadesByMateria: {},
   temasByUnidad: {},
+  examenesByUnidad: {},
+  examenDetalleById: {},
   planeacionByTema: {},
-  loading: { root: false, grados: {}, materias: {}, unidades: {}, temas: {} },
-  errors: { root: "", grados: {}, materias: {}, unidades: {}, temas: {} },
+  loading: { root: false, grados: {}, materias: {}, unidades: {}, temas: {}, examenes: {} },
+  errors: { root: "", grados: {}, materias: {}, unidades: {}, temas: {}, examenes: {} },
   expandedPlanteles: new Set(),
   expandedGrados: new Set(),
   expandedMaterias: new Set(),
@@ -21,6 +23,9 @@
   },
   searchQuery: "",
   generating: false,
+  examGeneration: { active: false, unidadId: null, status: "idle", message: "" },
+  examModal: { open: false, unidadId: null, selectedTypes: [], submitting: false, error: "" },
+  examPreview: { open: false, examenId: null, loading: false, error: "" },
   modal: { type: null, mode: "create", entityId: null, submitting: false },
   confirmDelete: {
     open: false,
@@ -78,6 +83,28 @@ const ACTIVIDADES_CIERRE = [
 const ACTIVIDADES_CIERRE_MAP = new Map(
   ACTIVIDADES_CIERRE.map((actividad) => [actividad.nombre, actividad.descripcion])
 );
+const EXAM_TIPOS_PREGUNTA = [
+  { value: "opcion_multiple", label: "Opcion multiple", range: "10 a 15 preguntas", time: "1 min/item", weight: 64 },
+  { value: "verdadero_falso", label: "Verdadero/Falso", range: "5 a 8 preguntas", time: "1 min/item", weight: 24 },
+  { value: "respuesta_corta", label: "Respuesta corta / completar", range: "3 a 5 preguntas", time: "2 a 3 min/item", weight: 16 },
+  { value: "emparejamiento", label: "Emparejamiento / relacion de columnas", range: "1 a 2 bloques", time: "5 min/bloque", weight: 8 },
+  { value: "pregunta_abierta", label: "Pregunta abierta / ensayo", range: "1 a 2 preguntas", time: "10 a 15 min/item", weight: 12 },
+  { value: "calculo_numerico", label: "Calculo / numerica", range: "2 a 4 problemas", time: "5 a 10 min/item", weight: 16 },
+  { value: "ordenacion_jerarquizacion", label: "Ordenacion / jerarquizacion", range: "1 a 2 ejercicios", time: "2 a 3 min/item", weight: 8 }
+];
+const DEFAULT_EXAM_TOTAL_QUESTIONS = 25;
+const DEFAULT_EXAM_DURATION_MINUTES = 50;
+
+function createExamModalState(overrides = {}) {
+  return {
+    open: false,
+    unidadId: null,
+    selectedTypes: [],
+    submitting: false,
+    error: "",
+    ...overrides
+  };
+}
 
 function getExplorerStorage() {
   try {
@@ -210,7 +237,7 @@ function syncBodyScrollLock() {
 
   document.body.classList.toggle(
     "overflow-hidden",
-    explorerState.quickCreate.open || explorerState.confirmDelete.open || entityModalOpen
+    explorerState.quickCreate.open || explorerState.confirmDelete.open || explorerState.examModal.open || explorerState.examPreview.open || entityModalOpen
   );
 }
 
@@ -386,6 +413,9 @@ function setCurrentLevel(level, ids) {
   if (level !== "unidad" || unitChanged) {
     explorerState.stagingTemas = [];
     explorerState.stagingPanelOpen = false;
+    explorerState.examGeneration = { active: false, unidadId: null, status: "idle", message: "" };
+    explorerState.examModal = createExamModalState();
+    explorerState.examPreview = { open: false, examenId: null, loading: false, error: "" };
     if (!explorerState.generating) {
       explorerState.progress = { total: 0, completed: 0, items: [], finalMessage: "", finalTone: "info" };
     }
@@ -553,6 +583,49 @@ async function ensureTemas(unidadId, { force = false } = {}) {
   }
 }
 
+async function ensureExamenes(unidadId, { force = false } = {}) {
+  if (!unidadId) return;
+  if (!force && explorerState.examenesByUnidad[unidadId]) return;
+
+  explorerState.loading.examenes[unidadId] = true;
+  delete explorerState.errors.examenes[unidadId];
+
+  try {
+    const items = await obtenerExamenesPorUnidad(unidadId);
+    explorerState.examenesByUnidad[unidadId] = Array.isArray(items) ? items : [];
+  } catch (error) {
+    explorerState.examenesByUnidad[unidadId] = [];
+    explorerState.errors.examenes[unidadId] = formatFetchError(error, "No se pudieron cargar los examenes.");
+  } finally {
+    explorerState.loading.examenes[unidadId] = false;
+  }
+}
+
+function formatExamDate(value) {
+  const parsed = value ? new Date(value) : null;
+  if (!parsed || Number.isNaN(parsed.getTime())) return "";
+
+  return parsed.toLocaleString("es-MX", {
+    dateStyle: "short",
+    timeStyle: "short"
+  });
+}
+
+function notifyDashboard(message, tone = "info") {
+  const toneMap = {
+    info: "border-slate-200 bg-white text-slate-700",
+    success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    danger: "border-rose-200 bg-rose-50 text-rose-700"
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `fixed right-4 top-4 z-[80] rounded-lg border px-3 py-2 text-sm shadow-lg ${toneMap[tone] || toneMap.info}`;
+  toast.textContent = message;
+
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2600);
+}
+
 async function selectRoot() {
   setCurrentLevel("root", { plantelId: null, gradoId: null, materiaId: null, unidadId: null });
   renderAll();
@@ -595,7 +668,7 @@ async function selectUnidad(plantelId, gradoId, materiaId, unidadId) {
   explorerState.expandedMaterias.add(materiaId);
 
   setCurrentLevel("unidad", { plantelId, gradoId, materiaId, unidadId });
-  await Promise.all([ensureGrados(plantelId), ensureMaterias(gradoId), ensureUnidades(materiaId), ensureTemas(unidadId)]);
+  await Promise.all([ensureGrados(plantelId), ensureMaterias(gradoId), ensureUnidades(materiaId), ensureTemas(unidadId), ensureExamenes(unidadId)]);
   renderAll();
 }
 
@@ -881,6 +954,21 @@ function getLevelHeaderActions(level = explorerState.current.level) {
   const createAction = heroActionsByLevel[level] || heroActionsByLevel.root;
   if (!createAction?.action) return [];
 
+  if (level === "unidad") {
+    return [
+      {
+        label: "+ Crear examen",
+        action: "open-unit-exam-modal",
+        tone: "neutral"
+      },
+      {
+        label: createAction.label,
+        action: createAction.action,
+        tone: "neutral"
+      }
+    ];
+  }
+
   return [
     {
       label: createAction.label,
@@ -978,6 +1066,359 @@ function renderDeleteConfirmModal() {
   submit.disabled = state.busy;
   cancel.disabled = state.busy;
   close.disabled = state.busy;
+}
+
+function getExamTopicsForUnidad(unidadId) {
+  return sortEntities(explorerState.temasByUnidad[unidadId] || []);
+}
+
+function normalizeExamTotalQuestions(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) return DEFAULT_EXAM_TOTAL_QUESTIONS;
+  return parsed;
+}
+
+function normalizeExamDuration(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 10) return DEFAULT_EXAM_DURATION_MINUTES;
+  return parsed;
+}
+
+function computeExamDistribution(selectedTypes, totalQuestions) {
+  const types = Array.isArray(selectedTypes) ? selectedTypes : [];
+  if (types.length === 0) return {};
+
+  const total = normalizeExamTotalQuestions(totalQuestions);
+  const selectedConfigs = EXAM_TIPOS_PREGUNTA.filter((item) => types.includes(item.value));
+  const weightTotal = selectedConfigs.reduce((sum, item) => sum + Number(item.weight || 1), 0) || 1;
+  const raw = selectedConfigs.map((item) => ({
+    tipo: item.value,
+    exact: (Number(item.weight || 1) / weightTotal) * total
+  }));
+
+  const distribution = {};
+  let assigned = 0;
+  raw.forEach((item) => {
+    const base = Math.floor(item.exact);
+    distribution[item.tipo] = base;
+    assigned += base;
+  });
+
+  let remainder = total - assigned;
+  raw
+    .map((item) => ({ tipo: item.tipo, fraction: item.exact - Math.floor(item.exact) }))
+    .sort((a, b) => b.fraction - a.fraction)
+    .forEach((item) => {
+      if (remainder <= 0) return;
+      distribution[item.tipo] += 1;
+      remainder -= 1;
+    });
+
+  const zeroTypes = types.filter((tipo) => Number(distribution[tipo] || 0) <= 0);
+  zeroTypes.forEach((tipo) => {
+    const donor = types
+      .filter((candidate) => candidate !== tipo)
+      .sort((a, b) => Number(distribution[b] || 0) - Number(distribution[a] || 0))
+      .find((candidate) => Number(distribution[candidate] || 0) > 1);
+
+    if (donor) {
+      distribution[donor] -= 1;
+      distribution[tipo] = 1;
+    }
+  });
+
+  return distribution;
+}
+
+function getExamDistributionSum(distribution, selectedTypes) {
+  return (Array.isArray(selectedTypes) ? selectedTypes : []).reduce(
+    (sum, tipo) => sum + Number(distribution?.[tipo] || 0),
+    0
+  );
+}
+
+function redistributeExamDistribution() {
+  const totalQuestions = normalizeExamTotalQuestions(explorerState.examModal.totalQuestions);
+  explorerState.examModal.totalQuestions = totalQuestions;
+  explorerState.examModal.distribution = computeExamDistribution(explorerState.examModal.selectedTypes, totalQuestions);
+}
+
+function updateExamDistributionValue(tipo, value) {
+  const selectedTypes = explorerState.examModal.selectedTypes;
+  if (!selectedTypes.includes(tipo)) return;
+
+  const totalQuestions = normalizeExamTotalQuestions(explorerState.examModal.totalQuestions);
+  const minForOthers = Math.max(selectedTypes.length - 1, 0);
+  const maxForCurrent = Math.max(totalQuestions - minForOthers, 1);
+  const nextValue = Math.max(1, Math.min(Number.parseInt(value, 10) || 1, maxForCurrent));
+
+  const distribution = { ...(explorerState.examModal.distribution || {}) };
+  distribution[tipo] = nextValue;
+
+  const others = selectedTypes.filter((item) => item !== tipo);
+  if (others.length === 0) {
+    distribution[tipo] = totalQuestions;
+  } else {
+    let currentSum = getExamDistributionSum(distribution, selectedTypes);
+    if (currentSum > totalQuestions) {
+      let overflow = currentSum - totalQuestions;
+      const donors = [...others].sort((a, b) => Number(distribution[b] || 0) - Number(distribution[a] || 0));
+      donors.forEach((candidate) => {
+        if (overflow <= 0) return;
+        const available = Math.max(Number(distribution[candidate] || 0) - 1, 0);
+        const deduction = Math.min(available, overflow);
+        distribution[candidate] = Number(distribution[candidate] || 0) - deduction;
+        overflow -= deduction;
+      });
+      if (overflow > 0) {
+        distribution[tipo] = Math.max(1, Number(distribution[tipo] || 1) - overflow);
+      }
+    } else if (currentSum < totalQuestions) {
+      let remaining = totalQuestions - currentSum;
+      const receivers = [...others].sort((a, b) => Number(distribution[a] || 0) - Number(distribution[b] || 0));
+      let receiverIndex = 0;
+      while (remaining > 0 && receivers.length > 0) {
+        const receiver = receivers[receiverIndex % receivers.length];
+        distribution[receiver] = Number(distribution[receiver] || 0) + 1;
+        remaining -= 1;
+        receiverIndex += 1;
+      }
+    }
+  }
+
+  explorerState.examModal.distribution = distribution;
+  explorerState.examModal.error = "";
+}
+
+function renderExamDistributionInputs(state) {
+  const selectedTypes = state.selectedTypes || [];
+  if (selectedTypes.length === 0) {
+    return '<p class="text-sm text-slate-500">Selecciona tipos de pregunta para distribuir automaticamente el total.</p>';
+  }
+
+  return selectedTypes.map((tipo) => {
+    const config = EXAM_TIPOS_PREGUNTA.find((item) => item.value === tipo);
+    const value = Number(state.distribution?.[tipo] || 0);
+    const disabled = state.submitting ? "disabled" : "";
+    const singleTypeOnly = selectedTypes.length === 1 ? "disabled" : disabled;
+
+    return `
+      <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+        <p class="min-w-0 truncate text-sm font-medium text-slate-900">${escapeHtml(config?.label || tipo)}</p>
+        <input
+          type="number"
+          min="1"
+          class="h-8 w-16 shrink-0 rounded-lg border border-slate-300 px-2 text-center text-sm focus:border-cyan-600 focus:outline-none"
+          value="${escapeHtml(String(value))}"
+          data-exam-distribution-input="${escapeHtml(tipo)}"
+          ${singleTypeOnly}
+        />
+      </div>
+    `;
+  }).join("");
+}
+
+function renderExamQuestionTypeOptions(state) {
+  return EXAM_TIPOS_PREGUNTA.map((tipo) => {
+    const checked = state.selectedTypes.includes(tipo.value) ? "checked" : "";
+    const disabled = state.submitting ? "disabled" : "";
+
+    return `
+      <label class="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
+        <input
+          type="checkbox"
+          class="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
+          data-exam-question-type="${escapeHtml(tipo.value)}"
+          ${checked}
+          ${disabled}
+        />
+        <span class="min-w-0">
+          <span class="block text-[13px] font-semibold leading-4 text-slate-900">${escapeHtml(tipo.label)}</span>
+          <span class="mt-0.5 block text-[10px] leading-3.5 text-slate-500">${escapeHtml(tipo.range)} · ${escapeHtml(tipo.time)}</span>
+        </span>
+      </label>
+    `;
+  }).join("");
+}
+
+function renderExamTopicsList(state) {
+  const unidadId = state?.unidadId;
+  const topics = getExamTopicsForUnidad(unidadId);
+  const isLoading = Boolean(explorerState.loading.temas[unidadId]);
+
+  if (isLoading) {
+    return '<p class="text-sm text-slate-500">Cargando temas de la unidad...</p>';
+  }
+
+  if (topics.length === 0) {
+    return '<p class="text-sm text-slate-500">No hay temas guardados en esta unidad. Primero agrega o genera temas para poder crear el examen.</p>';
+  }
+
+  return `
+    <div class="space-y-2">
+      ${topics.map((tema) => `
+        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
+          <p class="truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderUnitExamModal() {
+  const modal = document.getElementById("unit-exam-modal");
+  const title = document.getElementById("unit-exam-title");
+  const description = document.getElementById("unit-exam-description");
+  const types = document.getElementById("unit-exam-types");
+  const topics = document.getElementById("unit-exam-topics");
+  const topicsCount = document.getElementById("unit-exam-topics-count");
+  const error = document.getElementById("unit-exam-error");
+  const submit = document.getElementById("unit-exam-submit");
+  const cancel = document.getElementById("unit-exam-cancel");
+  const close = document.getElementById("unit-exam-close");
+
+  if (!modal || !title || !description || !types || !topics || !topicsCount || !error || !submit || !cancel || !close) {
+    return;
+  }
+
+  const state = explorerState.examModal;
+  const unidad = explorerState.current.unidadId === state.unidadId ? getCurrentUnidad() : null;
+  const unitName = unidad?.nombre || "unidad";
+  const topicItems = state.unidadId ? getExamTopicsForUnidad(state.unidadId) : [];
+  const hasTopics = topicItems.length > 0;
+
+  modal.classList.toggle("hidden", !state.open);
+  syncBodyScrollLock();
+
+  if (!state.open) {
+    error.classList.add("hidden");
+    error.textContent = "";
+    return;
+  }
+
+  title.textContent = "Crear examen de unidad";
+  description.textContent = `Se generara un examen nuevo usando todos los temas actuales de ${unitName}.`;
+  types.innerHTML = renderExamQuestionTypeOptions(state);
+  topics.innerHTML = renderExamTopicsList(state);
+  topicsCount.textContent = `${topicItems.length} tema(s)`;
+
+  if (state.error) {
+    error.classList.remove("hidden");
+    error.textContent = state.error;
+  } else {
+    error.classList.add("hidden");
+    error.textContent = "";
+  }
+
+  const disableSubmit = state.submitting || !hasTopics || state.selectedTypes.length === 0;
+  submit.disabled = disableSubmit;
+  submit.textContent = state.submitting
+    ? "Generando examen..."
+    : "Crear examen de unidad con los temas";
+  cancel.disabled = state.submitting;
+  close.disabled = state.submitting;
+}
+
+function openUnitExamModal() {
+  if (explorerState.current.level !== "unidad" || !explorerState.current.unidadId) {
+    alert("Selecciona una unidad para crear el examen.");
+    return;
+  }
+
+  const nextState = createExamModalState({
+    open: true,
+    unidadId: explorerState.current.unidadId
+  });
+  explorerState.examModal = nextState;
+
+  renderUnitExamModal();
+}
+
+function closeUnitExamModal({ force = false } = {}) {
+  if (explorerState.examModal.submitting && !force) return;
+  explorerState.examModal = createExamModalState();
+  renderUnitExamModal();
+}
+
+function toggleExamQuestionType(tipo, checked) {
+  if (!tipo) return;
+
+  const selected = new Set(explorerState.examModal.selectedTypes);
+  if (checked) selected.add(tipo);
+  else selected.delete(tipo);
+
+  explorerState.examModal.selectedTypes = EXAM_TIPOS_PREGUNTA
+    .map((item) => item.value)
+    .filter((value) => selected.has(value));
+  explorerState.examModal.error = "";
+  renderUnitExamModal();
+}
+
+async function submitUnitExamModal(event) {
+  event?.preventDefault?.();
+
+  const unidadId = explorerState.examModal.unidadId;
+  const selectedTypes = [...explorerState.examModal.selectedTypes];
+  const topicItems = unidadId ? getExamTopicsForUnidad(unidadId) : [];
+
+  if (!unidadId) {
+    explorerState.examModal.error = "Selecciona una unidad valida para crear el examen.";
+    renderUnitExamModal();
+    return;
+  }
+
+  if (topicItems.length === 0) {
+    explorerState.examModal.error = "No hay temas en la unidad para generar el examen.";
+    renderUnitExamModal();
+    return;
+  }
+
+  if (selectedTypes.length === 0) {
+    explorerState.examModal.error = "Selecciona al menos un tipo de pregunta.";
+    renderUnitExamModal();
+    return;
+  }
+
+  explorerState.examModal.submitting = true;
+  explorerState.examModal.error = "";
+  explorerState.examGeneration = {
+    active: true,
+    unidadId,
+    status: "generating",
+    message: `Preparando examen con ${topicItems.length} tema(s) de la unidad...`
+  };
+  closeUnitExamModal({ force: true });
+  renderAll();
+
+  try {
+    const examen = await generarExamenUnidad({
+      unidad_id: unidadId,
+      tipos_pregunta: selectedTypes
+    });
+
+    if (examen?.id) {
+      explorerState.examenDetalleById[examen.id] = examen;
+    }
+    const currentExamenes = explorerState.examenesByUnidad[unidadId] || [];
+    explorerState.examenesByUnidad[unidadId] = [examen, ...currentExamenes.filter((item) => item?.id !== examen?.id)];
+    explorerState.examGeneration = {
+      active: false,
+      unidadId,
+      status: "ready",
+      message: ""
+    };
+    await ensureExamenes(unidadId, { force: true });
+    renderAll();
+  } catch (error) {
+    explorerState.examGeneration = {
+      active: false,
+      unidadId,
+      status: "error",
+      message: ""
+    };
+    explorerState.errors.examenes[unidadId] = formatFetchError(error, "No se pudo generar el examen.");
+    renderAll();
+  }
 }
 
 function openDeleteConfirm(config) {
@@ -2381,6 +2822,290 @@ function renderProgressSection() {
     </section>
   `;
 }
+
+function getExamTypeLabel(tipo) {
+  return EXAM_TIPOS_PREGUNTA.find((item) => item.value === tipo)?.label || tipo || "Tipo";
+}
+
+async function ensureExamenDetalle(examenId, { force = false } = {}) {
+  if (!examenId) return null;
+  if (!force && explorerState.examenDetalleById[examenId]) {
+    return explorerState.examenDetalleById[examenId];
+  }
+
+  const examen = await obtenerExamenDetalle(examenId);
+  explorerState.examenDetalleById[examenId] = examen;
+  return examen;
+}
+
+function renderExamQuestionPreview(question, index) {
+  const opciones = Array.isArray(question?.opciones) ? question.opciones : [];
+  const pares = Array.isArray(question?.pares) ? question.pares : [];
+  const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
+
+  const opcionesHtml = opciones.length > 0
+    ? `<ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">${opciones.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+    : "";
+  const paresHtml = pares.length > 0
+    ? `<div class="mt-2 space-y-1 text-sm text-slate-600">${pares.map((pair) => `<p>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</p>`).join("")}</div>`
+    : "";
+  const elementosHtml = elementos.length > 0
+    ? `<ul class="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-600">${elementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+    : "";
+
+  return `
+    <article class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-sm font-semibold text-slate-900">Pregunta ${index + 1}</p>
+        <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700">${escapeHtml(getExamTypeLabel(question?.tipo))}</span>
+      </div>
+      ${question?.tema ? `<p class="mt-2 text-xs font-semibold uppercase tracking-wide text-cyan-700">${escapeHtml(question.tema)}</p>` : ""}
+      <p class="mt-2 text-sm text-slate-700">${escapeHtml(question?.pregunta || "")}</p>
+      ${opcionesHtml}
+      ${paresHtml}
+      ${elementosHtml}
+    </article>
+  `;
+}
+
+function renderExamPreviewModal() {
+  const modal = document.getElementById("unit-exam-preview-modal");
+  const title = document.getElementById("unit-exam-preview-title");
+  const meta = document.getElementById("unit-exam-preview-meta");
+  const body = document.getElementById("unit-exam-preview-body");
+  const error = document.getElementById("unit-exam-preview-error");
+  const download = document.getElementById("unit-exam-preview-download");
+  const close = document.getElementById("unit-exam-preview-close");
+
+  if (!modal || !title || !meta || !body || !error || !download || !close) return;
+
+  const state = explorerState.examPreview;
+  const examen = state.examenId ? explorerState.examenDetalleById[state.examenId] : null;
+
+  modal.classList.toggle("hidden", !state.open);
+  syncBodyScrollLock();
+
+  if (!state.open) {
+    error.classList.add("hidden");
+    error.textContent = "";
+    body.innerHTML = "";
+    meta.textContent = "";
+    return;
+  }
+
+  title.textContent = examen?.titulo || "Vista previa del examen";
+  meta.textContent = examen?.created_at
+    ? `${formatExamDate(examen.created_at)} · ${Array.isArray(examen?.examen_ia?.preguntas) ? examen.examen_ia.preguntas.length : (examen.total_preguntas || 0)} pregunta(s)`
+    : "";
+
+  if (state.error) {
+    error.classList.remove("hidden");
+    error.textContent = state.error;
+  } else {
+    error.classList.add("hidden");
+    error.textContent = "";
+  }
+
+  if (state.loading) {
+    body.innerHTML = '<p class="text-sm text-slate-500">Cargando examen...</p>';
+  } else if (!examen?.examen_ia?.preguntas?.length) {
+    body.innerHTML = '<p class="text-sm text-slate-500">No hay contenido disponible para este examen.</p>';
+  } else {
+    body.innerHTML = `
+      <div class="space-y-4">
+        ${examen.examen_ia?.instrucciones_generales ? `<div class="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">${escapeHtml(examen.examen_ia.instrucciones_generales)}</div>` : ""}
+        ${examen.examen_ia.preguntas.map((question, index) => renderExamQuestionPreview(question, index)).join("")}
+      </div>
+    `;
+  }
+
+  download.disabled = state.loading || !examen?.examen_ia;
+  close.disabled = state.loading;
+}
+
+function buildExamWordHtml(examen) {
+  const examenIa = examen?.examen_ia || {};
+  const preguntas = Array.isArray(examenIa.preguntas) ? examenIa.preguntas : [];
+
+  const preguntasHtml = preguntas.map((question, index) => {
+    const opciones = Array.isArray(question?.opciones) ? question.opciones : [];
+    const pares = Array.isArray(question?.pares) ? question.pares : [];
+    const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
+
+    const opcionesHtml = opciones.length > 0
+      ? `<ol>${opciones.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
+      : "";
+    const paresHtml = pares.length > 0
+      ? `<ul>${pares.map((pair) => `<li>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</li>`).join("")}</ul>`
+      : "";
+    const elementosHtml = elementos.length > 0
+      ? `<ol>${elementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
+      : "";
+
+    return `
+      <div style="margin-bottom:16px;">
+        <p><strong>${index + 1}. [${escapeHtml(getExamTypeLabel(question?.tipo))}]</strong> ${escapeHtml(question?.pregunta || "")}</p>
+        ${question?.tema ? `<p><strong>Tema:</strong> ${escapeHtml(question.tema)}</p>` : ""}
+        ${opcionesHtml}
+        ${paresHtml}
+        ${elementosHtml}
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; font-size: 11pt; color: #0f172a; }
+          h1 { text-align: center; margin-bottom: 12px; }
+          .meta { margin-bottom: 14px; }
+          .box { border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; background: #f8fafc; }
+          p { margin: 6px 0; }
+          ul, ol { margin: 8px 0 0 22px; }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeHtml(examenIa.titulo || examen?.titulo || "Examen de unidad")}</h1>
+        <div class="meta">
+          <p><strong>Unidad:</strong> ${escapeHtml(examen?.unidad_id || "")}</p>
+          <p><strong>Fecha:</strong> ${escapeHtml(formatExamDate(examen?.created_at) || "")}</p>
+          <p><strong>Total de preguntas:</strong> ${escapeHtml(String(preguntas.length || examen?.total_preguntas || 0))}</p>
+        </div>
+        ${examenIa.instrucciones_generales ? `<div class="box"><strong>Instrucciones:</strong><br>${escapeHtml(examenIa.instrucciones_generales)}</div>` : ""}
+        ${preguntasHtml}
+      </body>
+    </html>
+  `;
+}
+
+async function downloadExamWord(examenId) {
+  const examen = await ensureExamenDetalle(examenId);
+  if (!examen?.examen_ia) {
+    throw new Error("No hay contenido disponible para exportar.");
+  }
+
+  const html = buildExamWordHtml(examen);
+  const blob = new Blob([html], { type: "application/msword" });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `${(examen.titulo || "Examen_unidad").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") || "Examen_unidad"}.doc`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  document.body.removeChild(enlace);
+  URL.revokeObjectURL(url);
+}
+
+async function openExamPreview(examenId) {
+  explorerState.examPreview = {
+    open: true,
+    examenId,
+    loading: true,
+    error: ""
+  };
+  renderExamPreviewModal();
+
+  try {
+    await ensureExamenDetalle(examenId);
+    explorerState.examPreview.loading = false;
+    renderExamPreviewModal();
+  } catch (error) {
+    explorerState.examPreview.loading = false;
+    explorerState.examPreview.error = formatFetchError(error, "No se pudo cargar el examen.");
+    renderExamPreviewModal();
+  }
+}
+
+function closeExamPreviewModal() {
+  if (explorerState.examPreview.loading) return;
+  explorerState.examPreview = { open: false, examenId: null, loading: false, error: "" };
+  renderExamPreviewModal();
+}
+
+function shouldShowExamSection(unidadId) {
+  const examenes = explorerState.examenesByUnidad[unidadId] || [];
+  return Boolean(
+    explorerState.examGeneration.active && explorerState.examGeneration.unidadId === unidadId ||
+    explorerState.loading.examenes[unidadId] ||
+    explorerState.errors.examenes[unidadId] ||
+    examenes.length > 0
+  );
+}
+
+function renderExamSection(unidadId) {
+  const examenes = explorerState.examenesByUnidad[unidadId] || [];
+  const isGenerating = explorerState.examGeneration.active && explorerState.examGeneration.unidadId === unidadId;
+  const isLoading = Boolean(explorerState.loading.examenes[unidadId]);
+  const error = explorerState.errors.examenes[unidadId] || "";
+
+  if (!shouldShowExamSection(unidadId)) {
+    return "";
+  }
+
+  const generatingCard = isGenerating
+    ? `
+      <div class="explorer-progress-item generating">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="font-semibold">Creando examen de unidad</p>
+          ${renderProgressPill("generating", "Generando")}
+        </div>
+        <p class="mt-1 text-xs">${escapeHtml(explorerState.examGeneration.message || "Preparando examen con los temas actuales de la unidad...")}</p>
+      </div>
+    `
+    : "";
+
+  const loadingHtml = !isGenerating && isLoading
+    ? '<p class="text-sm text-slate-500">Cargando examenes...</p>'
+    : "";
+
+  const errorHtml = error
+    ? `<div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700">${escapeHtml(error)}</div>`
+    : "";
+
+  const examenesHtml = examenes.map((examen) => `
+    <div class="rounded-xl border border-slate-200 bg-white p-3">
+      <div class="flex flex-wrap items-start justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-slate-900">${escapeHtml(examen.titulo || "Examen de unidad")}</p>
+          <p class="mt-1 text-xs text-slate-500">${escapeHtml(formatExamDate(examen.created_at) || "Sin fecha")}</p>
+        </div>
+        ${renderProgressPill("ready", "Generado")}
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        ${(Array.isArray(examen.tipos_pregunta) ? examen.tipos_pregunta : []).map((tipo) => `
+          <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700">${escapeHtml(getExamTypeLabel(tipo))}</span>
+        `).join("")}
+      </div>
+      <p class="mt-3 text-xs text-slate-600">${escapeHtml(String(examen.total_preguntas || 0))} pregunta(s)</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button type="button" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="preview-exam" data-examen-id="${escapeHtml(examen.id)}">
+          Vista previa
+        </button>
+        <button type="button" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="download-exam-word" data-examen-id="${escapeHtml(examen.id)}">
+          Descargar Word
+        </button>
+      </div>
+    </div>
+  `).join("");
+
+  return `
+    <section class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="flex items-center justify-between gap-2">
+        <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Examenes de la unidad</h4>
+        <span class="text-xs text-slate-500">${examenes.length} examen(es)</span>
+      </div>
+      <div class="mt-3 space-y-3">
+        ${generatingCard}
+        ${loadingHtml}
+        ${errorHtml}
+        ${examenesHtml}
+      </div>
+    </section>
+  `;
+}
+
 function renderUnidadLevel() {
   const unidad = getCurrentUnidad();
   if (!unidad) return '<p class="text-sm text-slate-500">Selecciona una unidad valida.</p>';
@@ -2460,6 +3185,7 @@ function renderUnidadLevel() {
     ? "grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(340px,0.88fr)]"
     : "grid grid-cols-1 gap-4";
   const progressHtml = shouldShowUnitProgress() ? renderProgressSection() : "";
+  const examHtml = renderExamSection(unidad.id);
 
   return `
     <div class="space-y-4">
@@ -2504,6 +3230,7 @@ function renderUnidadLevel() {
         ` : ""}
       </div>
 
+      ${examHtml}
       ${progressHtml}
     </div>
   `;
@@ -2535,6 +3262,8 @@ function renderAll() {
   renderGlobalError();
   renderSidebarTree();
   renderExplorerContent();
+  renderUnitExamModal();
+  renderExamPreviewModal();
   renderDeleteConfirmModal();
 }
 
@@ -3189,6 +3918,10 @@ async function submitEntityModal(event) {
 }
 
 async function handleCreateAction(action) {
+  if (action === "open-unit-exam-modal") {
+    return openUnitExamModal();
+  }
+
   if (action === "create-plantel") return openEntityModal("plantel");
   if (action === "edit-plantel") {
     if (!explorerState.current.plantelId) return alert("Selecciona un plantel primero.");
@@ -3301,6 +4034,28 @@ async function handleContentClick(event) {
     return;
   }
 
+  if (action === "preview-exam") {
+    const examenId = button.getAttribute("data-examen-id");
+    if (examenId) {
+      await openExamPreview(examenId);
+    }
+    return;
+  }
+
+  if (action === "download-exam-word") {
+    const examenId = button.getAttribute("data-examen-id");
+    if (!examenId) return;
+
+    try {
+      await downloadExamWord(examenId);
+      notifyDashboard("Examen exportado a Word.", "success");
+    } catch (error) {
+      console.error("Error exportando examen:", error);
+      notifyDashboard(formatFetchError(error, "No se pudo exportar el examen."), "danger");
+    }
+    return;
+  }
+
   if (["archive-plantel", "archive-grado", "archive-materia", "archive-unidad", "archive-planeacion", "archive-batch"].includes(action)) {
     requestArchiveAction(action, ids);
     return;
@@ -3315,6 +4070,7 @@ async function handleContentClick(event) {
   if (action === "cancel-staging") return cancelStagingPanel();
   if (action === "remove-staging") return removeStagingTema(button.getAttribute("data-staging-id"));
   if (action === "generate-planeaciones") return generatePlaneacionesFromStaging();
+  if (action === "open-unit-exam-modal") return openUnitExamModal();
 
   if (action.startsWith("create-") || action.startsWith("edit-") || action === "focus-staging") {
     return handleCreateAction(action);
@@ -3341,6 +4097,12 @@ function bindDashboardEvents() {
     const select = event.target.closest?.("[data-staging-actividad-select]");
     if (!select) return;
     updateStagingTemaActividad(select.getAttribute("data-staging-actividad-select"), select.value);
+  });
+
+  document.getElementById("unit-exam-types")?.addEventListener("change", (event) => {
+    const input = event.target.closest?.("[data-exam-question-type]");
+    if (!input) return;
+    toggleExamQuestionType(input.getAttribute("data-exam-question-type"), Boolean(input.checked));
   });
 
   document.getElementById("explorer-breadcrumbs")?.addEventListener("click", (event) => {
@@ -3448,6 +4210,40 @@ function bindDashboardEvents() {
     if (event.target.matches("[data-modal-close]")) closeEntityModal();
   });
 
+  ["unit-exam-backdrop", "unit-exam-close", "unit-exam-cancel"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      closeUnitExamModal();
+    });
+  });
+
+  ["unit-exam-preview-backdrop", "unit-exam-preview-close", "unit-exam-preview-cancel"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      closeExamPreviewModal();
+    });
+  });
+
+  document.getElementById("unit-exam-form")?.addEventListener("submit", (event) => {
+    submitUnitExamModal(event).catch((error) => {
+      console.error("Error generando examen:", error);
+      explorerState.examModal.submitting = false;
+      explorerState.examModal.error = "No se pudo generar el examen.";
+      renderUnitExamModal();
+    });
+  });
+
+  document.getElementById("unit-exam-preview-download")?.addEventListener("click", async () => {
+    const examenId = explorerState.examPreview.examenId;
+    if (!examenId) return;
+
+    try {
+      await downloadExamWord(examenId);
+      notifyDashboard("Examen exportado a Word.", "success");
+    } catch (error) {
+      console.error("Error exportando examen:", error);
+      notifyDashboard(formatFetchError(error, "No se pudo exportar el examen."), "danger");
+    }
+  });
+
   document.getElementById("entity-modal-form")?.addEventListener("submit", (event) => {
     submitEntityModal(event).catch((error) => {
       console.error("Error guardando modal:", error);
@@ -3479,6 +4275,16 @@ function bindDashboardEvents() {
 
     if (explorerState.confirmDelete.open) {
       closeDeleteConfirm();
+      return;
+    }
+
+    if (explorerState.examModal.open) {
+      closeUnitExamModal();
+      return;
+    }
+
+    if (explorerState.examPreview.open) {
+      closeExamPreviewModal();
       return;
     }
 
