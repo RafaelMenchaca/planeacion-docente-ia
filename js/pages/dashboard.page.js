@@ -1075,18 +1075,15 @@ function renderExamQuestionTypeOptions(state) {
     const disabled = state.submitting ? "disabled" : "";
 
     return `
-      <label class="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
+      <label class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
         <input
           type="checkbox"
-          class="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
+          class="h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
           data-exam-question-type="${escapeHtml(tipo.value)}"
           ${checked}
           ${disabled}
         />
-        <span class="min-w-0">
-          <span class="block text-[13px] font-semibold leading-4 text-slate-900">${escapeHtml(tipo.label)}</span>
-          <span class="mt-0.5 block text-[10px] leading-3.5 text-slate-500">${escapeHtml(tipo.range)} · ${escapeHtml(tipo.time)}</span>
-        </span>
+        <span class="min-w-0 truncate text-[13px] font-semibold leading-4 text-slate-900">${escapeHtml(tipo.label)}</span>
       </label>
     `;
   }).join("");
