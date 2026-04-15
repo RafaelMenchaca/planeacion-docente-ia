@@ -24,7 +24,7 @@
   searchQuery: "",
   generating: false,
   examGeneration: { active: false, unidadId: null, status: "idle", message: "" },
-  examModal: { open: false, unidadId: null, selectedTypes: [], submitting: false, error: "" },
+  examModal: { open: false, unidadId: null, selectedTypes: [], questionCounts: {}, submitting: false, error: "" },
   examPreview: { open: false, examenId: null, loading: false, error: "" },
   modal: { type: null, mode: "create", entityId: null, submitting: false },
   confirmDelete: {
@@ -97,6 +97,7 @@ function createExamModalState(overrides = {}) {
     open: false,
     unidadId: null,
     selectedTypes: [],
+    questionCounts: {},
     submitting: false,
     error: "",
     ...overrides
@@ -1069,21 +1070,86 @@ function getExamTopicsForUnidad(unidadId) {
   return sortEntities(explorerState.temasByUnidad[unidadId] || []);
 }
 
+function normalizeExamQuestionCountInput(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(Math.max(0, Math.trunc(value)));
+  }
+
+  if (typeof value !== "string") return "";
+  return value.replace(/[^\d]/g, "");
+}
+
+function parseExamQuestionCount(value) {
+  const normalized = normalizeExamQuestionCountInput(value);
+  if (!normalized) return null;
+
+  const parsed = Number.parseInt(normalized, 10);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function getExamQuestionCountValue(state, tipo) {
+  return normalizeExamQuestionCountInput(state?.questionCounts?.[tipo] ?? "");
+}
+
+function hasInvalidExamQuestionCounts(state) {
+  return (state?.selectedTypes || []).some((tipo) => {
+    const count = parseExamQuestionCount(state?.questionCounts?.[tipo]);
+    return !Number.isInteger(count) || count < 1;
+  });
+}
+
+function getExamQuestionCountsPayload(state) {
+  const payload = {};
+
+  for (const tipo of state?.selectedTypes || []) {
+    const count = parseExamQuestionCount(state?.questionCounts?.[tipo]);
+    if (!Number.isInteger(count) || count < 1) {
+      return null;
+    }
+    payload[tipo] = count;
+  }
+
+  return payload;
+}
+
 function renderExamQuestionTypeOptions(state) {
   return EXAM_TIPOS_PREGUNTA.map((tipo) => {
-    const checked = state.selectedTypes.includes(tipo.value) ? "checked" : "";
+    const isSelected = state.selectedTypes.includes(tipo.value);
+    const checked = isSelected ? "checked" : "";
     const disabled = state.submitting ? "disabled" : "";
+    const rawCount = getExamQuestionCountValue(state, tipo.value);
+    const parsedCount = parseExamQuestionCount(rawCount);
+    const inputTone = isSelected && (!Number.isInteger(parsedCount) || parsedCount < 1)
+      ? "border-rose-300 bg-rose-50 text-rose-700 focus:border-rose-500 focus:ring-rose-500"
+      : "border-slate-300 bg-white text-slate-700 focus:border-cyan-600 focus:ring-cyan-600";
+    const cardTone = isSelected
+      ? "border-cyan-200 bg-cyan-50/70"
+      : "border-slate-200 bg-slate-50";
 
     return `
-      <label class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
-        <input
-          type="checkbox"
-          class="h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
-          data-exam-question-type="${escapeHtml(tipo.value)}"
-          ${checked}
-          ${disabled}
-        />
-        <span class="min-w-0 truncate text-[13px] font-semibold leading-4 text-slate-900">${escapeHtml(tipo.label)}</span>
+      <label class="flex items-center justify-between gap-3 rounded-xl border px-2.5 py-2 text-xs text-slate-700 ${cardTone}">
+        <span class="flex min-w-0 items-center gap-2">
+          <input
+            type="checkbox"
+            class="h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600"
+            data-exam-question-type="${escapeHtml(tipo.value)}"
+            ${checked}
+            ${disabled}
+          />
+          <span class="min-w-0 truncate text-[13px] font-semibold leading-4 text-slate-900">${escapeHtml(tipo.label)}</span>
+        </span>
+        ${isSelected ? `
+          <input
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="w-16 rounded-lg border px-2 py-1 text-right text-xs font-semibold shadow-sm focus:outline-none focus:ring-1 ${inputTone}"
+            data-exam-question-count="${escapeHtml(tipo.value)}"
+            value="${escapeHtml(rawCount)}"
+            placeholder="1"
+            ${disabled}
+          />
+        ` : ""}
       </label>
     `;
   }).join("");
@@ -1111,6 +1177,59 @@ function renderExamTopicsList(state) {
       `).join("")}
     </div>
   `;
+}
+
+function syncUnitExamModalErrorState() {
+  const error = document.getElementById("unit-exam-error");
+  if (!error) return;
+
+  if (explorerState.examModal.error) {
+    error.classList.remove("hidden");
+    error.textContent = explorerState.examModal.error;
+  } else {
+    error.classList.add("hidden");
+    error.textContent = "";
+  }
+}
+
+function syncUnitExamModalActionState() {
+  const submit = document.getElementById("unit-exam-submit");
+  const cancel = document.getElementById("unit-exam-cancel");
+  const close = document.getElementById("unit-exam-close");
+  if (!submit || !cancel || !close) return;
+
+  const state = explorerState.examModal;
+  const topicItems = state.unidadId ? getExamTopicsForUnidad(state.unidadId) : [];
+  const hasTopics = topicItems.length > 0;
+  const disableSubmit = state.submitting
+    || !hasTopics
+    || state.selectedTypes.length === 0
+    || hasInvalidExamQuestionCounts(state);
+
+  submit.disabled = disableSubmit;
+  submit.textContent = state.submitting
+    ? "Generando examen..."
+    : "Crear examen de unidad con los temas";
+  cancel.disabled = state.submitting;
+  close.disabled = state.submitting;
+}
+
+function syncExamQuestionCountInputTone(inputElement, value) {
+  if (!inputElement) return;
+
+  const parsed = parseExamQuestionCount(value);
+  const isInvalid = !Number.isInteger(parsed) || parsed < 1;
+
+  inputElement.classList.toggle("border-rose-300", isInvalid);
+  inputElement.classList.toggle("bg-rose-50", isInvalid);
+  inputElement.classList.toggle("text-rose-700", isInvalid);
+  inputElement.classList.toggle("focus:border-rose-500", isInvalid);
+  inputElement.classList.toggle("focus:ring-rose-500", isInvalid);
+  inputElement.classList.toggle("border-slate-300", !isInvalid);
+  inputElement.classList.toggle("bg-white", !isInvalid);
+  inputElement.classList.toggle("text-slate-700", !isInvalid);
+  inputElement.classList.toggle("focus:border-cyan-600", !isInvalid);
+  inputElement.classList.toggle("focus:ring-cyan-600", !isInvalid);
 }
 
 function renderUnitExamModal() {
@@ -1150,21 +1269,8 @@ function renderUnitExamModal() {
   topics.innerHTML = renderExamTopicsList(state);
   topicsCount.textContent = `${topicItems.length} tema(s)`;
 
-  if (state.error) {
-    error.classList.remove("hidden");
-    error.textContent = state.error;
-  } else {
-    error.classList.add("hidden");
-    error.textContent = "";
-  }
-
-  const disableSubmit = state.submitting || !hasTopics || state.selectedTypes.length === 0;
-  submit.disabled = disableSubmit;
-  submit.textContent = state.submitting
-    ? "Generando examen..."
-    : "Crear examen de unidad con los temas";
-  cancel.disabled = state.submitting;
-  close.disabled = state.submitting;
+  syncUnitExamModalErrorState();
+  syncUnitExamModalActionState();
 }
 
 function openUnitExamModal() {
@@ -1195,6 +1301,13 @@ function toggleExamQuestionType(tipo, checked) {
   if (checked) selected.add(tipo);
   else selected.delete(tipo);
 
+  if (checked) {
+    const currentValue = getExamQuestionCountValue(explorerState.examModal, tipo);
+    if (!currentValue || (parseExamQuestionCount(currentValue) || 0) < 1) {
+      explorerState.examModal.questionCounts[tipo] = "1";
+    }
+  }
+
   explorerState.examModal.selectedTypes = EXAM_TIPOS_PREGUNTA
     .map((item) => item.value)
     .filter((value) => selected.has(value));
@@ -1202,11 +1315,31 @@ function toggleExamQuestionType(tipo, checked) {
   renderUnitExamModal();
 }
 
+function updateExamQuestionCount(tipo, value, inputElement = null) {
+  if (!tipo) return;
+
+  const normalizedValue = normalizeExamQuestionCountInput(value);
+  explorerState.examModal.questionCounts = {
+    ...explorerState.examModal.questionCounts,
+    [tipo]: normalizedValue
+  };
+  explorerState.examModal.error = "";
+
+  if (inputElement && inputElement.value !== normalizedValue) {
+    inputElement.value = normalizedValue;
+  }
+
+  syncExamQuestionCountInputTone(inputElement, normalizedValue);
+  syncUnitExamModalErrorState();
+  syncUnitExamModalActionState();
+}
+
 async function submitUnitExamModal(event) {
   event?.preventDefault?.();
 
   const unidadId = explorerState.examModal.unidadId;
   const selectedTypes = [...explorerState.examModal.selectedTypes];
+  const questionCounts = getExamQuestionCountsPayload(explorerState.examModal);
   const topicItems = unidadId ? getExamTopicsForUnidad(unidadId) : [];
 
   if (!unidadId) {
@@ -1227,13 +1360,20 @@ async function submitUnitExamModal(event) {
     return;
   }
 
+  if (!questionCounts || Object.keys(questionCounts).length !== selectedTypes.length) {
+    explorerState.examModal.error = "Define una cantidad mayor a 0 para cada tipo de pregunta seleccionado.";
+    renderUnitExamModal();
+    return;
+  }
+
   explorerState.examModal.submitting = true;
   explorerState.examModal.error = "";
+  const totalPreguntas = Object.values(questionCounts).reduce((sum, count) => sum + count, 0);
   explorerState.examGeneration = {
     active: true,
     unidadId,
     status: "generating",
-    message: `Preparando examen con ${topicItems.length} tema(s) de la unidad...`
+    message: `Preparando examen con ${topicItems.length} tema(s) y ${totalPreguntas} pregunta(s)...`
   };
   closeUnitExamModal({ force: true });
   renderAll();
@@ -1241,7 +1381,8 @@ async function submitUnitExamModal(event) {
   try {
     const examen = await generarExamenUnidad({
       unidad_id: unidadId,
-      tipos_pregunta: selectedTypes
+      tipos_pregunta: selectedTypes,
+      cantidades_pregunta: questionCounts
     });
 
     if (examen?.id) {
@@ -3948,9 +4089,22 @@ function bindDashboardEvents() {
   });
 
   document.getElementById("unit-exam-types")?.addEventListener("change", (event) => {
-    const input = event.target.closest?.("[data-exam-question-type]");
-    if (!input) return;
-    toggleExamQuestionType(input.getAttribute("data-exam-question-type"), Boolean(input.checked));
+    const checkbox = event.target.closest?.("[data-exam-question-type]");
+    if (checkbox) {
+      toggleExamQuestionType(checkbox.getAttribute("data-exam-question-type"), Boolean(checkbox.checked));
+      return;
+    }
+
+    const countInput = event.target.closest?.("[data-exam-question-count]");
+    if (countInput) {
+      updateExamQuestionCount(countInput.getAttribute("data-exam-question-count"), countInput.value, countInput);
+    }
+  });
+
+  document.getElementById("unit-exam-types")?.addEventListener("input", (event) => {
+    const countInput = event.target.closest?.("[data-exam-question-count]");
+    if (!countInput) return;
+    updateExamQuestionCount(countInput.getAttribute("data-exam-question-count"), countInput.value, countInput);
   });
 
   document.getElementById("explorer-breadcrumbs")?.addEventListener("click", (event) => {
