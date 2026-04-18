@@ -2816,6 +2816,18 @@ function getExamTypeLabel(tipo) {
   return EXAM_TIPOS_PREGUNTA.find((item) => item.value === tipo)?.label || tipo || "Tipo";
 }
 
+function getExamOptionLabel(index) {
+  let currentIndex = Number.isInteger(index) ? index : 0;
+  let label = "";
+
+  do {
+    label = String.fromCharCode(97 + (currentIndex % 26)) + label;
+    currentIndex = Math.floor(currentIndex / 26) - 1;
+  } while (currentIndex >= 0);
+
+  return `${label})`;
+}
+
 async function ensureExamenDetalle(examenId, { force = false } = {}) {
   if (!examenId) return null;
   if (!force && explorerState.examenDetalleById[examenId]) {
@@ -2833,7 +2845,7 @@ function renderExamQuestionPreview(question, index) {
   const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
   const opcionesHtml = opciones.length > 0
-    ? `<ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">${opciones.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+    ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item, optionIndex) => `<li class="flex items-start gap-2"><span class="font-semibold text-slate-700">${escapeHtml(getExamOptionLabel(optionIndex))}</span><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
     : "";
   const paresHtml = pares.length > 0
     ? `<div class="mt-2 space-y-1 text-sm text-slate-600">${pares.map((pair) => `<p>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</p>`).join("")}</div>`
@@ -2844,11 +2856,7 @@ function renderExamQuestionPreview(question, index) {
 
   return `
     <article class="rounded-2xl border border-slate-200 bg-white p-4">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="text-sm font-semibold text-slate-900">Pregunta ${index + 1}</p>
-        <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700">${escapeHtml(getExamTypeLabel(question?.tipo))}</span>
-      </div>
-      ${question?.tema ? `<p class="mt-2 text-xs font-semibold uppercase tracking-wide text-cyan-700">${escapeHtml(question.tema)}</p>` : ""}
+      <p class="text-sm font-semibold text-slate-900">Pregunta ${index + 1}</p>
       <p class="mt-2 text-sm text-slate-700">${escapeHtml(question?.pregunta || "")}</p>
       ${opcionesHtml}
       ${paresHtml}
@@ -2922,7 +2930,7 @@ function buildExamWordHtml(examen) {
     const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
     const opcionesHtml = opciones.length > 0
-      ? `<ol>${opciones.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
+      ? `<ul style="list-style:none; margin:8px 0 0 0; padding-left:0;">${opciones.map((item, optionIndex) => `<li style="margin:4px 0;"><strong>${escapeHtml(getExamOptionLabel(optionIndex))}</strong> ${escapeHtml(item)}</li>`).join("")}</ul>`
       : "";
     const paresHtml = pares.length > 0
       ? `<ul>${pares.map((pair) => `<li>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</li>`).join("")}</ul>`
@@ -2933,8 +2941,7 @@ function buildExamWordHtml(examen) {
 
     return `
       <div style="margin-bottom:16px;">
-        <p><strong>${index + 1}. [${escapeHtml(getExamTypeLabel(question?.tipo))}]</strong> ${escapeHtml(question?.pregunta || "")}</p>
-        ${question?.tema ? `<p><strong>Tema:</strong> ${escapeHtml(question.tema)}</p>` : ""}
+        <p><strong>${index + 1}.</strong> ${escapeHtml(question?.pregunta || "")}</p>
         ${opcionesHtml}
         ${paresHtml}
         ${elementosHtml}

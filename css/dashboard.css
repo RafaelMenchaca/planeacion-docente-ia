@@ -36,6 +36,27 @@
   width: 100%;
 }
 
+#unit-exam-preview-shell {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+#unit-exam-preview-card {
+  display: flex;
+  max-height: calc(100vh - 4rem);
+  min-height: 0;
+  overflow: hidden;
+}
+
+#unit-exam-preview-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
 #delete-confirm-eyebrow[data-tone="danger"] {
   color: rgb(225 29 72);
 }
@@ -181,6 +202,15 @@
 }
 
 @media (min-width: 640px) {
+  #unit-exam-preview-shell {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  #unit-exam-preview-card {
+    max-height: calc(100vh - 5rem);
+  }
+
   #quick-create-shell {
     padding-top: 7.5rem;
     padding-bottom: 1.5rem;
