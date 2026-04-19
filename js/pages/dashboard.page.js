@@ -2828,6 +2828,96 @@ function getExamOptionLabel(index) {
   return `${label})`;
 }
 
+function normalizeExamAnswerScalar(value) {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return "";
+}
+
+function normalizeExamComparableText(value) {
+  return normalizeExamAnswerScalar(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getExamCorrectOptionAnswerText(question, answerText) {
+  const normalizedAnswer = normalizeExamComparableText(answerText);
+  const options = Array.isArray(question?.opciones) ? question.opciones : [];
+  const optionIndex = options.findIndex((option) => normalizeExamComparableText(option) === normalizedAnswer);
+
+  if (optionIndex === -1) return answerText;
+  return `${getExamOptionLabel(optionIndex)} ${answerText}`;
+}
+
+function buildExamAnswerLines(question) {
+  const respuestaCorrecta = question?.respuesta_correcta;
+
+  if (Array.isArray(respuestaCorrecta)) {
+    return respuestaCorrecta.map((item, index) => {
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        const left = normalizeExamAnswerScalar(item.lado_a);
+        const right = normalizeExamAnswerScalar(item.lado_b);
+
+        if (left || right) {
+          return [left, right].filter(Boolean).join(" - ");
+        }
+
+        const objectValues = Object.values(item)
+          .map((value) => normalizeExamAnswerScalar(value))
+          .filter(Boolean);
+        return objectValues.join(" - ");
+      }
+
+      const value = normalizeExamAnswerScalar(item);
+      return value ? `${index + 1}. ${value}` : "";
+    }).filter(Boolean);
+  }
+
+  const answerText = normalizeExamAnswerScalar(respuestaCorrecta);
+  if (!answerText) return [];
+
+  if (question?.tipo === "opcion_multiple" || question?.tipo === "verdadero_falso") {
+    return [getExamCorrectOptionAnswerText(question, answerText)];
+  }
+
+  return [answerText];
+}
+
+function renderExamAnswerSheetPreviewItem(question, index) {
+  const answerLines = buildExamAnswerLines(question);
+  const answerHtml = answerLines.length > 1
+    ? `<div class="mt-2 space-y-1 text-sm text-emerald-900">${answerLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>`
+    : `<p class="mt-2 text-sm font-semibold text-emerald-900">${escapeHtml(answerLines[0] || "Sin respuesta disponible.")}</p>`;
+
+  return `
+    <article class="rounded-2xl border border-emerald-200 bg-white/90 p-4">
+      <p class="text-sm font-semibold text-slate-900">Pregunta ${index + 1}</p>
+      <p class="mt-2 text-sm text-slate-700">${escapeHtml(question?.pregunta || "")}</p>
+      <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">Respuesta correcta</p>
+      ${answerHtml}
+    </article>
+  `;
+}
+
+function renderExamAnswerSheetPreviewSection(examen) {
+  const preguntas = Array.isArray(examen?.examen_ia?.preguntas) ? examen.examen_ia.preguntas : [];
+  if (preguntas.length === 0) return "";
+
+  return `
+    <section class="border-t border-dashed border-slate-300 pt-6">
+      <div class="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-4 sm:p-5">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Seccion final</p>
+        <h4 class="mt-2 text-lg font-semibold text-slate-900">Hoja de respuestas</h4>
+        <p class="mt-1 text-sm text-slate-600">Incluye cada pregunta con su respuesta correcta.</p>
+        <div class="mt-4 space-y-3">
+          ${preguntas.map((question, index) => renderExamAnswerSheetPreviewItem(question, index)).join("")}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 async function ensureExamenDetalle(examenId, { force = false } = {}) {
   if (!examenId) return null;
   if (!force && explorerState.examenDetalleById[examenId]) {
@@ -2912,6 +3002,7 @@ function renderExamPreviewModal() {
       <div class="space-y-4">
         ${examen.examen_ia?.instrucciones_generales ? `<div class="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">${escapeHtml(examen.examen_ia.instrucciones_generales)}</div>` : ""}
         ${examen.examen_ia.preguntas.map((question, index) => renderExamQuestionPreview(question, index)).join("")}
+        ${renderExamAnswerSheetPreviewSection(examen)}
       </div>
     `;
   }
@@ -2930,7 +3021,7 @@ function buildExamWordHtml(examen) {
     const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
     const opcionesHtml = opciones.length > 0
-      ? `<ul style="list-style:none; margin:8px 0 0 0; padding-left:0;">${opciones.map((item, optionIndex) => `<li style="margin:4px 0;"><strong>${escapeHtml(getExamOptionLabel(optionIndex))}</strong> ${escapeHtml(item)}</li>`).join("")}</ul>`
+      ? `<div style="margin:8px 0 0 0; padding-left:18px;">${opciones.map((item, optionIndex) => `<p style="margin:4px 0;"><strong>${escapeHtml(getExamOptionLabel(optionIndex))}</strong> ${escapeHtml(item)}</p>`).join("")}</div>`
       : "";
     const paresHtml = pares.length > 0
       ? `<ul>${pares.map((pair) => `<li>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</li>`).join("")}</ul>`
@@ -2949,6 +3040,29 @@ function buildExamWordHtml(examen) {
     `;
   }).join("");
 
+  const answerSheetHtml = preguntas.length > 0
+    ? `
+      <section class="answer-sheet">
+        <h2>Hoja de respuestas</h2>
+        <p class="answer-sheet-copy">Incluye cada pregunta con su respuesta correcta.</p>
+        ${preguntas.map((question, index) => {
+          const answerLines = buildExamAnswerLines(question);
+          const answerHtml = answerLines.length > 1
+            ? `<div class="answer-values">${answerLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>`
+            : `<p class="answer-values">${escapeHtml(answerLines[0] || "Sin respuesta disponible.")}</p>`;
+
+          return `
+            <div class="answer-item">
+              <p><strong>${index + 1}.</strong> ${escapeHtml(question?.pregunta || "")}</p>
+              <p class="answer-label"><strong>Respuesta correcta:</strong></p>
+              ${answerHtml}
+            </div>
+          `;
+        }).join("")}
+      </section>
+    `
+    : "";
+
   return `
     <html>
       <head>
@@ -2956,8 +3070,15 @@ function buildExamWordHtml(examen) {
         <style>
           body { font-family: Arial, sans-serif; font-size: 11pt; color: #0f172a; }
           h1 { text-align: center; margin-bottom: 12px; }
+          h2 { margin: 0 0 12px; font-size: 15pt; }
           .meta { margin-bottom: 14px; }
           .box { border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; background: #f8fafc; }
+          .answer-sheet { page-break-before: always; margin-top: 28px; padding-top: 18px; border-top: 2px solid #cbd5e1; }
+          .answer-sheet-copy { margin-bottom: 14px; color: #475569; }
+          .answer-item { margin-bottom: 16px; }
+          .answer-label { margin: 8px 0 4px; }
+          .answer-values { margin-left: 18px; }
+          .answer-values p { margin: 4px 0; }
           p { margin: 6px 0; }
           ul, ol { margin: 8px 0 0 22px; }
         </style>
@@ -2971,6 +3092,7 @@ function buildExamWordHtml(examen) {
         </div>
         ${examenIa.instrucciones_generales ? `<div class="box"><strong>Instrucciones:</strong><br>${escapeHtml(examenIa.instrucciones_generales)}</div>` : ""}
         ${preguntasHtml}
+        ${answerSheetHtml}
       </body>
     </html>
   `;
