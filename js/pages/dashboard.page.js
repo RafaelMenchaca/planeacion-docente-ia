@@ -609,6 +609,12 @@ function formatExamDate(value) {
   });
 }
 
+function formatExamTypeSummary(tipos) {
+  const labels = [...new Set((Array.isArray(tipos) ? tipos : []).map((tipo) => getExamTypeLabel(tipo)).filter(Boolean))];
+  if (labels.length === 0) return "";
+  return labels.join(" · ");
+}
+
 function notifyDashboard(message, tone = "info") {
   const toneMap = {
     info: "border-slate-200 bg-white text-slate-700",
@@ -3182,31 +3188,34 @@ function renderExamSection(unidadId) {
     ? `<div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700">${escapeHtml(error)}</div>`
     : "";
 
-  const examenesHtml = examenes.map((examen) => `
-    <div class="rounded-xl border border-slate-200 bg-white p-3">
-      <div class="flex flex-wrap items-start justify-between gap-2">
-        <div class="min-w-0">
+  const examenesHtml = examenes.map((examen) => {
+    const typeSummary = formatExamTypeSummary(examen.tipos_pregunta);
+
+    return `
+    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="min-w-0 flex flex-1 flex-wrap items-center gap-2">
           <p class="text-sm font-semibold text-slate-900">${escapeHtml(examen.titulo || "Examen de unidad")}</p>
-          <p class="mt-1 text-xs text-slate-500">${escapeHtml(formatExamDate(examen.created_at) || "Sin fecha")}</p>
+          ${renderProgressPill("ready", "Generado")}
         </div>
-        ${renderProgressPill("ready", "Generado")}
+        <div class="flex flex-wrap justify-end gap-2">
+          <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="preview-exam" data-examen-id="${escapeHtml(examen.id)}">
+            Vista previa
+          </button>
+          <button type="button" class="inline-flex items-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="download-exam-word" data-examen-id="${escapeHtml(examen.id)}">
+            Descargar Word
+          </button>
+        </div>
       </div>
-      <div class="mt-3 flex flex-wrap gap-2">
-        ${(Array.isArray(examen.tipos_pregunta) ? examen.tipos_pregunta : []).map((tipo) => `
-          <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700">${escapeHtml(getExamTypeLabel(tipo))}</span>
-        `).join("")}
-      </div>
-      <p class="mt-3 text-xs text-slate-600">${escapeHtml(String(examen.total_preguntas || 0))} pregunta(s)</p>
-      <div class="mt-3 flex flex-wrap gap-2">
-        <button type="button" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="preview-exam" data-examen-id="${escapeHtml(examen.id)}">
-          Vista previa
-        </button>
-        <button type="button" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-50" data-content-action="download-exam-word" data-examen-id="${escapeHtml(examen.id)}">
-          Descargar Word
-        </button>
+      <div class="mt-2 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[10px] leading-4 text-slate-400">
+        <span>${escapeHtml(formatExamDate(examen.created_at) || "Sin fecha")}</span>
+        <span aria-hidden="true" class="text-slate-300">•</span>
+        <span>${escapeHtml(String(examen.total_preguntas || 0))} pregunta(s)</span>
+        ${typeSummary ? `<span aria-hidden="true" class="text-slate-300">•</span><span>${escapeHtml(typeSummary)}</span>` : ""}
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 
   return `
     <section class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -3214,7 +3223,7 @@ function renderExamSection(unidadId) {
         <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Examenes de la unidad</h4>
         <span class="text-xs text-slate-500">${examenes.length} examen(es)</span>
       </div>
-      <div class="mt-3 space-y-3">
+      <div class="mt-3 space-y-2">
         ${generatingCard}
         ${loadingHtml}
         ${errorHtml}
@@ -3238,12 +3247,13 @@ function renderUnidadLevel() {
       .map((tema) => {
         const planeacion = explorerState.planeacionByTema[tema.id];
         const duracion = Number.isFinite(Number(tema.duracion)) ? `${Number(tema.duracion)} min` : "-";
+        const planeacionFecha = formatExamDate(planeacion?.fecha_creacion || planeacion?.created_at) || "Sin fecha";
 
         return `
           <div class="explorer-topic-row">
             <div>
               <p class="text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
-              <p class="mt-1 text-xs text-slate-500">Tema guardado</p>
+              <p class="mt-1 text-xs text-slate-500">${escapeHtml(planeacionFecha)}</p>
             </div>
             <p class="text-sm text-slate-600">${escapeHtml(duracion)}</p>
             <div class="flex flex-wrap items-center justify-end gap-2">
