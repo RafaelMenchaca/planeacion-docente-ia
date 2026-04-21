@@ -1383,6 +1383,7 @@ async function submitUnitExamModal(event) {
   };
   closeUnitExamModal({ force: true });
   renderAll();
+  scrollToExamSection();
 
   try {
     const examen = await generarExamenUnidad({
@@ -1404,6 +1405,7 @@ async function submitUnitExamModal(event) {
     };
     await ensureExamenes(unidadId, { force: true });
     renderAll();
+    scrollToExamSection();
   } catch (error) {
     explorerState.examGeneration = {
       active: false,
@@ -1413,6 +1415,7 @@ async function submitUnitExamModal(event) {
     };
     explorerState.errors.examenes[unidadId] = formatFetchError(error, "No se pudo generar el examen.");
     renderAll();
+    scrollToExamSection();
   }
 }
 
@@ -3170,7 +3173,7 @@ function renderExamSection(unidadId) {
 
   const generatingCard = isGenerating
     ? `
-      <div class="explorer-progress-item generating">
+      <div id="unit-exam-generating-card" class="explorer-progress-item generating">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="font-semibold">Creando examen de unidad</p>
           ${renderProgressPill("generating", "Generando")}
@@ -3188,15 +3191,15 @@ function renderExamSection(unidadId) {
     ? `<div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700">${escapeHtml(error)}</div>`
     : "";
 
-  const examenesHtml = examenes.map((examen) => {
+  const examenesHtml = examenes.map((examen, index) => {
     const typeSummary = formatExamTypeSummary(examen.tipos_pregunta);
+    const cardId = index === 0 ? ' id="unit-exam-result-card"' : "";
 
     return `
-    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+    <div${cardId} class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="min-w-0 flex flex-1 flex-wrap items-center gap-2">
           <p class="text-sm font-semibold text-slate-900">${escapeHtml(examen.titulo || "Examen de unidad")}</p>
-          ${renderProgressPill("ready", "Generado")}
         </div>
         <div class="flex flex-wrap justify-end gap-2">
           <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="preview-exam" data-examen-id="${escapeHtml(examen.id)}">
@@ -3218,7 +3221,7 @@ function renderExamSection(unidadId) {
   }).join("");
 
   return `
-    <section class="rounded-2xl border border-slate-200 bg-white p-4">
+    <section id="unit-exam-section-anchor" class="rounded-2xl border border-slate-200 bg-white p-4">
       <div class="flex items-center justify-between gap-2">
         <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Examenes de la unidad</h4>
         <span class="text-xs text-slate-500">${examenes.length} examen(es)</span>
@@ -3427,6 +3430,16 @@ function scrollToProgressFinal() {
   requestAnimationFrame(() => {
     const target = document.getElementById("unit-progress-final");
     if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+function scrollToExamSection(block = "center") {
+  requestAnimationFrame(() => {
+    const target = document.getElementById("unit-exam-generating-card")
+      || document.getElementById("unit-exam-result-card")
+      || document.getElementById("unit-exam-section-anchor");
+
+    if (target) target.scrollIntoView({ behavior: "smooth", block });
   });
 }
 
