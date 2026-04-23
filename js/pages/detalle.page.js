@@ -43,6 +43,11 @@ function normalizarActividadImagen(item) {
     file: item.file || null
   };
 
+  const source = normalizarTextoDetalle(item.source);
+  if (source) normalized.source = source;
+  const query = normalizarTextoDetalle(item.query);
+  if (query) normalized.query = query;
+
   if (!normalized.id) return null;
   return normalized;
 }
@@ -297,7 +302,7 @@ async function subirImagenActividad({ image, planeacionId, userId, tiempoSesion 
 }
 
 function serializeActividadImagen(imagen) {
-  return {
+  const out = {
     id: imagen.id,
     name: imagen.name,
     path: imagen.path,
@@ -305,6 +310,9 @@ function serializeActividadImagen(imagen) {
     size: Number(imagen.size) || 0,
     uploaded_at: imagen.uploaded_at
   };
+  if (imagen.source) out.source = imagen.source;
+  if (imagen.query) out.query = imagen.query;
+  return out;
 }
 
 function collectActividadImagePaths(tablaIa) {
