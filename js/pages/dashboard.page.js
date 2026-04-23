@@ -229,6 +229,69 @@ function renderActividadCierreControl({ scope, localId, actividadCierre }) {
   `;
 }
 
+const IMAGENES_AUTO_MOMENTOS = [
+  { key: "conocimientos-previos", label: "Conocimientos previos" },
+  { key: "desarrollo", label: "Desarrollo" },
+  { key: "cierre", label: "Cierre" }
+];
+
+function normalizeImagenMomentoKey(value) {
+  if (typeof value !== "string") return null;
+  if (value === "conocimientos-previos" || value === "desarrollo" || value === "cierre") {
+    return value;
+  }
+  return null;
+}
+
+function toggleMomentoInList(currentList, momentoKey, checked) {
+  const key = normalizeImagenMomentoKey(momentoKey);
+  const list = Array.isArray(currentList)
+    ? currentList.filter((item) => normalizeImagenMomentoKey(item))
+    : [];
+
+  if (!key) return list;
+
+  const idx = list.indexOf(key);
+  if (checked) {
+    if (idx === -1) list.push(key);
+  } else if (idx !== -1) {
+    list.splice(idx, 1);
+  }
+  return list;
+}
+
+function renderImagenesAutomaticasControl({ scope, localId, generarImagenesEn }) {
+  const safeScope = scope === "quick" ? "quick" : "staging";
+  const dataAttr = safeScope === "quick" ? "data-quick-imagen-check" : "data-staging-imagen-check";
+  const localIdAttr = safeScope === "quick" ? "data-quick-imagen-local-id" : "data-staging-imagen-local-id";
+  const selected = new Set(
+    (Array.isArray(generarImagenesEn) ? generarImagenesEn : [])
+      .map(normalizeImagenMomentoKey)
+      .filter(Boolean)
+  );
+  const safeLocalId = escapeHtml(String(localId));
+
+  const checkboxes = IMAGENES_AUTO_MOMENTOS.map((momento) => {
+    const id = `${safeScope}-imagen-${momento.key}-${safeLocalId}`;
+    const checked = selected.has(momento.key) ? "checked" : "";
+    return `
+      <label for="${id}" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 cursor-pointer">
+        <input type="checkbox" id="${id}" ${dataAttr}="${momento.key}" ${localIdAttr}="${safeLocalId}" ${checked} class="h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600" />
+        <span>${escapeHtml(momento.label)}</span>
+      </label>
+    `;
+  }).join("");
+
+  return `
+    <div class="mt-2 w-full">
+      <p class="text-xs font-medium text-slate-500">Imágenes automáticas</p>
+      <div class="mt-1 flex flex-wrap gap-1.5">
+        ${checkboxes}
+      </div>
+    </div>
+  `;
+}
+
 function syncBodyScrollLock() {
   if (!document.body) return;
   const entityModalOpen = !document.getElementById("entity-modal")?.classList.contains("hidden");
@@ -2133,21 +2196,28 @@ function renderQuickTemasList() {
 
   list.innerHTML = explorerState.quickCreate.temas
     .map((tema) => `
-      <div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-3 py-3">
-        <div class="min-w-0 flex flex-1 items-center gap-4">
-          <div class="min-w-0">
-            <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
-            <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+      <div class="rounded-lg border border-slate-200 bg-white px-3 py-3">
+        <div class="flex items-center gap-4">
+          <div class="min-w-0 flex flex-1 items-center gap-4">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
+              <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+            </div>
+            ${renderActividadCierreControl({
+              scope: "quick",
+              localId: tema.localId,
+              actividadCierre: tema.actividad_cierre
+            })}
           </div>
-          ${renderActividadCierreControl({
-            scope: "quick",
-            localId: tema.localId,
-            actividadCierre: tema.actividad_cierre
-          })}
+          <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-quick-remove-tema="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
+            ${renderTrashIcon()}
+          </button>
         </div>
-        <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-quick-remove-tema="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
-          ${renderTrashIcon()}
-        </button>
+        ${renderImagenesAutomaticasControl({
+          scope: "quick",
+          localId: tema.localId,
+          generarImagenesEn: tema.generar_imagenes_en
+        })}
       </div>
     `)
     .join("");
@@ -2325,7 +2395,8 @@ function addQuickTemaFromInputs() {
     localId: `quick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     titulo,
     duracion,
-    actividad_cierre: ""
+    actividad_cierre: "",
+    generar_imagenes_en: []
   });
 
   titleInput.value = "";
@@ -2358,6 +2429,17 @@ function updateQuickTemaActividad(localId, actividadCierre) {
   }
 
   renderQuickTemasList();
+}
+
+function toggleQuickTemaImagenMomento(localId, momentoKey, checked) {
+  if (!localId) return;
+  explorerState.quickCreate.temas = explorerState.quickCreate.temas.map((tema) => {
+    if (tema.localId !== localId) return tema;
+    return {
+      ...tema,
+      generar_imagenes_en: toggleMomentoInList(tema.generar_imagenes_en, momentoKey, checked)
+    };
+  });
 }
 
 function requireQuickText(inputId, label) {
@@ -3291,21 +3373,28 @@ function renderUnidadLevel() {
     ? '<p class="text-sm text-slate-500">No hay temas pendientes.</p>'
     : explorerState.stagingTemas
         .map((tema) => `
-          <div class="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-3 py-3">
-            <div class="min-w-0 flex flex-1 items-center gap-4">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
-                <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+          <div class="rounded-lg border border-slate-200 bg-white px-3 py-3">
+            <div class="flex items-center gap-4">
+              <div class="min-w-0 flex flex-1 items-center gap-4">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
+                  <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
+                </div>
+                ${renderActividadCierreControl({
+                  scope: "staging",
+                  localId: tema.localId,
+                  actividadCierre: tema.actividad_cierre
+                })}
               </div>
-              ${renderActividadCierreControl({
-                scope: "staging",
-                localId: tema.localId,
-                actividadCierre: tema.actividad_cierre
-              })}
+              <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-content-action="remove-staging" data-staging-id="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
+                ${renderTrashIcon()}
+              </button>
             </div>
-            <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-content-action="remove-staging" data-staging-id="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
-              ${renderTrashIcon()}
-            </button>
+            ${renderImagenesAutomaticasControl({
+              scope: "staging",
+              localId: tema.localId,
+              generarImagenesEn: tema.generar_imagenes_en
+            })}
           </div>
         `)
         .join("");
@@ -3460,7 +3549,8 @@ function addStagingTemaFromInputs() {
     localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     titulo,
     duracion,
-    actividad_cierre: ""
+    actividad_cierre: "",
+    generar_imagenes_en: []
   });
 
   titleInput.value = "";
@@ -3493,6 +3583,17 @@ function updateStagingTemaActividad(localId, actividadCierre) {
   });
 
   renderExplorerContent();
+}
+
+function toggleStagingTemaImagenMomento(localId, momentoKey, checked) {
+  if (!localId) return;
+  explorerState.stagingTemas = explorerState.stagingTemas.map((tema) => {
+    if (tema.localId !== localId) return tema;
+    return {
+      ...tema,
+      generar_imagenes_en: toggleMomentoInList(tema.generar_imagenes_en, momentoKey, checked)
+    };
+  });
 }
 
 function statusLabelFromTone(status) {
@@ -3676,7 +3777,10 @@ async function generatePlaneacionesFromStaging() {
       titulo: tema.titulo,
       duracion: tema.duracion,
       actividad_cierre: tema.actividad_cierre,
-      orden: index + 1
+      orden: index + 1,
+      generar_imagenes_en: Array.isArray(tema.generar_imagenes_en)
+        ? tema.generar_imagenes_en.map(normalizeImagenMomentoKey).filter(Boolean)
+        : []
     })),
     ...buildLegacyContext()
   };
@@ -3810,7 +3914,12 @@ async function submitQuickCreateForm(event) {
       localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       titulo: tema.titulo,
       duracion: tema.duracion,
-      actividad_cierre: tema.actividad_cierre
+      actividad_cierre: tema.actividad_cierre,
+      generar_imagenes_en: Array.isArray(tema.generar_imagenes_en)
+        ? tema.generar_imagenes_en
+            .map(normalizeImagenMomentoKey)
+            .filter(Boolean)
+        : []
     }));
 
     explorerState.quickCreate.temas = [];
@@ -4236,8 +4345,19 @@ function bindDashboardEvents() {
 
   document.getElementById("explorer-content")?.addEventListener("change", (event) => {
     const select = event.target.closest?.("[data-staging-actividad-select]");
-    if (!select) return;
-    updateStagingTemaActividad(select.getAttribute("data-staging-actividad-select"), select.value);
+    if (select) {
+      updateStagingTemaActividad(select.getAttribute("data-staging-actividad-select"), select.value);
+      return;
+    }
+
+    const imagenCheck = event.target.closest?.("[data-staging-imagen-check]");
+    if (imagenCheck) {
+      toggleStagingTemaImagenMomento(
+        imagenCheck.getAttribute("data-staging-imagen-local-id"),
+        imagenCheck.getAttribute("data-staging-imagen-check"),
+        Boolean(imagenCheck.checked)
+      );
+    }
   });
 
   document.getElementById("unit-exam-types")?.addEventListener("change", (event) => {
@@ -4346,8 +4466,19 @@ function bindDashboardEvents() {
 
   document.getElementById("quick-temas-list")?.addEventListener("change", (event) => {
     const select = event.target.closest?.("[data-quick-actividad-select]");
-    if (!select) return;
-    updateQuickTemaActividad(select.getAttribute("data-quick-actividad-select"), select.value);
+    if (select) {
+      updateQuickTemaActividad(select.getAttribute("data-quick-actividad-select"), select.value);
+      return;
+    }
+
+    const imagenCheck = event.target.closest?.("[data-quick-imagen-check]");
+    if (imagenCheck) {
+      toggleQuickTemaImagenMomento(
+        imagenCheck.getAttribute("data-quick-imagen-local-id"),
+        imagenCheck.getAttribute("data-quick-imagen-check"),
+        Boolean(imagenCheck.checked)
+      );
+    }
   });
 
   document.getElementById("quick-create-form")?.addEventListener("submit", (event) => {
