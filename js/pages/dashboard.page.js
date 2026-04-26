@@ -229,11 +229,12 @@ function renderActividadCierreControl({ scope, localId, actividadCierre }) {
   `;
 }
 
-const IMAGENES_AUTO_MOMENTOS = [
-  { key: "conocimientos-previos", label: "Conocimientos previos" },
-  { key: "desarrollo", label: "Desarrollo" },
-  { key: "cierre", label: "Cierre" }
-];
+// PAUSED: auto image generation disabled — const preserved for future re-enable
+// const IMAGENES_AUTO_MOMENTOS = [
+//   { key: "conocimientos-previos", label: "Conocimientos previos" },
+//   { key: "desarrollo", label: "Desarrollo" },
+//   { key: "cierre", label: "Cierre" }
+// ];
 
 function normalizeImagenMomentoKey(value) {
   if (typeof value !== "string") return null;
@@ -260,37 +261,38 @@ function toggleMomentoInList(currentList, momentoKey, checked) {
   return list;
 }
 
-function renderImagenesAutomaticasControl({ scope, localId, generarImagenesEn }) {
-  const safeScope = scope === "quick" ? "quick" : "staging";
-  const dataAttr = safeScope === "quick" ? "data-quick-imagen-check" : "data-staging-imagen-check";
-  const localIdAttr = safeScope === "quick" ? "data-quick-imagen-local-id" : "data-staging-imagen-local-id";
-  const selected = new Set(
-    (Array.isArray(generarImagenesEn) ? generarImagenesEn : [])
-      .map(normalizeImagenMomentoKey)
-      .filter(Boolean)
-  );
-  const safeLocalId = escapeHtml(String(localId));
-
-  const checkboxes = IMAGENES_AUTO_MOMENTOS.map((momento) => {
-    const id = `${safeScope}-imagen-${momento.key}-${safeLocalId}`;
-    const checked = selected.has(momento.key) ? "checked" : "";
-    return `
-      <label for="${id}" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 cursor-pointer">
-        <input type="checkbox" id="${id}" ${dataAttr}="${momento.key}" ${localIdAttr}="${safeLocalId}" ${checked} class="h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600" />
-        <span>${escapeHtml(momento.label)}</span>
-      </label>
-    `;
-  }).join("");
-
-  return `
-    <div class="mt-2 w-full">
-      <p class="text-xs font-medium text-slate-500">Imágenes automáticas</p>
-      <div class="mt-1 flex flex-wrap gap-1.5">
-        ${checkboxes}
-      </div>
-    </div>
-  `;
-}
+// PAUSED: auto image generation disabled — function preserved for future re-enable
+// function renderImagenesAutomaticasControl({ scope, localId, generarImagenesEn }) {
+//   const safeScope = scope === "quick" ? "quick" : "staging";
+//   const dataAttr = safeScope === "quick" ? "data-quick-imagen-check" : "data-staging-imagen-check";
+//   const localIdAttr = safeScope === "quick" ? "data-quick-imagen-local-id" : "data-staging-imagen-local-id";
+//   const selected = new Set(
+//     (Array.isArray(generarImagenesEn) ? generarImagenesEn : [])
+//       .map(normalizeImagenMomentoKey)
+//       .filter(Boolean)
+//   );
+//   const safeLocalId = escapeHtml(String(localId));
+//
+//   const checkboxes = IMAGENES_AUTO_MOMENTOS.map((momento) => {
+//     const id = `${safeScope}-imagen-${momento.key}-${safeLocalId}`;
+//     const checked = selected.has(momento.key) ? "checked" : "";
+//     return `
+//       <label for="${id}" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 cursor-pointer">
+//         <input type="checkbox" id="${id}" ${dataAttr}="${momento.key}" ${localIdAttr}="${safeLocalId}" ${checked} class="h-3.5 w-3.5 rounded border-slate-300 text-cyan-700 focus:ring-cyan-600" />
+//         <span>${escapeHtml(momento.label)}</span>
+//       </label>
+//     `;
+//   }).join("");
+//
+//   return `
+//     <div class="mt-2 w-full">
+//       <p class="text-xs font-medium text-slate-500">Imágenes automáticas</p>
+//       <div class="mt-1 flex flex-wrap gap-1.5">
+//         ${checkboxes}
+//       </div>
+//     </div>
+//   `;
+// }
 
 function syncBodyScrollLock() {
   if (!document.body) return;
@@ -2213,11 +2215,7 @@ function renderQuickTemasList() {
             ${renderTrashIcon()}
           </button>
         </div>
-        ${renderImagenesAutomaticasControl({
-          scope: "quick",
-          localId: tema.localId,
-          generarImagenesEn: tema.generar_imagenes_en
-        })}
+        ${"" /* PAUSED: renderImagenesAutomaticasControl({ scope: "quick", localId: tema.localId, generarImagenesEn: tema.generar_imagenes_en }) */}
       </div>
     `)
     .join("");
@@ -2431,16 +2429,17 @@ function updateQuickTemaActividad(localId, actividadCierre) {
   renderQuickTemasList();
 }
 
-function toggleQuickTemaImagenMomento(localId, momentoKey, checked) {
-  if (!localId) return;
-  explorerState.quickCreate.temas = explorerState.quickCreate.temas.map((tema) => {
-    if (tema.localId !== localId) return tema;
-    return {
-      ...tema,
-      generar_imagenes_en: toggleMomentoInList(tema.generar_imagenes_en, momentoKey, checked)
-    };
-  });
-}
+// PAUSED: auto image generation disabled — function preserved for future re-enable
+// function toggleQuickTemaImagenMomento(localId, momentoKey, checked) {
+//   if (!localId) return;
+//   explorerState.quickCreate.temas = explorerState.quickCreate.temas.map((tema) => {
+//     if (tema.localId !== localId) return tema;
+//     return {
+//       ...tema,
+//       generar_imagenes_en: toggleMomentoInList(tema.generar_imagenes_en, momentoKey, checked)
+//     };
+//   });
+// }
 
 function requireQuickText(inputId, label) {
   const input = document.getElementById(inputId);
@@ -3390,11 +3389,7 @@ function renderUnidadLevel() {
                 ${renderTrashIcon()}
               </button>
             </div>
-            ${renderImagenesAutomaticasControl({
-              scope: "staging",
-              localId: tema.localId,
-              generarImagenesEn: tema.generar_imagenes_en
-            })}
+            ${"" /* PAUSED: renderImagenesAutomaticasControl({ scope: "staging", localId: tema.localId, generarImagenesEn: tema.generar_imagenes_en }) */}
           </div>
         `)
         .join("");
@@ -3585,16 +3580,17 @@ function updateStagingTemaActividad(localId, actividadCierre) {
   renderExplorerContent();
 }
 
-function toggleStagingTemaImagenMomento(localId, momentoKey, checked) {
-  if (!localId) return;
-  explorerState.stagingTemas = explorerState.stagingTemas.map((tema) => {
-    if (tema.localId !== localId) return tema;
-    return {
-      ...tema,
-      generar_imagenes_en: toggleMomentoInList(tema.generar_imagenes_en, momentoKey, checked)
-    };
-  });
-}
+// PAUSED: auto image generation disabled — function preserved for future re-enable
+// function toggleStagingTemaImagenMomento(localId, momentoKey, checked) {
+//   if (!localId) return;
+//   explorerState.stagingTemas = explorerState.stagingTemas.map((tema) => {
+//     if (tema.localId !== localId) return tema;
+//     return {
+//       ...tema,
+//       generar_imagenes_en: toggleMomentoInList(tema.generar_imagenes_en, momentoKey, checked)
+//     };
+//   });
+// }
 
 function statusLabelFromTone(status) {
   if (status === "ready") return "Listo";
@@ -4350,14 +4346,15 @@ function bindDashboardEvents() {
       return;
     }
 
-    const imagenCheck = event.target.closest?.("[data-staging-imagen-check]");
-    if (imagenCheck) {
-      toggleStagingTemaImagenMomento(
-        imagenCheck.getAttribute("data-staging-imagen-local-id"),
-        imagenCheck.getAttribute("data-staging-imagen-check"),
-        Boolean(imagenCheck.checked)
-      );
-    }
+    // PAUSED: auto image generation disabled
+    // const imagenCheck = event.target.closest?.("[data-staging-imagen-check]");
+    // if (imagenCheck) {
+    //   toggleStagingTemaImagenMomento(
+    //     imagenCheck.getAttribute("data-staging-imagen-local-id"),
+    //     imagenCheck.getAttribute("data-staging-imagen-check"),
+    //     Boolean(imagenCheck.checked)
+    //   );
+    // }
   });
 
   document.getElementById("unit-exam-types")?.addEventListener("change", (event) => {
@@ -4471,14 +4468,15 @@ function bindDashboardEvents() {
       return;
     }
 
-    const imagenCheck = event.target.closest?.("[data-quick-imagen-check]");
-    if (imagenCheck) {
-      toggleQuickTemaImagenMomento(
-        imagenCheck.getAttribute("data-quick-imagen-local-id"),
-        imagenCheck.getAttribute("data-quick-imagen-check"),
-        Boolean(imagenCheck.checked)
-      );
-    }
+    // PAUSED: auto image generation disabled
+    // const imagenCheck = event.target.closest?.("[data-quick-imagen-check]");
+    // if (imagenCheck) {
+    //   toggleQuickTemaImagenMomento(
+    //     imagenCheck.getAttribute("data-quick-imagen-local-id"),
+    //     imagenCheck.getAttribute("data-quick-imagen-check"),
+    //     Boolean(imagenCheck.checked)
+    //   );
+    // }
   });
 
   document.getElementById("quick-create-form")?.addEventListener("submit", (event) => {
