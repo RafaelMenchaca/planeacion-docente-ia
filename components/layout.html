@@ -260,6 +260,77 @@
     </div>
   </div>
 
+  <div id="lista-cotejo-confirm-modal" class="hidden fixed inset-0 z-50">
+    <button id="lista-cotejo-confirm-backdrop" type="button" aria-label="Cerrar confirmacion de lista de cotejo" class="absolute inset-0 bg-slate-900/55 backdrop-blur-sm"></button>
+
+    <div class="relative mx-auto flex min-h-full w-full items-center justify-center px-3 py-4 sm:px-6 lg:px-8">
+      <div class="flex w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5" style="width:min(96vw, 560px); max-height:calc(100vh - 2rem);">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">Evaluacion por tema</p>
+            <h3 class="mt-2 text-lg font-semibold text-slate-900">Crear listas de cotejo</h3>
+            <p id="lista-cotejo-confirm-description" class="mt-1 text-sm text-slate-600">Se generara una lista de cotejo por cada planeacion de la unidad.</p>
+          </div>
+          <button id="lista-cotejo-confirm-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 text-slate-500 hover:bg-slate-50">
+            x
+          </button>
+        </div>
+
+        <div class="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
+          <section>
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Temas de la unidad</h4>
+              <span id="lista-cotejo-confirm-topics-count" class="text-[11px] text-slate-500">0 tema(s)</span>
+            </div>
+            <div id="lista-cotejo-confirm-topics" class="mt-2 max-h-44 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-2.5"></div>
+          </section>
+
+          <p class="text-xs text-slate-500">Cada lista se genera a partir de la actividad de cierre de la planeacion. Si una planeacion no tiene actividad de cierre, se omitira.</p>
+
+          <div id="lista-cotejo-confirm-error" class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"></div>
+
+          <div class="flex flex-wrap justify-end gap-2">
+            <button id="lista-cotejo-confirm-cancel" type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              Cancelar
+            </button>
+            <button id="lista-cotejo-confirm-submit" type="button" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800">
+              Generar listas de cotejo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lista-cotejo-preview-modal" class="hidden fixed inset-0 z-50">
+    <button id="lista-cotejo-preview-backdrop" type="button" aria-label="Cerrar vista previa de lista de cotejo" class="absolute inset-0 bg-slate-900/55 backdrop-blur-sm"></button>
+
+    <div class="relative mx-auto flex min-h-full w-full items-center justify-center px-3 py-4 sm:px-6 lg:px-8">
+      <div class="flex w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5" style="width:min(96vw, 700px); max-height:calc(100vh - 2rem);">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">Instrumento de evaluacion</p>
+            <h3 id="lista-cotejo-preview-title" class="mt-2 text-lg font-semibold text-slate-900">Lista de cotejo</h3>
+            <p id="lista-cotejo-preview-meta" class="mt-1 text-sm text-slate-600"></p>
+          </div>
+          <button id="lista-cotejo-preview-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 text-slate-500 hover:bg-slate-50">
+            x
+          </button>
+        </div>
+
+        <div id="lista-cotejo-preview-error" class="hidden mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"></div>
+
+        <div id="lista-cotejo-preview-body" class="mt-4 flex-1 overflow-y-auto pr-1"></div>
+
+        <div class="mt-4 flex flex-wrap justify-end gap-2">
+          <button id="lista-cotejo-preview-cancel" type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="delete-confirm-modal" class="hidden fixed inset-0 z-50">
     <button id="delete-confirm-backdrop" type="button" aria-label="Cerrar confirmacion" class="absolute inset-0"></button>
 
