@@ -7,8 +7,8 @@
   examenesByUnidad: {},
   examenDetalleById: {},
   planeacionByTema: {},
-  loading: { root: false, grados: {}, materias: {}, unidades: {}, temas: {}, examenes: {} },
-  errors: { root: "", grados: {}, materias: {}, unidades: {}, temas: {}, examenes: {} },
+  loading: { root: false, grados: {}, materias: {}, unidades: {}, temas: {}, examenes: {}, listaCotejo: {} },
+  errors: { root: "", grados: {}, materias: {}, unidades: {}, temas: {}, examenes: {}, listaCotejo: {} },
   expandedPlanteles: new Set(),
   expandedGrados: new Set(),
   expandedMaterias: new Set(),
@@ -26,6 +26,10 @@
   examGeneration: { active: false, unidadId: null, status: "idle", message: "" },
   examModal: { open: false, unidadId: null, selectedTypes: [], questionCounts: {}, submitting: false, error: "" },
   examPreview: { open: false, examenId: null, loading: false, error: "" },
+  listasCotejoByUnidad: {},
+  listaCotejoModal: { open: false, unidadId: null, submitting: false, error: "" },
+  listaCotejoGeneration: { active: false, unidadId: null, status: "idle", message: "" },
+  listaCotejoPreview: { open: false, listaId: null, listaData: null, loading: false, error: "" },
   modal: { type: null, mode: "create", entityId: null, submitting: false },
   confirmDelete: {
     open: false,
@@ -300,7 +304,7 @@ function syncBodyScrollLock() {
 
   document.body.classList.toggle(
     "overflow-hidden",
-    explorerState.quickCreate.open || explorerState.confirmDelete.open || explorerState.examModal.open || explorerState.examPreview.open || entityModalOpen
+    explorerState.quickCreate.open || explorerState.confirmDelete.open || explorerState.examModal.open || explorerState.examPreview.open || explorerState.listaCotejoModal.open || explorerState.listaCotejoPreview.open || entityModalOpen
   );
 }
 
@@ -664,6 +668,24 @@ async function ensureExamenes(unidadId, { force = false } = {}) {
   }
 }
 
+async function ensureListasCotejo(unidadId, { force = false } = {}) {
+  if (!unidadId) return;
+  if (!force && explorerState.listasCotejoByUnidad[unidadId]) return;
+
+  explorerState.loading.listaCotejo[unidadId] = true;
+  delete explorerState.errors.listaCotejo[unidadId];
+
+  try {
+    const items = await obtenerListasCotejoPorUnidad(unidadId);
+    explorerState.listasCotejoByUnidad[unidadId] = Array.isArray(items) ? items : [];
+  } catch (error) {
+    explorerState.listasCotejoByUnidad[unidadId] = [];
+    explorerState.errors.listaCotejo[unidadId] = formatFetchError(error, "No se pudieron cargar las listas de cotejo.");
+  } finally {
+    explorerState.loading.listaCotejo[unidadId] = false;
+  }
+}
+
 function formatExamDate(value) {
   const parsed = value ? new Date(value) : null;
   if (!parsed || Number.isNaN(parsed.getTime())) return "";
@@ -737,7 +759,7 @@ async function selectUnidad(plantelId, gradoId, materiaId, unidadId) {
   explorerState.expandedMaterias.add(materiaId);
 
   setCurrentLevel("unidad", { plantelId, gradoId, materiaId, unidadId });
-  await Promise.all([ensureGrados(plantelId), ensureMaterias(gradoId), ensureUnidades(materiaId), ensureTemas(unidadId), ensureExamenes(unidadId)]);
+  await Promise.all([ensureGrados(plantelId), ensureMaterias(gradoId), ensureUnidades(materiaId), ensureTemas(unidadId), ensureExamenes(unidadId), ensureListasCotejo(unidadId)]);
   renderAll();
 }
 
@@ -1025,6 +1047,11 @@ function getLevelHeaderActions(level = explorerState.current.level) {
 
   if (level === "unidad") {
     return [
+      {
+        label: "+ Crear lista de cotejo",
+        action: "open-lista-cotejo-modal",
+        tone: "neutral"
+      },
       {
         label: "+ Crear examen",
         action: "open-unit-exam-modal",
@@ -1342,6 +1369,322 @@ function renderUnitExamModal() {
 
   syncUnitExamModalErrorState();
   syncUnitExamModalActionState();
+}
+
+function getListaCotejoTopicsForUnidad(unidadId) {
+  return (explorerState.temasByUnidad[unidadId] || []).filter((tema) => {
+    const planeacion = explorerState.planeacionByTema[tema.id];
+    return Boolean(planeacion?.id);
+  });
+}
+
+function renderListaCotejoConfirmTopics(unidadId) {
+  const topics = getListaCotejoTopicsForUnidad(unidadId);
+  if (topics.length === 0) {
+    return '<p class="text-sm text-slate-500">No hay planeaciones generadas en esta unidad.</p>';
+  }
+  return `
+    <div class="space-y-2">
+      ${topics.map((tema) => `
+        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
+          <p class="truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function syncListaCotejoConfirmModal() {
+  const submit = document.getElementById("lista-cotejo-confirm-submit");
+  const cancel = document.getElementById("lista-cotejo-confirm-cancel");
+  const close = document.getElementById("lista-cotejo-confirm-close");
+  if (!submit || !cancel || !close) return;
+
+  const state = explorerState.listaCotejoModal;
+  const topics = state.unidadId ? getListaCotejoTopicsForUnidad(state.unidadId) : [];
+
+  submit.disabled = state.submitting || topics.length === 0;
+  submit.textContent = state.submitting ? "Generando listas..." : "Generar listas de cotejo";
+  cancel.disabled = state.submitting;
+  close.disabled = state.submitting;
+}
+
+function renderListaCotejoConfirmModal() {
+  const modal = document.getElementById("lista-cotejo-confirm-modal");
+  const description = document.getElementById("lista-cotejo-confirm-description");
+  const topics = document.getElementById("lista-cotejo-confirm-topics");
+  const topicsCount = document.getElementById("lista-cotejo-confirm-topics-count");
+  const error = document.getElementById("lista-cotejo-confirm-error");
+  if (!modal || !description || !topics || !topicsCount || !error) return;
+
+  const state = explorerState.listaCotejoModal;
+  modal.classList.toggle("hidden", !state.open);
+  syncBodyScrollLock();
+
+  if (!state.open) {
+    error.classList.add("hidden");
+    error.textContent = "";
+    return;
+  }
+
+  const topicItems = state.unidadId ? getListaCotejoTopicsForUnidad(state.unidadId) : [];
+  description.textContent = `Se generara una lista de cotejo por cada planeacion de la unidad. Se usara la actividad de cierre de cada planeacion.`;
+  topics.innerHTML = renderListaCotejoConfirmTopics(state.unidadId);
+  topicsCount.textContent = `${topicItems.length} planeacion(es)`;
+
+  if (state.error) {
+    error.classList.remove("hidden");
+    error.textContent = state.error;
+  } else {
+    error.classList.add("hidden");
+    error.textContent = "";
+  }
+
+  syncListaCotejoConfirmModal();
+}
+
+function openListaCotejoModal() {
+  if (explorerState.current.level !== "unidad" || !explorerState.current.unidadId) {
+    alert("Selecciona una unidad para crear listas de cotejo.");
+    return;
+  }
+  explorerState.listaCotejoModal = {
+    open: true,
+    unidadId: explorerState.current.unidadId,
+    submitting: false,
+    error: ""
+  };
+  renderListaCotejoConfirmModal();
+}
+
+function closeListaCotejoModal({ force = false } = {}) {
+  if (explorerState.listaCotejoModal.submitting && !force) return;
+  explorerState.listaCotejoModal = { open: false, unidadId: null, submitting: false, error: "" };
+  renderListaCotejoConfirmModal();
+}
+
+async function submitListaCotejoGenerate() {
+  const unidadId = explorerState.listaCotejoModal.unidadId;
+  const topics = unidadId ? getListaCotejoTopicsForUnidad(unidadId) : [];
+
+  if (!unidadId) {
+    explorerState.listaCotejoModal.error = "Selecciona una unidad valida.";
+    renderListaCotejoConfirmModal();
+    return;
+  }
+
+  if (topics.length === 0) {
+    explorerState.listaCotejoModal.error = "No hay planeaciones en la unidad para generar listas de cotejo.";
+    renderListaCotejoConfirmModal();
+    return;
+  }
+
+  explorerState.listaCotejoModal.submitting = true;
+  explorerState.listaCotejoModal.error = "";
+  explorerState.listaCotejoGeneration = {
+    active: true,
+    unidadId,
+    status: "generating",
+    message: `Generando listas de cotejo para ${topics.length} planeacion(es)...`
+  };
+  closeListaCotejoModal({ force: true });
+  renderAll();
+
+  try {
+    const result = await generarListasCotejoUnidad({ unidad_id: unidadId });
+
+    explorerState.listaCotejoGeneration = { active: false, unidadId, status: "ready", message: "" };
+
+    const created = result?.created_or_updated || 0;
+    const skipped = Array.isArray(result?.skipped) ? result.skipped : [];
+
+    await ensureListasCotejo(unidadId, { force: true });
+    renderAll();
+
+    let msg = `Se crearon/actualizaron ${created} lista(s) de cotejo.`;
+    if (skipped.length > 0) {
+      msg += ` ${skipped.length} planeacion(es) fueron omitidas por no tener actividad de cierre.`;
+    }
+    notifyDashboard(msg, "success");
+  } catch (error) {
+    explorerState.listaCotejoGeneration = { active: false, unidadId, status: "error", message: "" };
+    explorerState.errors.listaCotejo[unidadId] = formatFetchError(error, "No se pudieron generar las listas de cotejo.");
+    renderAll();
+  }
+}
+
+function renderListaCotejoPreviewBody(lista) {
+  if (!lista) return '<p class="text-sm text-slate-500">No se pudo cargar la lista.</p>';
+
+  const criterios = Array.isArray(lista.criterios) ? lista.criterios : [];
+
+  return `
+    <div class="space-y-3">
+      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividad de cierre evaluada</p>
+        <p class="mt-1 text-sm text-slate-700">${escapeHtml(lista.actividad_cierre || "No especificada")}</p>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Criterio</th>
+              <th class="w-20 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">Si (2 pts)</th>
+              <th class="w-20 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">No (0 pts)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${criterios.map((c, i) => `
+              <tr class="${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}">
+                <td class="px-3 py-2.5 text-slate-700">${escapeHtml(c.criterio || "")}</td>
+                <td class="px-3 py-2.5 text-center text-slate-500">${escapeHtml(String(c.si ?? 2))}</td>
+                <td class="px-3 py-2.5 text-center text-slate-500">${escapeHtml(String(c.no ?? 0))}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+          <tfoot class="bg-slate-50">
+            <tr>
+              <td class="px-3 py-2.5 text-xs font-semibold text-slate-600">Total</td>
+              <td class="px-3 py-2.5 text-center text-xs font-semibold text-slate-700">${escapeHtml(String(lista.total_puntos || 10))} pts</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderListaCotejoPreviewModal() {
+  const modal = document.getElementById("lista-cotejo-preview-modal");
+  const title = document.getElementById("lista-cotejo-preview-title");
+  const meta = document.getElementById("lista-cotejo-preview-meta");
+  const body = document.getElementById("lista-cotejo-preview-body");
+  const error = document.getElementById("lista-cotejo-preview-error");
+  if (!modal || !title || !meta || !body || !error) return;
+
+  const state = explorerState.listaCotejoPreview;
+  modal.classList.toggle("hidden", !state.open);
+  syncBodyScrollLock();
+
+  if (!state.open) {
+    error.classList.add("hidden");
+    error.textContent = "";
+    body.innerHTML = "";
+    return;
+  }
+
+  if (state.loading) {
+    body.innerHTML = '<p class="text-sm text-slate-500">Cargando lista de cotejo...</p>';
+    error.classList.add("hidden");
+    return;
+  }
+
+  if (state.error) {
+    error.classList.remove("hidden");
+    error.textContent = state.error;
+    body.innerHTML = "";
+    return;
+  }
+
+  const lista = state.listaData;
+  title.textContent = lista?.titulo || "Lista de cotejo";
+  meta.textContent = lista?.tema ? `Tema: ${lista.tema}` : "";
+  error.classList.add("hidden");
+  body.innerHTML = renderListaCotejoPreviewBody(lista);
+}
+
+async function openListaCotejoPreview(listaId) {
+  if (!listaId) return;
+
+  explorerState.listaCotejoPreview = { open: true, listaId, listaData: null, loading: true, error: "" };
+  renderListaCotejoPreviewModal();
+
+  try {
+    const lista = await obtenerListaCoTejoDetalle(listaId);
+    explorerState.listaCotejoPreview.listaData = lista;
+    explorerState.listaCotejoPreview.loading = false;
+  } catch (err) {
+    explorerState.listaCotejoPreview.loading = false;
+    explorerState.listaCotejoPreview.error = formatFetchError(err, "No se pudo cargar la lista de cotejo.");
+  }
+
+  renderListaCotejoPreviewModal();
+}
+
+function closeListaCotejoPreview() {
+  explorerState.listaCotejoPreview = { open: false, listaId: null, listaData: null, loading: false, error: "" };
+  renderListaCotejoPreviewModal();
+}
+
+function shouldShowListaCotejoSection(unidadId) {
+  const listas = explorerState.listasCotejoByUnidad[unidadId] || [];
+  return Boolean(
+    (explorerState.listaCotejoGeneration.active && explorerState.listaCotejoGeneration.unidadId === unidadId) ||
+    explorerState.loading.listaCotejo[unidadId] ||
+    explorerState.errors.listaCotejo[unidadId] ||
+    listas.length > 0
+  );
+}
+
+function renderListaCotejoSection(unidadId) {
+  if (!shouldShowListaCotejoSection(unidadId)) return "";
+
+  const listas = explorerState.listasCotejoByUnidad[unidadId] || [];
+  const isGenerating = explorerState.listaCotejoGeneration.active && explorerState.listaCotejoGeneration.unidadId === unidadId;
+  const isLoading = Boolean(explorerState.loading.listaCotejo[unidadId]);
+  const error = explorerState.errors.listaCotejo[unidadId] || "";
+
+  const generatingCard = isGenerating
+    ? `
+      <div class="explorer-progress-item generating">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="font-semibold">Creando listas de cotejo</p>
+          ${renderProgressPill("generating", "Generando")}
+        </div>
+        <p class="mt-1 text-xs">${escapeHtml(explorerState.listaCotejoGeneration.message || "Generando listas con la actividad de cierre de cada planeacion...")}</p>
+      </div>
+    `
+    : "";
+
+  const loadingHtml = !isGenerating && isLoading
+    ? '<p class="text-sm text-slate-500">Cargando listas de cotejo...</p>'
+    : "";
+
+  const errorHtml = error
+    ? `<div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700">${escapeHtml(error)}</div>`
+    : "";
+
+  const listasHtml = listas.map((lista) => `
+    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-slate-900">${escapeHtml(lista.titulo || "Lista de cotejo")}</p>
+          <p class="mt-0.5 text-xs text-slate-500">${escapeHtml(lista.tema || "")}</p>
+        </div>
+        <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="preview-lista-cotejo" data-lista-id="${escapeHtml(lista.id)}">
+          Ver lista
+        </button>
+      </div>
+      <p class="mt-1.5 text-[10px] text-slate-400">${escapeHtml(formatExamDate(lista.created_at) || "Sin fecha")} &bull; ${escapeHtml(String(lista.total_puntos || 10))} puntos</p>
+    </div>
+  `).join("");
+
+  return `
+    <section class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="flex items-center justify-between gap-2">
+        <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-700">Listas de cotejo</h4>
+        <span class="text-xs text-slate-500">${listas.length} lista(s)</span>
+      </div>
+      <div class="mt-3 space-y-2">
+        ${generatingCard}
+        ${loadingHtml}
+        ${errorHtml}
+        ${listasHtml}
+      </div>
+    </section>
+  `;
 }
 
 function openUnitExamModal() {
@@ -3401,6 +3744,7 @@ function renderUnidadLevel() {
     : "grid grid-cols-1 gap-4";
   const progressHtml = shouldShowUnitProgress() ? renderProgressSection() : "";
   const examHtml = renderExamSection(unidad.id);
+  const listaCotejoHtml = renderListaCotejoSection(unidad.id);
 
   return `
     <div class="space-y-4">
@@ -3445,6 +3789,7 @@ function renderUnidadLevel() {
         ` : ""}
       </div>
 
+      ${listaCotejoHtml}
       ${examHtml}
       ${progressHtml}
     </div>
@@ -3479,6 +3824,8 @@ function renderAll() {
   renderExplorerContent();
   renderUnitExamModal();
   renderExamPreviewModal();
+  renderListaCotejoConfirmModal();
+  renderListaCotejoPreviewModal();
   renderDeleteConfirmModal();
 }
 
@@ -4168,6 +4515,10 @@ async function handleCreateAction(action) {
     return openUnitExamModal();
   }
 
+  if (action === "open-lista-cotejo-modal") {
+    return openListaCotejoModal();
+  }
+
   if (action === "create-plantel") return openEntityModal("plantel");
   if (action === "edit-plantel") {
     if (!explorerState.current.plantelId) return alert("Selecciona un plantel primero.");
@@ -4280,6 +4631,14 @@ async function handleContentClick(event) {
     return;
   }
 
+  if (action === "preview-lista-cotejo") {
+    const listaId = button.getAttribute("data-lista-id");
+    if (listaId) {
+      await openListaCotejoPreview(listaId);
+    }
+    return;
+  }
+
   if (action === "preview-exam") {
     const examenId = button.getAttribute("data-examen-id");
     if (examenId) {
@@ -4317,6 +4676,7 @@ async function handleContentClick(event) {
   if (action === "remove-staging") return removeStagingTema(button.getAttribute("data-staging-id"));
   if (action === "generate-planeaciones") return generatePlaneacionesFromStaging();
   if (action === "open-unit-exam-modal") return openUnitExamModal();
+  if (action === "open-lista-cotejo-modal") return openListaCotejoModal();
 
   if (action.startsWith("create-") || action.startsWith("edit-") || action === "focus-staging") {
     return handleCreateAction(action);
@@ -4505,6 +4865,27 @@ function bindDashboardEvents() {
     });
   });
 
+  ["lista-cotejo-confirm-backdrop", "lista-cotejo-confirm-cancel", "lista-cotejo-confirm-close"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      closeListaCotejoModal();
+    });
+  });
+
+  document.getElementById("lista-cotejo-confirm-submit")?.addEventListener("click", () => {
+    submitListaCotejoGenerate().catch((error) => {
+      console.error("Error generando listas de cotejo:", error);
+      explorerState.listaCotejoModal.submitting = false;
+      explorerState.listaCotejoModal.error = "No se pudieron generar las listas de cotejo.";
+      renderListaCotejoConfirmModal();
+    });
+  });
+
+  ["lista-cotejo-preview-backdrop", "lista-cotejo-preview-close", "lista-cotejo-preview-cancel"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      closeListaCotejoPreview();
+    });
+  });
+
   document.getElementById("unit-exam-form")?.addEventListener("submit", (event) => {
     submitUnitExamModal(event).catch((error) => {
       console.error("Error generando examen:", error);
@@ -4568,6 +4949,16 @@ function bindDashboardEvents() {
 
     if (explorerState.examPreview.open) {
       closeExamPreviewModal();
+      return;
+    }
+
+    if (explorerState.listaCotejoModal.open) {
+      closeListaCotejoModal();
+      return;
+    }
+
+    if (explorerState.listaCotejoPreview.open) {
+      closeListaCotejoPreview();
       return;
     }
 
