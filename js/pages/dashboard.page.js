@@ -1515,16 +1515,13 @@ async function submitListaCotejoGenerate() {
 
 function renderListaCotejoPreviewBody(lista) {
   if (!lista) return '<p class="text-sm text-slate-500">No se pudo cargar la lista.</p>';
-
   const criterios = Array.isArray(lista.criterios) ? lista.criterios : [];
-
   return `
     <div class="space-y-3">
       <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividad de cierre evaluada</p>
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividad de cierre</p>
         <p class="mt-1 text-sm text-slate-700">${escapeHtml(lista.actividad_cierre || "No especificada")}</p>
       </div>
-
       <div class="overflow-x-auto rounded-xl border border-slate-200">
         <table class="w-full text-sm">
           <thead class="bg-slate-50">
@@ -1575,41 +1572,19 @@ function renderListaCotejoPreviewModal() {
     return;
   }
 
-  if (state.loading) {
-    body.innerHTML = '<p class="text-sm text-slate-500">Cargando lista de cotejo...</p>';
-    error.classList.add("hidden");
-    return;
-  }
-
-  if (state.error) {
-    error.classList.remove("hidden");
-    error.textContent = state.error;
-    body.innerHTML = "";
-    return;
-  }
-
   const lista = state.listaData;
   title.textContent = lista?.titulo || "Lista de cotejo";
-  meta.textContent = lista?.tema ? `Tema: ${lista.tema}` : "";
+  meta.textContent = lista?.tema ? `Tema: ${escapeHtml(lista.tema)}` : "";
   error.classList.add("hidden");
   body.innerHTML = renderListaCotejoPreviewBody(lista);
 }
 
-async function openListaCotejoPreview(listaId) {
+function openListaCotejoPreview(listaId) {
   if (!listaId) return;
-
-  explorerState.listaCotejoPreview = { open: true, listaId, listaData: null, loading: true, error: "" };
-  renderListaCotejoPreviewModal();
-
-  try {
-    const lista = await obtenerListaCoTejoDetalle(listaId);
-    explorerState.listaCotejoPreview.listaData = lista;
-    explorerState.listaCotejoPreview.loading = false;
-  } catch (err) {
-    explorerState.listaCotejoPreview.loading = false;
-    explorerState.listaCotejoPreview.error = formatFetchError(err, "No se pudo cargar la lista de cotejo.");
-  }
-
+  const unidadId = explorerState.current.unidadId;
+  const listas = explorerState.listasCotejoByUnidad[unidadId] || [];
+  const lista = listas.find((l) => l.id === listaId) || null;
+  explorerState.listaCotejoPreview = { open: true, listaId, listaData: lista, loading: false, error: "" };
   renderListaCotejoPreviewModal();
 }
 
@@ -1656,20 +1631,28 @@ function renderListaCotejoSection(unidadId) {
     ? `<div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700">${escapeHtml(error)}</div>`
     : "";
 
-  const listasHtml = listas.map((lista) => `
-    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-slate-900">${escapeHtml(lista.titulo || "Lista de cotejo")}</p>
-          <p class="mt-0.5 text-xs text-slate-500">${escapeHtml(lista.tema || "")}</p>
+  const listasHtml = listas.map((lista, index) => {
+    const cardId = index === 0 ? ' id="unit-lista-cotejo-result-card"' : "";
+    return `
+      <div${cardId} class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-slate-900">${escapeHtml(lista.tema || lista.titulo || "Lista de cotejo")}</p>
+          </div>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="preview-lista-cotejo" data-lista-id="${escapeHtml(lista.id)}">
+              Ver lista
+            </button>
+          </div>
         </div>
-        <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50" data-content-action="preview-lista-cotejo" data-lista-id="${escapeHtml(lista.id)}">
-          Ver lista
-        </button>
+        <div class="mt-2 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[10px] leading-4 text-slate-400">
+          <span>${escapeHtml(formatExamDate(lista.updated_at || lista.created_at) || "Sin fecha")}</span>
+          <span aria-hidden="true" class="text-slate-300">•</span>
+          <span>${escapeHtml(String(lista.total_puntos || 10))} puntos</span>
+        </div>
       </div>
-      <p class="mt-1.5 text-[10px] text-slate-400">${escapeHtml(formatExamDate(lista.created_at) || "Sin fecha")} &bull; ${escapeHtml(String(lista.total_puntos || 10))} puntos</p>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 
   return `
     <section class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -4633,9 +4616,7 @@ async function handleContentClick(event) {
 
   if (action === "preview-lista-cotejo") {
     const listaId = button.getAttribute("data-lista-id");
-    if (listaId) {
-      await openListaCotejoPreview(listaId);
-    }
+    if (listaId) openListaCotejoPreview(listaId);
     return;
   }
 
