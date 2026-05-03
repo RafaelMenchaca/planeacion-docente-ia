@@ -65,8 +65,12 @@ let materiaCombobox = null;
 let unidadCombobox = null;
 const DASHBOARD_LOCATION_STORAGE_KEY = "educativo.dashboard.last-location";
 const GRADO_NIVEL_OPTIONS = new Set(["primaria", "secundaria", "preparatoria", "universidad"]);
-const ACTIVIDAD_CIERRE_REQUERIDA_MESSAGE = "Cada tema debe tener una actividad de cierre seleccionada antes de generar la planeación.";
-const ACTIVIDADES_CIERRE = [
+const MOMENTOS_ACTIVIDADES_DIDACTICAS = [
+  { key: "conocimientos_previos", label: "Conocimientos previos" },
+  { key: "desarrollo", label: "Desarrollo" },
+  { key: "cierre", label: "Cierre" }
+];
+const ACTIVIDADES_DIDACTICAS = [
   { nombre: "Juegos de mesa educativos", descripcion: "Fomenta la lógica" },
   { nombre: "Debate en clase", descripcion: "Pensamiento crítico" },
   { nombre: "Proyectos de investigación", descripcion: "Fomenta la curiosidad" },
@@ -88,8 +92,8 @@ const ACTIVIDADES_CIERRE = [
   { nombre: "Podcasts educativos", descripcion: "Comunicación oral" },
   { nombre: "Tareas interdisciplinarias", descripcion: "Conexión de materias" }
 ];
-const ACTIVIDADES_CIERRE_MAP = new Map(
-  ACTIVIDADES_CIERRE.map((actividad) => [actividad.nombre, actividad.descripcion])
+const ACTIVIDADES_DIDACTICAS_MAP = new Map(
+  ACTIVIDADES_DIDACTICAS.map((actividad) => [actividad.nombre, actividad.descripcion])
 );
 const EXAM_TIPOS_PREGUNTA = [
   { value: "opcion_multiple", label: "Opcion multiple", range: "10 a 15 preguntas", time: "1 min/item", weight: 64 },
@@ -169,27 +173,54 @@ function persistExplorerLocation() {
   }
 }
 
-function normalizeActividadCierre(value) {
+function normalizeActividadDidactica(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function isActividadCierreValida(value) {
-  return ACTIVIDADES_CIERRE_MAP.has(normalizeActividadCierre(value));
+function isActividadDidacticaValida(value) {
+  return ACTIVIDADES_DIDACTICAS_MAP.has(normalizeActividadDidactica(value));
 }
 
-function getActividadCierreDescripcion(value) {
-  return ACTIVIDADES_CIERRE_MAP.get(normalizeActividadCierre(value)) || "";
+function getActividadDidacticaDescripcion(value) {
+  return ACTIVIDADES_DIDACTICAS_MAP.get(normalizeActividadDidactica(value)) || "";
 }
 
-function hasTemasSinActividadCierre(temas = []) {
-  return (temas || []).some((tema) => !isActividadCierreValida(tema?.actividad_cierre));
+function normalizeActividadesMomentos(value) {
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const normalized = {};
+
+  MOMENTOS_ACTIVIDADES_DIDACTICAS.forEach(({ key }) => {
+    const actividad = normalizeActividadDidactica(source[key]);
+    if (isActividadDidacticaValida(actividad)) {
+      normalized[key] = actividad;
+    }
+  });
+
+  return normalized;
 }
 
-function buildActividadCierreOptions(selectedValue) {
-  const normalized = normalizeActividadCierre(selectedValue);
-  const options = ['<option value="">Actividad</option>'];
+function buildActividadesMomentosPayload(actividadesMomentos) {
+  return normalizeActividadesMomentos(actividadesMomentos);
+}
 
-  ACTIVIDADES_CIERRE.forEach((actividad) => {
+function buildTemaActividadesPayload(tema) {
+  const actividades_momentos = buildActividadesMomentosPayload(tema?.actividades_momentos);
+  const actividad_cierre = getActividadCierreLegacy(actividades_momentos);
+  return {
+    actividades_momentos,
+    ...(actividad_cierre ? { actividad_cierre } : {})
+  };
+}
+
+function getActividadCierreLegacy(actividadesMomentos) {
+  return normalizeActividadesMomentos(actividadesMomentos).cierre || "";
+}
+
+function buildActividadDidacticaOptions(selectedValue) {
+  const normalized = normalizeActividadDidactica(selectedValue);
+  const options = ['<option value="">Sin actividad espec&iacute;fica</option>'];
+
+  ACTIVIDADES_DIDACTICAS.forEach((actividad) => {
     const isSelected = normalized === actividad.nombre ? " selected" : "";
     options.push(`<option value="${escapeHtml(actividad.nombre)}"${isSelected}>${escapeHtml(actividad.nombre)}</option>`);
   });
@@ -202,9 +233,9 @@ function renderActividadCierreStatus(actividadCierre) {
 }
 
 function getActividadCierreSelectLabel(actividadCierre) {
-  return isActividadCierreValida(actividadCierre)
-    ? normalizeActividadCierre(actividadCierre)
-    : "Actividad";
+  return isActividadDidacticaValida(actividadCierre)
+    ? normalizeActividadDidactica(actividadCierre)
+    : "Sin actividad especifica";
 }
 
 function getActividadCierreSelectWidth(actividadCierre) {
@@ -213,26 +244,75 @@ function getActividadCierreSelectWidth(actividadCierre) {
   return `${widthCh}ch`;
 }
 
+function renderActividadDidacticaSelect({ scope, localId, momentoKey, actividad }) {
+  const safeScope = scope === "quick" ? "quick" : "staging";
+  const safeLocalId = escapeHtml(String(localId));
+  const safeMomentoKey = escapeHtml(String(momentoKey));
+  const selectId = `${safeScope}-actividad-${safeMomentoKey}-${safeLocalId}`;
+  const dataAttribute = safeScope === "quick"
+    ? `data-quick-actividad-select="${safeLocalId}"`
+    : `data-staging-actividad-select="${safeLocalId}"`;
+  const descripcion = getActividadDidacticaDescripcion(actividad);
+  const title = isActividadDidacticaValida(actividad)
+    ? `${normalizeActividadDidactica(actividad)}${descripcion ? ` - ${descripcion}` : ""}`
+    : "Sin actividad especifica";
+
+  return `
+    <select
+      id="${selectId}"
+      class="actividad-cierre-select actividad-didactica-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none ${isActividadDidacticaValida(actividad) ? "is-filled" : ""}"
+      title="${escapeHtml(title)}"
+      data-actividad-momento="${safeMomentoKey}"
+      ${dataAttribute}
+    >
+      ${buildActividadDidacticaOptions(actividad)}
+    </select>
+  `;
+}
+
+function renderActividadesMomentosControl({ scope, localId, actividadesMomentos }) {
+  const normalized = normalizeActividadesMomentos(actividadesMomentos);
+
+  return `
+    <div class="actividades-momentos mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividades did&aacute;cticas opcionales</p>
+      <div class="mt-2 grid gap-2 md:grid-cols-3">
+        ${MOMENTOS_ACTIVIDADES_DIDACTICAS.map(({ key, label }) => `
+          <label class="min-w-0 text-xs font-medium text-slate-600">
+            <span class="mb-1 block">${escapeHtml(label)}</span>
+            ${renderActividadDidacticaSelect({
+              scope,
+              localId,
+              momentoKey: key,
+              actividad: normalized[key] || ""
+            })}
+          </label>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderActividadCierreControl({ scope, localId, actividadCierre }) {
   const safeScope = scope === "quick" ? "quick" : "staging";
   const selectId = `${safeScope}-actividad-cierre-${escapeHtml(String(localId))}`;
   const dataAttribute = safeScope === "quick"
     ? `data-quick-actividad-select="${escapeHtml(String(localId))}"`
     : `data-staging-actividad-select="${escapeHtml(String(localId))}"`;
-  const descripcion = getActividadCierreDescripcion(actividadCierre);
-  const title = isActividadCierreValida(actividadCierre)
-    ? `${normalizeActividadCierre(actividadCierre)}${descripcion ? ` - ${descripcion}` : ""}`
-    : "Actividad";
+  const descripcion = getActividadDidacticaDescripcion(actividadCierre);
+  const title = isActividadDidacticaValida(actividadCierre)
+    ? `${normalizeActividadDidactica(actividadCierre)}${descripcion ? ` - ${descripcion}` : ""}`
+    : "Sin actividad especifica";
 
   return `
     <select
       id="${selectId}"
-      class="actividad-cierre-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none ${isActividadCierreValida(actividadCierre) ? "is-filled" : ""}"
+      class="actividad-cierre-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none ${isActividadDidacticaValida(actividadCierre) ? "is-filled" : ""}"
       style="width: ${getActividadCierreSelectWidth(actividadCierre)}; min-width: 118px; max-width: 240px;"
       title="${escapeHtml(title)}"
       ${dataAttribute}
     >
-      ${buildActividadCierreOptions(actividadCierre)}
+      ${buildActividadDidacticaOptions(actividadCierre)}
     </select>
   `;
 }
@@ -2678,16 +2758,16 @@ function renderQuickTemasList() {
               <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
               <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
             </div>
-            ${renderActividadCierreControl({
-              scope: "quick",
-              localId: tema.localId,
-              actividadCierre: tema.actividad_cierre
-            })}
           </div>
           <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-quick-remove-tema="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
             ${renderTrashIcon()}
           </button>
         </div>
+        ${renderActividadesMomentosControl({
+          scope: "quick",
+          localId: tema.localId,
+          actividadesMomentos: tema.actividades_momentos
+        })}
         ${"" /* PAUSED: renderImagenesAutomaticasControl({ scope: "quick", localId: tema.localId, generarImagenesEn: tema.generar_imagenes_en }) */}
       </div>
     `)
@@ -2778,6 +2858,7 @@ function addQuickTemaFromInputs() {
     localId: `quick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     titulo,
     duracion,
+    actividades_momentos: {},
     actividad_cierre: "",
     generar_imagenes_en: []
   });
@@ -2791,26 +2872,30 @@ function addQuickTemaFromInputs() {
 
 function removeQuickTema(localId) {
   explorerState.quickCreate.temas = explorerState.quickCreate.temas.filter((tema) => tema.localId !== localId);
-  if (!hasTemasSinActividadCierre(explorerState.quickCreate.temas)) {
-    showQuickCreateError("");
-  }
   renderQuickTemasList();
 }
 
-function updateQuickTemaActividad(localId, actividadCierre) {
-  const actividadNormalizada = normalizeActividadCierre(actividadCierre);
+function updateQuickTemaActividad(localId, momentoKey, actividad) {
+  const safeMomento = MOMENTOS_ACTIVIDADES_DIDACTICAS.some((momento) => momento.key === momentoKey)
+    ? momentoKey
+    : "";
+  const actividadNormalizada = normalizeActividadDidactica(actividad);
   explorerState.quickCreate.temas = explorerState.quickCreate.temas.map((tema) => {
     if (tema.localId !== localId) return tema;
+    const actividadesMomentos = normalizeActividadesMomentos(tema.actividades_momentos);
+    if (safeMomento && isActividadDidacticaValida(actividadNormalizada)) {
+      actividadesMomentos[safeMomento] = actividadNormalizada;
+    } else if (safeMomento) {
+      delete actividadesMomentos[safeMomento];
+    }
     return {
       ...tema,
-      actividad_cierre: actividadNormalizada
+      actividades_momentos: actividadesMomentos,
+      actividad_cierre: getActividadCierreLegacy(actividadesMomentos)
     };
   });
 
-  if (!hasTemasSinActividadCierre(explorerState.quickCreate.temas)) {
-    showQuickCreateError("");
-  }
-
+  showQuickCreateError("");
   renderQuickTemasList();
 }
 
@@ -3750,16 +3835,16 @@ function renderUnidadLevel() {
                   <p class="truncate text-sm font-medium text-slate-800">${escapeHtml(tema.titulo)}</p>
                   <p class="text-xs text-slate-500">${escapeHtml(String(tema.duracion))} min</p>
                 </div>
-                ${renderActividadCierreControl({
-                  scope: "staging",
-                  localId: tema.localId,
-                  actividadCierre: tema.actividad_cierre
-                })}
               </div>
               <button type="button" class="explorer-danger-icon-btn ml-auto shrink-0" data-content-action="remove-staging" data-staging-id="${tema.localId}" title="Quitar tema" aria-label="Quitar tema">
                 ${renderTrashIcon()}
               </button>
             </div>
+            ${renderActividadesMomentosControl({
+              scope: "staging",
+              localId: tema.localId,
+              actividadesMomentos: tema.actividades_momentos
+            })}
             ${"" /* PAUSED: renderImagenesAutomaticasControl({ scope: "staging", localId: tema.localId, generarImagenesEn: tema.generar_imagenes_en }) */}
           </div>
         `)
@@ -3919,6 +4004,7 @@ function addStagingTemaFromInputs() {
     localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     titulo,
     duracion,
+    actividades_momentos: {},
     actividad_cierre: "",
     generar_imagenes_en: []
   });
@@ -3942,13 +4028,23 @@ function removeStagingTema(localId) {
   renderExplorerContent();
 }
 
-function updateStagingTemaActividad(localId, actividadCierre) {
-  const actividadNormalizada = normalizeActividadCierre(actividadCierre);
+function updateStagingTemaActividad(localId, momentoKey, actividad) {
+  const safeMomento = MOMENTOS_ACTIVIDADES_DIDACTICAS.some((momento) => momento.key === momentoKey)
+    ? momentoKey
+    : "";
+  const actividadNormalizada = normalizeActividadDidactica(actividad);
   explorerState.stagingTemas = explorerState.stagingTemas.map((tema) => {
     if (tema.localId !== localId) return tema;
+    const actividadesMomentos = normalizeActividadesMomentos(tema.actividades_momentos);
+    if (safeMomento && isActividadDidacticaValida(actividadNormalizada)) {
+      actividadesMomentos[safeMomento] = actividadNormalizada;
+    } else if (safeMomento) {
+      delete actividadesMomentos[safeMomento];
+    }
     return {
       ...tema,
-      actividad_cierre: actividadNormalizada
+      actividades_momentos: actividadesMomentos,
+      actividad_cierre: getActividadCierreLegacy(actividadesMomentos)
     };
   });
 
@@ -4131,11 +4227,6 @@ async function generatePlaneacionesFromStaging() {
     return;
   }
 
-  if (hasTemasSinActividadCierre(explorerState.stagingTemas)) {
-    alert(ACTIVIDAD_CIERRE_REQUERIDA_MESSAGE);
-    return;
-  }
-
   if (explorerState.generating) return;
 
   explorerState.generating = true;
@@ -4147,7 +4238,7 @@ async function generatePlaneacionesFromStaging() {
     temas: explorerState.stagingTemas.map((tema, index) => ({
       titulo: tema.titulo,
       duracion: tema.duracion,
-      actividad_cierre: tema.actividad_cierre,
+      ...buildTemaActividadesPayload(tema),
       orden: index + 1,
       generar_imagenes_en: Array.isArray(tema.generar_imagenes_en)
         ? tema.generar_imagenes_en.map(normalizeImagenMomentoKey).filter(Boolean)
@@ -4200,11 +4291,6 @@ async function submitQuickCreateForm(event) {
     showQuickCreateError("Agrega al menos un tema antes de crear la planeacion.");
     return;
   }
-  if (hasTemasSinActividadCierre(explorerState.quickCreate.temas)) {
-    showQuickCreateError(ACTIVIDAD_CIERRE_REQUERIDA_MESSAGE);
-    return;
-  }
-
   let plantelSelection, gradoSelection, materiaSelection, unidadSelection;
   try {
     plantelSelection = requireQuickComboboxValue(plantelCombobox, "Plantel");
@@ -4317,6 +4403,7 @@ async function submitQuickCreateForm(event) {
       localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       titulo: tema.titulo,
       duracion: tema.duracion,
+      actividades_momentos: buildActividadesMomentosPayload(tema.actividades_momentos),
       actividad_cierre: tema.actividad_cierre,
       generar_imagenes_en: Array.isArray(tema.generar_imagenes_en)
         ? tema.generar_imagenes_en
@@ -4861,7 +4948,11 @@ function bindDashboardEvents() {
   document.getElementById("explorer-content")?.addEventListener("change", (event) => {
     const select = event.target.closest?.("[data-staging-actividad-select]");
     if (select) {
-      updateStagingTemaActividad(select.getAttribute("data-staging-actividad-select"), select.value);
+      updateStagingTemaActividad(
+        select.getAttribute("data-staging-actividad-select"),
+        select.getAttribute("data-actividad-momento"),
+        select.value
+      );
       return;
     }
 
@@ -4938,7 +5029,11 @@ function bindDashboardEvents() {
   document.getElementById("quick-temas-list")?.addEventListener("change", (event) => {
     const select = event.target.closest?.("[data-quick-actividad-select]");
     if (select) {
-      updateQuickTemaActividad(select.getAttribute("data-quick-actividad-select"), select.value);
+      updateQuickTemaActividad(
+        select.getAttribute("data-quick-actividad-select"),
+        select.getAttribute("data-actividad-momento"),
+        select.value
+      );
       return;
     }
 
