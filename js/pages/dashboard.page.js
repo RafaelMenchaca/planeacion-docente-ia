@@ -23,7 +23,7 @@
   },
   searchQuery: "",
   generating: false,
-  examGeneration: { active: false, unidadId: null, status: "idle", message: "" },
+  examGeneration: { active: false, unidadId: null, jobId: null, status: "idle", message: "", progressCurrent: 0, progressTotal: 0 },
   examModal: { open: false, unidadId: null, selectedTypes: [], questionCounts: {}, submitting: false, error: "" },
   examPreview: { open: false, examenId: null, loading: false, error: "" },
   listasCotejoByUnidad: {},
@@ -564,7 +564,7 @@ function setCurrentLevel(level, ids) {
   if (level !== "unidad" || unitChanged) {
     explorerState.stagingTemas = [];
     explorerState.stagingPanelOpen = false;
-    explorerState.examGeneration = { active: false, unidadId: null, status: "idle", message: "" };
+    explorerState.examGeneration = { active: false, unidadId: null, jobId: null, status: "idle", message: "", progressCurrent: 0, progressTotal: 0 };
     explorerState.examModal = createExamModalState();
     explorerState.examPreview = { open: false, examenId: null, loading: false, error: "" };
     if (!explorerState.generating) {
@@ -1815,6 +1815,56 @@ function updateExamQuestionCount(tipo, value, inputElement = null) {
   syncUnitExamModalActionState();
 }
 
+function waitForExamPolling(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function getExamGenerationUserMessage(statusPayload) {
+  const rawStep = typeof statusPayload?.current_step === "string" ? statusPayload.current_step.trim() : "";
+  if (rawStep) return rawStep;
+
+  const current = Number(statusPayload?.progress_current || 0);
+  const total = Number(statusPayload?.progress_total || 0);
+  if (total > 0) return `Generando pregunta ${Math.min(current + 1, total)} de ${total}...`;
+  return "Generando examen...";
+}
+
+async function waitForExamGenerationCompletion(jobId, unidadId) {
+  let lastStatus = null;
+
+  while (jobId) {
+    await waitForExamPolling(lastStatus ? 4000 : 1500);
+    const statusPayload = await obtenerEstadoGeneracionExamen(jobId);
+    lastStatus = statusPayload;
+
+    explorerState.examGeneration = {
+      active: true,
+      unidadId,
+      jobId,
+      status: statusPayload?.status || "processing",
+      message: getExamGenerationUserMessage(statusPayload),
+      progressCurrent: Number(statusPayload?.progress_current || 0),
+      progressTotal: Number(statusPayload?.progress_total || 0)
+    };
+    renderAll();
+    scrollToExamSection();
+
+    if (statusPayload?.status === "completed") {
+      return statusPayload;
+    }
+
+    if (statusPayload?.status === "failed" || statusPayload?.status === "partial" || statusPayload?.status === "cancelled") {
+      const error = new Error("No se pudo completar el examen. Algunas preguntas no se generaron correctamente. Intenta nuevamente.");
+      error.payload = statusPayload;
+      throw error;
+    }
+  }
+
+  throw new Error("No se pudo obtener el progreso del examen.");
+}
+
 async function submitUnitExamModal(event) {
   event?.preventDefault?.();
 
@@ -1853,19 +1903,47 @@ async function submitUnitExamModal(event) {
   explorerState.examGeneration = {
     active: true,
     unidadId,
-    status: "generating",
-    message: `Preparando examen con ${topicItems.length} tema(s) y ${totalPreguntas} pregunta(s)...`
+    jobId: null,
+    status: "processing",
+    message: `Preparando examen con ${topicItems.length} tema(s) y ${totalPreguntas} pregunta(s)...`,
+    progressCurrent: 0,
+    progressTotal: totalPreguntas
   };
   closeUnitExamModal({ force: true });
   renderAll();
   scrollToExamSection();
 
   try {
-    const examen = await generarExamenUnidad({
+    const generationJob = await generarExamenUnidad({
       unidad_id: unidadId,
       tipos_pregunta: selectedTypes,
       cantidades_pregunta: questionCounts
     });
+    const jobId = generationJob?.job_id || generationJob?.id;
+
+    if (!jobId) {
+      throw new Error("No se pudo iniciar la generacion del examen.");
+    }
+
+    explorerState.examGeneration = {
+      active: true,
+      unidadId,
+      jobId,
+      status: generationJob?.status || "processing",
+      message: "Preparando preguntas...",
+      progressCurrent: 0,
+      progressTotal: totalPreguntas
+    };
+    renderAll();
+
+    const completedJob = await waitForExamGenerationCompletion(jobId, unidadId);
+    const examenId = completedJob?.examen_id;
+
+    if (!examenId) {
+      throw new Error("El examen se genero, pero no se recibio el identificador.");
+    }
+
+    const examen = await obtenerExamenDetalle(examenId);
 
     if (examen?.id) {
       explorerState.examenDetalleById[examen.id] = examen;
@@ -1876,7 +1954,10 @@ async function submitUnitExamModal(event) {
       active: false,
       unidadId,
       status: "ready",
-      message: ""
+      jobId,
+      message: "Examen generado correctamente",
+      progressCurrent: totalPreguntas,
+      progressTotal: totalPreguntas
     };
     await ensureExamenes(unidadId, { force: true });
     renderAll();
@@ -1886,9 +1967,12 @@ async function submitUnitExamModal(event) {
       active: false,
       unidadId,
       status: "error",
-      message: ""
+      jobId: null,
+      message: "",
+      progressCurrent: 0,
+      progressTotal: totalPreguntas
     };
-    explorerState.errors.examenes[unidadId] = formatFetchError(error, "No se pudo generar el examen.");
+    explorerState.errors.examenes[unidadId] = formatFetchError(error, "No se pudo completar el examen. Algunas preguntas no se generaron correctamente. Intenta nuevamente.");
     renderAll();
     scrollToExamSection();
   }
@@ -3716,6 +3800,12 @@ function renderExamSection(unidadId) {
           ${renderProgressPill("generating", "Generando")}
         </div>
         <p class="mt-1 text-xs">${escapeHtml(explorerState.examGeneration.message || "Preparando examen con los temas actuales de la unidad...")}</p>
+        ${explorerState.examGeneration.progressTotal ? `
+          <div class="mt-2 h-2 overflow-hidden rounded-full bg-cyan-100">
+            <div class="h-full rounded-full bg-cyan-500" style="width: ${Math.min(100, Math.round((Number(explorerState.examGeneration.progressCurrent || 0) / Math.max(Number(explorerState.examGeneration.progressTotal || 1), 1)) * 100))}%"></div>
+          </div>
+          <p class="mt-1 text-[11px] text-slate-500">${escapeHtml(String(explorerState.examGeneration.progressCurrent || 0))} de ${escapeHtml(String(explorerState.examGeneration.progressTotal || 0))} pregunta(s)</p>
+        ` : ""}
       </div>
     `
     : "";
