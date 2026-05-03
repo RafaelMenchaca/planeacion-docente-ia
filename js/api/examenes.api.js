@@ -60,6 +60,19 @@ async function apiExamenesListByUnidad(unidadId, accessToken) {
   );
 }
 
+async function apiExamenGenerationStatus(jobId, accessToken) {
+  return requestExamJson(
+    `${API_BASE_URL}/api/examenes/generacion/${encodeURIComponent(jobId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      },
+      cache: "no-store"
+    },
+    "No se pudo obtener el progreso del examen"
+  );
+}
+
 async function apiExamenById(id, accessToken) {
   return requestExamJson(
     `${API_BASE_URL}/api/examenes/${encodeURIComponent(id)}`,
@@ -74,5 +87,6 @@ async function apiExamenById(id, accessToken) {
 }
 
 window.apiExamenesGenerate = apiExamenesGenerate;
+window.apiExamenGenerationStatus = apiExamenGenerationStatus;
 window.apiExamenesListByUnidad = apiExamenesListByUnidad;
 window.apiExamenById = apiExamenById;

@@ -37,6 +37,12 @@ async function generarExamenUnidad(payload) {
   });
 }
 
+async function obtenerEstadoGeneracionExamen(jobId) {
+  return withExamSession(async (token) => {
+    return apiExamenGenerationStatus(jobId, token);
+  });
+}
+
 async function obtenerExamenesPorUnidad(unidadId) {
   return withExamSession(async (token) => {
     const response = await apiExamenesListByUnidad(unidadId, token);
@@ -52,5 +58,6 @@ async function obtenerExamenDetalle(id) {
 }
 
 window.generarExamenUnidad = generarExamenUnidad;
+window.obtenerEstadoGeneracionExamen = obtenerEstadoGeneracionExamen;
 window.obtenerExamenesPorUnidad = obtenerExamenesPorUnidad;
 window.obtenerExamenDetalle = obtenerExamenDetalle;
