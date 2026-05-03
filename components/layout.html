@@ -77,15 +77,14 @@
           <form id="quick-create-form" class="space-y-4 p-4 sm:p-5">
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div class="space-y-2">
-                <label for="quick-plantel-select" class="text-sm font-medium text-slate-700">Plantel</label>
-                <select id="quick-plantel-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
-                <input id="quick-plantel-new" type="text" class="hidden w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre del plantel" />
+                <label class="text-sm font-medium text-slate-700">Plantel</label>
+                <div id="quick-plantel-combobox" class="relative"></div>
               </div>
 
               <div class="space-y-2">
-                <label for="quick-grado-select" class="text-sm font-medium text-slate-700">Grado</label>
-                <select id="quick-grado-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
-                <div class="hidden space-y-2" id="quick-grado-new-row">
+                <label class="text-sm font-medium text-slate-700">Grado</label>
+                <div id="quick-grado-combobox" class="relative"></div>
+                <div class="hidden space-y-1" id="quick-grado-new-row">
                   <select id="quick-grado-base-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none">
                     <option value="" selected disabled hidden>Selecciona nivel base</option>
                     <option value="primaria">Primaria</option>
@@ -93,22 +92,17 @@
                     <option value="preparatoria">Preparatoria</option>
                     <option value="universidad">Universidad</option>
                   </select>
-                  <input id="quick-grado-new" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre visible del grado, ej. 5B" />
                 </div>
               </div>
 
               <div class="space-y-2">
-                <label for="quick-materia-select" class="text-sm font-medium text-slate-700">Materia</label>
-                <select id="quick-materia-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
-                <input id="quick-materia-new" type="text" class="hidden w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre de la materia" />
+                <label class="text-sm font-medium text-slate-700">Materia</label>
+                <div id="quick-materia-combobox" class="relative"></div>
               </div>
 
               <div class="space-y-2">
-                <label for="quick-unidad-select" class="text-sm font-medium text-slate-700">Unidad</label>
-                <select id="quick-unidad-select" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none"></select>
-                <div class="hidden" id="quick-unidad-new-row">
-                  <input id="quick-unidad-new" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" placeholder="Nombre de la unidad" />
-                </div>
+                <label class="text-sm font-medium text-slate-700">Unidad</label>
+                <div id="quick-unidad-combobox" class="relative"></div>
               </div>
             </div>
 
