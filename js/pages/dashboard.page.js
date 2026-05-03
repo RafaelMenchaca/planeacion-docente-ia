@@ -3651,17 +3651,23 @@ function buildExamWordHtml(examen) {
     const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
     const opcionesHtml = opciones.length > 0
-      ? `<div style="margin:8px 0 0 0; padding-left:18px;">${opciones.map((item, optionIndex) => `<p style="margin:4px 0;"><strong>${escapeHtml(getExamOptionLabel(optionIndex))}</strong> ${escapeHtml(item)}</p>`).join("")}</div>`
+      ? `<div class="options">${opciones.map((item, optionIndex) => `<p>${escapeHtml(getExamOptionLabel(optionIndex))} ${escapeHtml(item)}</p>`).join("")}</div>`
       : "";
     const paresHtml = pares.length > 0
-      ? `<ul>${pares.map((pair) => `<li>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</li>`).join("")}</ul>`
+      ? `<table class="match-table">
+          <tbody>${pares.map((pair, pi) => `<tr>
+            <td class="match-col">${pi + 1}. ${escapeHtml(pair.lado_a || "")}</td>
+            <td class="match-gap"></td>
+            <td class="match-col">${String.fromCharCode(65 + pi)}. ${escapeHtml(pair.lado_b || "")}</td>
+          </tr>`).join("")}</tbody>
+        </table>`
       : "";
     const elementosHtml = elementos.length > 0
       ? `<ol>${elementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
       : "";
 
     return `
-      <div style="margin-bottom:16px;">
+      <div class="question-block">
         <p><strong>${index + 1}.</strong> ${escapeHtml(question?.pregunta || "")}</p>
         ${opcionesHtml}
         ${paresHtml}
@@ -3699,10 +3705,13 @@ function buildExamWordHtml(examen) {
         <meta charset="UTF-8">
         <style>
           body { font-family: Arial, sans-serif; font-size: 11pt; color: #0f172a; }
-          h1 { text-align: center; margin-bottom: 12px; }
+          h1 { text-align: center; margin-bottom: 10px; }
           h2 { margin: 0 0 12px; font-size: 15pt; }
-          .meta { margin-bottom: 14px; }
+          .student-info { margin: 8px 0 18px; font-size: 11pt; }
           .box { border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; background: #f8fafc; }
+          .question-block { margin-bottom: 18px; }
+          .options { margin: 10px 0 0 28px; }
+          .options p { margin: 6px 0; }
           .answer-sheet { page-break-before: always; margin-top: 28px; padding-top: 18px; border-top: 2px solid #cbd5e1; }
           .answer-sheet-copy { margin-bottom: 14px; color: #475569; }
           .answer-item { margin-bottom: 16px; }
@@ -3711,15 +3720,16 @@ function buildExamWordHtml(examen) {
           .answer-values p { margin: 4px 0; }
           p { margin: 6px 0; }
           ul, ol { margin: 8px 0 0 22px; }
+          .match-table { width: 100%; border-collapse: collapse; margin: 10px 0 0 28px; }
+          .match-table th { text-align: left; font-size: 9pt; color: #475569; font-weight: normal; padding-bottom: 4px; border: none; background: none; }
+          .match-table td { border: none; padding: 5px 0; vertical-align: top; }
+          .match-col { width: 38%; }
+          .match-gap { width: 24%; }
         </style>
       </head>
       <body>
         <h1>${escapeHtml(examenIa.titulo || examen?.titulo || "Examen de unidad")}</h1>
-        <div class="meta">
-          <p><strong>Unidad:</strong> ${escapeHtml(examen?.unidad_id || "")}</p>
-          <p><strong>Fecha:</strong> ${escapeHtml(formatExamDate(examen?.created_at) || "")}</p>
-          <p><strong>Total de preguntas:</strong> ${escapeHtml(String(preguntas.length || examen?.total_preguntas || 0))}</p>
-        </div>
+        <p class="student-info">Nombre del alumno: __________________________________&nbsp;&nbsp;&nbsp;&nbsp;Fecha: __________</p>
         ${examenIa.instrucciones_generales ? `<div class="box"><strong>Instrucciones:</strong><br>${escapeHtml(examenIa.instrucciones_generales)}</div>` : ""}
         ${preguntasHtml}
         ${answerSheetHtml}
