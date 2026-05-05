@@ -1512,7 +1512,7 @@ function renderListaCotejoConfirmModal() {
   }
 
   const topicItems = state.unidadId ? getListaCotejoTopicsForUnidad(state.unidadId) : [];
-  description.textContent = `Se generara una lista de cotejo por cada planeacion de la unidad. Se usara la actividad de cierre de cada planeacion.`;
+  description.textContent = `Se generara una lista de cotejo por cada planeacion de la unidad. Se evaluara la actividad o actividades didacticas seleccionadas en cada planeacion.`;
   topics.innerHTML = renderListaCotejoConfirmTopics(state.unidadId);
   topicsCount.textContent = `${topicItems.length} planeacion(es)`;
 
@@ -1597,15 +1597,39 @@ async function submitListaCotejoGenerate() {
   }
 }
 
+function renderActividadesEvaluadasHtml(lista) {
+  const actividadesEvaluadas = Array.isArray(lista.actividades_evaluadas) ? lista.actividades_evaluadas : [];
+
+  if (actividadesEvaluadas.length > 0) {
+    const label = actividadesEvaluadas.length === 1 ? "Actividad evaluada" : "Actividades evaluadas";
+    const items = actividadesEvaluadas.map((act) => `
+      <div class="mb-2 last:mb-0">
+        <p class="text-xs font-semibold text-slate-600">${escapeHtml(act.momento_label || "")} — ${escapeHtml(act.actividad_seleccionada || "")}</p>
+        ${act.actividad_texto ? `<p class="mt-0.5 text-sm text-slate-700">${escapeHtml(act.actividad_texto)}</p>` : ""}
+      </div>
+    `).join("");
+    return `
+      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">${escapeHtml(label)}</p>
+        <div class="mt-1 space-y-2">${items}</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividad evaluada</p>
+      <p class="mt-1 text-sm text-slate-700">${escapeHtml(lista.actividad_cierre || "No especificada")}</p>
+    </div>
+  `;
+}
+
 function renderListaCotejoPreviewBody(lista) {
   if (!lista) return '<p class="text-sm text-slate-500">No se pudo cargar la lista.</p>';
   const criterios = Array.isArray(lista.criterios) ? lista.criterios : [];
   return `
     <div class="space-y-3">
-      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividad de cierre</p>
-        <p class="mt-1 text-sm text-slate-700">${escapeHtml(lista.actividad_cierre || "No especificada")}</p>
-      </div>
+      ${renderActividadesEvaluadasHtml(lista)}
       <div class="overflow-x-auto rounded-xl border border-slate-200">
         <table class="w-full text-sm">
           <thead class="bg-slate-50">
@@ -1702,7 +1726,7 @@ function renderListaCotejoSection(unidadId) {
           <p class="font-semibold">Creando listas de cotejo</p>
           ${renderProgressPill("generating", "Generando")}
         </div>
-        <p class="mt-1 text-xs">${escapeHtml(explorerState.listaCotejoGeneration.message || "Generando listas con la actividad de cierre de cada planeacion...")}</p>
+        <p class="mt-1 text-xs">${escapeHtml(explorerState.listaCotejoGeneration.message || "Generando listas con las actividades seleccionadas de cada planeacion...")}</p>
       </div>
     `
     : "";
