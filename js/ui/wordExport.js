@@ -185,4 +185,108 @@ const contenidoHTML = `
     alert("Error al generar el archivo Word.");
   }
 };
-// =================================================== 
+// ===================================================
+
+window.descargarListaCotejoWord = function (lista) {
+  try {
+    const criterios = (() => {
+      const raw = lista?.criterios;
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === "string") {
+        try { return JSON.parse(raw); } catch { return []; }
+      }
+      return [];
+    })();
+
+    if (!criterios.length) {
+      alert("No hay criterios para exportar.");
+      return;
+    }
+
+    const tema = lista?.tema || "Sin tema";
+    const materia = lista?.materia || "";
+    const nivel = lista?.nivel || "";
+    const totalPuntos = lista?.total_puntos || 10;
+
+    const filas = criterios.map((c) => `
+      <tr>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${c.criterio || ""}</td>
+        <td style="border:1px solid #000;padding:8px;text-align:center;font-size:10pt;vertical-align:middle;">${c.si ?? 2}</td>
+        <td style="border:1px solid #000;padding:8px;text-align:center;font-size:10pt;vertical-align:middle;">${c.no ?? 0}</td>
+      </tr>
+    `).join("");
+
+    const metaExtra = [
+      materia ? `<strong>Materia:</strong> ${materia}` : "",
+      nivel ? `<strong>Nivel:</strong> ${nivel}` : ""
+    ].filter(Boolean).join(" &nbsp;&nbsp; ");
+
+    const contenidoHTML = `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page Section1 { size: 21cm 29.7cm; margin: 2cm; }
+            div.Section1 { page: Section1; }
+            body { font-family: Arial, sans-serif; font-size: 11pt; }
+            h2 { margin-bottom: 6px; font-size: 13pt; }
+            .meta { margin-bottom: 14px; font-size: 10pt; }
+            table { border-collapse: collapse; width: 100%; }
+            th { background-color: #8ca2d2; color: white; border: 1px solid #000; padding: 8px; font-size: 10pt; font-weight: bold; }
+            th.center { text-align: center; }
+            .total-row { margin-top: 10px; font-weight: bold; font-size: 10pt; }
+          </style>
+        </head>
+        <body>
+          <div class="Section1">
+            <h2>Lista de cotejo</h2>
+            <p class="meta"><strong>Tema:</strong> ${tema}${metaExtra ? " &nbsp;&nbsp; " + metaExtra : ""}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:70%;text-align:left;">Criterio</th>
+                  <th class="center" style="width:15%;">S&iacute; (2 pts)</th>
+                  <th class="center" style="width:15%;">No (0 pts)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filas}
+              </tbody>
+            </table>
+            <p class="total-row">Total: ${totalPuntos} puntos</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const nombreSeguro = tema
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60) || "lista";
+
+    const blob = new Blob([contenidoHTML], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lista-cotejo-${nombreSeguro}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Error al exportar lista de cotejo Word:", err);
+    alert("Error al generar el archivo Word.");
+  }
+};
