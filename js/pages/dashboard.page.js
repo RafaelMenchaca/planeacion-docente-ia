@@ -1629,7 +1629,6 @@ function renderListaCotejoPreviewBody(lista) {
   const criterios = Array.isArray(lista.criterios) ? lista.criterios : [];
   return `
     <div class="space-y-3">
-      ${renderActividadesEvaluadasHtml(lista)}
       <div class="overflow-x-auto rounded-xl border border-slate-200">
         <table class="w-full text-sm">
           <thead class="bg-slate-50">
@@ -5217,6 +5216,14 @@ function bindDashboardEvents() {
     document.getElementById(id)?.addEventListener("click", () => {
       closeListaCotejoPreview();
     });
+  });
+
+  document.getElementById("lista-cotejo-preview-download")?.addEventListener("click", () => {
+    const lista = explorerState.listaCotejoPreview?.listaData;
+    if (!lista) return;
+    if (typeof window.descargarListaCotejoWord === "function") {
+      window.descargarListaCotejoWord(lista);
+    }
   });
 
   document.getElementById("unit-exam-form")?.addEventListener("submit", (event) => {
