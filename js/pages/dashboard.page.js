@@ -141,6 +141,8 @@ function createExamModalState(overrides = {}) {
     unidadId: null,
     selectedTypes: [],
     questionCounts: {},
+    selectedTopicIds: null,
+    attempted: false,
     submitting: false,
     error: "",
     ...overrides
@@ -1372,6 +1374,8 @@ function renderExamTopicsList(state) {
   const unidadId = state?.unidadId;
   const topics = getExamTopicsForUnidad(unidadId);
   const isLoading = Boolean(explorerState.loading.temas[unidadId]);
+  const selectedIds = state?.selectedTopicIds instanceof Set ? state.selectedTopicIds : null;
+  const isDisabled = Boolean(state?.submitting);
 
   if (isLoading) {
     return '<p class="text-sm text-slate-500">Cargando temas de la unidad...</p>';
@@ -1383,11 +1387,27 @@ function renderExamTopicsList(state) {
 
   return `
     <div class="space-y-2">
-      ${topics.map((tema) => `
-        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <p class="truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
-        </div>
-      `).join("")}
+      ${topics.map((tema) => {
+        const tid = escapeHtml(String(tema.id));
+        const isChecked = selectedIds === null || selectedIds.has(String(tema.id));
+        const cbId = `exam-topic-cb-${tid}`;
+        const rowClass = isDisabled
+          ? "flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-not-allowed opacity-60"
+          : "flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-cyan-50";
+        return `
+          <label for="${cbId}" class="${rowClass}">
+            <input
+              type="checkbox"
+              id="${cbId}"
+              class="h-4 w-4 shrink-0 rounded accent-cyan-700 disabled:cursor-not-allowed"
+              data-tema-id="${tid}"
+              ${isChecked ? "checked" : ""}
+              ${isDisabled ? "disabled" : ""}
+            />
+            <p class="ml-3 min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
+          </label>
+        `;
+      }).join("")}
     </div>
   `;
 }
@@ -1414,10 +1434,10 @@ function syncUnitExamModalActionState() {
   const state = explorerState.examModal;
   const topicItems = state.unidadId ? getExamTopicsForUnidad(state.unidadId) : [];
   const hasTopics = topicItems.length > 0;
-  const disableSubmit = state.submitting
-    || !hasTopics
-    || state.selectedTypes.length === 0
-    || hasInvalidExamQuestionCounts(state);
+  const selectedTopicIds = state.selectedTopicIds instanceof Set ? state.selectedTopicIds : null;
+  const hasSelectedTopics = selectedTopicIds ? selectedTopicIds.size > 0 : hasTopics;
+  const hasSelectedTypes = state.selectedTypes.length > 0;
+  const disableSubmit = state.submitting;
 
   submit.disabled = disableSubmit;
   submit.textContent = state.submitting
@@ -1425,6 +1445,11 @@ function syncUnitExamModalActionState() {
     : "Crear examen de unidad con los temas";
   cancel.disabled = state.submitting;
   close.disabled = state.submitting;
+
+  const typesHint = document.getElementById("unit-exam-types-hint");
+  const topicsHint = document.getElementById("unit-exam-topics-hint");
+  if (typesHint) typesHint.classList.toggle("hidden", !state.attempted || hasSelectedTypes || state.submitting);
+  if (topicsHint) topicsHint.classList.toggle("hidden", !state.attempted || hasSelectedTopics || state.submitting);
 }
 
 function syncExamQuestionCountInputTone(inputElement, value) {
@@ -1476,11 +1501,39 @@ function renderUnitExamModal() {
     return;
   }
 
+  const selectedTopicIds = state.selectedTopicIds instanceof Set ? state.selectedTopicIds : null;
+  const selectedCount = selectedTopicIds ? selectedTopicIds.size : topicItems.length;
+
+  const countText = `${selectedCount} de ${topicItems.length} tema(s)`;
+
   title.textContent = "Crear examen de unidad";
-  description.textContent = `Se generara un examen nuevo usando todos los temas actuales de ${unitName}.`;
+  description.textContent = selectedCount > 0
+    ? `Se generara un examen con ${selectedCount} de ${topicItems.length} tema(s) de ${unitName}.`
+    : `Configura los tipos de pregunta y selecciona los temas para generar el examen.`;
   types.innerHTML = renderExamQuestionTypeOptions(state);
   topics.innerHTML = renderExamTopicsList(state);
-  topicsCount.textContent = `${topicItems.length} tema(s)`;
+  topicsCount.textContent = countText;
+
+  topics.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const tid = cb.dataset.temaId;
+      if (!tid) return;
+      if (!(explorerState.examModal.selectedTopicIds instanceof Set)) {
+        explorerState.examModal.selectedTopicIds = new Set();
+      }
+      if (cb.checked) {
+        explorerState.examModal.selectedTopicIds.add(tid);
+      } else {
+        explorerState.examModal.selectedTopicIds.delete(tid);
+      }
+      const newCount = explorerState.examModal.selectedTopicIds.size;
+      description.textContent = newCount > 0
+        ? `Se generara un examen con ${newCount} de ${topicItems.length} tema(s) de ${unitName}.`
+        : `Configura los tipos de pregunta y selecciona los temas para generar el examen.`;
+      topicsCount.textContent = `${newCount} de ${topicItems.length} tema(s)`;
+      syncUnitExamModalActionState();
+    });
+  });
 
   syncUnitExamModalErrorState();
   syncUnitExamModalActionState();
@@ -1868,9 +1921,12 @@ function openUnitExamModal() {
     return;
   }
 
+  const unidadId = explorerState.current.unidadId;
+  const allTopics = getExamTopicsForUnidad(unidadId);
   const nextState = createExamModalState({
     open: true,
-    unidadId: explorerState.current.unidadId
+    unidadId,
+    selectedTopicIds: new Set()
   });
   explorerState.examModal = nextState;
 
@@ -1976,10 +2032,15 @@ async function waitForExamGenerationCompletion(jobId, unidadId) {
 async function submitUnitExamModal(event) {
   event?.preventDefault?.();
 
+  explorerState.examModal.attempted = true;
   const unidadId = explorerState.examModal.unidadId;
   const selectedTypes = [...explorerState.examModal.selectedTypes];
   const questionCounts = getExamQuestionCountsPayload(explorerState.examModal);
-  const topicItems = unidadId ? getExamTopicsForUnidad(unidadId) : [];
+  const allTopicItems = unidadId ? getExamTopicsForUnidad(unidadId) : [];
+  const selectedTopicIds = explorerState.examModal.selectedTopicIds instanceof Set
+    ? explorerState.examModal.selectedTopicIds
+    : new Set(allTopicItems.map((t) => String(t.id)));
+  const selectedTopicCount = selectedTopicIds.size;
 
   if (!unidadId) {
     explorerState.examModal.error = "Selecciona una unidad valida para crear el examen.";
@@ -1987,14 +2048,13 @@ async function submitUnitExamModal(event) {
     return;
   }
 
-  if (topicItems.length === 0) {
+  if (allTopicItems.length === 0) {
     explorerState.examModal.error = "No hay temas en la unidad para generar el examen.";
     renderUnitExamModal();
     return;
   }
 
-  if (selectedTypes.length === 0) {
-    explorerState.examModal.error = "Selecciona al menos un tipo de pregunta.";
+  if (selectedTopicCount === 0 || selectedTypes.length === 0) {
     renderUnitExamModal();
     return;
   }
@@ -2013,7 +2073,7 @@ async function submitUnitExamModal(event) {
     unidadId,
     jobId: null,
     status: "processing",
-    message: `Preparando examen con ${topicItems.length} tema(s) y ${totalPreguntas} pregunta(s)...`,
+    message: `Preparando examen con ${selectedTopicCount} tema(s) y ${totalPreguntas} pregunta(s)...`,
     progressCurrent: 0,
     progressTotal: totalPreguntas
   };
@@ -2025,7 +2085,8 @@ async function submitUnitExamModal(event) {
     const generationJob = await generarExamenUnidad({
       unidad_id: unidadId,
       tipos_pregunta: selectedTypes,
-      cantidades_pregunta: questionCounts
+      cantidades_pregunta: questionCounts,
+      tema_ids: [...selectedTopicIds]
     });
     const jobId = generationJob?.job_id || generationJob?.id;
 
