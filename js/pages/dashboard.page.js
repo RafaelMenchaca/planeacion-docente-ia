@@ -3554,6 +3554,26 @@ function getExamTypeLabel(tipo) {
   return EXAM_TIPOS_PREGUNTA.find((item) => item.value === tipo)?.label || tipo || "Tipo";
 }
 
+function getStringSeed(str) {
+  let hash = 0;
+  const s = typeof str === "string" ? str : "";
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) || 1;
+}
+
+function shuffleArrayDeterministic(arr, seed) {
+  const a = [...arr];
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function getExamOptionLabel(index) {
   let currentIndex = Number.isInteger(index) ? index : 0;
   let label = "";
@@ -3672,13 +3692,21 @@ function renderExamQuestionPreview(question, index) {
   const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
   const opcionesHtml = opciones.length > 0
-    ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item) => `<li class="flex items-start gap-2"><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
+    ? question?.tipo === "verdadero_falso"
+      ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item, oi) => `<li class="flex items-start gap-2"><span>${oi + 1}.&nbsp;&nbsp;${escapeHtml(item)}</span></li>`).join("")}</ul>`
+      : `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item) => `<li class="flex items-start gap-2"><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
     : "";
+  const seed = getStringSeed(question?.pregunta || "");
+  const ladoB = shuffleArrayDeterministic(pares.map((p) => p.lado_b || ""), seed);
   const paresHtml = pares.length > 0
-    ? `<div class="mt-2 space-y-1 text-sm text-slate-600">${pares.map((pair) => `<p>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</p>`).join("")}</div>`
+    ? `<div class="mt-2 flex gap-10 text-sm text-slate-600">
+        <div class="space-y-2">${pares.map((pair, pi) => `<p>${pi + 1}.&nbsp;&nbsp;${escapeHtml(pair.lado_a || "")}</p>`).join("")}</div>
+        <div class="space-y-2">${ladoB.map((b, bi) => `<p>${String.fromCharCode(65 + bi)}.&nbsp;&nbsp;${escapeHtml(b)}</p>`).join("")}</div>
+      </div>`
     : "";
-  const elementosHtml = elementos.length > 0
-    ? `<ul class="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-600">${elementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+  const elementosShuffled = shuffleArrayDeterministic(elementos, seed);
+  const elementosHtml = elementosShuffled.length > 0
+    ? `<ol class="mt-2 space-y-1 pl-0 text-sm text-slate-600 list-none">${elementosShuffled.map((item, ei) => `<li>${ei + 1}.&nbsp;&nbsp;${escapeHtml(item)}</li>`).join("")}</ol>`
     : "";
 
   return `
@@ -3758,19 +3786,25 @@ function buildExamWordHtml(examen) {
     const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
     const opcionesHtml = opciones.length > 0
-      ? `<div class="options">${opciones.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>`
+      ? question?.tipo === "verdadero_falso"
+        ? `<div class="options">${opciones.map((item, oi) => `<p>${oi + 1}.&nbsp;&nbsp;${escapeHtml(item)}</p>`).join("")}</div>`
+        : `<div class="options">${opciones.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>`
       : "";
+    const exportSeed = getStringSeed(question?.pregunta || "");
+    const exportLadoB = shuffleArrayDeterministic(pares.map((p) => p.lado_b || ""), exportSeed);
     const paresHtml = pares.length > 0
       ? `<table class="match-table">
+          <thead><tr><th>Columna A</th><th class="match-gap"></th><th>Columna B</th></tr></thead>
           <tbody>${pares.map((pair, pi) => `<tr>
-            <td class="match-col">${pi + 1}. ${escapeHtml(pair.lado_a || "")}</td>
+            <td class="match-col">${pi + 1}.&nbsp;&nbsp;${escapeHtml(pair.lado_a || "")}</td>
             <td class="match-gap"></td>
-            <td class="match-col">${String.fromCharCode(65 + pi)}. ${escapeHtml(pair.lado_b || "")}</td>
+            <td class="match-col">${String.fromCharCode(65 + pi)}.&nbsp;&nbsp;${escapeHtml(exportLadoB[pi] || "")}</td>
           </tr>`).join("")}</tbody>
         </table>`
       : "";
-    const elementosHtml = elementos.length > 0
-      ? `<ol>${elementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
+    const exportElementos = shuffleArrayDeterministic(elementos, exportSeed);
+    const elementosHtml = exportElementos.length > 0
+      ? `<ol>${exportElementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
       : "";
 
     return `
