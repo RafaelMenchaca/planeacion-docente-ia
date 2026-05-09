@@ -3499,8 +3499,7 @@ function getExamCorrectOptionAnswerText(question, answerText) {
   const options = Array.isArray(question?.opciones) ? question.opciones : [];
   const optionIndex = options.findIndex((option) => normalizeExamComparableText(option) === normalizedAnswer);
 
-  if (optionIndex === -1) return answerText;
-  return `${getExamOptionLabel(optionIndex)} ${answerText}`;
+  return answerText;
 }
 
 function buildExamAnswerLines(question) {
@@ -3588,7 +3587,7 @@ function renderExamQuestionPreview(question, index) {
   const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
   const opcionesHtml = opciones.length > 0
-    ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item, optionIndex) => `<li class="flex items-start gap-2"><span class="font-semibold text-slate-700">${escapeHtml(getExamOptionLabel(optionIndex))}</span><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
+    ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item) => `<li class="flex items-start gap-2"><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
     : "";
   const paresHtml = pares.length > 0
     ? `<div class="mt-2 space-y-1 text-sm text-slate-600">${pares.map((pair) => `<p>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</p>`).join("")}</div>`
@@ -3674,7 +3673,7 @@ function buildExamWordHtml(examen) {
     const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
     const opcionesHtml = opciones.length > 0
-      ? `<div class="options">${opciones.map((item, optionIndex) => `<p>${escapeHtml(getExamOptionLabel(optionIndex))} ${escapeHtml(item)}</p>`).join("")}</div>`
+      ? `<div class="options">${opciones.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>`
       : "";
     const paresHtml = pares.length > 0
       ? `<table class="match-table">
