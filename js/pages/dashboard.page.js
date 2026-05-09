@@ -141,6 +141,8 @@ function createExamModalState(overrides = {}) {
     unidadId: null,
     selectedTypes: [],
     questionCounts: {},
+    selectedTopicIds: null,
+    attempted: false,
     submitting: false,
     error: "",
     ...overrides
@@ -1372,6 +1374,8 @@ function renderExamTopicsList(state) {
   const unidadId = state?.unidadId;
   const topics = getExamTopicsForUnidad(unidadId);
   const isLoading = Boolean(explorerState.loading.temas[unidadId]);
+  const selectedIds = state?.selectedTopicIds instanceof Set ? state.selectedTopicIds : null;
+  const isDisabled = Boolean(state?.submitting);
 
   if (isLoading) {
     return '<p class="text-sm text-slate-500">Cargando temas de la unidad...</p>';
@@ -1383,11 +1387,27 @@ function renderExamTopicsList(state) {
 
   return `
     <div class="space-y-2">
-      ${topics.map((tema) => `
-        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <p class="truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
-        </div>
-      `).join("")}
+      ${topics.map((tema) => {
+        const tid = escapeHtml(String(tema.id));
+        const isChecked = selectedIds === null || selectedIds.has(String(tema.id));
+        const cbId = `exam-topic-cb-${tid}`;
+        const rowClass = isDisabled
+          ? "flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-not-allowed opacity-60"
+          : "flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-cyan-50";
+        return `
+          <label for="${cbId}" class="${rowClass}">
+            <input
+              type="checkbox"
+              id="${cbId}"
+              class="h-4 w-4 shrink-0 rounded accent-cyan-700 disabled:cursor-not-allowed"
+              data-tema-id="${tid}"
+              ${isChecked ? "checked" : ""}
+              ${isDisabled ? "disabled" : ""}
+            />
+            <p class="ml-3 min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
+          </label>
+        `;
+      }).join("")}
     </div>
   `;
 }
@@ -1414,10 +1434,10 @@ function syncUnitExamModalActionState() {
   const state = explorerState.examModal;
   const topicItems = state.unidadId ? getExamTopicsForUnidad(state.unidadId) : [];
   const hasTopics = topicItems.length > 0;
-  const disableSubmit = state.submitting
-    || !hasTopics
-    || state.selectedTypes.length === 0
-    || hasInvalidExamQuestionCounts(state);
+  const selectedTopicIds = state.selectedTopicIds instanceof Set ? state.selectedTopicIds : null;
+  const hasSelectedTopics = selectedTopicIds ? selectedTopicIds.size > 0 : hasTopics;
+  const hasSelectedTypes = state.selectedTypes.length > 0;
+  const disableSubmit = state.submitting;
 
   submit.disabled = disableSubmit;
   submit.textContent = state.submitting
@@ -1425,6 +1445,11 @@ function syncUnitExamModalActionState() {
     : "Crear examen de unidad con los temas";
   cancel.disabled = state.submitting;
   close.disabled = state.submitting;
+
+  const typesHint = document.getElementById("unit-exam-types-hint");
+  const topicsHint = document.getElementById("unit-exam-topics-hint");
+  if (typesHint) typesHint.classList.toggle("hidden", !state.attempted || hasSelectedTypes || state.submitting);
+  if (topicsHint) topicsHint.classList.toggle("hidden", !state.attempted || hasSelectedTopics || state.submitting);
 }
 
 function syncExamQuestionCountInputTone(inputElement, value) {
@@ -1476,11 +1501,39 @@ function renderUnitExamModal() {
     return;
   }
 
+  const selectedTopicIds = state.selectedTopicIds instanceof Set ? state.selectedTopicIds : null;
+  const selectedCount = selectedTopicIds ? selectedTopicIds.size : topicItems.length;
+
+  const countText = `${selectedCount} de ${topicItems.length} tema(s)`;
+
   title.textContent = "Crear examen de unidad";
-  description.textContent = `Se generara un examen nuevo usando todos los temas actuales de ${unitName}.`;
+  description.textContent = selectedCount > 0
+    ? `Se generara un examen con ${selectedCount} de ${topicItems.length} tema(s) de ${unitName}.`
+    : `Configura los tipos de pregunta y selecciona los temas para generar el examen.`;
   types.innerHTML = renderExamQuestionTypeOptions(state);
   topics.innerHTML = renderExamTopicsList(state);
-  topicsCount.textContent = `${topicItems.length} tema(s)`;
+  topicsCount.textContent = countText;
+
+  topics.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const tid = cb.dataset.temaId;
+      if (!tid) return;
+      if (!(explorerState.examModal.selectedTopicIds instanceof Set)) {
+        explorerState.examModal.selectedTopicIds = new Set();
+      }
+      if (cb.checked) {
+        explorerState.examModal.selectedTopicIds.add(tid);
+      } else {
+        explorerState.examModal.selectedTopicIds.delete(tid);
+      }
+      const newCount = explorerState.examModal.selectedTopicIds.size;
+      description.textContent = newCount > 0
+        ? `Se generara un examen con ${newCount} de ${topicItems.length} tema(s) de ${unitName}.`
+        : `Configura los tipos de pregunta y selecciona los temas para generar el examen.`;
+      topicsCount.textContent = `${newCount} de ${topicItems.length} tema(s)`;
+      syncUnitExamModalActionState();
+    });
+  });
 
   syncUnitExamModalErrorState();
   syncUnitExamModalActionState();
@@ -1868,9 +1921,12 @@ function openUnitExamModal() {
     return;
   }
 
+  const unidadId = explorerState.current.unidadId;
+  const allTopics = getExamTopicsForUnidad(unidadId);
   const nextState = createExamModalState({
     open: true,
-    unidadId: explorerState.current.unidadId
+    unidadId,
+    selectedTopicIds: new Set()
   });
   explorerState.examModal = nextState;
 
@@ -1976,10 +2032,15 @@ async function waitForExamGenerationCompletion(jobId, unidadId) {
 async function submitUnitExamModal(event) {
   event?.preventDefault?.();
 
+  explorerState.examModal.attempted = true;
   const unidadId = explorerState.examModal.unidadId;
   const selectedTypes = [...explorerState.examModal.selectedTypes];
   const questionCounts = getExamQuestionCountsPayload(explorerState.examModal);
-  const topicItems = unidadId ? getExamTopicsForUnidad(unidadId) : [];
+  const allTopicItems = unidadId ? getExamTopicsForUnidad(unidadId) : [];
+  const selectedTopicIds = explorerState.examModal.selectedTopicIds instanceof Set
+    ? explorerState.examModal.selectedTopicIds
+    : new Set(allTopicItems.map((t) => String(t.id)));
+  const selectedTopicCount = selectedTopicIds.size;
 
   if (!unidadId) {
     explorerState.examModal.error = "Selecciona una unidad valida para crear el examen.";
@@ -1987,14 +2048,13 @@ async function submitUnitExamModal(event) {
     return;
   }
 
-  if (topicItems.length === 0) {
+  if (allTopicItems.length === 0) {
     explorerState.examModal.error = "No hay temas en la unidad para generar el examen.";
     renderUnitExamModal();
     return;
   }
 
-  if (selectedTypes.length === 0) {
-    explorerState.examModal.error = "Selecciona al menos un tipo de pregunta.";
+  if (selectedTopicCount === 0 || selectedTypes.length === 0) {
     renderUnitExamModal();
     return;
   }
@@ -2013,7 +2073,7 @@ async function submitUnitExamModal(event) {
     unidadId,
     jobId: null,
     status: "processing",
-    message: `Preparando examen con ${topicItems.length} tema(s) y ${totalPreguntas} pregunta(s)...`,
+    message: `Preparando examen con ${selectedTopicCount} tema(s) y ${totalPreguntas} pregunta(s)...`,
     progressCurrent: 0,
     progressTotal: totalPreguntas
   };
@@ -2025,7 +2085,8 @@ async function submitUnitExamModal(event) {
     const generationJob = await generarExamenUnidad({
       unidad_id: unidadId,
       tipos_pregunta: selectedTypes,
-      cantidades_pregunta: questionCounts
+      cantidades_pregunta: questionCounts,
+      tema_ids: [...selectedTopicIds]
     });
     const jobId = generationJob?.job_id || generationJob?.id;
 
@@ -3554,6 +3615,26 @@ function getExamTypeLabel(tipo) {
   return EXAM_TIPOS_PREGUNTA.find((item) => item.value === tipo)?.label || tipo || "Tipo";
 }
 
+function getStringSeed(str) {
+  let hash = 0;
+  const s = typeof str === "string" ? str : "";
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) || 1;
+}
+
+function shuffleArrayDeterministic(arr, seed) {
+  const a = [...arr];
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function getExamOptionLabel(index) {
   let currentIndex = Number.isInteger(index) ? index : 0;
   let label = "";
@@ -3672,13 +3753,21 @@ function renderExamQuestionPreview(question, index) {
   const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
   const opcionesHtml = opciones.length > 0
-    ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item) => `<li class="flex items-start gap-2"><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
+    ? question?.tipo === "verdadero_falso"
+      ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item, oi) => `<li class="flex items-start gap-2"><span>${oi + 1}.&nbsp;&nbsp;${escapeHtml(item)}</span></li>`).join("")}</ul>`
+      : `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item) => `<li class="flex items-start gap-2"><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
     : "";
+  const seed = getStringSeed(question?.pregunta || "");
+  const ladoB = shuffleArrayDeterministic(pares.map((p) => p.lado_b || ""), seed);
   const paresHtml = pares.length > 0
-    ? `<div class="mt-2 space-y-1 text-sm text-slate-600">${pares.map((pair) => `<p>${escapeHtml(pair.lado_a || "")} - ${escapeHtml(pair.lado_b || "")}</p>`).join("")}</div>`
+    ? `<div class="mt-2 flex gap-10 text-sm text-slate-600">
+        <div class="space-y-2">${pares.map((pair, pi) => `<p>${pi + 1}.&nbsp;&nbsp;${escapeHtml(pair.lado_a || "")}</p>`).join("")}</div>
+        <div class="space-y-2">${ladoB.map((b, bi) => `<p>${String.fromCharCode(65 + bi)}.&nbsp;&nbsp;${escapeHtml(b)}</p>`).join("")}</div>
+      </div>`
     : "";
-  const elementosHtml = elementos.length > 0
-    ? `<ul class="mt-2 list-decimal space-y-1 pl-5 text-sm text-slate-600">${elementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+  const elementosShuffled = shuffleArrayDeterministic(elementos, seed);
+  const elementosHtml = elementosShuffled.length > 0
+    ? `<ol class="mt-2 space-y-1 pl-0 text-sm text-slate-600 list-none">${elementosShuffled.map((item, ei) => `<li>${ei + 1}.&nbsp;&nbsp;${escapeHtml(item)}</li>`).join("")}</ol>`
     : "";
 
   return `
@@ -3758,19 +3847,25 @@ function buildExamWordHtml(examen) {
     const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
 
     const opcionesHtml = opciones.length > 0
-      ? `<div class="options">${opciones.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>`
+      ? question?.tipo === "verdadero_falso"
+        ? `<div class="options">${opciones.map((item, oi) => `<p>${oi + 1}.&nbsp;&nbsp;${escapeHtml(item)}</p>`).join("")}</div>`
+        : `<div class="options">${opciones.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>`
       : "";
+    const exportSeed = getStringSeed(question?.pregunta || "");
+    const exportLadoB = shuffleArrayDeterministic(pares.map((p) => p.lado_b || ""), exportSeed);
     const paresHtml = pares.length > 0
       ? `<table class="match-table">
+          <thead><tr><th>Columna A</th><th class="match-gap"></th><th>Columna B</th></tr></thead>
           <tbody>${pares.map((pair, pi) => `<tr>
-            <td class="match-col">${pi + 1}. ${escapeHtml(pair.lado_a || "")}</td>
+            <td class="match-col">${pi + 1}.&nbsp;&nbsp;${escapeHtml(pair.lado_a || "")}</td>
             <td class="match-gap"></td>
-            <td class="match-col">${String.fromCharCode(65 + pi)}. ${escapeHtml(pair.lado_b || "")}</td>
+            <td class="match-col">${String.fromCharCode(65 + pi)}.&nbsp;&nbsp;${escapeHtml(exportLadoB[pi] || "")}</td>
           </tr>`).join("")}</tbody>
         </table>`
       : "";
-    const elementosHtml = elementos.length > 0
-      ? `<ol>${elementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
+    const exportElementos = shuffleArrayDeterministic(elementos, exportSeed);
+    const elementosHtml = exportElementos.length > 0
+      ? `<ol>${exportElementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
       : "";
 
     return `
