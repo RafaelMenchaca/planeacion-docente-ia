@@ -959,6 +959,8 @@ async function refreshExplorerAfterReturn() {
   renderAll();
 }
 function renderWorkspaceVisibility() {
+  if (window.BIBLIOTECA_MODE) return;
+
   const onboarding = document.getElementById("explorer-onboarding");
   const onboardingError = document.getElementById("explorer-onboarding-error");
   const onboardingRetry = document.getElementById("btn-onboarding-retry");
@@ -4212,6 +4214,11 @@ function renderUnidadLevel() {
 }
 
 function renderExplorerContent() {
+  if (window.BIBLIOTECA_MODE && typeof window.renderBibliotecaContent === "function") {
+    window.renderBibliotecaContent();
+    return;
+  }
+
   const container = document.getElementById("explorer-content");
   if (!container) return;
 
@@ -4546,7 +4553,8 @@ async function generatePlaneacionesFromStaging() {
         ? tema.generar_imagenes_en.map(normalizeImagenMomentoKey).filter(Boolean)
         : []
     })),
-    ...buildLegacyContext()
+    ...buildLegacyContext(),
+    ...(window.biblioteca?.pendingBatchId ? { batch_id: window.biblioteca.pendingBatchId } : {})
   };
 
   try {
@@ -4558,6 +4566,11 @@ async function generatePlaneacionesFromStaging() {
     applyGenerateResult(result || {});
     explorerState.stagingTemas = [];
     await ensureTemas(unidadId, { force: true });
+
+    if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.refresh === "function") {
+      window.biblioteca.pendingBatchId = null;
+      window.biblioteca.refresh().catch(console.error);
+    }
 
     renderExplorerContent();
     scrollToProgressFinal();
@@ -4580,6 +4593,9 @@ async function generatePlaneacionesFromStaging() {
     scrollToProgressFinal();
   } finally {
     explorerState.generating = false;
+    if (window.biblioteca?.pendingBatchId) {
+      window.biblioteca.pendingBatchId = null;
+    }
     updateProgressCounters();
     renderExplorerContent();
   }
@@ -5551,6 +5567,16 @@ async function initDashboardPage() {
   }
 
   bindDashboardEvents();
+
+  if (typeof window.initBiblioteca === "function") {
+    window.BIBLIOTECA_MODE = true;
+    try {
+      await window.initBiblioteca();
+    } catch (error) {
+      console.error("Error cargando biblioteca:", error);
+    }
+    return;
+  }
 
   try {
     await hydrateExplorerData();
