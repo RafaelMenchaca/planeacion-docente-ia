@@ -71,26 +71,57 @@ const MOMENTOS_ACTIVIDADES_DIDACTICAS = [
   { key: "cierre", label: "Cierre" }
 ];
 const ACTIVIDADES_DIDACTICAS = [
-  { nombre: "Juegos de mesa educativos", descripcion: "Fomenta la lógica" },
-  { nombre: "Debate en clase", descripcion: "Pensamiento crítico" },
+  { nombre: "Juegos de mesa educativos", descripcion: "Lógica y estrategia" },
+  { nombre: "Debate académico", descripcion: "Pensamiento crítico" },
   { nombre: "Proyectos de investigación", descripcion: "Fomenta la curiosidad" },
-  { nombre: "Aprendizaje basado en proyectos", descripcion: "Problemas reales" },
-  { nombre: "Simulación", descripcion: "Experiencia práctica" },
-  { nombre: "Trabajo en equipo", descripcion: "Colaboración efectiva" },
-  { nombre: "Taller de escritura creativa", descripcion: "Estimula la creatividad" },
-  { nombre: "Laboratorios científicos", descripcion: "Experimentos prácticos" },
-  { nombre: "Estudio de caso", descripcion: "Análisis realista" },
-  { nombre: "Augmented learning", descripcion: "Revisión en casa" },
-  { nombre: "Excursiones educativas", descripcion: "Exploración curricular" },
+  { nombre: "Aprendizaje basado en proyectos (ABP)", descripcion: "Problemas reales" },
+  { nombre: "Simulación de situaciones reales", descripcion: "Experiencia práctica" },
+  { nombre: "Trabajo colaborativo", descripcion: "Cooperación efectiva" },
+  { nombre: "Taller de escritura creativa", descripcion: "Expresión escrita" },
+  { nombre: "Prácticas de laboratorio", descripcion: "Aprendizaje experimental" },
+  { nombre: "Análisis de estudio de caso", descripcion: "Análisis y decisiones" },
+  { nombre: "Clase invertida (Flipped Classroom)", descripcion: "Aprendizaje autónomo" },
+  { nombre: "Excursiones educativas", descripcion: "Experiencias reales" },
   { nombre: "Presentaciones multimedia", descripcion: "Comunicación visual" },
-  { nombre: "Aprendizaje cooperativo", descripcion: "Trabajo en grupos" },
+  { nombre: "Aprendizaje cooperativo", descripcion: "Interacción grupal" },
   { nombre: "Encuestas y entrevistas", descripcion: "Recopilación de datos" },
-  { nombre: "Juegos de rol", descripcion: "Perspectivas diferentes" },
-  { nombre: "Preguntas de reflexión", descripcion: "Estimula el pensamiento" },
-  { nombre: "Proyectos de arte", descripcion: "Expresión artística" },
-  { nombre: "Mapas conceptuales", descripcion: "Organización visual" },
+  { nombre: "Juegos de rol", descripcion: "Perspectivas y contextos" },
+  { nombre: "Preguntas de reflexión", descripcion: "Pensamiento profundo" },
+  { nombre: "Proyectos artísticos", descripcion: "Creatividad y expresión" },
+  { nombre: "Organizador Grafico", descripcion: "Información visual" },
   { nombre: "Podcasts educativos", descripcion: "Comunicación oral" },
-  { nombre: "Tareas interdisciplinarias", descripcion: "Conexión de materias" }
+  { nombre: "Actividades interdisciplinarias", descripcion: "Integración de materias" },
+  { nombre: "Lluvia de ideas", descripcion: "Participación creativa" },
+  { nombre: "Foros de discusión", descripcion: "Intercambio de opiniones" },
+  { nombre: "Resolución de problemas", descripcion: "Razonamiento lógico" },
+  { nombre: "Creación de infografías", descripcion: "Recursos visuales" },
+  { nombre: "Elaboración de maquetas", descripcion: "Modelos físicos" },
+  { nombre: "Cuadros comparativos", descripcion: "Diferencias y semejanzas" },
+  { nombre: "Líneas del tiempo", descripcion: "Organización cronológica" },
+  { nombre: "Diarios de aprendizaje", descripcion: "Reflexión personal" },
+  { nombre: "Lectura guiada", descripcion: "Comprensión lectora" },
+  { nombre: "Círculo de lectura", descripcion: "Discusión de textos" },
+  { nombre: "Creación de videos educativos", descripcion: "Creatividad digital" },
+  { nombre: "Kahoot o cuestionarios interactivos", descripcion: "Evaluación dinámica" },
+  { nombre: "Gamificación", descripcion: "Motivación por el juego" },
+  { nombre: "Aprendizaje basado en retos", descripcion: "Innovación y desafíos" },
+  { nombre: "Exposición oral", descripcion: "Comunicación y dominio" },
+  { nombre: "Panel de expertos", descripcion: "Exposición especializada" },
+  { nombre: "Mesa redonda", descripcion: "Análisis colectivo" },
+  { nombre: "Tutoría entre pares", descripcion: "Aprendizaje colaborativo" },
+  { nombre: "Portafolio de evidencias", descripcion: "Documentación de avances" },
+  { nombre: "Aprendizaje basado en problemas (ABPr)", descripcion: "Solución de problemas" },
+  { nombre: "Diseño de experimentos", descripcion: "Método científico" },
+  { nombre: "Creación de blogs educativos", descripcion: "Escritura digital" },
+  { nombre: "Historietas o cómics educativos", descripcion: "Narrativa visual" },
+  { nombre: "Mapas mentales", descripcion: "Ideas creativas" },
+  { nombre: "Análisis de videos", descripcion: "Interpretación audiovisual" },
+  { nombre: "Aprendizaje servicio", descripcion: "Acciones comunitarias" },
+  { nombre: "Diseño de prototipos", descripcion: "Innovación tecnológica" },
+  { nombre: "Investigación documental", descripcion: "Análisis de fuentes" },
+  { nombre: "Feria científica o tecnológica", descripcion: "Proyectos al público" },
+  { nombre: "Escape room educativo", descripcion: "Trabajo en equipo" },
+  { nombre: "Dinámicas rompehielo", descripcion: "Integración grupal" }
 ];
 const ACTIVIDADES_DIDACTICAS_MAP = new Map(
   ACTIVIDADES_DIDACTICAS.map((actividad) => [actividad.nombre, actividad.descripcion])
@@ -1456,10 +1487,19 @@ function renderUnitExamModal() {
 }
 
 function getListaCotejoTopicsForUnidad(unidadId) {
-  return (explorerState.temasByUnidad[unidadId] || []).filter((tema) => {
-    const planeacion = explorerState.planeacionByTema[tema.id];
-    return Boolean(planeacion?.id);
-  });
+  const listas = explorerState.listasCotejoByUnidad[unidadId] || [];
+  const listasByPlaneacionId = new Set(listas.map((l) => String(l.planeacion_id)));
+
+  return (explorerState.temasByUnidad[unidadId] || [])
+    .filter((tema) => Boolean(explorerState.planeacionByTema[tema.id]?.id))
+    .map((tema) => {
+      const planeacion = explorerState.planeacionByTema[tema.id];
+      return {
+        ...tema,
+        planeacion_id: planeacion.id,
+        has_lista_cotejo: listasByPlaneacionId.has(String(planeacion.id))
+      };
+    });
 }
 
 function renderListaCotejoConfirmTopics(unidadId) {
@@ -1467,13 +1507,32 @@ function renderListaCotejoConfirmTopics(unidadId) {
   if (topics.length === 0) {
     return '<p class="text-sm text-slate-500">No hay planeaciones generadas en esta unidad.</p>';
   }
+  const selectedIds = explorerState.listaCotejoModal.selectedIds || new Set();
   return `
     <div class="space-y-2">
-      ${topics.map((tema) => `
-        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <p class="truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
-        </div>
-      `).join("")}
+      ${topics.map((tema) => {
+        const hasLista = tema.has_lista_cotejo;
+        const pid = escapeHtml(String(tema.planeacion_id));
+        const isChecked = selectedIds.has(String(tema.planeacion_id));
+        const cbId = `lista-cotejo-cb-${pid}`;
+        const rowClass = hasLista
+          ? "flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-not-allowed opacity-60"
+          : "flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-cyan-50";
+        return `
+          <label for="${cbId}" class="${rowClass}">
+            <input
+              type="checkbox"
+              id="${cbId}"
+              class="h-4 w-4 shrink-0 rounded accent-cyan-700 disabled:cursor-not-allowed"
+              data-planeacion-id="${pid}"
+              ${isChecked ? "checked" : ""}
+              ${hasLista ? "disabled" : ""}
+            />
+            <p class="ml-3 min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">${escapeHtml(tema.titulo || "Tema sin titulo")}</p>
+            ${hasLista ? '<span class="ml-auto shrink-0 rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold text-cyan-700">Lista ya generada</span>' : ""}
+          </label>
+        `;
+      }).join("")}
     </div>
   `;
 }
@@ -1485,10 +1544,10 @@ function syncListaCotejoConfirmModal() {
   if (!submit || !cancel || !close) return;
 
   const state = explorerState.listaCotejoModal;
-  const topics = state.unidadId ? getListaCotejoTopicsForUnidad(state.unidadId) : [];
+  const selectedIds = state.selectedIds || new Set();
 
-  submit.disabled = state.submitting || topics.length === 0;
-  submit.textContent = state.submitting ? "Generando listas..." : "Generar listas de cotejo";
+  submit.disabled = state.submitting || selectedIds.size === 0;
+  submit.textContent = state.submitting ? "Generando listas..." : "Generar listas seleccionadas";
   cancel.disabled = state.submitting;
   close.disabled = state.submitting;
 }
@@ -1512,9 +1571,27 @@ function renderListaCotejoConfirmModal() {
   }
 
   const topicItems = state.unidadId ? getListaCotejoTopicsForUnidad(state.unidadId) : [];
-  description.textContent = `Se generara una lista de cotejo por cada planeacion de la unidad. Se evaluara la actividad o actividades didacticas seleccionadas en cada planeacion.`;
+  const availableCount = topicItems.filter((t) => !t.has_lista_cotejo).length;
+  description.textContent = `Selecciona las actividades para las que deseas generar lista de cotejo. Las que ya tienen lista generada no se pueden volver a seleccionar.`;
   topics.innerHTML = renderListaCotejoConfirmTopics(state.unidadId);
-  topicsCount.textContent = `${topicItems.length} planeacion(es)`;
+  topicsCount.textContent = `${availableCount} disponible(s) de ${topicItems.length}`;
+
+  // Bind checkboxes after rendering
+  topics.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const pid = cb.dataset.planeacionId;
+      if (!pid) return;
+      if (!explorerState.listaCotejoModal.selectedIds) {
+        explorerState.listaCotejoModal.selectedIds = new Set();
+      }
+      if (cb.checked) {
+        explorerState.listaCotejoModal.selectedIds.add(pid);
+      } else {
+        explorerState.listaCotejoModal.selectedIds.delete(pid);
+      }
+      syncListaCotejoConfirmModal();
+    });
+  });
 
   if (state.error) {
     error.classList.remove("hidden");
@@ -1536,20 +1613,21 @@ function openListaCotejoModal() {
     open: true,
     unidadId: explorerState.current.unidadId,
     submitting: false,
-    error: ""
+    error: "",
+    selectedIds: new Set()
   };
   renderListaCotejoConfirmModal();
 }
 
 function closeListaCotejoModal({ force = false } = {}) {
   if (explorerState.listaCotejoModal.submitting && !force) return;
-  explorerState.listaCotejoModal = { open: false, unidadId: null, submitting: false, error: "" };
+  explorerState.listaCotejoModal = { open: false, unidadId: null, submitting: false, error: "", selectedIds: new Set() };
   renderListaCotejoConfirmModal();
 }
 
 async function submitListaCotejoGenerate() {
   const unidadId = explorerState.listaCotejoModal.unidadId;
-  const topics = unidadId ? getListaCotejoTopicsForUnidad(unidadId) : [];
+  const selectedIds = explorerState.listaCotejoModal.selectedIds || new Set();
 
   if (!unidadId) {
     explorerState.listaCotejoModal.error = "Selecciona una unidad valida.";
@@ -1557,11 +1635,13 @@ async function submitListaCotejoGenerate() {
     return;
   }
 
-  if (topics.length === 0) {
-    explorerState.listaCotejoModal.error = "No hay planeaciones en la unidad para generar listas de cotejo.";
+  if (selectedIds.size === 0) {
+    explorerState.listaCotejoModal.error = "Selecciona al menos una actividad para generar su lista de cotejo.";
     renderListaCotejoConfirmModal();
     return;
   }
+
+  const planeacionIds = [...selectedIds];
 
   explorerState.listaCotejoModal.submitting = true;
   explorerState.listaCotejoModal.error = "";
@@ -1569,25 +1649,30 @@ async function submitListaCotejoGenerate() {
     active: true,
     unidadId,
     status: "generating",
-    message: `Generando listas de cotejo para ${topics.length} planeacion(es)...`
+    message: `Generando listas de cotejo para ${planeacionIds.length} actividad(es)...`
   };
   closeListaCotejoModal({ force: true });
   renderAll();
 
   try {
-    const result = await generarListasCotejoUnidad({ unidad_id: unidadId });
+    const result = await generarListasCotejoUnidad({ planeacion_ids: planeacionIds, unidad_id: unidadId });
 
     explorerState.listaCotejoGeneration = { active: false, unidadId, status: "ready", message: "" };
 
-    const created = result?.created_or_updated || 0;
+    const created = result?.created ?? result?.created_or_updated ?? 0;
     const skipped = Array.isArray(result?.skipped) ? result.skipped : [];
 
     await ensureListasCotejo(unidadId, { force: true });
     renderAll();
 
-    let msg = `Se crearon/actualizaron ${created} lista(s) de cotejo.`;
-    if (skipped.length > 0) {
-      msg += ` ${skipped.length} planeacion(es) fueron omitidas por no tener actividad de cierre.`;
+    let msg = `Se generaron ${created} lista(s) de cotejo.`;
+    const alreadyExisted = skipped.filter((s) => s.reason === "already_exists").length;
+    const otherSkipped = skipped.filter((s) => s.reason !== "already_exists").length;
+    if (alreadyExisted > 0) {
+      msg += ` ${alreadyExisted} actividad(es) ya tenian lista de cotejo y fueron omitidas.`;
+    }
+    if (otherSkipped > 0) {
+      msg += ` ${otherSkipped} actividad(es) no pudieron generarse.`;
     }
     notifyDashboard(msg, "success");
   } catch (error) {
