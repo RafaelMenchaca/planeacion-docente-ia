@@ -57,6 +57,25 @@ const bibliotecaState = {
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
   set pendingBatchId(v) { bibliotecaState.pendingBatchId = v; },
+  getConjuntos: () => Array.isArray(bibliotecaState.conjuntos) ? bibliotecaState.conjuntos : [],
+  selectConjunto: (conjuntoId, options = {}) => {
+    setSelectedConjunto(conjuntoId, { tab: options.tab || "planeaciones" });
+    renderBibliotecaContent();
+  },
+  startPlaneacionesGeneration: (conjuntoId, temas = []) => {
+    const safeId = normalizeBibliotecaId(conjuntoId);
+    if (!safeId) return;
+    setSelectedConjunto(safeId, { tab: "planeaciones" });
+    bibliotecaState.pendingPlaneacionesByBatchId[safeId] = {
+      items: (Array.isArray(temas) ? temas : []).map((tema) => ({
+        titulo: tema?.titulo || "",
+        status: "pending",
+        message: ""
+      })),
+      error: ""
+    };
+    renderBibliotecaContent();
+  },
   setPendingConjunto: (data) => {
     const tempId = data.tempId || `tmp-${Date.now()}`;
     bibliotecaState.pendingConjunto = {
@@ -118,6 +137,19 @@ function bibFormatDateTime(dateStr) {
   } catch { return ""; }
 }
 
+function bibFormatShortDateTime(dateStr) {
+  if (!dateStr) return "";
+  try {
+    return new Date(dateStr).toLocaleString("es-MX", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  } catch { return ""; }
+}
+
 function formatBibliotecaDisplayText(value) {
   const text = String(value ?? "").trim();
   if (!text) return "";
@@ -126,6 +158,15 @@ function formatBibliotecaDisplayText(value) {
 
 function escapeBibliotecaDisplayText(value, fallback = "") {
   return escapeHtml(formatBibliotecaDisplayText(value) || fallback);
+}
+
+function isBibliotecaTechnicalUnidad(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return normalized === "bloque de planeacion";
 }
 
 function getFilteredConjuntos() {
@@ -381,6 +422,28 @@ function renderBibliotecaSectionHeader(title, actionHtml = "") {
   `;
 }
 
+function getBibliotecaExamTypeLabel(tipo) {
+  const labels = {
+    opcion_multiple: "Opcion multiple",
+    verdadero_falso: "Verdadero/Falso",
+    respuesta_corta: "Respuesta corta / completar",
+    completar: "Respuesta corta / completar",
+    emparejamiento: "Emparejamiento / relacion de columnas",
+    relacion_columnas: "Emparejamiento / relacion de columnas",
+    pregunta_abierta: "Pregunta abierta / ensayo",
+    ensayo: "Pregunta abierta / ensayo",
+    calculo_numerico: "Calculo / Numerica",
+    ordenacion_jerarquizacion: "Ordenacion / jerarquizacion",
+    ordenacion: "Ordenacion / jerarquizacion"
+  };
+  return labels[String(tipo || "").trim()] || formatBibliotecaDisplayText(tipo);
+}
+
+function getBibliotecaExamTopics(examen) {
+  const temas = Array.isArray(examen?.contexto_temas) ? examen.contexto_temas : [];
+  return [...new Set(temas.map((tema) => tema?.tema || tema?.titulo).filter(Boolean))];
+}
+
 function renderPlaneacionesTab(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
   const id = escapeHtml(String(conjunto.id));
@@ -435,8 +498,8 @@ function renderPlaneacionesTab(conjunto) {
       ${planeaciones.map(p => {
         const titulo   = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
         const duracion = p.duracion ? `${p.duracion} min` : "";
-        const fecha    = bibFormatDate(p.fecha_creacion);
-        const meta     = [duracion, fecha ? `Creado: ${fecha}` : ""].filter(Boolean).join(" &middot; ");
+        const fecha    = bibFormatShortDateTime(p.fecha_creacion);
+        const meta     = [duracion, fecha].filter(Boolean).join(" &middot; ");
         return `
           <div class="biblioteca-item-row">
             <div class="biblioteca-item-info">
@@ -491,11 +554,12 @@ function renderExamenesTab(conjunto) {
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${examenes.map(ex => {
-        const titulo    = escapeBibliotecaDisplayText(ex.titulo, "Examen");
-        const preguntas = ex.total_preguntas ? `${ex.total_preguntas} preguntas` : "";
-        const fecha     = bibFormatDate(ex.created_at);
-        const status    = ex.status ? `Estado: ${escapeHtml(String(ex.status))}` : "";
-        const meta      = [preguntas, status, fecha ? `Creado: ${fecha}` : ""].filter(Boolean).join(" &middot; ");
+        const titulo    = `Examen de ${escapeBibliotecaDisplayText(conjunto.titulo, "Bloque de planeacion")}`;
+        const preguntas = ex.total_preguntas ? `${ex.total_preguntas} pregunta(s)` : "";
+        const fecha     = bibFormatShortDateTime(ex.created_at);
+        const tipos     = [...new Set((Array.isArray(ex.tipos_pregunta) ? ex.tipos_pregunta : []).map(getBibliotecaExamTypeLabel).filter(Boolean))].map(escapeHtml).join(" · ");
+        const temas     = getBibliotecaExamTopics(ex).map((tema) => escapeBibliotecaDisplayText(tema)).join(" · ");
+        const meta      = [fecha, preguntas, tipos, temas ? `Temas: ${temas}` : ""].filter(Boolean).join(" &bull; ");
         return `
           <div class="biblioteca-item-row">
             <div class="biblioteca-item-info">
@@ -565,8 +629,8 @@ function renderListasCotejoTab(conjunto) {
         const titulo = escapeBibliotecaDisplayText(lista.titulo, "Lista de cotejo");
         const tema   = lista.tema ? escapeBibliotecaDisplayText(lista.tema) : "";
         const puntos = lista.total_puntos ? `${lista.total_puntos} puntos` : "";
-        const fecha  = bibFormatDate(lista.created_at);
-        const meta   = [tema, puntos, fecha ? `Creado: ${fecha}` : ""].filter(Boolean).join(" &middot; ");
+        const fecha  = bibFormatShortDateTime(lista.created_at);
+        const meta   = [tema, puntos, fecha].filter(Boolean).join(" &middot; ");
         return `
           <div class="biblioteca-item-row">
             <div class="biblioteca-item-info">
@@ -632,8 +696,7 @@ function renderConjuntoSidebarItem(conjunto) {
   const titulo = escapeBibliotecaDisplayText(conjunto.titulo, "Sin titulo");
   const meta = [
     conjunto.nivel ? escapeBibliotecaDisplayText(conjunto.nivel) : "Sin nivel",
-    conjunto.materia ? escapeBibliotecaDisplayText(conjunto.materia) : "Sin materia",
-    conjunto.unidad ? `Unidad ${escapeBibliotecaDisplayText(conjunto.unidad)}` : ""
+    conjunto.materia ? escapeBibliotecaDisplayText(conjunto.materia) : "Sin materia"
   ].filter(Boolean).join(" | ");
   const fecha = bibFormatDateTime(conjunto.created_at);
   const planeaciones = Number(conjunto.total_planeaciones || 0);
@@ -707,10 +770,9 @@ function renderBibliotecaDetail(conjunto) {
   const titulo = escapeBibliotecaDisplayText(conjunto.titulo, "Sin titulo");
   const metaItems = [
     { label: "Nivel", value: conjunto.nivel ? escapeBibliotecaDisplayText(conjunto.nivel) : "Sin nivel" },
-    { label: "Materia", value: conjunto.materia ? escapeBibliotecaDisplayText(conjunto.materia) : "Sin materia" },
-    { label: "Unidad", value: conjunto.unidad ? `Unidad ${escapeBibliotecaDisplayText(conjunto.unidad)}` : "Sin unidad" },
-    { label: "Creado", value: bibFormatDateTime(conjunto.created_at) || (conjunto.isPending ? "Generando" : "Sin fecha") }
+    { label: "Materia", value: conjunto.materia ? escapeBibliotecaDisplayText(conjunto.materia) : "Sin materia" }
   ];
+  metaItems.push({ label: "Creado", value: bibFormatDateTime(conjunto.created_at) || (conjunto.isPending ? "Generando" : "Sin fecha") });
 
   return `
     <section class="biblioteca-detail">
@@ -1515,7 +1577,6 @@ function renderBibliotecaAgregarModal() {
     <div class="rounded-xl border border-cyan-100 bg-cyan-50/60 px-3 py-2.5 text-sm text-slate-700">
       ${s.materia ? `<span class="font-semibold">${escapeBibliotecaDisplayText(s.materia)}</span>` : ""}
       ${s.nivel ? ` &middot; ${escapeBibliotecaDisplayText(s.nivel)}` : ""}
-      ${s.unidad != null ? ` &middot; Unidad ${escapeHtml(String(s.unidad))}` : ""}
     </div>`;
 
   // Per-tema rows with their own activity selects
