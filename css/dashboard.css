@@ -792,50 +792,6 @@
   gap: 1.25rem;
 }
 
-.biblioteca-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-@media (min-width: 640px) {
-  .biblioteca-stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.biblioteca-stat-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border: 1px solid rgb(226 232 240);
-  border-radius: 0.95rem;
-  background: #ffffff;
-  padding: 0.9rem 1rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-}
-
-.biblioteca-stat-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.biblioteca-stat-value {
-  font-size: 1.45rem;
-  font-weight: 700;
-  color: rgb(15 23 42);
-  line-height: 1;
-}
-
-.biblioteca-stat-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgb(100 116 139);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.25rem;
-}
-
 .biblioteca-search-wrap {
   position: relative;
 }
@@ -1189,6 +1145,31 @@
   }
 }
 
+/* ---- Pending/progress states ---- */
+
+.biblioteca-pending-block {
+  border: 1px solid rgb(207 250 254);
+  border-radius: 0.75rem;
+  background: rgb(240 253 255);
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.biblioteca-item-pending {
+  border-color: rgb(207 250 254);
+  background: rgb(240 253 255);
+}
+
+.biblioteca-conjunto-pending {
+  border-color: rgb(207 250 254);
+  background: linear-gradient(135deg, rgb(240 253 255) 0%, #ffffff 100%);
+  opacity: 0.95;
+}
+
+.biblioteca-conjunto-pending .biblioteca-conjunto-eyebrow {
+  color: rgb(8 145 178);
+}
+
 /* Responsive: móvil */
 @media (max-width: 639px) {
   .biblioteca-item-row {
@@ -1214,7 +1195,4 @@
     justify-content: center;
   }
 
-  .biblioteca-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }

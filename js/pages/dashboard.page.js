@@ -14,6 +14,7 @@
   expandedMaterias: new Set(),
   current: { level: "root", plantelId: null, gradoId: null, materiaId: null, unidadId: null },
   stagingTemas: [],
+  stagingTituloConjunto: "",
   stagingPanelOpen: false,
   progress: { total: 0, completed: 0, items: [], finalMessage: "", finalTone: "info" },
   quickCreate: {
@@ -3062,8 +3063,13 @@ async function initQuickCreateForm() {
   plantelCombobox?.setItems(explorerState.planteles || []);
 
   gradoCombobox?.reset();
-  gradoCombobox?.setItems([]);
-  gradoCombobox?.setDisabled(true);
+  if (window.BIBLIOTECA_MODE) {
+    gradoCombobox?.setItems(getAllGradosFlat());
+    gradoCombobox?.setDisabled(false);
+  } else {
+    gradoCombobox?.setItems([]);
+    gradoCombobox?.setDisabled(true);
+  }
 
   materiaCombobox?.reset();
   materiaCombobox?.setItems([]);
@@ -3079,21 +3085,93 @@ async function initQuickCreateForm() {
   if (titleInput) titleInput.value = "";
   const durationInput = document.getElementById("quick-tema-duration");
   if (durationInput) durationInput.value = "50";
+  const conjuntoTituloInput = document.getElementById("quick-conjunto-titulo");
+  if (conjuntoTituloInput) conjuntoTituloInput.value = "";
 
   renderQuickTemasList();
+}
+
+function resetQuickCreatePanelSections() {
+  const form       = document.getElementById("quick-create-form");
+  const generating = document.getElementById("quick-create-generating");
+  const result     = document.getElementById("quick-create-result");
+  if (form)       form.classList.remove("hidden");
+  if (generating) generating.classList.add("hidden");
+  if (result)     result.classList.add("hidden");
+}
+
+function showQuickCreateGeneratingSection(items) {
+  const form       = document.getElementById("quick-create-form");
+  const generating = document.getElementById("quick-create-generating");
+  if (form)       form.classList.add("hidden");
+  if (generating) generating.classList.remove("hidden");
+
+  const itemsEl = document.getElementById("quick-create-generating-items");
+  if (itemsEl && Array.isArray(items)) {
+    itemsEl.innerHTML = items.map(item => {
+      const icon  = item.status === "ready"   ? "&#10003;"
+                  : item.status === "error"   ? "&#10005;"
+                  : item.status === "skipped" ? "&#8213;"
+                  : "&#8230;";
+      const color = item.status === "ready"   ? "text-emerald-700"
+                  : item.status === "error"   ? "text-rose-600"
+                  : item.status === "skipped" ? "text-slate-400"
+                  : "text-cyan-700";
+      const msg   = item.statusLabel || item.message || "";
+      return `<div class="flex items-center gap-2 text-xs ${color}">
+        <span class="w-4 flex-shrink-0 text-center">${icon}</span>
+        <span>${escapeHtml(item.titulo || "")}${msg ? ` — ${escapeHtml(msg)}` : ""}</span>
+      </div>`;
+    }).join("");
+  }
+}
+
+function showQuickCreateResultSection(finalMessage, finalTone) {
+  const generating = document.getElementById("quick-create-generating");
+  const result     = document.getElementById("quick-create-result");
+  if (generating) generating.classList.add("hidden");
+  if (result)     result.classList.remove("hidden");
+
+  const msgEl = document.getElementById("quick-create-result-message");
+  if (msgEl) {
+    const isSuccess = finalTone === "success";
+    const isWarning = finalTone === "warning";
+    msgEl.className = `rounded-xl border px-4 py-3 text-sm ${
+      isSuccess ? "border-emerald-200 bg-emerald-50 text-emerald-800" :
+      isWarning ? "border-yellow-200 bg-yellow-50 text-yellow-800" :
+                  "border-rose-200 bg-rose-50 text-rose-700"
+    }`;
+    msgEl.textContent = finalMessage || "Proceso finalizado.";
+  }
+
+  const closeBtn = document.getElementById("quick-create-result-close");
+  closeBtn?.addEventListener("click", closeQuickCreatePanel, { once: true });
 }
 
 async function openQuickCreatePanel() {
   explorerState.quickCreate.open = true;
   setQuickPanelVisibility(true);
+  resetQuickCreatePanelSections();
+
+  if (window.BIBLIOTECA_MODE) {
+    await loadPlanteles();
+    await ensureAllGrados();
+  }
+
   await initQuickCreateForm();
-  plantelCombobox?.focus();
+
+  if (window.BIBLIOTECA_MODE) {
+    gradoCombobox?.focus();
+  } else {
+    plantelCombobox?.focus();
+  }
 }
 
 function closeQuickCreatePanel() {
   explorerState.quickCreate.open = false;
   setQuickPanelVisibility(false);
   showQuickCreateError("");
+  resetQuickCreatePanelSections();
 }
 
 function addQuickTemaFromInputs() {
@@ -4554,7 +4632,11 @@ async function generatePlaneacionesFromStaging() {
         : []
     })),
     ...buildLegacyContext(),
-    ...(window.biblioteca?.pendingBatchId ? { batch_id: window.biblioteca.pendingBatchId } : {})
+    ...(window.biblioteca?.pendingBatchId ? { batch_id: window.biblioteca.pendingBatchId } : {}),
+    ...(explorerState.stagingTituloConjunto ? { titulo_conjunto: explorerState.stagingTituloConjunto } : {}),
+    ...(window.BIBLIOTECA_MODE && !window.biblioteca?.pendingBatchId
+      ? { force_new_batch: true, mode: "create" }
+      : {})
   };
 
   try {
@@ -4565,11 +4647,14 @@ async function generatePlaneacionesFromStaging() {
 
     applyGenerateResult(result || {});
     explorerState.stagingTemas = [];
+    explorerState.stagingTituloConjunto = "";
     await ensureTemas(unidadId, { force: true });
 
-    if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.refresh === "function") {
+    if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.finishPlaneacionesGeneration === "function") {
+      await window.biblioteca.finishPlaneacionesGeneration(result || {});
+    } else if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.refresh === "function") {
       window.biblioteca.pendingBatchId = null;
-      window.biblioteca.refresh().catch(console.error);
+      await window.biblioteca.refresh();
     }
 
     renderExplorerContent();
@@ -4609,9 +4694,11 @@ async function submitQuickCreateForm(event) {
     showQuickCreateError("Agrega al menos un tema antes de crear la planeacion.");
     return;
   }
-  let plantelSelection, gradoSelection, materiaSelection, unidadSelection;
+  let plantelSelection = null, gradoSelection, materiaSelection, unidadSelection;
   try {
-    plantelSelection = requireQuickComboboxValue(plantelCombobox, "Plantel");
+    if (!window.BIBLIOTECA_MODE) {
+      plantelSelection = requireQuickComboboxValue(plantelCombobox, "Plantel");
+    }
     gradoSelection = requireQuickGradoSelection();
     materiaSelection = requireQuickComboboxValue(materiaCombobox, "Materia");
     unidadSelection = requireQuickComboboxValue(unidadCombobox, "Unidad");
@@ -4620,28 +4707,39 @@ async function submitQuickCreateForm(event) {
     return;
   }
 
-  // Todas las validaciones pasaron: cerrar panel inmediatamente
+  // Capturar titulo personalizado del conjunto antes de cerrar el panel
+  const conjuntoTituloEl = document.getElementById("quick-conjunto-titulo");
+  explorerState.stagingTituloConjunto = conjuntoTituloEl?.value?.trim() || "";
+
+  // Validaciones pasaron — cerrar panel siempre
   showQuickCreateError("");
   closeQuickCreatePanel();
 
   try {
     const normalizeForCompare = (str) => String(str || "").trim().toLowerCase();
 
-    let plantelId = plantelSelection.id;
-    if (!plantelId) {
-      const existingPlantel = explorerState.planteles.find(
-        (p) => normalizeForCompare(p.nombre) === normalizeForCompare(plantelSelection.nombre)
-      );
-      if (existingPlantel) {
-        plantelId = existingPlantel.id;
-      } else {
-        const created = await crearPlantel({ nombre: plantelSelection.nombre.trim() });
-        plantelId = created?.id;
-        if (!plantelId) throw new Error("No se pudo crear el plantel.");
-        await loadPlanteles();
+    let plantelId;
+    if (window.BIBLIOTECA_MODE) {
+      plantelId = gradoSelection.id
+        ? (findPlantelIdForGrado(gradoSelection.id) || (await ensureDefaultPlantel()))
+        : (await ensureDefaultPlantel());
+    } else {
+      plantelId = plantelSelection.id;
+      if (!plantelId) {
+        const existingPlantel = explorerState.planteles.find(
+          (p) => normalizeForCompare(p.nombre) === normalizeForCompare(plantelSelection.nombre)
+        );
+        if (existingPlantel) {
+          plantelId = existingPlantel.id;
+        } else {
+          const created = await crearPlantel({ nombre: plantelSelection.nombre.trim() });
+          plantelId = created?.id;
+          if (!plantelId) throw new Error("No se pudo crear el plantel.");
+          await loadPlanteles();
+        }
+      } else if (!quickListHasId(explorerState.planteles, plantelId)) {
+        throw new Error("El plantel seleccionado no es valido.");
       }
-    } else if (!quickListHasId(explorerState.planteles, plantelId)) {
-      throw new Error("El plantel seleccionado no es valido.");
     }
 
     await ensureGrados(plantelId);
@@ -4715,7 +4813,11 @@ async function submitQuickCreateForm(event) {
       throw new Error("La unidad seleccionada no pertenece a la materia elegida.");
     }
 
-    await selectUnidad(plantelId, gradoId, materiaId, unidadId);
+    if (window.BIBLIOTECA_MODE) {
+      explorerState.current.unidadId = unidadId;
+    } else {
+      await selectUnidad(plantelId, gradoId, materiaId, unidadId);
+    }
 
     explorerState.stagingTemas = explorerState.quickCreate.temas.map((tema) => ({
       localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -4731,6 +4833,20 @@ async function submitQuickCreateForm(event) {
     }));
 
     explorerState.quickCreate.temas = [];
+
+    if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.setPendingConjunto === "function") {
+      window.biblioteca.setPendingConjunto({
+        tempId:  `tmp-${Date.now()}`,
+        titulo:  explorerState.stagingTituloConjunto || "Nuevo conjunto",
+        nivel:   gradoSelection?.nivelBase || "",
+        materia: materiaSelection?.nombre  || "",
+        unidad:  unidadSelection?.nombre   || null
+      });
+      if (typeof window.renderBibliotecaContent === "function") {
+        window.renderBibliotecaContent();
+      }
+    }
+
     await generatePlaneacionesFromStaging();
   } catch (error) {
     console.error("Error en creacion rapida:", error);
@@ -5143,10 +5259,33 @@ async function handleContentClick(event) {
   }
 }
 
+function findPlantelIdForGrado(gradoId) {
+  for (const [plantelId, grados] of Object.entries(explorerState.gradosByPlantel || {})) {
+    if ((grados || []).some((g) => g.id === gradoId)) return plantelId;
+  }
+  return null;
+}
+
+function getAllGradosFlat() {
+  return Object.values(explorerState.gradosByPlantel || {}).flat();
+}
+
+async function ensureAllGrados() {
+  await Promise.all((explorerState.planteles || []).map((p) => ensureGrados(p.id)));
+}
+
+async function ensureDefaultPlantel() {
+  if ((explorerState.planteles || []).length > 0) return explorerState.planteles[0].id;
+  const created = await crearPlantel({ nombre: "Mi plantel" });
+  if (!created?.id) throw new Error("No se pudo crear el plantel por defecto.");
+  await loadPlanteles();
+  return explorerState.planteles[0]?.id || null;
+}
+
 function initQuickComboboxes() {
-  plantelCombobox = createQuickCombobox("quick-plantel-combobox", {
-    placeholder: "Escribe o selecciona un plantel",
-    disabledPlaceholder: "Escribe o selecciona un plantel",
+  plantelCombobox = createQuickCombobox("quick-internal-structure-combobox", {
+    placeholder: "Escribe o selecciona una estructura",
+    disabledPlaceholder: "Escribe o selecciona una estructura",
     onChange: async (val) => {
       if (val.typing) {
         if (val.nombre) gradoCombobox?.setDisabled(false);
@@ -5179,8 +5318,8 @@ function initQuickComboboxes() {
   });
 
   gradoCombobox = createQuickCombobox("quick-grado-combobox", {
-    placeholder: "Escribe o selecciona un grado",
-    disabledPlaceholder: "Primero selecciona o crea un plantel",
+    placeholder: "Escribe o selecciona un nivel / grado",
+    disabledPlaceholder: "Primero selecciona o crea una estructura",
     onChange: async (val) => {
       toggleQuickGradoNewRow();
 
@@ -5373,7 +5512,10 @@ function bindDashboardEvents() {
     });
   });
 
-  document.getElementById("btn-onboarding-create")?.addEventListener("click", () => openEntityModal("plantel"));
+  document.getElementById("btn-onboarding-create")?.addEventListener("click", () => {
+    if (window.BIBLIOTECA_MODE) return;
+    openEntityModal("plantel");
+  });
   document.getElementById("btn-onboarding-retry")?.addEventListener("click", () => loadPlanteles().then(renderAll).catch((error) => console.error("Error reintentando:", error)));
 
   document.getElementById("entity-modal")?.addEventListener("click", (event) => {
@@ -5553,10 +5695,17 @@ async function hydrateExplorerData() {
 }
 
 async function initDashboardPage() {
+  const hasBiblioteca = typeof window.initBiblioteca === "function";
+  if (hasBiblioteca) {
+    window.BIBLIOTECA_MODE = true;
+  }
+
   try {
     await injectComponent("dashboard-layout-root", "../components/layout.html");
     await Promise.all([
-      injectComponent("dashboard-sidebar-slot", "../components/sidebar.html"),
+      hasBiblioteca
+        ? Promise.resolve()
+        : injectComponent("dashboard-sidebar-slot", "../components/sidebar.html"),
       window.initPrivateChrome ? window.initPrivateChrome() : Promise.resolve()
     ]);
   } catch (error) {
@@ -5568,8 +5717,7 @@ async function initDashboardPage() {
 
   bindDashboardEvents();
 
-  if (typeof window.initBiblioteca === "function") {
-    window.BIBLIOTECA_MODE = true;
+  if (hasBiblioteca) {
     try {
       await window.initBiblioteca();
     } catch (error) {
@@ -5588,3 +5736,9 @@ async function initDashboardPage() {
 }
 
 window.initDashboardPage = initDashboardPage;
+window.explorerState = explorerState;
+window.renderExamPreviewModal = renderExamPreviewModal;
+window.closeExamPreviewModal = closeExamPreviewModal;
+window.renderListaCotejoPreviewModal = renderListaCotejoPreviewModal;
+window.closeListaCotejoPreview = closeListaCotejoPreview;
+window.downloadExamWord = downloadExamWord;
