@@ -819,6 +819,22 @@ function renderBibliotecaDetailInPlace() {
   panel.outerHTML = renderBibliotecaDetail(selected);
 }
 
+// Actualiza solo la lista de items del sidebar sin tocar el input del buscador.
+// Esto preserva el focus y el valor escrito mientras el usuario busca.
+function renderBibliotecaSidebarListInPlace() {
+  const list = document.querySelector(".biblioteca-sidebar-list");
+  if (!list) { renderBibliotecaContent(); return; }
+  const filtered = getFilteredConjuntosForSidebar();
+  const emptyMessage = bibliotecaState.searchQuery.trim()
+    ? "No se encontraron bloques con esa busqueda."
+    : "Aun no tienes bloques de planeación.";
+  list.innerHTML = filtered.length
+    ? filtered.map(renderConjuntoSidebarItem).join("")
+    : `<p class="biblioteca-sidebar-empty">${escapeHtml(emptyMessage)}</p>`;
+  const badge = document.querySelector(".biblioteca-sidebar-badge");
+  if (badge) badge.textContent = String(getAllConjuntosForSidebar().length);
+}
+
 // ---- MAIN RENDER ----
 
 function renderBibliotecaContent() {
@@ -863,7 +879,7 @@ function renderBibliotecaContent() {
   const searchInput = document.getElementById("biblioteca-search");
   if (searchInput) {
     searchInput.value = bibliotecaState.searchQuery;
-    searchInput.addEventListener("input", onBibliotecaSearch);
+    searchInput.oninput = onBibliotecaSearch;
   }
 
   if (prevSidebarScroll > 0) {
@@ -955,7 +971,7 @@ async function loadAndRenderBiblioteca(options = {}) {
 
 function onBibliotecaSearch(event) {
   bibliotecaState.searchQuery = event.target.value;
-  renderBibliotecaContent();
+  renderBibliotecaSidebarListInPlace();
 }
 
 function onBibliotecaClick(event) {
