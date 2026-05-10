@@ -3583,6 +3583,7 @@ function renderSidebarTree() {
     return;
   }
 
+  const savedScroll = tree.scrollTop;
   tree.innerHTML = planteles
     .map((plantel) => {
       const expanded = explorerState.expandedPlanteles.has(plantel.id);
@@ -3604,6 +3605,7 @@ function renderSidebarTree() {
       `;
     })
     .join("");
+  requestAnimationFrame(() => { tree.scrollTop = savedScroll; });
 }
 function renderRootLevel() {
   if (explorerState.loading.root) return '<p class="text-sm text-slate-500">Cargando planteles...</p>';
@@ -5387,6 +5389,7 @@ async function handleTreeClick(event) {
   const button = event.target.closest("[data-tree-action]");
   if (!button) return;
 
+  button.blur();
   const action = button.getAttribute("data-tree-action");
   const ids = getNodeIds(button);
 

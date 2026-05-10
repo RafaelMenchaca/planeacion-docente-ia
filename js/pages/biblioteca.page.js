@@ -60,7 +60,8 @@ window.biblioteca = {
   getConjuntos: () => Array.isArray(bibliotecaState.conjuntos) ? bibliotecaState.conjuntos : [],
   selectConjunto: (conjuntoId, options = {}) => {
     setSelectedConjunto(conjuntoId, { tab: options.tab || "planeaciones" });
-    renderBibliotecaContent();
+    updateBibliotecaSidebarActive();
+    renderBibliotecaDetailInPlace();
   },
   startPlaneacionesGeneration: (conjuntoId, temas = []) => {
     const safeId = normalizeBibliotecaId(conjuntoId);
@@ -752,7 +753,7 @@ function renderBibliotecaSidebar(conjuntos) {
 
 function renderBibliotecaDetailEmpty() {
   return `
-    <section class="biblioteca-detail">
+    <section id="biblioteca-detail-panel" class="biblioteca-detail">
       <div class="biblioteca-detail-empty">
         <h3>Selecciona un bloque</h3>
         <p>Elige un bloque de la izquierda para ver sus planeaciones, examenes y listas.</p>
@@ -775,7 +776,7 @@ function renderBibliotecaDetail(conjunto) {
   metaItems.push({ label: "Creado", value: bibFormatDateTime(conjunto.created_at) || (conjunto.isPending ? "Generando" : "Sin fecha") });
 
   return `
-    <section class="biblioteca-detail">
+    <section id="biblioteca-detail-panel" class="biblioteca-detail">
       <div class="biblioteca-detail-head">
         <div class="biblioteca-detail-summary">
           <p class="biblioteca-detail-eyebrow">BLOQUE SELECCIONADO</p>
@@ -794,6 +795,28 @@ function renderBibliotecaDetail(conjunto) {
       ${renderBibliotecaTabContent(conjunto)}
     </section>
   `;
+}
+
+// ---- PARTIAL RENDERS (preserve sidebar scroll) ----
+
+// Actualiza solo las clases is-active en el sidebar sin re-renderizar la lista.
+function updateBibliotecaSidebarActive() {
+  const list = document.querySelector(".biblioteca-sidebar-list");
+  if (!list) return;
+  const currentId = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId);
+  list.querySelectorAll("[data-bib-action='select-conjunto']").forEach((btn) => {
+    const btnId = normalizeBibliotecaId(btn.dataset.conjuntoId);
+    btn.classList.toggle("is-active", btnId === currentId);
+  });
+}
+
+// Reemplaza solo el panel derecho (#biblioteca-detail-panel) sin tocar el sidebar.
+// Si el panel aún no existe en el DOM, cae a un render completo.
+function renderBibliotecaDetailInPlace() {
+  const panel = document.getElementById("biblioteca-detail-panel");
+  if (!panel) { renderBibliotecaContent(); return; }
+  const selected = getSelectedConjunto();
+  panel.outerHTML = renderBibliotecaDetail(selected);
 }
 
 // ---- MAIN RENDER ----
@@ -826,6 +849,8 @@ function renderBibliotecaContent() {
   const filtered = getFilteredConjuntosForSidebar();
   const selected = getSelectedConjunto();
 
+  const prevSidebarScroll = document.querySelector(".biblioteca-sidebar-list")?.scrollTop ?? 0;
+
   container.innerHTML = `
     <div class="biblioteca-shell">
       <div class="biblioteca-layout">
@@ -839,6 +864,13 @@ function renderBibliotecaContent() {
   if (searchInput) {
     searchInput.value = bibliotecaState.searchQuery;
     searchInput.addEventListener("input", onBibliotecaSearch);
+  }
+
+  if (prevSidebarScroll > 0) {
+    requestAnimationFrame(() => {
+      const list = document.querySelector(".biblioteca-sidebar-list");
+      if (list) list.scrollTop = prevSidebarScroll;
+    });
   }
 }
 
@@ -939,19 +971,21 @@ function onBibliotecaClick(event) {
   switch (action) {
     case "select-conjunto": {
       setSelectedConjunto(conjuntoId);
-      renderBibliotecaContent();
+      updateBibliotecaSidebarActive();
+      renderBibliotecaDetailInPlace();
       break;
     }
 
     case "toggle-expand": {
       setSelectedConjunto(conjuntoId);
-      renderBibliotecaContent();
+      updateBibliotecaSidebarActive();
+      renderBibliotecaDetailInPlace();
       break;
     }
 
     case "switch-tab": {
       setSelectedConjunto(conjuntoId, { tab });
-      renderBibliotecaContent();
+      renderBibliotecaDetailInPlace();
       break;
     }
 
