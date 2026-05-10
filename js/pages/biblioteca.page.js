@@ -8,6 +8,7 @@ const bibliotecaState = {
   loading: false,
   error: "",
   searchQuery: "",
+  selectedConjuntoId: null,
   expandedIds: new Set(),
   activeTab: {},          // { [conjuntoId]: "planeaciones" | "examenes" | "listas" }
   pendingBatchId: null,
@@ -63,7 +64,7 @@ window.biblioteca = {
       tempId,
       isPending:           true,
       status_ui:           "generating",
-      titulo:              data.titulo  || "Nuevo conjunto",
+      titulo:              data.titulo  || "Nuevo bloque",
       nivel:               data.nivel   || "",
       materia:             data.materia || "",
       unidad:              data.unidad  || null,
@@ -75,7 +76,7 @@ window.biblioteca = {
       examenes:            [],
       listas_cotejo:       []
     };
-    bibliotecaState.expandedIds.add(tempId);
+    bibliotecaState.selectedConjuntoId = tempId;
     bibliotecaState.activeTab[tempId] = "planeaciones";
   },
   refresh: (options = {}) => loadAndRenderBiblioteca(options),
@@ -104,6 +105,29 @@ function bibFormatDate(dateStr) {
   } catch { return ""; }
 }
 
+function bibFormatDateTime(dateStr) {
+  if (!dateStr) return "";
+  try {
+    return new Date(dateStr).toLocaleString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } catch { return ""; }
+}
+
+function formatBibliotecaDisplayText(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  return text.charAt(0).toLocaleUpperCase("es-MX") + text.slice(1);
+}
+
+function escapeBibliotecaDisplayText(value, fallback = "") {
+  return escapeHtml(formatBibliotecaDisplayText(value) || fallback);
+}
+
 function getFilteredConjuntos() {
   const q = bibliotecaState.searchQuery.trim().toLowerCase();
   if (!q) return bibliotecaState.conjuntos;
@@ -117,6 +141,10 @@ function getFilteredConjuntos() {
 
 function findConjuntoById(id) {
   const safeId = normalizeBibliotecaId(id);
+  if (!safeId) return null;
+  if (normalizeBibliotecaId(bibliotecaState.pendingConjunto?.id) === safeId) {
+    return bibliotecaState.pendingConjunto;
+  }
   return bibliotecaState.conjuntos.find(c => normalizeBibliotecaId(c.id) === safeId) || null;
 }
 
@@ -127,6 +155,43 @@ function normalizeBibliotecaId(value) {
 
 function getGenerationBatchId(result) {
   return normalizeBibliotecaId(result?.batch_id || result?.batchId);
+}
+
+function getAllConjuntosForSidebar() {
+  const pending = bibliotecaState.pendingConjunto;
+  const list = Array.isArray(bibliotecaState.conjuntos) ? bibliotecaState.conjuntos : [];
+  if (!pending) return list;
+
+  const pendingId = normalizeBibliotecaId(pending.id);
+  const withoutDuplicate = list.filter(c => normalizeBibliotecaId(c.id) !== pendingId);
+  return [pending, ...withoutDuplicate];
+}
+
+function getFilteredConjuntosForSidebar() {
+  const q = bibliotecaState.searchQuery.trim().toLowerCase();
+  const list = getAllConjuntosForSidebar();
+  if (!q) return list;
+  return list.filter(c =>
+    (c.titulo   || "").toLowerCase().includes(q) ||
+    (c.materia  || "").toLowerCase().includes(q) ||
+    (c.nivel    || "").toLowerCase().includes(q) ||
+    String(c.unidad || "").toLowerCase().includes(q)
+  );
+}
+
+function setSelectedConjunto(conjuntoId, { tab } = {}) {
+  const safeId = normalizeBibliotecaId(conjuntoId);
+  if (!safeId) return;
+  bibliotecaState.selectedConjuntoId = safeId;
+  if (tab) {
+    bibliotecaState.activeTab[safeId] = tab;
+  } else if (!bibliotecaState.activeTab[safeId]) {
+    bibliotecaState.activeTab[safeId] = "planeaciones";
+  }
+}
+
+function getSelectedConjunto() {
+  return findConjuntoById(bibliotecaState.selectedConjuntoId);
 }
 
 function normalizeGeneratedPlaneaciones(result) {
@@ -168,7 +233,7 @@ function mergePlaneaciones(existing, incoming) {
 
 function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
   const safeBatchId = normalizeBibliotecaId(batchId);
-  if (!safeBatchId || !Array.isArray(planeaciones) || !planeaciones.length) return;
+  if (!safeBatchId) return;
 
   const pending = bibliotecaState.pendingConjunto;
   let conjunto = findConjuntoById(safeBatchId);
@@ -185,6 +250,9 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
     bibliotecaState.conjuntos = [conjunto, ...bibliotecaState.conjuntos];
     bibliotecaState.expandedIds.delete(pending.tempId);
     delete bibliotecaState.activeTab[pending.tempId];
+    if (normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(pending.tempId)) {
+      bibliotecaState.selectedConjuntoId = safeBatchId;
+    }
     bibliotecaState.pendingConjunto = null;
   }
 
@@ -192,9 +260,9 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
 
   conjunto.isPending = false;
   conjunto.status_ui = "ready";
-  conjunto.planeaciones = mergePlaneaciones(conjunto.planeaciones, planeaciones);
+  conjunto.planeaciones = mergePlaneaciones(conjunto.planeaciones, planeaciones || []);
   conjunto.total_planeaciones = conjunto.planeaciones.length;
-  bibliotecaState.expandedIds.add(safeBatchId);
+  bibliotecaState.selectedConjuntoId = safeBatchId;
   bibliotecaState.activeTab[safeBatchId] = "planeaciones";
 }
 
@@ -259,7 +327,7 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
     if (Number(result?.error_count || 0) === 0) {
       delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
     }
-    bibliotecaState.expandedIds.add(batchId);
+    bibliotecaState.selectedConjuntoId = batchId;
     bibliotecaState.activeTab[batchId] = "planeaciones";
   }
 
@@ -284,7 +352,7 @@ function renderProgressItemHtml(item) {
   return `
     <div class="explorer-progress-item ${escapeHtml(status)}">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="font-semibold">${escapeHtml(item.titulo || "")}</p>
+        <p class="font-semibold">${escapeBibliotecaDisplayText(item.titulo)}</p>
         ${pill}
       </div>
       ${item.message ? `<p class="mt-1 text-xs">${escapeHtml(item.message)}</p>` : ""}
@@ -304,8 +372,23 @@ function renderPendingSpinnerCard(message) {
     </div>`;
 }
 
+function renderBibliotecaSectionHeader(title, actionHtml = "") {
+  return `
+    <div class="biblioteca-section-header">
+      <h4 class="biblioteca-section-title">${escapeHtml(title)}</h4>
+      ${actionHtml ? `<div class="biblioteca-section-actions">${actionHtml}</div>` : ""}
+    </div>
+  `;
+}
+
 function renderPlaneacionesTab(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
+  const id = escapeHtml(String(conjunto.id));
+  const addButton = conjunto.isPending ? "" : `
+    <button type="button" class="biblioteca-btn-secondary"
+      data-bib-action="agregar-planeacion" data-conjunto-id="${id}">
+      + Agregar planeacion
+    </button>`;
 
   let pendingHtml = "";
   if (conjunto.isPending) {
@@ -339,14 +422,18 @@ function renderPlaneacionesTab(conjunto) {
   }
 
   if (!planeaciones.length && !pendingHtml) {
-    return `<p class="biblioteca-empty-tab">Este conjunto no tiene planeaciones disponibles.</p>`;
+    return `
+      ${renderBibliotecaSectionHeader("Planeaciones del bloque", addButton)}
+      <p class="biblioteca-empty-tab">Este bloque no tiene planeaciones.</p>
+    `;
   }
 
   return `
+    ${renderBibliotecaSectionHeader("Planeaciones del bloque", addButton)}
     <div class="biblioteca-items-list">
       ${pendingHtml ? `<div class="mb-3">${pendingHtml}</div>` : ""}
       ${planeaciones.map(p => {
-        const titulo   = escapeHtml(p.tema || p.custom_title || "Sin titulo");
+        const titulo   = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
         const duracion = p.duracion ? `${p.duracion} min` : "";
         const fecha    = bibFormatDate(p.fecha_creacion);
         const meta     = [duracion, fecha ? `Creado: ${fecha}` : ""].filter(Boolean).join(" &middot; ");
@@ -357,7 +444,7 @@ function renderPlaneacionesTab(conjunto) {
               ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
             </div>
             <div class="biblioteca-item-actions">
-              <a href="detalle.html?id=${encodeURIComponent(p.id)}" class="biblioteca-btn-link">Abrir</a>
+              <a href="detalle.html?id=${encodeURIComponent(p.id)}" class="biblioteca-btn-link">Ver planeacion</a>
             </div>
           </div>
         `;
@@ -367,8 +454,18 @@ function renderPlaneacionesTab(conjunto) {
 }
 
 function renderExamenesTab(conjunto) {
+  const id = escapeHtml(String(conjunto.id));
+  const actionButton = conjunto.isPending ? "" : `
+    <button type="button" class="biblioteca-btn-secondary"
+      data-bib-action="generar-examen" data-conjunto-id="${id}">
+      + Generar examen
+    </button>`;
+
   if (conjunto.isPending) {
-    return `<p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear examenes cuando el conjunto este listo.</p>`;
+    return `
+      ${renderBibliotecaSectionHeader("Examenes del bloque")}
+      <p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear examenes cuando el bloque este listo.</p>
+    `;
   }
 
   const examenes = Array.isArray(conjunto.examenes) ? conjunto.examenes : [];
@@ -383,17 +480,22 @@ function renderExamenesTab(conjunto) {
   }
 
   if (!examenes.length && !pending) {
-    return `<p class="biblioteca-empty-tab">Aun no hay examenes en este conjunto.</p>`;
+    return `
+      ${renderBibliotecaSectionHeader("Examenes del bloque", actionButton)}
+      <p class="biblioteca-empty-tab">Aun no hay examenes en este bloque.</p>
+    `;
   }
 
   return `
+    ${renderBibliotecaSectionHeader("Examenes del bloque", actionButton)}
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${examenes.map(ex => {
-        const titulo    = escapeHtml(ex.titulo || "Examen");
+        const titulo    = escapeBibliotecaDisplayText(ex.titulo, "Examen");
         const preguntas = ex.total_preguntas ? `${ex.total_preguntas} preguntas` : "";
         const fecha     = bibFormatDate(ex.created_at);
-        const meta      = [preguntas, fecha ? `Creado: ${fecha}` : ""].filter(Boolean).join(" &middot; ");
+        const status    = ex.status ? `Estado: ${escapeHtml(String(ex.status))}` : "";
+        const meta      = [preguntas, status, fecha ? `Creado: ${fecha}` : ""].filter(Boolean).join(" &middot; ");
         return `
           <div class="biblioteca-item-row">
             <div class="biblioteca-item-info">
@@ -416,8 +518,18 @@ function renderExamenesTab(conjunto) {
 }
 
 function renderListasCotejoTab(conjunto) {
+  const id = escapeHtml(String(conjunto.id));
+  const actionButton = conjunto.isPending ? "" : `
+    <button type="button" class="biblioteca-btn-secondary"
+      data-bib-action="generar-lista" data-conjunto-id="${id}">
+      + Generar lista de cotejo
+    </button>`;
+
   if (conjunto.isPending) {
-    return `<p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear listas de cotejo cuando el conjunto este listo.</p>`;
+    return `
+      ${renderBibliotecaSectionHeader("Listas de cotejo")}
+      <p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear listas de cotejo cuando el bloque este listo.</p>
+    `;
   }
 
   const listas  = Array.isArray(conjunto.listas_cotejo) ? conjunto.listas_cotejo : [];
@@ -439,15 +551,19 @@ function renderListasCotejoTab(conjunto) {
   }
 
   if (!listas.length && !pending) {
-    return `<p class="biblioteca-empty-tab">Aun no hay listas de cotejo en este conjunto.</p>`;
+    return `
+      ${renderBibliotecaSectionHeader("Listas de cotejo", actionButton)}
+      <p class="biblioteca-empty-tab">Aun no hay listas de cotejo en este bloque.</p>
+    `;
   }
 
   return `
+    ${renderBibliotecaSectionHeader("Listas de cotejo", actionButton)}
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${listas.map(lista => {
-        const titulo = escapeHtml(lista.titulo || "Lista de cotejo");
-        const tema   = lista.tema ? escapeHtml(lista.tema) : "";
+        const titulo = escapeBibliotecaDisplayText(lista.titulo, "Lista de cotejo");
+        const tema   = lista.tema ? escapeBibliotecaDisplayText(lista.tema) : "";
         const puntos = lista.total_puntos ? `${lista.total_puntos} puntos` : "";
         const fecha  = bibFormatDate(lista.created_at);
         const meta   = [tema, puntos, fecha ? `Creado: ${fecha}` : ""].filter(Boolean).join(" &middot; ");
@@ -474,99 +590,147 @@ function renderListasCotejoTab(conjunto) {
 
 // ---- RENDER CONJUNTO ----
 
-function renderConjuntoExpanded(conjunto) {
+function renderBibliotecaTabs(conjunto) {
   const activeTab = bibliotecaState.activeTab[conjunto.id] || "planeaciones";
   const id = escapeHtml(String(conjunto.id));
   return `
-    <div class="biblioteca-conjunto-body">
-      <div class="biblioteca-tabs" role="tablist">
-        <button type="button" role="tab"
-          class="biblioteca-tab-btn ${activeTab === "planeaciones" ? "is-active" : ""}"
-          data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="planeaciones">
-          Planeaciones <span class="biblioteca-tab-count">${conjunto.total_planeaciones || 0}</span>
-        </button>
-        <button type="button" role="tab"
-          class="biblioteca-tab-btn ${activeTab === "examenes" ? "is-active" : ""}"
-          data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="examenes">
-          Examenes <span class="biblioteca-tab-count">${conjunto.total_examenes || 0}</span>
-        </button>
-        <button type="button" role="tab"
-          class="biblioteca-tab-btn ${activeTab === "listas" ? "is-active" : ""}"
-          data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="listas">
-          Listas de cotejo <span class="biblioteca-tab-count">${conjunto.total_listas_cotejo || 0}</span>
-        </button>
-      </div>
-      <div class="biblioteca-tab-content">
-        ${activeTab === "planeaciones" ? renderPlaneacionesTab(conjunto) : ""}
-        ${activeTab === "examenes"     ? renderExamenesTab(conjunto)     : ""}
-        ${activeTab === "listas"       ? renderListasCotejoTab(conjunto) : ""}
-      </div>
+    <div class="biblioteca-tabs" role="tablist">
+      <button type="button" role="tab"
+        class="biblioteca-tab-btn ${activeTab === "planeaciones" ? "is-active" : ""}"
+        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="planeaciones">
+        Planeaciones <span class="biblioteca-tab-count">${conjunto.total_planeaciones || 0}</span>
+      </button>
+      <button type="button" role="tab"
+        class="biblioteca-tab-btn ${activeTab === "examenes" ? "is-active" : ""}"
+        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="examenes">
+        Examenes <span class="biblioteca-tab-count">${conjunto.total_examenes || 0}</span>
+      </button>
+      <button type="button" role="tab"
+        class="biblioteca-tab-btn ${activeTab === "listas" ? "is-active" : ""}"
+        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="listas">
+        Listas de cotejo <span class="biblioteca-tab-count">${conjunto.total_listas_cotejo || 0}</span>
+      </button>
     </div>
   `;
 }
 
-function renderConjuntoCard(conjunto) {
-  const id         = escapeHtml(String(conjunto.id));
-  const isExpanded = bibliotecaState.expandedIds.has(conjunto.id);
-  const isPending  = !!conjunto.isPending;
-  const titulo     = escapeHtml(conjunto.titulo || "Sin titulo");
-  const metaParts  = [
-    conjunto.nivel   ? escapeHtml(conjunto.nivel)                      : "Sin nivel",
-    conjunto.materia ? escapeHtml(conjunto.materia)                    : "Sin materia",
-    conjunto.unidad  ? `Unidad ${escapeHtml(String(conjunto.unidad))}` : ""
-  ].filter(Boolean);
-  const meta  = metaParts.join(" &middot; ");
-  const fecha = bibFormatDate(conjunto.created_at);
+function renderBibliotecaTabContent(conjunto) {
+  const activeTab = bibliotecaState.activeTab[conjunto.id] || "planeaciones";
+  return `
+    <div class="biblioteca-tab-content">
+      ${activeTab === "planeaciones" ? renderPlaneacionesTab(conjunto) : ""}
+      ${activeTab === "examenes"     ? renderExamenesTab(conjunto)     : ""}
+      ${activeTab === "listas"       ? renderListasCotejoTab(conjunto) : ""}
+    </div>
+  `;
+}
 
-  const generatingPill = isPending && typeof renderProgressPill === "function"
-    ? renderProgressPill("generating", "Generando")
-    : "";
-
-  const actionButtons = isPending
-    ? `<button type="button" class="biblioteca-btn-primary"
-          data-bib-action="toggle-expand" data-conjunto-id="${id}">
-          ${isExpanded ? "Ocultar contenido" : "Ver progreso"}
-        </button>`
-    : `<button type="button" class="biblioteca-btn-primary"
-          data-bib-action="toggle-expand" data-conjunto-id="${id}">
-          ${isExpanded ? "Ocultar contenido" : "Ver contenido"}
-        </button>
-        <button type="button" class="biblioteca-btn-secondary"
-          data-bib-action="agregar-planeacion" data-conjunto-id="${id}">
-          + Agregar planeacion
-        </button>
-        <button type="button" class="biblioteca-btn-secondary"
-          data-bib-action="generar-examen" data-conjunto-id="${id}">
-          Generar examen
-        </button>
-        <button type="button" class="biblioteca-btn-secondary"
-          data-bib-action="generar-lista" data-conjunto-id="${id}">
-          Generar lista de cotejo
-        </button>`;
+function renderConjuntoSidebarItem(conjunto) {
+  const id = escapeHtml(String(conjunto.id));
+  const isSelected = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(conjunto.id);
+  const isPending = !!conjunto.isPending;
+  const titulo = escapeBibliotecaDisplayText(conjunto.titulo, "Sin titulo");
+  const meta = [
+    conjunto.nivel ? escapeBibliotecaDisplayText(conjunto.nivel) : "Sin nivel",
+    conjunto.materia ? escapeBibliotecaDisplayText(conjunto.materia) : "Sin materia",
+    conjunto.unidad ? `Unidad ${escapeBibliotecaDisplayText(conjunto.unidad)}` : ""
+  ].filter(Boolean).join(" | ");
+  const fecha = bibFormatDateTime(conjunto.created_at);
+  const planeaciones = Number(conjunto.total_planeaciones || 0);
+  const examenes = Number(conjunto.total_examenes || 0);
+  const listas = Number(conjunto.total_listas_cotejo || 0);
 
   return `
-    <div class="biblioteca-conjunto-card">
-      <div class="biblioteca-conjunto-header">
-        <div class="biblioteca-conjunto-eyebrow flex items-center gap-2">
-          <span>${isPending ? "Generando conjunto" : "Conjunto de planeaciones"}</span>
-          ${generatingPill}
-        </div>
-        <h3 class="biblioteca-conjunto-title">${titulo}</h3>
-        <p class="biblioteca-conjunto-meta">${meta}</p>
-        ${fecha ? `<p class="biblioteca-conjunto-date">Creado: ${fecha}</p>` : ""}
+    <button type="button"
+      class="biblioteca-sidebar-item ${isSelected ? "is-active" : ""} ${isPending ? "is-generating" : ""}"
+      data-bib-action="select-conjunto"
+      data-conjunto-id="${id}">
+      <span class="biblioteca-sidebar-item-main">
+        <span class="biblioteca-sidebar-title">${titulo}</span>
+        <span class="biblioteca-sidebar-meta">${meta || "Sin datos"}</span>
+        <span class="biblioteca-sidebar-date">${fecha || (isPending ? "Generando" : "")}</span>
+        <span class="biblioteca-sidebar-counts">
+          ${planeaciones} planeaciones · ${examenes} examenes · ${listas} listas de cotejo
+        </span>
+      </span>
+    </button>
+  `;
+}
 
-        <div class="biblioteca-conjunto-counts">
-          <span class="biblioteca-count-pill">${conjunto.total_planeaciones || 0} planeaciones</span>
-          <span class="biblioteca-count-pill">${conjunto.total_examenes || 0} examenes</span>
-          <span class="biblioteca-count-pill">${conjunto.total_listas_cotejo || 0} listas</span>
-        </div>
+function renderBibliotecaSidebar(conjuntos) {
+  const total = getAllConjuntosForSidebar().length;
+  const emptyMessage = bibliotecaState.searchQuery.trim()
+    ? "No se encontraron bloques con esa busqueda."
+    : "Aun no tienes bloques de planeación.";
 
-        <div class="biblioteca-conjunto-actions">
-          ${actionButtons}
+  return `
+    <aside class="biblioteca-sidebar" aria-label="Bloques de planeación">
+      <div class="biblioteca-sidebar-head">
+        <h3>Bloques de planeación</h3>
+        <span class="biblioteca-sidebar-badge">${total}</span>
+      </div>
+      <div class="biblioteca-search-wrap">
+        <input
+          id="biblioteca-search"
+          type="search"
+          class="biblioteca-search-input"
+          placeholder="Buscar bloque..."
+          autocomplete="off"
+        />
+      </div>
+      <div class="biblioteca-sidebar-list">
+        ${conjuntos.length
+          ? conjuntos.map(renderConjuntoSidebarItem).join("")
+          : `<p class="biblioteca-sidebar-empty">${escapeHtml(emptyMessage)}</p>`}
+      </div>
+    </aside>
+  `;
+}
+
+function renderBibliotecaDetailEmpty() {
+  return `
+    <section class="biblioteca-detail">
+      <div class="biblioteca-detail-empty">
+        <h3>Selecciona un bloque</h3>
+        <p>Elige un bloque de la izquierda para ver sus planeaciones, examenes y listas.</p>
+        <button type="button" class="biblioteca-btn-primary" data-bib-action="crear-planeaciones">
+          + Crear bloque de planeación
+        </button>
+      </div>
+    </section>
+  `;
+}
+
+function renderBibliotecaDetail(conjunto) {
+  if (!conjunto) return renderBibliotecaDetailEmpty();
+
+  const titulo = escapeBibliotecaDisplayText(conjunto.titulo, "Sin titulo");
+  const metaItems = [
+    { label: "Nivel", value: conjunto.nivel ? escapeBibliotecaDisplayText(conjunto.nivel) : "Sin nivel" },
+    { label: "Materia", value: conjunto.materia ? escapeBibliotecaDisplayText(conjunto.materia) : "Sin materia" },
+    { label: "Unidad", value: conjunto.unidad ? `Unidad ${escapeBibliotecaDisplayText(conjunto.unidad)}` : "Sin unidad" },
+    { label: "Creado", value: bibFormatDateTime(conjunto.created_at) || (conjunto.isPending ? "Generando" : "Sin fecha") }
+  ];
+
+  return `
+    <section class="biblioteca-detail">
+      <div class="biblioteca-detail-head">
+        <div class="biblioteca-detail-summary">
+          <p class="biblioteca-detail-eyebrow">BLOQUE SELECCIONADO</p>
+          <h3 class="biblioteca-detail-title">${titulo}</h3>
+          <div class="biblioteca-detail-meta-grid">
+            ${metaItems.map(item => `
+              <div class="biblioteca-detail-meta-item">
+                <span class="biblioteca-detail-meta-label">${escapeHtml(item.label)}</span>
+                <span class="biblioteca-detail-meta-value">${item.value}</span>
+              </div>
+            `).join("")}
+          </div>
         </div>
       </div>
-      ${isExpanded ? renderConjuntoExpanded(conjunto) : ""}
-    </div>
+      ${renderBibliotecaTabs(conjunto)}
+      ${renderBibliotecaTabContent(conjunto)}
+    </section>
   `;
 }
 
@@ -597,46 +761,15 @@ function renderBibliotecaContent() {
     return;
   }
 
-  const filtered        = getFilteredConjuntos();
-  const pendingConjunto = bibliotecaState.pendingConjunto;
-
-  let conjuntosHtml;
-  if (!bibliotecaState.conjuntos.length && !pendingConjunto) {
-    conjuntosHtml = `
-      <div class="biblioteca-empty">
-        <h3 class="biblioteca-empty-title">Aun no tienes conjuntos de planeaciones</h3>
-        <p class="biblioteca-empty-text">Crea tus primeras planeaciones para comenzar.</p>
-        <button type="button" class="biblioteca-btn-primary" style="margin-top:1rem"
-          data-bib-action="crear-planeaciones">+ Crear planeaciones</button>
-      </div>
-    `;
-  } else if (!filtered.length && !pendingConjunto) {
-    conjuntosHtml = `
-      <div class="biblioteca-empty">
-        <p class="biblioteca-empty-text">No se encontraron conjuntos con esa busqueda.</p>
-      </div>
-    `;
-  } else {
-    const allList = pendingConjunto ? [pendingConjunto, ...filtered] : filtered;
-    conjuntosHtml = `
-      <div class="biblioteca-conjuntos-list">
-        ${allList.map(c => renderConjuntoCard(c)).join("")}
-      </div>
-    `;
-  }
+  const filtered = getFilteredConjuntosForSidebar();
+  const selected = getSelectedConjunto();
 
   container.innerHTML = `
     <div class="biblioteca-shell">
-      <div class="biblioteca-search-wrap">
-        <input
-          id="biblioteca-search"
-          type="search"
-          class="biblioteca-search-input"
-          placeholder="Buscar por titulo, materia, nivel o unidad..."
-          autocomplete="off"
-        />
+      <div class="biblioteca-layout">
+        ${renderBibliotecaSidebar(filtered)}
+        ${renderBibliotecaDetail(selected)}
       </div>
-      ${conjuntosHtml}
     </div>
   `;
 
@@ -658,9 +791,10 @@ async function loadAndRenderBiblioteca(options = {}) {
 
   // Capture pending info before clearing (for reconciliation after quick-create)
   const prevTempId    = bibliotecaState.pendingConjunto?.tempId || null;
-  const wasExpanded   = prevTempId ? bibliotecaState.expandedIds.has(prevTempId) : false;
+  const wasSelected   = prevTempId ? normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(prevTempId) : false;
   const prevActiveTab = prevTempId ? (bibliotecaState.activeTab[prevTempId] || "planeaciones") : null;
-  const prevConjuntos = [...bibliotecaState.conjuntos];
+  const prevSelectedId = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId);
+  const prevConjuntos = getAllConjuntosForSidebar();
 
   if (!silent) {
     bibliotecaState.pendingConjunto = null;
@@ -678,15 +812,14 @@ async function loadAndRenderBiblioteca(options = {}) {
 
     // Reconciliation: map tempId expanded state to the newly created real conjunto
     if (prevTempId) {
-      bibliotecaState.expandedIds.delete(prevTempId);
       delete bibliotecaState.activeTab[prevTempId];
-      if (wasExpanded) {
+      if (wasSelected) {
         const prevIds     = new Set(prevConjuntos.map(c => normalizeBibliotecaId(c.id)));
         const newConjunto = targetBatchId
           ? newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId)
           : newList.find(c => !prevIds.has(normalizeBibliotecaId(c.id)));
         if (newConjunto) {
-          bibliotecaState.expandedIds.add(newConjunto.id);
+          bibliotecaState.selectedConjuntoId = normalizeBibliotecaId(newConjunto.id);
           bibliotecaState.activeTab[newConjunto.id] = prevActiveTab;
         }
       }
@@ -695,7 +828,7 @@ async function loadAndRenderBiblioteca(options = {}) {
     if (targetBatchId) {
       const target = newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId);
       if (target) {
-        bibliotecaState.expandedIds.add(target.id);
+        bibliotecaState.selectedConjuntoId = normalizeBibliotecaId(target.id);
         bibliotecaState.activeTab[target.id] = targetActiveTab;
       }
     }
@@ -703,6 +836,18 @@ async function loadAndRenderBiblioteca(options = {}) {
     bibliotecaState.conjuntos = newList;
     bibliotecaState.loading   = false;
     bibliotecaState.pendingConjunto = null;
+
+    const selectedStillExists = findConjuntoById(bibliotecaState.selectedConjuntoId);
+    if (!selectedStillExists) {
+      const fallback = targetBatchId
+        ? newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId)
+        : newList.find(c => normalizeBibliotecaId(c.id) === prevSelectedId) || newList[0] || null;
+      bibliotecaState.selectedConjuntoId = fallback ? normalizeBibliotecaId(fallback.id) : null;
+      if (fallback && !bibliotecaState.activeTab[fallback.id]) {
+        bibliotecaState.activeTab[fallback.id] = "planeaciones";
+      }
+    }
+
     renderBibliotecaContent();
   } catch (error) {
     console.error("[biblioteca] Error al cargar conjuntos:", error);
@@ -730,21 +875,20 @@ function onBibliotecaClick(event) {
   const listaId    = btn.dataset.listaId;
 
   switch (action) {
+    case "select-conjunto": {
+      setSelectedConjunto(conjuntoId);
+      renderBibliotecaContent();
+      break;
+    }
+
     case "toggle-expand": {
-      if (bibliotecaState.expandedIds.has(conjuntoId)) {
-        bibliotecaState.expandedIds.delete(conjuntoId);
-      } else {
-        bibliotecaState.expandedIds.add(conjuntoId);
-        if (!bibliotecaState.activeTab[conjuntoId]) {
-          bibliotecaState.activeTab[conjuntoId] = "planeaciones";
-        }
-      }
+      setSelectedConjunto(conjuntoId);
       renderBibliotecaContent();
       break;
     }
 
     case "switch-tab": {
-      bibliotecaState.activeTab[conjuntoId] = tab;
+      setSelectedConjunto(conjuntoId, { tab });
       renderBibliotecaContent();
       break;
     }
@@ -903,7 +1047,7 @@ function renderBibliotecaExamModal() {
 
   const state    = bibliotecaState.examModal;
   const conjunto = findConjuntoById(state.conjuntoId);
-  const titulo   = conjunto ? escapeHtml(conjunto.titulo || "Conjunto") : "";
+  const titulo   = conjunto ? escapeBibliotecaDisplayText(conjunto.titulo, "Bloque") : "";
 
   const tiposHtml = BIB_EXAM_TIPOS.map(tipo => {
     const isSelected = state.selectedTypes.includes(tipo.value);
@@ -933,7 +1077,7 @@ function renderBibliotecaExamModal() {
         ${state.planeaciones.map(p => {
           const pid      = String(p.id);
           const checked  = state.selectedPlaneacionIds.includes(pid);
-          const titulo_p = escapeHtml(p.tema || p.custom_title || "Sin titulo");
+          const titulo_p = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
           const dur      = p.duracion ? ` · ${p.duracion} min` : "";
           return `
             <label class="flex items-start gap-2 py-0.5 cursor-pointer select-none">
@@ -943,7 +1087,7 @@ function renderBibliotecaExamModal() {
             </label>`;
         }).join("")}
       </div>`
-    : `<p class="text-xs text-slate-500">No hay planeaciones en este conjunto.</p>`;
+    : `<p class="text-xs text-slate-500">No hay planeaciones en este bloque.</p>`;
 
   const errorHtml = state.error
     ? `<p class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">${escapeHtml(state.error)}</p>`
@@ -1050,7 +1194,7 @@ async function submitBibliotecaExamModal() {
   const state = bibliotecaState.examModal;
 
   if (!state.unidadId) {
-    bibliotecaState.examModal.error = "Este conjunto no tiene unidad vinculada.";
+    bibliotecaState.examModal.error = "Este bloque no tiene unidad vinculada.";
     renderBibliotecaExamModal();
     return;
   }
@@ -1093,8 +1237,7 @@ async function submitBibliotecaExamModal() {
     // Close modal immediately — progress will show in the card
     const conjuntoId = state.conjuntoId;
     closeBibliotecaExamModal();
-    bibliotecaState.expandedIds.add(conjuntoId);
-    bibliotecaState.activeTab[conjuntoId] = "examenes";
+    setSelectedConjunto(conjuntoId, { tab: "examenes" });
     bibliotecaState.pendingExamenByBatchId[conjuntoId] = { message: "Iniciando generacion de examen...", error: "" };
     renderBibliotecaContent();
 
@@ -1123,10 +1266,11 @@ async function submitBibliotecaExamModal() {
         if (polls >= MAX_POLLS) throw new Error("La generacion tardo demasiado. Intenta de nuevo.");
 
         delete bibliotecaState.pendingExamenByBatchId[conjuntoId];
-        await loadAndRenderBiblioteca();
-        bibliotecaState.expandedIds.add(conjuntoId);
-        bibliotecaState.activeTab[conjuntoId] = "examenes";
-        renderBibliotecaContent();
+        await loadAndRenderBiblioteca({
+          silent: true,
+          targetBatchId: conjuntoId,
+          activeTab: "examenes"
+        });
       } catch (pollError) {
         console.error("[biblioteca] Error en polling de examen:", pollError);
         bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
@@ -1176,14 +1320,14 @@ function renderBibliotecaListaModal() {
 
   const state    = bibliotecaState.listaModal;
   const conjunto = findConjuntoById(state.conjuntoId);
-  const titulo   = conjunto ? escapeHtml(conjunto.titulo || "Conjunto") : "";
+  const titulo   = conjunto ? escapeBibliotecaDisplayText(conjunto.titulo, "Bloque") : "";
 
   const planeacionesHtml = state.planeaciones.length
     ? `<div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 max-h-44 overflow-y-auto space-y-1">
         ${state.planeaciones.map(p => {
           const pid      = String(p.id);
           const checked  = state.selectedPlaneacionIds.includes(pid);
-          const titulo_p = escapeHtml(p.tema || p.custom_title || "Sin titulo");
+          const titulo_p = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
           const dur      = p.duracion ? ` · ${p.duracion} min` : "";
           return `
             <label class="flex items-start gap-2 py-0.5 cursor-pointer select-none">
@@ -1193,7 +1337,7 @@ function renderBibliotecaListaModal() {
             </label>`;
         }).join("")}
       </div>`
-    : `<p class="text-sm text-slate-500">No hay planeaciones en este conjunto.</p>`;
+    : `<p class="text-sm text-slate-500">No hay planeaciones en este bloque.</p>`;
 
   const errorHtml = state.error
     ? `<p class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">${escapeHtml(state.error)}</p>`
@@ -1282,8 +1426,7 @@ async function submitBibliotecaListaModal() {
 
     // Close modal immediately — progress shows in card
     closeBibliotecaListaModal();
-    bibliotecaState.expandedIds.add(conjuntoId);
-    bibliotecaState.activeTab[conjuntoId] = "listas";
+    setSelectedConjunto(conjuntoId, { tab: "listas" });
     bibliotecaState.pendingListaByBatchId[conjuntoId] = {
       message: `Generando ${selectedIds.length} lista(s) de cotejo...`,
       result:  null,
@@ -1308,10 +1451,11 @@ async function submitBibliotecaListaModal() {
 
         await new Promise(r => setTimeout(r, 1500));
         delete bibliotecaState.pendingListaByBatchId[conjuntoId];
-        await loadAndRenderBiblioteca();
-        bibliotecaState.expandedIds.add(conjuntoId);
-        bibliotecaState.activeTab[conjuntoId] = "listas";
-        renderBibliotecaContent();
+        await loadAndRenderBiblioteca({
+          silent: true,
+          targetBatchId: conjuntoId,
+          activeTab: "listas"
+        });
       } catch (genError) {
         console.error("[biblioteca] Error generando listas:", genError);
         bibliotecaState.pendingListaByBatchId[conjuntoId] = {
@@ -1335,7 +1479,7 @@ async function submitBibliotecaListaModal() {
 
 function openBibliotecaAgregarModal(conjunto) {
   if (!conjunto.unidad_id) {
-    alert("Este conjunto no tiene unidad vinculada. Para agregar planeaciones, usa el flujo normal de creacion desde la jerarquia.");
+    alert("Este bloque no tiene unidad vinculada. Para agregar planeaciones, usa el flujo normal de creacion desde la jerarquia.");
     return;
   }
   bibliotecaState.agregarModal = {
@@ -1369,8 +1513,8 @@ function renderBibliotecaAgregarModal() {
 
   const contextHtml = `
     <div class="rounded-xl border border-cyan-100 bg-cyan-50/60 px-3 py-2.5 text-sm text-slate-700">
-      ${s.materia ? `<span class="font-semibold">${escapeHtml(s.materia)}</span>` : ""}
-      ${s.nivel ? ` &middot; ${escapeHtml(s.nivel)}` : ""}
+      ${s.materia ? `<span class="font-semibold">${escapeBibliotecaDisplayText(s.materia)}</span>` : ""}
+      ${s.nivel ? ` &middot; ${escapeBibliotecaDisplayText(s.nivel)}` : ""}
       ${s.unidad != null ? ` &middot; Unidad ${escapeHtml(String(s.unidad))}` : ""}
     </div>`;
 
@@ -1438,7 +1582,7 @@ function renderBibliotecaAgregarModal() {
     <div class="flex items-start justify-between gap-3 mb-4">
       <div>
         <p class="text-xs font-semibold uppercase tracking-widest text-cyan-700">Agregar planeaciones</p>
-        <h3 class="mt-1 text-base font-semibold text-slate-900">${escapeHtml(findConjuntoById(s.conjuntoId)?.titulo || "Conjunto")}</h3>
+        <h3 class="mt-1 text-base font-semibold text-slate-900">${escapeBibliotecaDisplayText(findConjuntoById(s.conjuntoId)?.titulo, "Bloque")}</h3>
       </div>
       <button type="button" id="bib-agr-close"
         class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50">
@@ -1592,8 +1736,7 @@ async function submitBibliotecaAgregarModal() {
   closeBibliotecaAgregarModal();
 
   // Show progress in card
-  bibliotecaState.expandedIds.add(conjuntoId);
-  bibliotecaState.activeTab[conjuntoId] = "planeaciones";
+  setSelectedConjunto(conjuntoId, { tab: "planeaciones" });
   bibliotecaState.pendingPlaneacionesByBatchId[conjuntoId] = {
     items: temasSnap.map(t => ({ titulo: t.titulo, status: "pending", message: "" })),
     error: ""
@@ -1636,8 +1779,7 @@ async function submitBibliotecaAgregarModal() {
         delete bibliotecaState.pendingPlaneacionesByBatchId[conjuntoId];
         if (batchId !== conjuntoId) delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
       }
-      bibliotecaState.expandedIds.add(batchId);
-      bibliotecaState.activeTab[batchId] = "planeaciones";
+      setSelectedConjunto(batchId, { tab: "planeaciones" });
       renderBibliotecaContent();
 
       await loadAndRenderBiblioteca({
