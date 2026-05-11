@@ -134,14 +134,14 @@
 }
 
 #quick-create-shell {
-  padding-top: 6.75rem;
-  padding-bottom: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
   overflow-y: auto;
 }
 
 #quick-create-card {
   display: flex;
-  max-height: calc(100vh - 7.75rem);
+  max-height: calc(100vh - 4rem);
   flex-direction: column;
 }
 
@@ -169,12 +169,31 @@
 }
 
 #quick-temas-list {
-  max-height: 11.5rem;
+  max-height: 17rem;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 0.25rem;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
+}
+
+.actividad-momento-row {
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 12rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.actividad-momento-label {
+  min-width: 0;
+  color: rgb(71 85 105);
+}
+
+.actividad-momento-row .actividad-didactica-select {
+  width: 100%;
+  max-width: 30rem;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
 }
 
 #quick-create-panel select,
@@ -212,12 +231,12 @@
   }
 
   #quick-create-shell {
-    padding-top: 7.5rem;
-    padding-bottom: 1.5rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
   }
 
   #quick-create-card {
-    max-height: calc(100vh - 8.5rem);
+    max-height: calc(100vh - 5rem);
   }
 
   #quick-create-tema-row {
@@ -780,6 +799,11 @@
   }
 
   .explorer-topic-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .actividad-momento-row,
+  .biblioteca-tema-create-row {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -1362,11 +1386,527 @@
 .biblioteca-modal-card {
   width: 100%;
   max-width: 640px;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
   border-radius: 1.5rem;
   border: 1px solid rgb(226 232 240);
   background: #ffffff;
   padding: 1.25rem;
   box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.25);
+}
+
+.biblioteca-agregar-card {
+  max-height: calc(100vh - 3rem);
+}
+
+.biblioteca-agregar-temas-scroll {
+  max-height: min(46vh, 28rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+.biblioteca-tema-create-box {
+  margin-top: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1rem;
+  background: rgb(248 250 252);
+  padding: 1rem;
+}
+
+.biblioteca-tema-create-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 128px;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.biblioteca-tema-create-row input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(203 213 225);
+  background: #fff;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.biblioteca-tema-create-row input:focus {
+  border-color: rgb(8 145 178);
+  outline: none;
+}
+
+.biblioteca-tema-add-btn {
+  min-height: 42px;
+  white-space: nowrap;
+  border: 1px solid rgb(103 232 249);
+  border-radius: 0.75rem;
+  background: rgb(236 254 255);
+  color: rgb(14 116 144);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.biblioteca-tema-add-btn:hover {
+  background: rgb(207 250 254);
+  border-color: rgb(34 211 238);
+}
+
+.biblioteca-exam-create-card {
+  width: min(90vw, 720px);
+  max-width: 720px;
+  max-height: calc(100vh - 4rem);
+  overflow: hidden;
+  border-radius: 1.35rem;
+  padding: 1rem;
+}
+
+.bib-exam-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.bib-exam-title-block {
+  min-width: 0;
+}
+
+.bib-exam-eyebrow {
+  margin: 0 0 0.55rem;
+  color: rgb(14 116 144);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.38em;
+}
+
+.bib-exam-title-block h3 {
+  margin: 0;
+  color: rgb(15 23 42);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.bib-exam-title-block p {
+  margin: 0.45rem 0 0;
+  color: rgb(71 85 105);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.bib-exam-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-shrink: 0;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 9999px;
+  background: #fff;
+  color: rgb(100 116 139);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.bib-exam-close:hover {
+  background: rgb(248 250 252);
+}
+
+.bib-exam-content {
+  margin-top: 1rem;
+  min-height: 0;
+  max-height: calc(100vh - 11rem);
+  overflow: hidden;
+}
+
+.bib-exam-section + .bib-exam-section {
+  margin-top: 1rem;
+}
+
+.bib-exam-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.bib-exam-section-head h4 {
+  margin: 0;
+  color: rgb(51 65 85);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.bib-exam-section-head span {
+  color: rgb(100 116 139);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.bib-exam-types {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.6rem;
+}
+
+.bib-exam-choice,
+.bib-exam-topic {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.55rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1.05rem;
+  background: rgb(248 250 252);
+  padding: 0.45rem 0.65rem;
+  color: rgb(15 23 42);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bib-exam-choice {
+  gap: 0.55rem;
+  min-height: 2.3rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.bib-exam-choice span {
+  flex: 1;
+  min-width: 0;
+}
+
+.bib-exam-count {
+  width: 3.75rem;
+  flex-shrink: 0;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 0.65rem;
+  background: #fff;
+  padding: 0.28rem 0.45rem;
+  color: rgb(15 23 42);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.bib-exam-choice.is-selected,
+.bib-exam-topic:has(input:checked) {
+  border-color: rgb(186 230 253);
+  background: rgb(240 249 255);
+}
+
+.bib-exam-checkbox {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  border-radius: 0.25rem;
+  accent-color: rgb(14 116 144);
+}
+
+.bib-exam-topic-list {
+  max-height: min(28vh, 12rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1.15rem;
+  background: rgb(248 250 252);
+}
+
+.bib-exam-topic {
+  min-height: 2.55rem;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 1rem;
+  background: #fff;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.92rem;
+}
+
+.bib-exam-topic + .bib-exam-topic {
+  border-top: 0;
+}
+
+.bib-exam-empty {
+  color: rgb(100 116 139);
+  font-size: 0.9rem;
+}
+
+.bib-exam-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.bib-exam-cancel,
+.bib-exam-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.45rem;
+  border-radius: 1rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.bib-exam-cancel {
+  border: 1px solid rgb(203 213 225);
+  background: #fff;
+  color: rgb(51 65 85);
+}
+
+.bib-exam-submit {
+  border: 1px solid rgb(14 116 144);
+  background: rgb(14 116 144);
+  color: #fff;
+}
+
+.bib-exam-submit:hover {
+  background: rgb(21 94 117);
+}
+
+.bib-exam-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.biblioteca-lista-create-card {
+  width: min(92vw, 680px);
+  max-width: 680px;
+  max-height: calc(100vh - 3rem);
+  overflow: hidden;
+  border-radius: 1.35rem;
+  padding: 1rem;
+}
+
+.bib-lista-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bib-lista-title-block {
+  min-width: 0;
+}
+
+.bib-lista-eyebrow {
+  margin: 0 0 0.55rem;
+  color: rgb(14 116 144);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+}
+
+.bib-lista-title-block h3 {
+  margin: 0;
+  color: rgb(15 23 42);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.bib-lista-title-block p {
+  margin: 0.45rem 0 0;
+  color: rgb(71 85 105);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.bib-lista-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-shrink: 0;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 9999px;
+  background: #fff;
+  color: rgb(100 116 139);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.bib-lista-close:hover {
+  background: rgb(248 250 252);
+}
+
+.bib-lista-content {
+  margin-top: 1rem;
+  min-height: 0;
+  max-height: calc(100vh - 10rem);
+  overflow: hidden;
+}
+
+.bib-lista-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.bib-lista-section-head h4 {
+  margin: 0;
+  color: rgb(51 65 85);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.bib-lista-section-head span {
+  color: rgb(100 116 139);
+  font-size: 0.92rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bib-lista-topic-list {
+  max-height: min(42vh, 20rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1.15rem;
+  background: rgb(248 250 252);
+}
+
+.bib-lista-topic {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.85rem;
+  border: 1px solid rgb(226 232 240);
+  border-right: 0;
+  border-left: 0;
+  border-radius: 1rem;
+  background: #fff;
+  padding: 0.55rem 0.8rem;
+  color: rgb(15 23 42);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bib-lista-topic + .bib-lista-topic {
+  border-top: 0;
+}
+
+.bib-lista-topic.is-disabled {
+  background: rgb(248 250 252);
+  color: rgb(71 85 105);
+  cursor: not-allowed;
+  opacity: 0.82;
+}
+
+.bib-lista-checkbox {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  border-radius: 0.25rem;
+  accent-color: rgb(14 116 144);
+}
+
+.bib-lista-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.bib-lista-topic-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bib-lista-generated-badge {
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: rgb(207 250 254);
+  color: rgb(8 145 178);
+  padding: 0.18rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.bib-lista-empty {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1rem;
+  background: rgb(248 250 252);
+  padding: 1rem;
+  color: rgb(100 116 139);
+  font-size: 0.9rem;
+}
+
+.bib-lista-note,
+.bib-lista-note-alert {
+  margin: 0.9rem 0 0;
+  color: rgb(100 116 139);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.bib-lista-note-alert {
+  border: 1px solid rgb(186 230 253);
+  border-radius: 0.9rem;
+  background: rgb(240 249 255);
+  padding: 0.65rem 0.8rem;
+  color: rgb(14 116 144);
+  font-weight: 700;
+}
+
+.bib-lista-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.bib-lista-cancel,
+.bib-lista-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.45rem;
+  border-radius: 1rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.bib-lista-cancel {
+  border: 1px solid rgb(203 213 225);
+  background: #fff;
+  color: rgb(51 65 85);
+}
+
+.bib-lista-submit {
+  border: 1px solid rgb(14 116 144);
+  background: rgb(14 116 144);
+  color: #fff;
+}
+
+.bib-lista-submit:hover {
+  background: rgb(21 94 117);
+}
+
+.bib-lista-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 @media (min-width: 640px) {
@@ -1404,6 +1944,49 @@
 @media (max-width: 639px) {
   .biblioteca-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .biblioteca-tema-create-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .biblioteca-exam-create-card {
+    padding: 1rem;
+  }
+
+  .biblioteca-lista-create-card {
+    padding: 1rem;
+  }
+
+  .bib-exam-head,
+  .bib-exam-section-head,
+  .bib-exam-actions,
+  .bib-lista-head,
+  .bib-lista-section-head,
+  .bib-lista-actions {
+    align-items: stretch;
+  }
+
+  .bib-exam-types {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bib-exam-actions,
+  .bib-lista-actions {
+    flex-direction: column-reverse;
+  }
+
+  .bib-lista-section-head {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .bib-lista-topic {
+    align-items: flex-start;
+  }
+
+  .bib-lista-topic-title {
+    white-space: normal;
   }
 
   .biblioteca-sidebar-list {

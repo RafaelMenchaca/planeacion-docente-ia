@@ -319,10 +319,10 @@ function renderActividadesMomentosControl({ scope, localId, actividadesMomentos 
   return `
     <div class="actividades-momentos mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
       <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividades did&aacute;cticas opcionales</p>
-      <div class="mt-2 grid gap-2 md:grid-cols-3">
+      <div class="mt-2 grid gap-2">
         ${MOMENTOS_ACTIVIDADES_DIDACTICAS.map(({ key, label }) => `
-          <label class="min-w-0 text-xs font-medium text-slate-600">
-            <span class="mb-1 block">${escapeHtml(label)}</span>
+          <label class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
+            <span class="actividad-momento-label">${escapeHtml(label)}</span>
             ${renderActividadDidacticaSelect({
               scope,
               localId,

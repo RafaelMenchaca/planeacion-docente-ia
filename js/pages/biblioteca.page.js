@@ -105,13 +105,13 @@ window.biblioteca = {
 
 // Tipos de pregunta para el modal de examen
 const BIB_EXAM_TIPOS = [
-  { value: "opcion_multiple",           label: "Opcion multiple",    defaultCount: 5 },
-  { value: "verdadero_falso",           label: "Verdadero / Falso",  defaultCount: 5 },
-  { value: "respuesta_corta",           label: "Respuesta corta",    defaultCount: 3 },
-  { value: "pregunta_abierta",          label: "Pregunta abierta",   defaultCount: 1 },
-  { value: "emparejamiento",            label: "Emparejamiento",     defaultCount: 1 },
-  { value: "calculo_numerico",          label: "Calculo / Numerica", defaultCount: 3 },
-  { value: "ordenacion_jerarquizacion", label: "Ordenacion",         defaultCount: 1 }
+  { value: "opcion_multiple",           label: "Opcion multiple", defaultCount: 5 },
+  { value: "verdadero_falso",           label: "Verdadero/Falso", defaultCount: 5 },
+  { value: "respuesta_corta",           label: "Respuesta corta / completar", defaultCount: 3 },
+  { value: "emparejamiento",            label: "Emparejamiento / relacion de columnas", defaultCount: 1 },
+  { value: "pregunta_abierta",          label: "Pregunta abierta / ensayo", defaultCount: 1 },
+  { value: "calculo_numerico",          label: "Calculo / numerica", defaultCount: 3 },
+  { value: "ordenacion_jerarquizacion", label: "Ordenacion / jerarquizacion", defaultCount: 1 }
 ];
 
 // ---- HELPERS ----
@@ -1134,7 +1134,7 @@ function openBibliotecaExamModal(conjunto) {
     conjuntoId:            conjunto.id,
     unidadId:              conjunto.unidad_id || null,
     planeaciones,
-    selectedPlaneacionIds: planeaciones.map(p => String(p.id)),  // all selected by default
+    selectedPlaneacionIds: [],
     selectedTypes:         [],
     questionCounts:        {},
     submitting:            false,
@@ -1157,91 +1157,81 @@ function renderBibliotecaExamModal() {
   const modal = document.getElementById("biblioteca-exam-modal");
   if (!modal) return;
 
-  const state    = bibliotecaState.examModal;
-  const conjunto = findConjuntoById(state.conjuntoId);
-  const titulo   = conjunto ? escapeBibliotecaDisplayText(conjunto.titulo, "Bloque") : "";
+  const state = bibliotecaState.examModal;
 
   const tiposHtml = BIB_EXAM_TIPOS.map(tipo => {
     const isSelected = state.selectedTypes.includes(tipo.value);
     const count      = state.questionCounts[tipo.value] || tipo.defaultCount;
     return `
-      <label class="flex items-start gap-3 rounded-xl border ${isSelected ? "border-cyan-200 bg-cyan-50" : "border-slate-200 bg-white"} p-3 cursor-pointer select-none">
-        <input type="checkbox" class="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-slate-300"
+      <label class="bib-exam-choice ${isSelected ? "is-selected" : ""}">
+        <input type="checkbox" class="bib-exam-checkbox"
           data-bib-exam-type="${escapeHtml(tipo.value)}" ${isSelected ? "checked" : ""} />
-        <div class="flex-1 min-w-0">
-          <span class="block text-sm font-semibold text-slate-800">${escapeHtml(tipo.label)}</span>
-          ${isSelected ? `
-            <div class="mt-1.5 flex items-center gap-2">
-              <span class="text-xs text-slate-500">Preguntas:</span>
-              <input type="number" min="1" max="30" value="${count}"
-                data-bib-exam-count="${escapeHtml(tipo.value)}"
-                class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-xs focus:border-cyan-600 focus:outline-none" />
-            </div>
-          ` : ""}
-        </div>
+        <span>${escapeHtml(tipo.label)}</span>
+        ${isSelected ? `
+          <input type="number" min="1" max="30" value="${count}"
+            data-bib-exam-count="${escapeHtml(tipo.value)}"
+            class="bib-exam-count"
+            aria-label="Numero de preguntas para ${escapeHtml(tipo.label)}" />
+        ` : ""}
       </label>
     `;
   }).join("");
 
   // Planeaciones with checkboxes
   const planeacionesHtml = state.planeaciones.length
-    ? `<div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 max-h-44 overflow-y-auto space-y-1">
+    ? `<div class="bib-exam-topic-list">
         ${state.planeaciones.map(p => {
           const pid      = String(p.id);
           const checked  = state.selectedPlaneacionIds.includes(pid);
           const titulo_p = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
-          const dur      = p.duracion ? ` · ${p.duracion} min` : "";
           return `
-            <label class="flex items-start gap-2 py-0.5 cursor-pointer select-none">
-              <input type="checkbox" class="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-slate-300"
+            <label class="bib-exam-topic">
+              <input type="checkbox" class="bib-exam-checkbox"
                 data-bib-exam-planid="${escapeHtml(pid)}" ${checked ? "checked" : ""} />
-              <span class="text-sm text-slate-700">${titulo_p}<span class="text-xs text-slate-400">${dur}</span></span>
+              <span>${titulo_p}</span>
             </label>`;
         }).join("")}
       </div>`
-    : `<p class="text-xs text-slate-500">No hay planeaciones en este bloque.</p>`;
+    : `<p class="bib-exam-empty">No hay planeaciones en este bloque.</p>`;
 
   const errorHtml = state.error
     ? `<p class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">${escapeHtml(state.error)}</p>`
     : "";
 
-  modal.querySelector(".biblioteca-modal-card").innerHTML = `
-    <div class="flex items-start justify-between gap-3 mb-5">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-widest text-cyan-700">Generar examen</p>
-        <h3 class="mt-1 text-base font-semibold text-slate-900">${titulo}</h3>
+  const card = modal.querySelector(".biblioteca-modal-card");
+  card.classList.add("biblioteca-exam-create-card");
+  card.innerHTML = `
+    <div class="bib-exam-head">
+      <div class="bib-exam-title-block">
+        <h3>Crear examen de unidad</h3>
+        <p>Configura los tipos de pregunta y selecciona los temas para generar el examen.</p>
       </div>
-      <button type="button" id="bib-exam-close"
-        class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50">
-        &#10005;
-      </button>
+      <button type="button" id="bib-exam-close" class="bib-exam-close">X</button>
     </div>
 
-    <div class="space-y-4">
-      <div>
-        <p class="mb-2 text-sm font-semibold text-slate-700">Tipos de pregunta</p>
-        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">${tiposHtml}</div>
-      </div>
+    <div class="bib-exam-content">
+      <section class="bib-exam-section">
+        <div class="bib-exam-section-head">
+          <h4>TIPOS DE PREGUNTA</h4>
+          <span>Seleccion multiple</span>
+        </div>
+        <div class="bib-exam-types">${tiposHtml}</div>
+      </section>
 
-      <div>
-        <p class="mb-1 text-sm font-semibold text-slate-700">
-          Planeaciones a incluir
-          <span class="ml-1 text-xs font-normal text-slate-400">(${state.selectedPlaneacionIds.length} seleccionadas)</span>
-        </p>
+      <section class="bib-exam-section">
+        <div class="bib-exam-section-head">
+          <h4>TEMAS USADOS COMO CONTEXTO</h4>
+          <span id="bib-exam-topics-count">${state.selectedPlaneacionIds.length} de ${state.planeaciones.length} tema(s)</span>
+        </div>
         ${planeacionesHtml}
-      </div>
+      </section>
 
       ${errorHtml}
 
-      <div class="flex flex-wrap justify-end gap-2 pt-1">
-        <button type="button" id="bib-exam-cancel"
-          class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Cancelar
-        </button>
-        <button type="button" id="bib-exam-submit"
-          class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-          ${state.submitting ? "disabled" : ""}>
-          ${state.submitting ? "Iniciando..." : "Generar examen"}
+      <div class="bib-exam-actions">
+        <button type="button" id="bib-exam-cancel" class="bib-exam-cancel">Cancelar</button>
+        <button type="button" id="bib-exam-submit" class="bib-exam-submit" ${state.submitting ? "disabled" : ""}>
+          ${state.submitting ? "Iniciando..." : "Crear examen de unidad con los temas"}
         </button>
       </div>
     </div>
@@ -1291,12 +1281,9 @@ function renderBibliotecaExamModal() {
         bibliotecaState.examModal.selectedPlaneacionIds =
           bibliotecaState.examModal.selectedPlaneacionIds.filter(id => id !== pid);
       }
-      // Update the counter without full re-render
-      const counter = modal.querySelector("[data-bib-exam-planid]")
-        ?.closest(".space-y-4")
-        ?.querySelector(".text-xs.font-normal.text-slate-400");
+      const counter = document.getElementById("bib-exam-topics-count");
       if (counter) {
-        counter.textContent = `(${bibliotecaState.examModal.selectedPlaneacionIds.length} seleccionadas)`;
+        counter.textContent = `${bibliotecaState.examModal.selectedPlaneacionIds.length} de ${bibliotecaState.examModal.planeaciones.length} tema(s)`;
       }
     });
   });
@@ -1409,7 +1396,7 @@ function openBibliotecaListaModal(conjunto) {
     open:                  true,
     conjuntoId:            conjunto.id,
     planeaciones,
-    selectedPlaneacionIds: planeaciones.map(p => String(p.id)),  // all selected by default
+    selectedPlaneacionIds: [],
     submitting:            false,
     error:                 ""
   };
@@ -1432,62 +1419,75 @@ function renderBibliotecaListaModal() {
 
   const state    = bibliotecaState.listaModal;
   const conjunto = findConjuntoById(state.conjuntoId);
-  const titulo   = conjunto ? escapeBibliotecaDisplayText(conjunto.titulo, "Bloque") : "";
+  const listas = Array.isArray(conjunto?.listas_cotejo) ? conjunto.listas_cotejo : [];
+  const listaPlaneacionIds = new Set(listas.map((lista) => normalizeBibliotecaId(lista?.planeacion_id)).filter(Boolean));
+  const totalPlaneaciones = state.planeaciones.length;
+  const disponibles = state.planeaciones.filter((p) => !listaPlaneacionIds.has(normalizeBibliotecaId(p.id)));
+  const availableIds = new Set(disponibles.map((p) => normalizeBibliotecaId(p.id)));
+  const selectedValidIds = state.selectedPlaneacionIds.filter((id) => availableIds.has(normalizeBibliotecaId(id)));
+  if (selectedValidIds.length !== state.selectedPlaneacionIds.length) {
+    bibliotecaState.listaModal.selectedPlaneacionIds = selectedValidIds;
+  }
+  const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0 && !state.submitting;
 
   const planeacionesHtml = state.planeaciones.length
-    ? `<div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 max-h-44 overflow-y-auto space-y-1">
+    ? `<div class="bib-lista-topic-list">
         ${state.planeaciones.map(p => {
           const pid      = String(p.id);
-          const checked  = state.selectedPlaneacionIds.includes(pid);
+          const safePid  = normalizeBibliotecaId(pid);
+          const hasLista = listaPlaneacionIds.has(safePid);
+          const checked  = selectedValidIds.includes(pid);
           const titulo_p = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
-          const dur      = p.duracion ? ` · ${p.duracion} min` : "";
           return `
-            <label class="flex items-start gap-2 py-0.5 cursor-pointer select-none">
-              <input type="checkbox" class="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-slate-300"
-                data-bib-lista-planid="${escapeHtml(pid)}" ${checked ? "checked" : ""} />
-              <span class="text-sm text-slate-700">${titulo_p}<span class="text-xs text-slate-400">${dur}</span></span>
+            <label class="bib-lista-topic ${hasLista ? "is-disabled" : ""}">
+              <input type="checkbox" class="bib-lista-checkbox"
+                data-bib-lista-planid="${escapeHtml(pid)}" ${checked ? "checked" : ""} ${hasLista ? "disabled" : ""} />
+              <span class="bib-lista-topic-title">${titulo_p}</span>
+              ${hasLista ? `<span class="bib-lista-generated-badge">Lista ya generada</span>` : ""}
             </label>`;
         }).join("")}
       </div>`
-    : `<p class="text-sm text-slate-500">No hay planeaciones en este bloque.</p>`;
+    : `<p class="bib-lista-empty">Este bloque no tiene planeaciones disponibles para generar listas de cotejo.</p>`;
 
   const errorHtml = state.error
     ? `<p class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">${escapeHtml(state.error)}</p>`
     : "";
 
-  modal.querySelector(".biblioteca-modal-card").innerHTML = `
-    <div class="flex items-start justify-between gap-3 mb-5">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-widest text-cyan-700">Generar listas de cotejo</p>
-        <h3 class="mt-1 text-base font-semibold text-slate-900">${titulo}</h3>
-        <p class="mt-1 text-sm text-slate-500">Selecciona las planeaciones para las que deseas generar lista de cotejo.</p>
+  const allGeneratedMessage = totalPlaneaciones > 0 && disponibles.length === 0
+    ? `<p class="bib-lista-note-alert">Todas las planeaciones de este bloque ya tienen lista de cotejo.</p>`
+    : "";
+
+  const card = modal.querySelector(".biblioteca-modal-card");
+  card.classList.add("biblioteca-lista-create-card");
+  card.innerHTML = `
+    <div class="bib-lista-head">
+      <div class="bib-lista-title-block">
+        <p class="bib-lista-eyebrow">EVALUACION POR TEMA</p>
+        <h3>Crear listas de cotejo</h3>
+        <p>Selecciona las actividades para las que deseas generar lista de cotejo.<br>Las que ya tienen lista generada no se pueden volver a seleccionar.</p>
       </div>
-      <button type="button" id="bib-lista-close"
-        class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50">
-        &#10005;
-      </button>
+      <button type="button" id="bib-lista-close" class="bib-lista-close">X</button>
     </div>
 
-    <div class="space-y-4">
-      <div>
-        <p class="mb-1 text-sm font-semibold text-slate-700">
-          Planeaciones
-          <span class="ml-1 text-xs font-normal text-slate-400">(${state.selectedPlaneacionIds.length} seleccionadas)</span>
-        </p>
+    <div class="bib-lista-content">
+      <section class="bib-lista-section">
+        <div class="bib-lista-section-head">
+          <h4>TEMAS DEL BLOQUE</h4>
+          <span id="bib-lista-available-count">${disponibles.length} disponible(s) de ${totalPlaneaciones}</span>
+        </div>
         ${planeacionesHtml}
-      </div>
+      </section>
+
+      ${allGeneratedMessage}
+
+      <p class="bib-lista-note">Cada lista se genera a partir de la actividad de cierre de la planeacion. Si una planeacion no tiene actividad de cierre, se omitira.</p>
 
       ${errorHtml}
 
-      <div class="flex flex-wrap justify-end gap-2 pt-1">
-        <button type="button" id="bib-lista-cancel"
-          class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Cancelar
-        </button>
-        <button type="button" id="bib-lista-submit"
-          class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-          ${state.submitting ? "disabled" : ""}>
-          ${state.submitting ? "Iniciando..." : "Generar listas de cotejo"}
+      <div class="bib-lista-actions">
+        <button type="button" id="bib-lista-cancel" class="bib-lista-cancel">Cancelar</button>
+        <button type="button" id="bib-lista-submit" class="bib-lista-submit" ${canSubmit ? "" : "disabled"}>
+          ${state.submitting ? "Iniciando..." : "Generar listas seleccionadas"}
         </button>
       </div>
     </div>
@@ -1499,7 +1499,12 @@ function renderBibliotecaListaModal() {
 
   modal.querySelectorAll("[data-bib-lista-planid]").forEach(cb => {
     cb.addEventListener("change", e => {
+      if (e.target.disabled) return;
       const pid = e.target.dataset.bibListaPlanid;
+      if (!availableIds.has(normalizeBibliotecaId(pid))) {
+        e.target.checked = false;
+        return;
+      }
       if (e.target.checked) {
         if (!bibliotecaState.listaModal.selectedPlaneacionIds.includes(pid)) {
           bibliotecaState.listaModal.selectedPlaneacionIds.push(pid);
@@ -1508,18 +1513,24 @@ function renderBibliotecaListaModal() {
         bibliotecaState.listaModal.selectedPlaneacionIds =
           bibliotecaState.listaModal.selectedPlaneacionIds.filter(id => id !== pid);
       }
-      const counter = modal.querySelector(".text-xs.font-normal.text-slate-400");
-      if (counter) {
-        counter.textContent = `(${bibliotecaState.listaModal.selectedPlaneacionIds.length} seleccionadas)`;
-      }
+      renderBibliotecaListaModal();
     });
   });
 }
 
 async function submitBibliotecaListaModal() {
   const state = bibliotecaState.listaModal;
+  const conjunto = findConjuntoById(state.conjuntoId);
+  const listas = Array.isArray(conjunto?.listas_cotejo) ? conjunto.listas_cotejo : [];
+  const blockedIds = new Set(listas.map((lista) => normalizeBibliotecaId(lista?.planeacion_id)).filter(Boolean));
+  const availableIds = new Set((Array.isArray(state.planeaciones) ? state.planeaciones : [])
+    .map((p) => normalizeBibliotecaId(p.id))
+    .filter((id) => id && !blockedIds.has(id)));
+  const selectedIds = [...new Set(state.selectedPlaneacionIds
+    .map((id) => normalizeBibliotecaId(id))
+    .filter((id) => availableIds.has(id)))];
 
-  if (!state.selectedPlaneacionIds.length) {
+  if (!selectedIds.length) {
     bibliotecaState.listaModal.error = "Selecciona al menos una planeacion.";
     renderBibliotecaListaModal();
     return;
@@ -1534,7 +1545,6 @@ async function submitBibliotecaListaModal() {
     if (!session) return;
 
     const conjuntoId = state.conjuntoId;
-    const selectedIds = [...state.selectedPlaneacionIds];
 
     // Close modal immediately — progress shows in card
     closeBibliotecaListaModal();
@@ -1639,17 +1649,17 @@ function renderBibliotecaAgregarModal() {
                 ? buildActividadDidacticaOptions(curVal)
                 : "";
               return `
-                <div class="flex items-center gap-2 mt-1.5">
-                  <label class="w-28 flex-shrink-0 text-xs text-slate-500">${escapeHtml(m.label)}</label>
+                <label class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
+                  <span class="actividad-momento-label">${escapeHtml(m.label)}</span>
                   <select
                     data-bib-agr-actividad
                     data-local-id="${escapeHtml(t.localId)}"
                     data-momento="${escapeHtml(m.key)}"
-                    class="flex-1 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:border-cyan-600 focus:outline-none">
-                    <option value="">— sin actividad —</option>
+                    class="actividad-cierre-select actividad-didactica-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                    <option value="">Sin actividad especifica</option>
                     ${opts}
                   </select>
-                </div>`;
+                </label>`;
             }).join("")
           : "";
 
@@ -1662,25 +1672,28 @@ function renderBibliotecaAgregarModal() {
                 data-bib-agr-remove="${escapeHtml(t.localId)}"
                 title="Quitar tema">&#10005;</button>
             </div>
-            ${actSelects ? `<div class="mt-1">${actSelects}</div>` : ""}
+            ${actSelects ? `
+              <div class="actividades-momentos mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividades didacticas opcionales</p>
+                <div class="mt-2 grid gap-2">${actSelects}</div>
+              </div>` : ""}
           </div>`;
       }).join("")
     : `<p class="text-xs text-slate-400 py-1">Sin temas. Agrega al menos uno usando el formulario de abajo.</p>`;
 
   const addFormHtml = `
-    <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Agregar tema</p>
-      <div class="flex gap-2">
-        <input type="text" id="bib-agr-titulo" placeholder="Titulo del tema"
-          class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-cyan-600 focus:outline-none" />
-        <input type="number" id="bib-agr-duracion" value="50" min="10" max="300"
-          class="w-20 rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm text-center focus:border-cyan-600 focus:outline-none"
-          title="Duracion en minutos" />
-      </div>
-      <div class="flex justify-end">
-        <button type="button" id="bib-agr-add"
-          class="inline-flex items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
-          + Agregar tema
+    <div class="biblioteca-tema-create-box">
+      <div class="biblioteca-tema-create-row">
+        <div>
+          <label for="bib-agr-titulo" class="mb-1 block text-sm font-medium text-slate-700">Tema</label>
+          <input type="text" id="bib-agr-titulo" placeholder="Ej. Fracciones equivalentes" />
+        </div>
+        <div>
+          <label for="bib-agr-duracion" class="mb-1 block text-sm font-medium text-slate-700">Duracion</label>
+          <input type="number" id="bib-agr-duracion" value="50" min="10" max="300" title="Duracion en minutos" />
+        </div>
+        <button type="button" id="bib-agr-add" class="biblioteca-tema-add-btn">
+          Agregar tema
         </button>
       </div>
     </div>`;
@@ -1705,7 +1718,7 @@ function renderBibliotecaAgregarModal() {
 
     <div class="mt-4 space-y-2">
       <p class="text-sm font-semibold text-slate-700">Temas a generar</p>
-      <div class="space-y-2 max-h-64 overflow-y-auto">${temasListHtml}</div>
+      <div class="biblioteca-agregar-temas-scroll space-y-2">${temasListHtml}</div>
       ${addFormHtml}
     </div>
 
@@ -1723,6 +1736,7 @@ function renderBibliotecaAgregarModal() {
       </button>
     </div>
   `;
+  modal.querySelector(".biblioteca-modal-card")?.classList.add("biblioteca-agregar-card");
 
   document.getElementById("bib-agr-close")?.addEventListener("click", closeBibliotecaAgregarModal);
   document.getElementById("bib-agr-cancel")?.addEventListener("click", closeBibliotecaAgregarModal);
