@@ -14,12 +14,15 @@
   expandedMaterias: new Set(),
   current: { level: "root", plantelId: null, gradoId: null, materiaId: null, unidadId: null },
   stagingTemas: [],
+  stagingTituloConjunto: "",
+  stagingContext: null,
   stagingPanelOpen: false,
   progress: { total: 0, completed: 0, items: [], finalMessage: "", finalTone: "info" },
   quickCreate: {
     open: false,
     temas: [],
-    requestVersion: { grado: 0, materia: 0, unidad: 0 }
+    requestVersion: { grado: 0, materia: 0, unidad: 0 },
+    selectedConjunto: null
   },
   searchQuery: "",
   generating: false,
@@ -60,11 +63,18 @@ const heroActionsByLevel = {
 let isDashboardBound = false;
 const QUICK_CREATE_NEW_VALUE = "__new__";
 let plantelCombobox = null;
+let tituloConjuntoCombobox = null;
 let gradoCombobox = null;
 let materiaCombobox = null;
 let unidadCombobox = null;
 const DASHBOARD_LOCATION_STORAGE_KEY = "educativo.dashboard.last-location";
 const GRADO_NIVEL_OPTIONS = new Set(["primaria", "secundaria", "preparatoria", "universidad"]);
+const QUICK_NIVELES_EDUCATIVOS = [
+  { value: "primaria", label: "Primaria" },
+  { value: "secundaria", label: "Secundaria" },
+  { value: "preparatoria", label: "Preparatoria" },
+  { value: "universidad", label: "Universidad" }
+];
 const MOMENTOS_ACTIVIDADES_DIDACTICAS = [
   { key: "conocimientos_previos", label: "Conocimientos previos" },
   { key: "desarrollo", label: "Desarrollo" },
@@ -309,10 +319,10 @@ function renderActividadesMomentosControl({ scope, localId, actividadesMomentos 
   return `
     <div class="actividades-momentos mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
       <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividades did&aacute;cticas opcionales</p>
-      <div class="mt-2 grid gap-2 md:grid-cols-3">
+      <div class="mt-2 grid gap-2">
         ${MOMENTOS_ACTIVIDADES_DIDACTICAS.map(({ key, label }) => `
-          <label class="min-w-0 text-xs font-medium text-slate-600">
-            <span class="mb-1 block">${escapeHtml(label)}</span>
+          <label class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
+            <span class="actividad-momento-label">${escapeHtml(label)}</span>
             ${renderActividadDidacticaSelect({
               scope,
               localId,
@@ -959,6 +969,8 @@ async function refreshExplorerAfterReturn() {
   renderAll();
 }
 function renderWorkspaceVisibility() {
+  if (window.BIBLIOTECA_MODE) return;
+
   const onboarding = document.getElementById("explorer-onboarding");
   const onboardingError = document.getElementById("explorer-onboarding-error");
   const onboardingRetry = document.getElementById("btn-onboarding-retry");
@@ -2730,7 +2742,14 @@ function createQuickCombobox(containerId, opts = {}) {
   const {
     placeholder = "Escribe o selecciona",
     disabledPlaceholder = "Primero completa el campo anterior",
-    onChange = null
+    onChange = null,
+    renderItem = null,
+    maxResults = null,
+    autoSelectExactOnBlur = true,
+    getSearchText = null,
+    openOnFocus = true,
+    openOnClick = true,
+    openOnlyWithQuery = false
   } = opts;
 
   const container = document.getElementById(containerId);
@@ -2788,17 +2807,22 @@ function createQuickCombobox(containerId, opts = {}) {
   function renderDropdown() {
     const query = input.value;
     const q = normalizeName(query);
-    const filtered = q ? _items.filter((item) => normalizeName(item.nombre).includes(q)) : [..._items];
+    const filteredBase = q
+      ? _items.filter((item) => normalizeName(typeof getSearchText === "function" ? getSearchText(item) : item.nombre).includes(q))
+      : [..._items];
+    const filtered = Number.isFinite(Number(maxResults)) ? filteredBase.slice(0, Number(maxResults)) : filteredBase;
     const trimmedQuery = query.trim();
-    const exactMatch = trimmedQuery && _items.some((item) => normalizeName(item.nombre) === normalizeName(trimmedQuery));
 
     const itemRows = filtered.map(
-      (item) => `
+      (item) => renderItem
+        ? renderItem(item, { selected: _selectedId === item.id, escapeHtml })
+        : `
         <button
           type="button"
           class="combobox-item w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2${_selectedId === item.id ? " bg-cyan-50" : ""}"
           data-cb-id="${escapeHtml(String(item.id))}"
           data-cb-nombre="${escapeHtml(String(item.nombre))}"
+          data-cb-synthetic="${item.synthetic ? "1" : "0"}"
         >
           <span class="w-3.5 shrink-0 text-cyan-600 text-xs">${_selectedId === item.id ? "✓" : ""}</span>
           <span class="truncate text-slate-800">${escapeHtml(item.nombre)}</span>
@@ -2814,6 +2838,7 @@ function createQuickCombobox(containerId, opts = {}) {
 
   function openDropdown() {
     if (_disabled) return;
+    if (openOnlyWithQuery && !input.value.trim()) return;
     renderDropdown();
     if (list.innerHTML) {
       dropdown.classList.remove("hidden");
@@ -2854,20 +2879,21 @@ function createQuickCombobox(containerId, opts = {}) {
   }
 
   input.addEventListener("focus", () => {
-    if (!_disabled) openDropdown();
+    if (!_disabled && openOnFocus) openDropdown();
   });
 
   input.addEventListener("click", () => {
-    if (!_disabled && !_isOpen) openDropdown();
+    if (!_disabled && openOnClick && !_isOpen) openDropdown();
   });
 
   input.addEventListener("input", () => {
+    const hadSelection = Boolean(_selectedId);
     _selectedId = null;
     _isNew = false;
     syncClearBtn();
     if (!_isOpen) openDropdown();
     else renderDropdown();
-    emit({ id: null, nombre: input.value.trim(), isNew: false, typing: true });
+    emit({ id: null, nombre: input.value.trim(), isNew: false, typing: true, clearedSelection: hadSelection });
   });
 
   input.addEventListener("blur", () => {
@@ -2881,7 +2907,9 @@ function createQuickCombobox(containerId, opts = {}) {
       }
       if (!_selectedId && !_isNew) {
         const match = _items.find((item) => normalizeName(item.nombre) === normalizeName(trimmed));
-        if (match) {
+        if (match?.synthetic && autoSelectExactOnBlur) {
+          commitNew(match.nombre);
+        } else if (match && autoSelectExactOnBlur) {
           commitExisting(match.id, match.nombre);
         } else {
           commitNew(trimmed);
@@ -2894,6 +2922,10 @@ function createQuickCombobox(containerId, opts = {}) {
     const itemBtn = event.target.closest("[data-cb-id]");
     if (!itemBtn) return;
     event.preventDefault();
+    if (itemBtn.dataset.cbSynthetic === "1") {
+      commitNew(itemBtn.dataset.cbNombre);
+      return;
+    }
     commitExisting(itemBtn.dataset.cbId, itemBtn.dataset.cbNombre);
   });
 
@@ -2914,6 +2946,9 @@ function createQuickCombobox(containerId, opts = {}) {
       if (trimmed) return { id: null, nombre: trimmed, isNew: true };
       return { id: null, nombre: "", isNew: false };
     },
+    hasSelection() {
+      return Boolean(_selectedId);
+    },
     isEmpty() {
       return !input.value.trim();
     },
@@ -2928,6 +2963,14 @@ function createQuickCombobox(containerId, opts = {}) {
       closeDropdown();
       syncClearBtn();
     },
+    setValue(value, { id = null, isNew = !id, emitChange = false } = {}) {
+      _selectedId = id;
+      _isNew = Boolean(isNew);
+      input.value = value || "";
+      closeDropdown();
+      syncClearBtn();
+      if (emitChange) emit({ id, nombre: input.value.trim(), isNew: _isNew });
+    },
     setDisabled(disabled, customPlaceholder) {
       _disabled = disabled;
       input.disabled = disabled;
@@ -2937,6 +2980,9 @@ function createQuickCombobox(containerId, opts = {}) {
     },
     focus() {
       if (!_disabled) input.focus();
+    },
+    close() {
+      closeDropdown();
     }
   };
 }
@@ -3051,47 +3097,275 @@ async function fillQuickUnidadOptions(materiaId) {
   unidadCombobox?.setItems(materiaId ? (explorerState.unidadesByMateria[materiaId] || []) : []);
 }
 
+function normalizeQuickText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getQuickBibliotecaConjuntos() {
+  if (typeof window.biblioteca?.getConjuntos === "function") {
+    return window.biblioteca.getConjuntos().filter((conjunto) => conjunto?.id && !conjunto?.isPending);
+  }
+  return [];
+}
+
+function getQuickTitleItems() {
+  return getQuickBibliotecaConjuntos().map((conjunto) => ({
+    id: String(conjunto.id),
+    nombre: conjunto.titulo || "Sin titulo",
+    conjunto,
+    nivel: conjunto.nivel || "",
+    materia: conjunto.materia || "",
+    planeaciones: Number(conjunto.total_planeaciones || 0),
+    created_at: conjunto.created_at || ""
+  }));
+}
+
+function getQuickMateriaItems(extraMateria = "") {
+  const byName = new Map();
+  const extraNombre = String(extraMateria || "").trim();
+  if (extraNombre) {
+    const key = normalizeQuickText(extraNombre);
+    byName.set(key, { id: `materia-${key}`, nombre: extraNombre, synthetic: true });
+  }
+  getQuickBibliotecaConjuntos().forEach((conjunto) => {
+    const nombre = String(conjunto?.materia || "").trim();
+    if (!nombre) return;
+    const key = normalizeQuickText(nombre);
+    if (!byName.has(key)) byName.set(key, { id: `materia-${key}`, nombre, synthetic: true });
+  });
+  return Array.from(byName.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
+function renderQuickTitleItem(item, { selected, escapeHtml: esc }) {
+  const meta = [
+    item.nivel || "",
+    item.materia || "",
+    `${item.planeaciones} planeacion${item.planeaciones === 1 ? "" : "es"}`
+  ].filter(Boolean).join(" · ");
+  const date = item.created_at ? new Date(item.created_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }) : "";
+  return `
+    <button
+      type="button"
+      class="combobox-item w-full px-3 py-2.5 text-left text-sm hover:bg-slate-50 flex items-start gap-2${selected ? " bg-cyan-50" : ""}"
+      data-cb-id="${esc(String(item.id))}"
+      data-cb-nombre="${esc(String(item.nombre))}"
+    >
+      <span class="w-3.5 shrink-0 pt-0.5 text-cyan-600 text-xs">${selected ? "✓" : ""}</span>
+      <span class="min-w-0">
+        <span class="block truncate font-medium text-slate-900">${esc(item.nombre)}</span>
+        <span class="block truncate text-xs text-slate-500">${esc(meta)}${date ? ` · ${esc(date)}` : ""}</span>
+      </span>
+    </button>`;
+}
+
+function syncQuickTitleItems() {
+  tituloConjuntoCombobox?.setItems(getQuickTitleItems());
+}
+
+function setQuickNivelEducativoValue(nivel) {
+  const select = document.getElementById("quick-nivel-educativo-select");
+  if (!select) return;
+  const normalized = normalizeQuickText(nivel);
+  const option = QUICK_NIVELES_EDUCATIVOS.find((item) => item.value === normalized || normalizeQuickText(item.label) === normalized);
+  select.value = option?.value || "";
+  syncQuickSelectVisualState("quick-nivel-educativo-select");
+}
+
+function selectQuickExistingConjunto(conjunto) {
+  if (!conjunto?.id) return;
+  explorerState.quickCreate.selectedConjunto = conjunto;
+  setQuickNivelEducativoValue(conjunto.nivel || "");
+  materiaCombobox?.reset();
+  materiaCombobox?.setDisabled(false);
+  materiaCombobox?.setItems(getQuickMateriaItems(conjunto.materia || ""));
+  if (conjunto.materia) {
+    materiaCombobox?.setValue(conjunto.materia, { id: null, isNew: true, emitChange: false });
+  }
+}
+
+function clearQuickExistingConjuntoSelection() {
+  explorerState.quickCreate.selectedConjunto = null;
+}
+
+function getQuickNivelEducativoSelection() {
+  const select = document.getElementById("quick-nivel-educativo-select");
+  const value = select?.value || "";
+  const option = QUICK_NIVELES_EDUCATIVOS.find((item) => item.value === value);
+  if (!option) {
+    throw new Error("Selecciona un nivel educativo.");
+  }
+  return { id: null, nombre: option.label, nivelBase: option.value, isNew: true };
+}
+
+function findQuickGradoByNivel(plantelId, nivelBase) {
+  const normalizedNivel = String(nivelBase || "").trim().toLowerCase();
+  const grados = explorerState.gradosByPlantel[plantelId] || [];
+  return grados.find((grado) => String(grado?.nivel_base || "").trim().toLowerCase() === normalizedNivel)
+    || grados.find((grado) => String(grado?.nombre || "").trim().toLowerCase() === normalizedNivel)
+    || null;
+}
+
+async function fillQuickMateriaOptionsForNivel(nivelBase) {
+  if (!window.BIBLIOTECA_MODE || !nivelBase) {
+    materiaCombobox?.setItems(getQuickMateriaItems());
+    return;
+  }
+
+  const requestId = ++explorerState.quickCreate.requestVersion.materia;
+  explorerState.quickCreate.requestVersion.unidad += 1;
+  const plantelId = await ensureDefaultPlantel();
+  await ensureGrados(plantelId);
+  const grado = findQuickGradoByNivel(plantelId, nivelBase);
+  if (!grado?.id) {
+    if (requestId === explorerState.quickCreate.requestVersion.materia) {
+      materiaCombobox?.setItems(getQuickMateriaItems());
+    }
+    return;
+  }
+
+  await ensureMaterias(grado.id);
+  if (requestId !== explorerState.quickCreate.requestVersion.materia) return;
+  const byName = new Map();
+  [...getQuickMateriaItems(), ...(explorerState.materiasByGrado[grado.id] || [])].forEach((materia) => {
+    const nombre = String(materia?.nombre || "").trim();
+    if (!nombre) return;
+    const key = normalizeQuickText(nombre);
+    const current = byName.get(key);
+    if (!current || (current.synthetic && !materia.synthetic)) byName.set(key, materia);
+  });
+  materiaCombobox?.setItems(Array.from(byName.values()));
+}
+
 async function initQuickCreateForm() {
   explorerState.quickCreate.temas = [];
   explorerState.quickCreate.requestVersion = { grado: 0, materia: 0, unidad: 0 };
+  explorerState.quickCreate.selectedConjunto = null;
   showQuickCreateError("");
+
+  tituloConjuntoCombobox?.reset();
+  tituloConjuntoCombobox?.setDisabled(false);
+  syncQuickTitleItems();
 
   plantelCombobox?.reset();
   plantelCombobox?.setItems(explorerState.planteles || []);
 
   gradoCombobox?.reset();
-  gradoCombobox?.setItems([]);
-  gradoCombobox?.setDisabled(true);
+  if (window.BIBLIOTECA_MODE) {
+    gradoCombobox?.setItems(getAllGradosFlat());
+    gradoCombobox?.setDisabled(false);
+  } else {
+    gradoCombobox?.setItems([]);
+    gradoCombobox?.setDisabled(true);
+  }
 
   materiaCombobox?.reset();
-  materiaCombobox?.setItems([]);
-  materiaCombobox?.setDisabled(true);
+  materiaCombobox?.setItems(window.BIBLIOTECA_MODE ? getQuickMateriaItems() : []);
+  materiaCombobox?.setDisabled(!window.BIBLIOTECA_MODE);
 
   unidadCombobox?.reset();
   unidadCombobox?.setItems([]);
   unidadCombobox?.setDisabled(true);
 
   toggleQuickGradoNewRow();
+  const nivelEducativoSelect = document.getElementById("quick-nivel-educativo-select");
+  if (nivelEducativoSelect) {
+    nivelEducativoSelect.value = "";
+    nivelEducativoSelect.disabled = false;
+    syncQuickSelectVisualState("quick-nivel-educativo-select");
+  }
 
   const titleInput = document.getElementById("quick-tema-title");
   if (titleInput) titleInput.value = "";
   const durationInput = document.getElementById("quick-tema-duration");
   if (durationInput) durationInput.value = "50";
-
   renderQuickTemasList();
+}
+
+function resetQuickCreatePanelSections() {
+  const form       = document.getElementById("quick-create-form");
+  const generating = document.getElementById("quick-create-generating");
+  const result     = document.getElementById("quick-create-result");
+  if (form)       form.classList.remove("hidden");
+  if (generating) generating.classList.add("hidden");
+  if (result)     result.classList.add("hidden");
+}
+
+function showQuickCreateGeneratingSection(items) {
+  const form       = document.getElementById("quick-create-form");
+  const generating = document.getElementById("quick-create-generating");
+  if (form)       form.classList.add("hidden");
+  if (generating) generating.classList.remove("hidden");
+
+  const itemsEl = document.getElementById("quick-create-generating-items");
+  if (itemsEl && Array.isArray(items)) {
+    itemsEl.innerHTML = items.map(item => {
+      const icon  = item.status === "ready"   ? "&#10003;"
+                  : item.status === "error"   ? "&#10005;"
+                  : item.status === "skipped" ? "&#8213;"
+                  : "&#8230;";
+      const color = item.status === "ready"   ? "text-emerald-700"
+                  : item.status === "error"   ? "text-rose-600"
+                  : item.status === "skipped" ? "text-slate-400"
+                  : "text-cyan-700";
+      const msg   = item.statusLabel || item.message || "";
+      return `<div class="flex items-center gap-2 text-xs ${color}">
+        <span class="w-4 flex-shrink-0 text-center">${icon}</span>
+        <span>${escapeHtml(item.titulo || "")}${msg ? ` — ${escapeHtml(msg)}` : ""}</span>
+      </div>`;
+    }).join("");
+  }
+}
+
+function showQuickCreateResultSection(finalMessage, finalTone) {
+  const generating = document.getElementById("quick-create-generating");
+  const result     = document.getElementById("quick-create-result");
+  if (generating) generating.classList.add("hidden");
+  if (result)     result.classList.remove("hidden");
+
+  const msgEl = document.getElementById("quick-create-result-message");
+  if (msgEl) {
+    const isSuccess = finalTone === "success";
+    const isWarning = finalTone === "warning";
+    msgEl.className = `rounded-xl border px-4 py-3 text-sm ${
+      isSuccess ? "border-emerald-200 bg-emerald-50 text-emerald-800" :
+      isWarning ? "border-yellow-200 bg-yellow-50 text-yellow-800" :
+                  "border-rose-200 bg-rose-50 text-rose-700"
+    }`;
+    msgEl.textContent = finalMessage || "Proceso finalizado.";
+  }
+
+  const closeBtn = document.getElementById("quick-create-result-close");
+  closeBtn?.addEventListener("click", closeQuickCreatePanel, { once: true });
 }
 
 async function openQuickCreatePanel() {
   explorerState.quickCreate.open = true;
   setQuickPanelVisibility(true);
+  resetQuickCreatePanelSections();
+
+  if (window.BIBLIOTECA_MODE) {
+    await loadPlanteles();
+    await ensureAllGrados();
+  }
+
   await initQuickCreateForm();
-  plantelCombobox?.focus();
+
+  if (window.BIBLIOTECA_MODE) {
+    tituloConjuntoCombobox?.focus();
+  } else {
+    plantelCombobox?.focus();
+  }
 }
 
 function closeQuickCreatePanel() {
   explorerState.quickCreate.open = false;
   setQuickPanelVisibility(false);
   showQuickCreateError("");
+  resetQuickCreatePanelSections();
 }
 
 function addQuickTemaFromInputs() {
@@ -3184,6 +3458,20 @@ function requireQuickComboboxValue(combobox, label) {
 }
 
 function requireQuickGradoSelection() {
+  if (window.BIBLIOTECA_MODE) {
+    try {
+      return getQuickNivelEducativoSelection();
+    } catch (error) {
+      const selected = explorerState.quickCreate.selectedConjunto;
+      if (selected?.nivel) {
+        const normalized = normalizeQuickText(selected.nivel);
+        const option = QUICK_NIVELES_EDUCATIVOS.find((item) => item.value === normalized || normalizeQuickText(item.label) === normalized);
+        if (option) return { id: null, nombre: option.label, nivelBase: option.value, isNew: true };
+      }
+      throw error;
+    }
+  }
+
   const selection = requireQuickComboboxValue(gradoCombobox, "Grado");
 
   if (selection.isNew) {
@@ -3295,6 +3583,7 @@ function renderSidebarTree() {
     return;
   }
 
+  const savedScroll = tree.scrollTop;
   tree.innerHTML = planteles
     .map((plantel) => {
       const expanded = explorerState.expandedPlanteles.has(plantel.id);
@@ -3316,6 +3605,7 @@ function renderSidebarTree() {
       `;
     })
     .join("");
+  requestAnimationFrame(() => { tree.scrollTop = savedScroll; });
 }
 function renderRootLevel() {
   if (explorerState.loading.root) return '<p class="text-sm text-slate-500">Cargando planteles...</p>';
@@ -4212,6 +4502,11 @@ function renderUnidadLevel() {
 }
 
 function renderExplorerContent() {
+  if (window.BIBLIOTECA_MODE && typeof window.renderBibliotecaContent === "function") {
+    window.renderBibliotecaContent();
+    return;
+  }
+
   const container = document.getElementById("explorer-content");
   if (!container) return;
 
@@ -4510,10 +4805,24 @@ function applyGenerateResult(result) {
 }
 
 function buildLegacyContext() {
+  if (explorerState.stagingContext) {
+    return {
+      materia: explorerState.stagingContext.materia || undefined,
+      nivel: explorerState.stagingContext.nivel || undefined,
+      unidad: explorerState.stagingContext.unidad || undefined
+    };
+  }
+
+  const unidadNombre = getCurrentUnidad()?.nombre || "";
+  const unidadNormalizada = unidadNombre
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
   return {
     materia: getCurrentMateria()?.nombre || undefined,
     nivel: getCurrentGrado()?.nivel_base || undefined,
-    unidad: getCurrentUnidad()?.nombre || undefined
+    unidad: unidadNormalizada === "bloque de planeacion" ? undefined : unidadNombre || undefined
   };
 }
 
@@ -4546,7 +4855,12 @@ async function generatePlaneacionesFromStaging() {
         ? tema.generar_imagenes_en.map(normalizeImagenMomentoKey).filter(Boolean)
         : []
     })),
-    ...buildLegacyContext()
+    ...buildLegacyContext(),
+    ...(window.biblioteca?.pendingBatchId ? { batch_id: window.biblioteca.pendingBatchId } : {}),
+    ...(explorerState.stagingTituloConjunto ? { titulo_conjunto: explorerState.stagingTituloConjunto } : {}),
+    ...(window.BIBLIOTECA_MODE && !window.biblioteca?.pendingBatchId
+      ? { force_new_batch: true, mode: "create" }
+      : {})
   };
 
   try {
@@ -4557,7 +4871,16 @@ async function generatePlaneacionesFromStaging() {
 
     applyGenerateResult(result || {});
     explorerState.stagingTemas = [];
+    explorerState.stagingTituloConjunto = "";
+    explorerState.stagingContext = null;
     await ensureTemas(unidadId, { force: true });
+
+    if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.finishPlaneacionesGeneration === "function") {
+      await window.biblioteca.finishPlaneacionesGeneration(result || {});
+    } else if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.refresh === "function") {
+      window.biblioteca.pendingBatchId = null;
+      await window.biblioteca.refresh();
+    }
 
     renderExplorerContent();
     scrollToProgressFinal();
@@ -4580,6 +4903,9 @@ async function generatePlaneacionesFromStaging() {
     scrollToProgressFinal();
   } finally {
     explorerState.generating = false;
+    if (window.biblioteca?.pendingBatchId) {
+      window.biblioteca.pendingBatchId = null;
+    }
     updateProgressCounters();
     renderExplorerContent();
   }
@@ -4593,39 +4919,55 @@ async function submitQuickCreateForm(event) {
     showQuickCreateError("Agrega al menos un tema antes de crear la planeacion.");
     return;
   }
-  let plantelSelection, gradoSelection, materiaSelection, unidadSelection;
+  let plantelSelection = null, gradoSelection, materiaSelection, unidadSelection;
   try {
-    plantelSelection = requireQuickComboboxValue(plantelCombobox, "Plantel");
+    if (!window.BIBLIOTECA_MODE) {
+      plantelSelection = requireQuickComboboxValue(plantelCombobox, "Plantel");
+    }
     gradoSelection = requireQuickGradoSelection();
     materiaSelection = requireQuickComboboxValue(materiaCombobox, "Materia");
-    unidadSelection = requireQuickComboboxValue(unidadCombobox, "Unidad");
+    if (!window.BIBLIOTECA_MODE) {
+      unidadSelection = requireQuickComboboxValue(unidadCombobox, "Unidad");
+    }
   } catch (validationError) {
     showQuickCreateError(formatFetchError(validationError, "Completa todos los campos requeridos."));
     return;
   }
 
-  // Todas las validaciones pasaron: cerrar panel inmediatamente
+  const selectedConjunto = window.BIBLIOTECA_MODE ? explorerState.quickCreate.selectedConjunto : null;
+  const tituloValue = tituloConjuntoCombobox?.getValue();
+  explorerState.stagingTituloConjunto = selectedConjunto?.titulo || tituloValue?.nombre?.trim() || "";
+  if (window.BIBLIOTECA_MODE && !selectedConjunto && !explorerState.stagingTituloConjunto) {
+    explorerState.stagingTituloConjunto = materiaSelection?.nombre?.trim() || "Bloque de planeacion";
+  }
+
+  // Validaciones pasaron — cerrar panel siempre
   showQuickCreateError("");
   closeQuickCreatePanel();
 
   try {
     const normalizeForCompare = (str) => String(str || "").trim().toLowerCase();
 
-    let plantelId = plantelSelection.id;
-    if (!plantelId) {
-      const existingPlantel = explorerState.planteles.find(
-        (p) => normalizeForCompare(p.nombre) === normalizeForCompare(plantelSelection.nombre)
-      );
-      if (existingPlantel) {
-        plantelId = existingPlantel.id;
-      } else {
-        const created = await crearPlantel({ nombre: plantelSelection.nombre.trim() });
-        plantelId = created?.id;
-        if (!plantelId) throw new Error("No se pudo crear el plantel.");
-        await loadPlanteles();
+    let plantelId;
+    if (window.BIBLIOTECA_MODE) {
+      plantelId = await ensureDefaultPlantel();
+    } else {
+      plantelId = plantelSelection.id;
+      if (!plantelId) {
+        const existingPlantel = explorerState.planteles.find(
+          (p) => normalizeForCompare(p.nombre) === normalizeForCompare(plantelSelection.nombre)
+        );
+        if (existingPlantel) {
+          plantelId = existingPlantel.id;
+        } else {
+          const created = await crearPlantel({ nombre: plantelSelection.nombre.trim() });
+          plantelId = created?.id;
+          if (!plantelId) throw new Error("No se pudo crear el plantel.");
+          await loadPlanteles();
+        }
+      } else if (!quickListHasId(explorerState.planteles, plantelId)) {
+        throw new Error("El plantel seleccionado no es valido.");
       }
-    } else if (!quickListHasId(explorerState.planteles, plantelId)) {
-      throw new Error("El plantel seleccionado no es valido.");
     }
 
     await ensureGrados(plantelId);
@@ -4633,9 +4975,11 @@ async function submitQuickCreateForm(event) {
 
     let gradoId = gradoSelection.id;
     if (!gradoId) {
-      const existingGrado = gradosDisponibles.find(
-        (g) => normalizeForCompare(g.nombre) === normalizeForCompare(gradoSelection.nombre)
-      );
+      const existingGrado = window.BIBLIOTECA_MODE
+        ? findQuickGradoByNivel(plantelId, gradoSelection.nivelBase)
+        : gradosDisponibles.find(
+            (g) => normalizeForCompare(g.nombre) === normalizeForCompare(gradoSelection.nombre)
+          );
       if (existingGrado) {
         gradoId = existingGrado.id;
       } else {
@@ -4677,29 +5021,46 @@ async function submitQuickCreateForm(event) {
     await ensureUnidades(materiaId);
     const unidadesDisponibles = explorerState.unidadesByMateria[materiaId] || [];
 
-    let unidadId = unidadSelection.id;
+    let unidadId = selectedConjunto?.unidad_id || selectedConjunto?.unidadId || null;
     if (!unidadId) {
-      const existingUnidad = unidadesDisponibles.find(
-        (u) => normalizeForCompare(u.nombre) === normalizeForCompare(unidadSelection.nombre)
-      );
-      if (existingUnidad) {
-        unidadId = existingUnidad.id;
-      } else {
-        const payload = {
-          nombre: unidadSelection.nombre.trim(),
-          materia_id: materiaId,
-          orden: getNextOrder(unidadesDisponibles)
-        };
-        const created = await crearUnidad(payload);
-        unidadId = created?.id;
-        if (!unidadId) throw new Error("No se pudo crear la unidad.");
-        await ensureUnidades(materiaId, { force: true });
+      const unidadTecnicaNombre = "Bloque de planeacion";
+      if (window.BIBLIOTECA_MODE) {
+        const existingUnidad = unidadesDisponibles.find(
+          (u) => normalizeForCompare(u.nombre) === normalizeForCompare(unidadTecnicaNombre)
+        );
+        unidadSelection = existingUnidad
+          ? { id: existingUnidad.id, nombre: existingUnidad.nombre, isNew: false }
+          : { id: null, nombre: unidadTecnicaNombre, isNew: true };
       }
-    } else if (!quickListHasId(unidadesDisponibles, unidadId)) {
-      throw new Error("La unidad seleccionada no pertenece a la materia elegida.");
+
+      unidadId = unidadSelection.id;
+      if (!unidadId) {
+        const existingUnidad = unidadesDisponibles.find(
+          (u) => normalizeForCompare(u.nombre) === normalizeForCompare(unidadSelection.nombre)
+        );
+        if (existingUnidad) {
+          unidadId = existingUnidad.id;
+        } else {
+          const payload = {
+            nombre: unidadSelection.nombre.trim(),
+            materia_id: materiaId,
+            orden: getNextOrder(unidadesDisponibles)
+          };
+          const created = await crearUnidad(payload);
+          unidadId = created?.id;
+          if (!unidadId) throw new Error("No se pudo crear la unidad.");
+          await ensureUnidades(materiaId, { force: true });
+        }
+      } else if (!quickListHasId(unidadesDisponibles, unidadId)) {
+        throw new Error("La unidad seleccionada no pertenece a la materia elegida.");
+      }
     }
 
-    await selectUnidad(plantelId, gradoId, materiaId, unidadId);
+    if (window.BIBLIOTECA_MODE) {
+      explorerState.current = { level: "unidad", plantelId, gradoId, materiaId, unidadId };
+    } else {
+      await selectUnidad(plantelId, gradoId, materiaId, unidadId);
+    }
 
     explorerState.stagingTemas = explorerState.quickCreate.temas.map((tema) => ({
       localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -4715,6 +5076,32 @@ async function submitQuickCreateForm(event) {
     }));
 
     explorerState.quickCreate.temas = [];
+    explorerState.stagingContext = {
+      materia: materiaSelection?.nombre || selectedConjunto?.materia || "",
+      nivel: gradoSelection?.nivelBase || selectedConjunto?.nivel || "",
+      unidad: null
+    };
+
+    if (window.BIBLIOTECA_MODE && selectedConjunto?.id) {
+      window.biblioteca.pendingBatchId = selectedConjunto.id;
+      if (typeof window.biblioteca?.startPlaneacionesGeneration === "function") {
+        window.biblioteca.startPlaneacionesGeneration(selectedConjunto.id, explorerState.stagingTemas);
+      } else if (typeof window.biblioteca?.selectConjunto === "function") {
+        window.biblioteca.selectConjunto(selectedConjunto.id, { tab: "planeaciones" });
+      }
+    } else if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.setPendingConjunto === "function") {
+      window.biblioteca.setPendingConjunto({
+        tempId:  `tmp-${Date.now()}`,
+        titulo:  explorerState.stagingTituloConjunto || "Bloque de planeacion",
+        nivel:   gradoSelection?.nivelBase || "",
+        materia: materiaSelection?.nombre  || "",
+        unidad:  null
+      });
+      if (typeof window.renderBibliotecaContent === "function") {
+        window.renderBibliotecaContent();
+      }
+    }
+
     await generatePlaneacionesFromStaging();
   } catch (error) {
     console.error("Error en creacion rapida:", error);
@@ -5002,6 +5389,7 @@ async function handleTreeClick(event) {
   const button = event.target.closest("[data-tree-action]");
   if (!button) return;
 
+  button.blur();
   const action = button.getAttribute("data-tree-action");
   const ids = getNodeIds(button);
 
@@ -5127,10 +5515,57 @@ async function handleContentClick(event) {
   }
 }
 
+function findPlantelIdForGrado(gradoId) {
+  for (const [plantelId, grados] of Object.entries(explorerState.gradosByPlantel || {})) {
+    if ((grados || []).some((g) => g.id === gradoId)) return plantelId;
+  }
+  return null;
+}
+
+function getAllGradosFlat() {
+  return Object.values(explorerState.gradosByPlantel || {}).flat();
+}
+
+async function ensureAllGrados() {
+  await Promise.all((explorerState.planteles || []).map((p) => ensureGrados(p.id)));
+}
+
+async function ensureDefaultPlantel() {
+  if ((explorerState.planteles || []).length > 0) return explorerState.planteles[0].id;
+  const created = await crearPlantel({ nombre: "Mi plantel" });
+  if (!created?.id) throw new Error("No se pudo crear el plantel por defecto.");
+  await loadPlanteles();
+  return explorerState.planteles[0]?.id || null;
+}
+
 function initQuickComboboxes() {
-  plantelCombobox = createQuickCombobox("quick-plantel-combobox", {
-    placeholder: "Escribe o selecciona un plantel",
-    disabledPlaceholder: "Escribe o selecciona un plantel",
+  tituloConjuntoCombobox = createQuickCombobox("quick-conjunto-titulo-combobox", {
+    placeholder: "Ej. Fisica 1 - Vectores",
+    disabledPlaceholder: "Ej. Fisica 1 - Vectores",
+    maxResults: 8,
+    autoSelectExactOnBlur: false,
+    openOnFocus: false,
+    openOnClick: false,
+    openOnlyWithQuery: true,
+    getSearchText: (item) => `${item.nombre || ""} ${item.nivel || ""} ${item.materia || ""}`,
+    renderItem: renderQuickTitleItem,
+    onChange: (val) => {
+      if (val?.typing || !val?.id) {
+        if (val?.clearedSelection || explorerState.quickCreate.selectedConjunto) {
+          clearQuickExistingConjuntoSelection();
+          tituloConjuntoCombobox?.setDisabled(false);
+        }
+        return;
+      }
+      const conjunto = getQuickBibliotecaConjuntos().find((item) => String(item.id) === String(val.id));
+      if (conjunto) selectQuickExistingConjunto(conjunto);
+    }
+  });
+  syncQuickTitleItems();
+
+  plantelCombobox = createQuickCombobox("quick-internal-structure-combobox", {
+    placeholder: "Escribe o selecciona una estructura",
+    disabledPlaceholder: "Escribe o selecciona una estructura",
     onChange: async (val) => {
       if (val.typing) {
         if (val.nombre) gradoCombobox?.setDisabled(false);
@@ -5163,8 +5598,8 @@ function initQuickComboboxes() {
   });
 
   gradoCombobox = createQuickCombobox("quick-grado-combobox", {
-    placeholder: "Escribe o selecciona un grado",
-    disabledPlaceholder: "Primero selecciona o crea un plantel",
+    placeholder: "Escribe o selecciona un nivel / grado",
+    disabledPlaceholder: "Primero selecciona o crea una estructura",
     onChange: async (val) => {
       toggleQuickGradoNewRow();
 
@@ -5196,9 +5631,13 @@ function initQuickComboboxes() {
   gradoCombobox.setDisabled(true);
 
   materiaCombobox = createQuickCombobox("quick-materia-combobox", {
-    placeholder: "Escribe o selecciona una materia",
-    disabledPlaceholder: "Primero selecciona o crea un grado",
+    placeholder: window.BIBLIOTECA_MODE ? "Selecciona o escribe una materia" : "Escribe o selecciona una materia",
+    disabledPlaceholder: window.BIBLIOTECA_MODE ? "Selecciona o escribe una materia" : "Primero selecciona o crea un grado",
     onChange: async (val) => {
+      if (window.BIBLIOTECA_MODE) {
+        return;
+      }
+
       if (val.typing) {
         if (val.nombre) unidadCombobox?.setDisabled(false);
         else unidadCombobox?.setDisabled(true);
@@ -5221,7 +5660,7 @@ function initQuickComboboxes() {
       }
     }
   });
-  materiaCombobox.setDisabled(true);
+  materiaCombobox.setDisabled(!window.BIBLIOTECA_MODE);
 
   unidadCombobox = createQuickCombobox("quick-unidad-combobox", {
     placeholder: "Escribe o selecciona una unidad",
@@ -5310,6 +5749,19 @@ function bindDashboardEvents() {
     syncQuickSelectVisualState("quick-grado-base-select");
   });
 
+  document.getElementById("quick-nivel-educativo-select")?.addEventListener("change", (event) => {
+    syncQuickSelectVisualState("quick-nivel-educativo-select");
+    if (!window.BIBLIOTECA_MODE) return;
+    if (explorerState.quickCreate.selectedConjunto) {
+      clearQuickExistingConjuntoSelection();
+    }
+    materiaCombobox?.reset();
+    materiaCombobox?.setDisabled(false);
+    fillQuickMateriaOptionsForNivel(event.target.value).catch((error) => {
+      console.error("Error cargando materias por nivel:", error);
+    });
+  });
+
   document.getElementById("quick-add-tema")?.addEventListener("click", () => {
     addQuickTemaFromInputs();
   });
@@ -5357,7 +5809,10 @@ function bindDashboardEvents() {
     });
   });
 
-  document.getElementById("btn-onboarding-create")?.addEventListener("click", () => openEntityModal("plantel"));
+  document.getElementById("btn-onboarding-create")?.addEventListener("click", () => {
+    if (window.BIBLIOTECA_MODE) return;
+    openEntityModal("plantel");
+  });
   document.getElementById("btn-onboarding-retry")?.addEventListener("click", () => loadPlanteles().then(renderAll).catch((error) => console.error("Error reintentando:", error)));
 
   document.getElementById("entity-modal")?.addEventListener("click", (event) => {
@@ -5537,10 +5992,17 @@ async function hydrateExplorerData() {
 }
 
 async function initDashboardPage() {
+  const hasBiblioteca = typeof window.initBiblioteca === "function";
+  if (hasBiblioteca) {
+    window.BIBLIOTECA_MODE = true;
+  }
+
   try {
     await injectComponent("dashboard-layout-root", "../components/layout.html");
     await Promise.all([
-      injectComponent("dashboard-sidebar-slot", "../components/sidebar.html"),
+      hasBiblioteca
+        ? Promise.resolve()
+        : injectComponent("dashboard-sidebar-slot", "../components/sidebar.html"),
       window.initPrivateChrome ? window.initPrivateChrome() : Promise.resolve()
     ]);
   } catch (error) {
@@ -5552,6 +6014,15 @@ async function initDashboardPage() {
 
   bindDashboardEvents();
 
+  if (hasBiblioteca) {
+    try {
+      await window.initBiblioteca();
+    } catch (error) {
+      console.error("Error cargando biblioteca:", error);
+    }
+    return;
+  }
+
   try {
     await hydrateExplorerData();
   } catch (error) {
@@ -5562,3 +6033,9 @@ async function initDashboardPage() {
 }
 
 window.initDashboardPage = initDashboardPage;
+window.explorerState = explorerState;
+window.renderExamPreviewModal = renderExamPreviewModal;
+window.closeExamPreviewModal = closeExamPreviewModal;
+window.renderListaCotejoPreviewModal = renderListaCotejoPreviewModal;
+window.closeListaCotejoPreview = closeListaCotejoPreview;
+window.downloadExamWord = downloadExamWord;
