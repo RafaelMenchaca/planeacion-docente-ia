@@ -7,33 +7,41 @@ function tieneValor(valor) {
   return normalizarValor(valor) !== "";
 }
 
-function normalizarEstadoPlaneacion(status) {
-  const raw = normalizarValor(status).toLowerCase();
-  if (raw === "ready") return "Lista";
-  if (raw === "generating") return "Generandose";
-  if (raw === "pending") return "En espera";
-  if (raw === "error") return "Con error";
-  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "";
+function primerValorDetalle(...values) {
+  return values.find((value) => tieneValor(value)) || "";
 }
 
-function construirRutaJerarquia(data) {
-  const ruta = Array.isArray(data?.jerarquia?.ruta) ? data.jerarquia.ruta : [];
-  if (ruta.length > 0) {
-    return ruta.map((item) => item.nombre).filter(Boolean).join(" / ");
-  }
-
-  return [
-    data?.jerarquia?.plantel?.nombre,
-    data?.jerarquia?.grado?.nombre || data?.nivel,
-    data?.jerarquia?.materia?.nombre || data?.materia,
-    data?.jerarquia?.unidad?.nombre || (tieneValor(data?.unidad) ? `Unidad ${data.unidad}` : ""),
-    data?.jerarquia?.tema?.titulo || data?.tema
-  ]
-    .filter(Boolean)
-    .join(" / ");
+function capitalizarDetalleTexto(value) {
+  return normalizarValor(value).replace(/\p{L}[\p{L}\p{M}]*/gu, (word) =>
+    word.charAt(0).toLocaleUpperCase("es-MX") + word.slice(1).toLocaleLowerCase("es-MX")
+  );
 }
 
-function renderInfoRows(rows, { emphasizeLast = false } = {}) {
+function formatDetalleDateTime(value) {
+  if (!tieneValor(value)) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return capitalizarDetalleTexto(value);
+
+  const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = months[date.getMonth()] || "";
+  const year = date.getFullYear();
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const period = hours >= 12 ? "p.m." : "a.m.";
+  hours = hours % 12 || 12;
+
+  return `${day} ${capitalizarDetalleTexto(month)} ${year}, ${String(hours).padStart(2, "0")}:${minutes} ${period}`;
+}
+
+function formatDetalleDuration(value) {
+  if (!tieneValor(value)) return "-";
+  const raw = normalizarValor(value);
+  return raw.toLowerCase().includes("min") ? raw : `${raw} min`;
+}
+
+function renderInfoRows(rows) {
   const visibles = (Array.isArray(rows) ? rows : []).filter((item) => tieneValor(item?.value));
 
   if (visibles.length === 0) {
@@ -41,86 +49,58 @@ function renderInfoRows(rows, { emphasizeLast = false } = {}) {
   }
 
   return visibles
-    .map((item, index) => {
-      const valueClass = emphasizeLast && index === visibles.length - 1
-        ? "detalle-info-value detalle-info-value-strong"
-        : "detalle-info-value";
-
-      return `
-        <div class="detalle-info-row">
-          <span class="detalle-info-key">${escapeHtml(item.label)}</span>
-          <span class="${valueClass}">${item.html || escapeHtml(item.value)}</span>
-        </div>
-      `;
-    })
+    .map((item) => `
+      <div class="detalle-info-row">
+        <span class="detalle-info-key">${escapeHtml(item.label)}:</span>
+        <span class="detalle-info-value">${escapeHtml(item.value)}</span>
+      </div>
+    `)
     .join("");
 }
 
-function renderInfo(data) {
+function renderInfo(data, metadata = {}) {
   const contenedor = document.getElementById("detalle-info");
   if (!contenedor) return;
 
-  const fechaCreacion = data.fecha_creacion
-    ? new Date(data.fecha_creacion).toLocaleDateString("es-MX", {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      })
-    : "";
+  const bloque = metadata?.bloque && typeof metadata.bloque === "object" ? metadata.bloque : {};
+  const planeacionBloque = metadata?.planeacionBloque && typeof metadata.planeacionBloque === "object"
+    ? metadata.planeacionBloque
+    : {};
 
-  const rutaJerarquia = construirRutaJerarquia(data);
-  const estado = normalizarEstadoPlaneacion(data.status);
+  const tituloBloque = primerValorDetalle(
+    bloque.titulo,
+    data.custom_title,
+    data.materia,
+    data.tema,
+    "Bloque de planeación"
+  );
+  const nivel = capitalizarDetalleTexto(primerValorDetalle(bloque.nivel, planeacionBloque.nivel, data.nivel, "Sin nivel"));
+  const materia = capitalizarDetalleTexto(primerValorDetalle(bloque.materia, planeacionBloque.materia, data.materia, "Sin materia"));
+  const tema = capitalizarDetalleTexto(primerValorDetalle(planeacionBloque.tema, data.tema, data.custom_title, "Sin tema"));
+  const duracion = formatDetalleDuration(primerValorDetalle(planeacionBloque.duracion, data.duracion));
+  const creado = formatDetalleDateTime(primerValorDetalle(
+    bloque.created_at,
+    planeacionBloque.fecha_creacion,
+    data.fecha_creacion,
+    data.created_at,
+    "-"
+  ));
 
-  const contextoRows = [
-    { label: "Plantel", value: data?.jerarquia?.plantel?.nombre },
-    { label: "Grado", value: data?.jerarquia?.grado?.nombre || data.nivel },
-    { label: "Materia", value: data?.jerarquia?.materia?.nombre || data.materia },
-    { label: "Unidad", value: data?.jerarquia?.unidad?.nombre || (tieneValor(data.unidad) ? `Unidad ${data.unidad}` : "") },
-    { label: "Tema", value: data?.jerarquia?.tema?.titulo || data.tema }
-  ];
-
-  const planeacionRows = [
-    { label: "Duracion", value: tieneValor(data.duracion) ? `${data.duracion} min` : "" },
-    {
-      label: "Estado",
-      value: estado,
-      html: tieneValor(estado) ? `<span class="detalle-status-chip">${escapeHtml(estado)}</span>` : ""
-    },
-    { label: "Creada", value: fechaCreacion }
+  const rows = [
+    { label: "Nivel", value: nivel },
+    { label: "Materia", value: materia },
+    { label: "Planeación", value: tema },
+    { label: "Duración", value: duracion },
+    { label: "Creado", value: creado || "-" }
   ];
 
   contenedor.innerHTML = `
-    <div class="detalle-info-layout">
-      <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-800">Origen actual</p>
-          <h1 class="mt-2 text-xl font-semibold text-slate-900 sm:text-2xl">Detalle de la planeacion</h1>
-          <p class="mt-2 text-sm text-slate-600">Consulta el contexto jerarquico, ajusta el contenido y exporta la version final.</p>
-        </div>
+    <div class="detalle-info-compact">
+      <div class="detalle-info-heading">
+        <p class="detalle-info-eyebrow">Bloque de planeación</p>
+        <h1 class="detalle-info-title">${escapeHtml(capitalizarDetalleTexto(tituloBloque))}</h1>
       </div>
-
-      <div class="detalle-info-panels">
-        <section class="detalle-info-panel">
-          <div class="detalle-info-panel-header">
-            <div>
-              <p class="detalle-info-panel-title">Ruta de origen</p>
-              <p class="detalle-info-panel-copy">La planeacion mantiene visible la ruta completa de la jerarquia donde fue creada.</p>
-            </div>
-            ${tieneValor(rutaJerarquia) ? `<div class="detalle-route-pill">${escapeHtml(rutaJerarquia)}</div>` : ""}
-          </div>
-          <div class="detalle-info-rows">${renderInfoRows(contextoRows, { emphasizeLast: true })}</div>
-        </section>
-
-        <section class="detalle-info-panel">
-          <div class="detalle-info-panel-header">
-            <div>
-              <p class="detalle-info-panel-title">Datos de la planeacion</p>
-              <p class="detalle-info-panel-copy">Resumen rapido para revisar vigencia y estado sin llenar el encabezado de cards.</p>
-            </div>
-          </div>
-          <div class="detalle-info-rows">${renderInfoRows(planeacionRows)}</div>
-        </section>
-      </div>
+      <div class="detalle-info-rows">${renderInfoRows(rows)}</div>
     </div>
   `;
 }

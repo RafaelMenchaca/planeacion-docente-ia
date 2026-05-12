@@ -92,6 +92,33 @@ function normalizarPlaneacionDetalle(data) {
   return planeacion;
 }
 
+function normalizarBatchIdDetalle(data) {
+  const raw = data?.batch_id ?? data?.batchId ?? "";
+  return raw === null || raw === undefined ? "" : String(raw).trim();
+}
+
+async function obtenerBloqueDetalle(batchId) {
+  const safeBatchId = normalizarTextoDetalle(batchId);
+  if (!safeBatchId || typeof window.apiBibliotecaConjuntoById !== "function") {
+    return null;
+  }
+
+  try {
+    const session = await window.requireSession();
+    if (!session?.access_token) return null;
+    return await window.apiBibliotecaConjuntoById(safeBatchId, session.access_token);
+  } catch (error) {
+    console.warn("No se pudo cargar metadata del bloque de planeación:", error);
+    return null;
+  }
+}
+
+function obtenerPlaneacionDelBloque(bloque, planeacionId) {
+  const planeaciones = Array.isArray(bloque?.planeaciones) ? bloque.planeaciones : [];
+  const safeId = String(planeacionId || "").trim();
+  return planeaciones.find((item) => String(item?.id || "").trim() === safeId) || null;
+}
+
 function syncDetalleEdicionUI() {
   setDetalleModoEdicion(modoEdicion);
   actualizarEstadoEdicion(cambiosPendientes);
@@ -206,12 +233,14 @@ async function hidratarTablaIaConImagenes(tablaIa) {
 
 async function aplicarPlaneacionCargada(data) {
   PLANEACION_ORIGINAL = normalizarPlaneacionDetalle(data);
+  const bloque = await obtenerBloqueDetalle(normalizarBatchIdDetalle(PLANEACION_ORIGINAL));
+  const planeacionBloque = obtenerPlaneacionDelBloque(bloque, PLANEACION_ORIGINAL.id);
   TABLA_IA_LECTURA = await hidratarTablaIaConImagenes(PLANEACION_ORIGINAL.tabla_ia || []);
   TABLA_IA_EDICION = [];
   modoEdicion = false;
   cambiosPendientes = false;
 
-  renderInfo(PLANEACION_ORIGINAL);
+  renderInfo(PLANEACION_ORIGINAL, { bloque, planeacionBloque });
   renderTablaIA(TABLA_IA_LECTURA, { modoEdicion: false });
   syncDetalleEdicionUI();
 }
