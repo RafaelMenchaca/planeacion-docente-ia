@@ -11,7 +11,7 @@
   <div id="navbar-placeholder"></div>
 
   <main class="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-    <section id="detalle-info" class="detalle-card rounded-3xl border border-slate-200 bg-white p-5 sm:p-6">
+    <section id="detalle-info" class="detalle-card rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
       <p class="text-sm text-slate-500">Cargando información...</p>
     </section>
 
@@ -28,19 +28,24 @@
             <button id="btn-editar" class="inline-flex min-w-44 items-center justify-center rounded-xl border border-cyan-300 px-4 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">
               Editar planeación
             </button>
-            <button id="btn-cancelar-edicion" class="hidden inline-flex min-w-44 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-              Cancelar edición
-            </button>
-            <button id="btn-guardar-cambios" class="hidden inline-flex min-w-44 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
-              Guardar cambios
+            <button id="btn-descargar-doc" class="inline-flex min-w-44 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              Descargar Word
             </button>
           </div>
         </div>
 
         <div id="detalle-edit-banner" class="detalle-edit-banner hidden mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3">
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <p class="text-sm font-semibold text-cyan-900">Edición activada. Ahora puedes escribir en las celdas de contenido.</p>
-            <span id="detalle-edit-status" class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-cyan-700">Sin cambios aún</span>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center lg:justify-end">
+              <span id="detalle-edit-status" class="inline-flex items-center justify-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-cyan-700">Sin cambios aún</span>
+              <button id="btn-cancelar-edicion" class="hidden inline-flex min-w-40 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                Cancelar edición
+              </button>
+              <button id="btn-guardar-cambios" class="hidden inline-flex min-w-40 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
+                Guardar cambios
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -64,17 +69,6 @@
         </div>
       </div>
     </section>
-
-    <section class="detalle-card rounded-3xl border border-slate-200 bg-white p-4 sm:p-5">
-      <div class="flex flex-wrap justify-center gap-3">
-        <button id="btn-descargar-doc" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Descargar Word
-        </button>
-        <button id="btn-export-excel" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
-          Descargar Excel
-        </button>
-      </div>
-    </section>
   </main>
 
   <div id="footer-placeholder"></div>
@@ -85,6 +79,7 @@
   <script src="../js/core/supabase.client.js"></script>
   <script src="../js/services/auth.service.js"></script>
   <script src="../js/core/utils.js"></script>
+  <script src="../js/api/biblioteca.api.js"></script>
   <script src="../js/api/planeaciones.api.js"></script>
   <script src="../js/services/planeaciones.service.js"></script>
   <script src="../js/ui/components.private.js"></script>
