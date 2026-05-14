@@ -3837,16 +3837,11 @@ function renderMateriaLevel() {
   `;
 }
 
-function renderProgressPill(status, label = statusLabelFromTone(status)) {
-  const safeLabel = escapeHtml(label || statusLabelFromTone(status));
-
-  return `
-    <span class="explorer-status-pill ${status}">
-      <span class="explorer-status-indicator ${status}" aria-hidden="true"></span>
-      <span>${safeLabel}</span>
-      ${status === "generating" ? '<span class="explorer-ellipsis" aria-hidden="true">...</span>' : ""}
-    </span>
-  `;
+// Implementación canónica movida a js/ui/shared.ui.js (window.AppUI.renderProgressPill).
+// Este wrapper mantiene la función accesible en el scope local de dashboard.page.js.
+function renderProgressPill(status, label) {
+  if (label === undefined) label = statusLabelFromTone(status);
+  return window.AppUI.renderProgressPill(status, label);
 }
 
 function renderNavigableCardTitle(title) {
@@ -4660,12 +4655,10 @@ function updateStagingTemaActividad(localId, momentoKey, actividad) {
 //   });
 // }
 
+// Implementación canónica movida a js/ui/shared.ui.js (window.AppUI.statusLabelFromTone).
+// Este wrapper mantiene la función accesible en el scope local de dashboard.page.js.
 function statusLabelFromTone(status) {
-  if (status === "ready") return "Listo";
-  if (status === "generating") return "Generando";
-  if (status === "skipped") return "No realizado";
-  if (status === "error") return "Error";
-  return "En espera";
+  return window.AppUI.statusLabelFromTone(status);
 }
 
 function initProgressFromStaging() {
