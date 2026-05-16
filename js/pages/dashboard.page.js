@@ -5728,12 +5728,10 @@ function bindDashboardEvents() {
     openQuickCreatePanel().catch((error) => console.error("Error abriendo creacion rapida:", error));
   });
 
-  document.getElementById("quick-create-close")?.addEventListener("click", () => {
-    closeQuickCreatePanel();
-  });
-
-  document.getElementById("quick-create-backdrop")?.addEventListener("click", () => {
-    closeQuickCreatePanel();
+  ["quick-create-close", "quick-create-cancel", "quick-create-backdrop"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", () => {
+      closeQuickCreatePanel();
+    });
   });
 
   initQuickComboboxes();
@@ -5818,7 +5816,7 @@ function bindDashboardEvents() {
     });
   });
 
-  ["unit-exam-preview-backdrop", "unit-exam-preview-close", "unit-exam-preview-cancel"].forEach((id) => {
+  ["unit-exam-preview-backdrop", "unit-exam-preview-close"].forEach((id) => {
     document.getElementById(id)?.addEventListener("click", () => {
       closeExamPreviewModal();
     });
@@ -5839,7 +5837,7 @@ function bindDashboardEvents() {
     });
   });
 
-  ["lista-cotejo-preview-backdrop", "lista-cotejo-preview-close", "lista-cotejo-preview-cancel"].forEach((id) => {
+  ["lista-cotejo-preview-backdrop", "lista-cotejo-preview-close"].forEach((id) => {
     document.getElementById(id)?.addEventListener("click", () => {
       closeListaCotejoPreview();
     });

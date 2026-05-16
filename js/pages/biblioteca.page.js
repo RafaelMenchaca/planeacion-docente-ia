@@ -1709,7 +1709,7 @@ function renderBibliotecaAgregarModal() {
         <h3 class="mt-1 text-base font-semibold text-slate-900">${escapeBibliotecaDisplayText(findConjuntoById(s.conjuntoId)?.titulo, "Bloque")}</h3>
       </div>
       <button type="button" id="bib-agr-close"
-        class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50">
+        class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50">
         &#10005;
       </button>
     </div>

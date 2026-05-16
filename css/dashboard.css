@@ -1509,16 +1509,16 @@
   width: 2.35rem;
   height: 2.35rem;
   flex-shrink: 0;
-  border: 1px solid rgb(203 213 225);
+  border: 1px solid rgb(254 205 211);
   border-radius: 9999px;
   background: #fff;
-  color: rgb(100 116 139);
+  color: rgb(225 29 72);
   font-size: 0.95rem;
   font-weight: 500;
 }
 
 .bib-exam-close:hover {
-  background: rgb(248 250 252);
+  background: rgb(255 241 242);
 }
 
 .bib-exam-content {
@@ -1736,16 +1736,16 @@
   width: 2.35rem;
   height: 2.35rem;
   flex-shrink: 0;
-  border: 1px solid rgb(203 213 225);
+  border: 1px solid rgb(254 205 211);
   border-radius: 9999px;
   background: #fff;
-  color: rgb(100 116 139);
+  color: rgb(225 29 72);
   font-size: 0.95rem;
   font-weight: 500;
 }
 
 .bib-lista-close:hover {
-  background: rgb(248 250 252);
+  background: rgb(255 241 242);
 }
 
 .bib-lista-content {
