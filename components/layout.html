@@ -67,8 +67,8 @@
               <h3 class="text-base font-semibold text-slate-900">Crear bloque de planeación</h3>
               <p class="text-sm text-slate-600">Busca un bloque existente o crea uno nuevo, selecciona la materia y agrega los temas que deseas planear.</p>
             </div>
-            <button id="quick-create-close" type="button" class="ml-auto shrink-0 inline-flex items-center justify-center rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50">
-              Cerrar
+            <button id="quick-create-close" type="button" class="ml-auto shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50">
+              x
             </button>
           </div>
         </div>
@@ -142,9 +142,14 @@
 
             <div id="quick-create-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"></div>
 
-            <button id="quick-create-submit" type="submit" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">
-              Crear y generar planeaciones
-            </button>
+            <div class="flex flex-wrap justify-end gap-2">
+              <button id="quick-create-cancel" type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                Cancelar
+              </button>
+              <button id="quick-create-submit" type="submit" class="inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800">
+                Crear y generar planeaciones
+              </button>
+            </div>
           </form>
 
           <div id="quick-create-generating" class="hidden p-4 sm:p-5">
@@ -215,7 +220,7 @@
             <h3 id="unit-exam-title" class="mt-2 text-lg font-semibold text-slate-900">Crear examen de unidad</h3>
             <p id="unit-exam-description" class="mt-1 text-sm text-slate-600">Configura los tipos de pregunta y usa los temas actuales de la unidad.</p>
           </div>
-          <button id="unit-exam-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 text-slate-500 hover:bg-slate-50">
+          <button id="unit-exam-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50">
             x
           </button>
         </div>
@@ -265,7 +270,7 @@
             <h3 id="unit-exam-preview-title" class="mt-2 text-lg font-semibold text-slate-900">Examen de unidad</h3>
             <p id="unit-exam-preview-meta" class="mt-1 text-sm text-slate-600"></p>
           </div>
-          <button id="unit-exam-preview-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 text-slate-500 hover:bg-slate-50">
+          <button id="unit-exam-preview-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50">
             x
           </button>
         </div>
@@ -274,10 +279,7 @@
 
         <div id="unit-exam-preview-body" class="mt-4 flex-1 pr-1"></div>
 
-        <div class="mt-4 flex flex-wrap justify-between gap-2">
-          <button id="unit-exam-preview-cancel" type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            Cerrar
-          </button>
+        <div class="mt-4 flex flex-wrap justify-end gap-2">
           <button id="unit-exam-preview-download" type="button" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">
             Descargar Word
           </button>
@@ -297,7 +299,7 @@
             <h3 class="mt-2 text-lg font-semibold text-slate-900">Crear listas de cotejo</h3>
             <p id="lista-cotejo-confirm-description" class="mt-1 text-sm text-slate-600">Se generara una lista de cotejo por cada planeacion de la unidad.</p>
           </div>
-          <button id="lista-cotejo-confirm-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 text-slate-500 hover:bg-slate-50">
+          <button id="lista-cotejo-confirm-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50">
             x
           </button>
         </div>
@@ -339,7 +341,7 @@
             <h3 id="lista-cotejo-preview-title" class="mt-2 text-lg font-semibold text-slate-900">Lista de cotejo</h3>
             <p id="lista-cotejo-preview-meta" class="mt-1 text-sm text-slate-600"></p>
           </div>
-          <button id="lista-cotejo-preview-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 text-slate-500 hover:bg-slate-50">
+          <button id="lista-cotejo-preview-close" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50">
             x
           </button>
         </div>
@@ -348,10 +350,7 @@
 
         <div id="lista-cotejo-preview-body" class="mt-4 flex-1 overflow-y-auto pr-1"></div>
 
-        <div class="mt-4 flex flex-wrap justify-between gap-2">
-          <button id="lista-cotejo-preview-cancel" type="button" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            Cerrar
-          </button>
+        <div class="mt-4 flex flex-wrap justify-end gap-2">
           <button id="lista-cotejo-preview-download" type="button" class="inline-flex items-center justify-center rounded-xl border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50">
             Descargar Word
           </button>
