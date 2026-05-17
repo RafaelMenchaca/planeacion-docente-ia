@@ -10,7 +10,7 @@ const bibliotecaState = {
   searchQuery: "",
   selectedConjuntoId: null,
   expandedIds: new Set(),
-  activeTab: {},          // { [conjuntoId]: "planeaciones" | "examenes" | "listas" }
+  activeTab: {},          // { [conjuntoId]: "planeaciones" | "examenes" | "listas" | "anexos" }
   pendingBatchId: null,
 
   // Progress shown inline in cards (not inside modals)
@@ -18,6 +18,17 @@ const bibliotecaState = {
   pendingPlaneacionesByBatchId: {},    // { [batchId]: { items:[{titulo,status,message}], error } }
   pendingExamenByBatchId: {},          // { [batchId]: { message, error } }
   pendingListaByBatchId: {},           // { [batchId]: { message, result, error } }
+  // { [batchId]: { [planeacionId]: { titulo, materia, nivel, status: "generating"|"error", errorMessage } } }
+  anexosGenerating: {},
+
+  anexoModal: {
+    open: false,
+    conjuntoId: null,
+    planeaciones: [],
+    selectedPlaneacionIds: [],
+    submitting: false,
+    error: ""
+  },
 
   examModal: {
     open: false,
@@ -582,6 +593,104 @@ function renderExamenesTab(conjunto) {
   `;
 }
 
+function renderAnexosTab(conjunto) {
+  const id = escapeHtml(String(conjunto.id));
+
+  const actionButton = conjunto.isPending ? "" : `
+    <button type="button" class="biblioteca-btn-secondary"
+      data-bib-action="abrir-modal-anexos" data-conjunto-id="${id}">
+      + Generar anexos
+    </button>`;
+
+  if (conjunto.isPending) {
+    return `
+      ${renderBibliotecaSectionHeader("Anexos del bloque")}
+      <p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear anexos cuando el bloque este listo.</p>
+    `;
+  }
+
+  const anexos         = Array.isArray(conjunto.anexos) ? conjunto.anexos : [];
+  const generatingMap  = bibliotecaState.anexosGenerating[conjunto.id] || {};
+
+  const anexosByPlanId = new Map(
+    anexos.map((a) => [normalizeBibliotecaId(a.planeacion_id), a])
+  );
+
+  // Cards de anexos ya generados
+  const realRowsHtml = anexos.map((anexo) => {
+    const pid    = normalizeBibliotecaId(anexo.planeacion_id);
+    const tema   = escapeBibliotecaDisplayText(anexo.tema, "Sin titulo");
+    const titulo = `Anexo &middot; ${tema}`;
+    const fecha  = bibFormatShortDateTime(anexo.created_at);
+    const meta   = fecha || "";
+    return `
+      <div class="biblioteca-item-row">
+        <div class="biblioteca-item-info">
+          <span class="biblioteca-item-title">${titulo}</span>
+          ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
+        </div>
+        <div class="biblioteca-item-actions">
+          <button type="button" class="biblioteca-btn-link"
+            data-bib-action="ver-anexo"
+            data-anexo-id="${escapeHtml(String(anexo.id))}">Ver</button>
+          <button type="button" class="biblioteca-btn-link"
+            data-bib-action="descargar-anexo"
+            data-anexo-id="${escapeHtml(String(anexo.id))}">Descargar</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  // Cards temporales para los que están en proceso (excluir los que ya tienen anexo real)
+  const tempRowsHtml = Object.entries(generatingMap)
+    .filter(([pid]) => !anexosByPlanId.has(pid))
+    .map(([pid, item]) => {
+      const titulo = escapeBibliotecaDisplayText(item.titulo, "Sin titulo");
+      const meta   = [
+        escapeBibliotecaDisplayText(item.materia),
+        escapeBibliotecaDisplayText(item.nivel)
+      ].filter(Boolean).join(" &middot; ");
+
+      if (item.status === "error") {
+        return `
+          <div class="biblioteca-item-row">
+            <div class="biblioteca-item-info">
+              <span class="biblioteca-item-title">${titulo}</span>
+              ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
+              <span style="font-size:0.75rem; color:#dc2626;">${escapeHtml(item.errorMessage || "No se pudo generar el anexo.")}</span>
+            </div>
+            <div class="biblioteca-item-actions"></div>
+          </div>`;
+      }
+
+      return `
+        <div class="biblioteca-item-row">
+          <div class="biblioteca-item-info">
+            <span class="biblioteca-item-title">${titulo}</span>
+            ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
+            <span class="bib-lista-generated-badge" style="opacity:0.65;">Generando anexo...</span>
+          </div>
+          <div class="biblioteca-item-actions"></div>
+        </div>`;
+    }).join("");
+
+  const hasContent = realRowsHtml || tempRowsHtml;
+
+  if (!hasContent) {
+    return `
+      ${renderBibliotecaSectionHeader("Anexos del bloque", actionButton)}
+      <p class="biblioteca-empty-tab">Este bloque todavia no tiene anexos generados.</p>
+    `;
+  }
+
+  return `
+    ${renderBibliotecaSectionHeader("Anexos del bloque", actionButton)}
+    <div class="biblioteca-items-list">
+      ${realRowsHtml}
+      ${tempRowsHtml}
+    </div>
+  `;
+}
+
 function renderListasCotejoTab(conjunto) {
   const id = escapeHtml(String(conjunto.id));
   const actionButton = conjunto.isPending ? "" : `
@@ -675,6 +784,11 @@ function renderBibliotecaTabs(conjunto) {
         data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="listas">
         Listas de cotejo <span class="biblioteca-tab-count">${conjunto.total_listas_cotejo || 0}</span>
       </button>
+      <button type="button" role="tab"
+        class="biblioteca-tab-btn ${activeTab === "anexos" ? "is-active" : ""}"
+        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="anexos">
+        Anexos <span class="biblioteca-tab-count">${conjunto.total_anexos || 0}</span>
+      </button>
     </div>
   `;
 }
@@ -686,6 +800,7 @@ function renderBibliotecaTabContent(conjunto) {
       ${activeTab === "planeaciones" ? renderPlaneacionesTab(conjunto) : ""}
       ${activeTab === "examenes"     ? renderExamenesTab(conjunto)     : ""}
       ${activeTab === "listas"       ? renderListasCotejoTab(conjunto) : ""}
+      ${activeTab === "anexos"       ? renderAnexosTab(conjunto)       : ""}
     </div>
   `;
 }
@@ -703,6 +818,7 @@ function renderConjuntoSidebarItem(conjunto) {
   const planeaciones = Number(conjunto.total_planeaciones || 0);
   const examenes = Number(conjunto.total_examenes || 0);
   const listas = Number(conjunto.total_listas_cotejo || 0);
+  const anexos = Number(conjunto.total_anexos || 0);
 
   return `
     <button type="button"
@@ -714,7 +830,7 @@ function renderConjuntoSidebarItem(conjunto) {
         <span class="biblioteca-sidebar-meta">${meta || "Sin datos"}</span>
         <span class="biblioteca-sidebar-date">${fecha || (isPending ? "Generando" : "")}</span>
         <span class="biblioteca-sidebar-counts">
-          ${planeaciones} planeaciones · ${examenes} examenes · ${listas} listas de cotejo
+          ${planeaciones} planeaciones · ${examenes} examenes · ${listas} listas · ${anexos} anexos
         </span>
       </span>
     </button>
@@ -978,11 +1094,13 @@ function onBibliotecaClick(event) {
   const btn = event.target.closest("[data-bib-action]");
   if (!btn) return;
 
-  const action     = btn.dataset.bibAction;
-  const conjuntoId = btn.dataset.conjuntoId;
-  const tab        = btn.dataset.tab;
-  const examenId   = btn.dataset.examenId;
-  const listaId    = btn.dataset.listaId;
+  const action       = btn.dataset.bibAction;
+  const conjuntoId   = btn.dataset.conjuntoId;
+  const tab          = btn.dataset.tab;
+  const examenId     = btn.dataset.examenId;
+  const listaId      = btn.dataset.listaId;
+  const anexoId      = btn.dataset.anexoId;
+  const planeacionId = btn.dataset.planeacionId;
 
   switch (action) {
     case "select-conjunto": {
@@ -1054,7 +1172,667 @@ function onBibliotecaClick(event) {
       if (listaId) bibDescargarLista(listaId);
       break;
     }
+
+    case "abrir-modal-anexos": {
+      const cj = findConjuntoById(conjuntoId);
+      if (cj) openBibliotecaAnexoCreateModal(cj);
+      break;
+    }
+
+    case "generar-anexo": {
+      if (planeacionId && conjuntoId) bibGenerarAnexo(planeacionId, conjuntoId);
+      break;
+    }
+
+    case "ver-anexo": {
+      if (anexoId) openBibliotecaAnexoPreview(anexoId);
+      break;
+    }
+
+    case "descargar-anexo": {
+      if (anexoId) bibDescargarAnexo(anexoId);
+      break;
+    }
+
+    case "regenerar-anexo": {
+      if (anexoId && conjuntoId && planeacionId) bibRegenerarAnexo(anexoId, conjuntoId, planeacionId);
+      break;
+    }
   }
+}
+
+// ---- ANEXOS CREATE MODAL ----
+
+function openBibliotecaAnexoCreateModal(conjunto) {
+  const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
+  bibliotecaState.anexoModal = {
+    open:                  true,
+    conjuntoId:            conjunto.id,
+    planeaciones,
+    selectedPlaneacionIds: [],
+    submitting:            false,
+    error:                 ""
+  };
+  const modal = document.getElementById("biblioteca-anexo-create-modal");
+  if (modal) modal.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
+  renderBibliotecaAnexoCreateModal();
+}
+
+function closeBibliotecaAnexoCreateModal() {
+  bibliotecaState.anexoModal.open = false;
+  const modal = document.getElementById("biblioteca-anexo-create-modal");
+  if (modal) modal.classList.add("hidden");
+  document.body.classList.remove("overflow-hidden");
+}
+
+function renderBibliotecaAnexoCreateModal() {
+  const modal = document.getElementById("biblioteca-anexo-create-modal");
+  if (!modal) return;
+
+  const state    = bibliotecaState.anexoModal;
+  const conjunto = findConjuntoById(state.conjuntoId);
+  const anexosExistentes = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
+  const generatingMap    = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
+  const anexosPlaneacionIds = new Set([
+    ...anexosExistentes.map((a) => normalizeBibliotecaId(a.planeacion_id)),
+    ...Object.keys(generatingMap)
+  ].filter(Boolean));
+
+  const totalPlaneaciones = state.planeaciones.length;
+  const disponibles = state.planeaciones.filter(
+    (p) => !anexosPlaneacionIds.has(normalizeBibliotecaId(p.id))
+  );
+  const availableIds = new Set(disponibles.map((p) => normalizeBibliotecaId(p.id)));
+  const selectedValidIds = state.selectedPlaneacionIds.filter((id) =>
+    availableIds.has(normalizeBibliotecaId(id))
+  );
+  if (selectedValidIds.length !== state.selectedPlaneacionIds.length) {
+    bibliotecaState.anexoModal.selectedPlaneacionIds = selectedValidIds;
+  }
+  const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0 && !state.submitting;
+
+  const planeacionesHtml = state.planeaciones.length
+    ? `<div class="bib-lista-topic-list">
+        ${state.planeaciones.map((p) => {
+          const pid          = normalizeBibliotecaId(p.id);
+          const tieneAnexo   = anexosExistentes.some((a) => normalizeBibliotecaId(a.planeacion_id) === pid);
+          const estaGenerando = !tieneAnexo && !!generatingMap[pid];
+          const bloqueada    = tieneAnexo || estaGenerando;
+          const checked      = selectedValidIds.includes(pid);
+          const titulo_p     = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
+          const badge        = tieneAnexo
+            ? `<span class="bib-lista-generated-badge">Anexo generado</span>`
+            : estaGenerando
+              ? `<span class="bib-lista-generated-badge" style="opacity:0.65;">Generando...</span>`
+              : "";
+          return `
+            <label class="bib-lista-topic ${bloqueada ? "is-disabled" : ""}">
+              <input type="checkbox" class="bib-lista-checkbox"
+                data-bib-anexo-planid="${escapeHtml(pid)}"
+                ${checked   ? "checked"  : ""}
+                ${bloqueada ? "disabled" : ""} />
+              <span class="bib-lista-topic-title">${titulo_p}</span>
+              ${badge}
+            </label>`;
+        }).join("")}
+      </div>`
+    : `<p class="bib-lista-empty">Este bloque no tiene planeaciones disponibles.</p>`;
+
+  const allGeneratedMessage = totalPlaneaciones > 0 && disponibles.length === 0
+    ? `<p class="bib-lista-note-alert">Todas las planeaciones de este bloque ya tienen anexo generado.</p>`
+    : "";
+
+  const errorHtml = state.error
+    ? `<p class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">${escapeHtml(state.error)}</p>`
+    : "";
+
+  const card = modal.querySelector(".biblioteca-modal-card");
+  card.classList.add("biblioteca-lista-create-card");
+  card.innerHTML = `
+    <div class="bib-lista-head">
+      <div class="bib-lista-title-block">
+        <p class="bib-lista-eyebrow">MATERIAL PARA ESTUDIANTES</p>
+        <h3>Crear anexos</h3>
+        <p>Selecciona las planeaciones para las que deseas generar anexos.<br>Las que ya tienen anexo generado no se pueden volver a seleccionar.</p>
+      </div>
+      <button type="button" id="bib-anexo-create-close" class="bib-lista-close">X</button>
+    </div>
+
+    <div class="bib-lista-content">
+      <section class="bib-lista-section">
+        <div class="bib-lista-section-head">
+          <h4>PLANEACIONES DEL BLOQUE</h4>
+          <span id="bib-anexo-create-count">${disponibles.length} disponible(s) de ${totalPlaneaciones}</span>
+        </div>
+        ${planeacionesHtml}
+      </section>
+
+      ${allGeneratedMessage}
+
+      ${errorHtml}
+
+      <div class="bib-lista-actions">
+        <button type="button" id="bib-anexo-create-cancel" class="bib-lista-cancel"
+          ${state.submitting ? "disabled" : ""}>Cancelar</button>
+        <button type="button" id="bib-anexo-create-submit" class="bib-lista-submit"
+          ${canSubmit ? "" : "disabled"}>
+          ${state.submitting ? "Generando..." : "Generar anexos seleccionados"}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("bib-anexo-create-close")?.addEventListener("click",  closeBibliotecaAnexoCreateModal);
+  document.getElementById("bib-anexo-create-cancel")?.addEventListener("click", closeBibliotecaAnexoCreateModal);
+  document.getElementById("bib-anexo-create-submit")?.addEventListener("click", submitBibliotecaAnexoCreateModal);
+
+  modal.querySelectorAll("[data-bib-anexo-planid]").forEach((cb) => {
+    cb.addEventListener("change", (e) => {
+      if (e.target.disabled) return;
+      const pid = e.target.dataset.bibAnexoPlanid;
+      if (!availableIds.has(normalizeBibliotecaId(pid))) {
+        e.target.checked = false;
+        return;
+      }
+      if (e.target.checked) {
+        if (!bibliotecaState.anexoModal.selectedPlaneacionIds.includes(pid)) {
+          bibliotecaState.anexoModal.selectedPlaneacionIds.push(pid);
+        }
+      } else {
+        bibliotecaState.anexoModal.selectedPlaneacionIds =
+          bibliotecaState.anexoModal.selectedPlaneacionIds.filter((id) => id !== pid);
+      }
+      renderBibliotecaAnexoCreateModal();
+    });
+  });
+}
+
+async function submitBibliotecaAnexoCreateModal() {
+  const state    = bibliotecaState.anexoModal;
+  const conjunto = findConjuntoById(state.conjuntoId);
+  const anexosExistentes  = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
+  const currentGenerating = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
+  const blockedIds = new Set([
+    ...anexosExistentes.map((a) => normalizeBibliotecaId(a.planeacion_id)),
+    ...Object.keys(currentGenerating)
+  ].filter(Boolean));
+  const availableIds = new Set(
+    (Array.isArray(state.planeaciones) ? state.planeaciones : [])
+      .map((p) => normalizeBibliotecaId(p.id))
+      .filter((id) => id && !blockedIds.has(id))
+  );
+  const selectedIds = [...new Set(
+    state.selectedPlaneacionIds
+      .map((id) => normalizeBibliotecaId(id))
+      .filter((id) => availableIds.has(id))
+  )];
+
+  if (!selectedIds.length) {
+    bibliotecaState.anexoModal.error = "Selecciona al menos una planeacion.";
+    renderBibliotecaAnexoCreateModal();
+    return;
+  }
+
+  bibliotecaState.anexoModal.submitting = true;
+  bibliotecaState.anexoModal.error      = "";
+  renderBibliotecaAnexoCreateModal();
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    const conjuntoId = state.conjuntoId;
+
+    // Construir mapa con info de cada planeacion seleccionada para las cards temporales
+    const planMap = new Map(
+      (Array.isArray(state.planeaciones) ? state.planeaciones : [])
+        .map((p) => [normalizeBibliotecaId(p.id), p])
+    );
+
+    // Insertar cards temporales "generating" antes de cerrar el modal
+    if (!bibliotecaState.anexosGenerating[conjuntoId]) {
+      bibliotecaState.anexosGenerating[conjuntoId] = {};
+    }
+    for (const pid of selectedIds) {
+      const p = planMap.get(pid);
+      bibliotecaState.anexosGenerating[conjuntoId][pid] = {
+        titulo:  p?.tema || p?.custom_title || "Sin titulo",
+        materia: p?.materia || null,
+        nivel:   p?.nivel   || null,
+        status:  "generating",
+        errorMessage: ""
+      };
+    }
+
+    closeBibliotecaAnexoCreateModal();
+    setSelectedConjunto(conjuntoId, { tab: "anexos" });
+    renderBibliotecaDetailInPlace();
+
+    ;(async () => {
+      let anySuccess = false;
+
+      for (const pid of selectedIds) {
+        try {
+          const res = await apiGenerarAnexo(pid, session.access_token);
+
+          // Update optimista: crear anexo en el estado local para que aparezca inmediatamente
+          const conjuntoObj = bibliotecaState.conjuntos.find(
+            (c) => normalizeBibliotecaId(c.id) === normalizeBibliotecaId(conjuntoId)
+          );
+          if (conjuntoObj) {
+            if (!Array.isArray(conjuntoObj.anexos)) conjuntoObj.anexos = [];
+            const item = bibliotecaState.anexosGenerating[conjuntoId]?.[pid];
+            conjuntoObj.anexos.push({
+              id:           res.anexo_id || `tmp-${pid}`,
+              planeacion_id: pid,
+              titulo:        item?.titulo  || "Anexo",
+              materia:       item?.materia || null,
+              nivel:         item?.nivel   || null,
+              status:        "generated",
+              created_at:    new Date().toISOString()
+            });
+            conjuntoObj.total_anexos = conjuntoObj.anexos.length;
+          }
+
+          // Quitar card temporal de este pid
+          if (bibliotecaState.anexosGenerating[conjuntoId]) {
+            delete bibliotecaState.anexosGenerating[conjuntoId][pid];
+          }
+          anySuccess = true;
+        } catch (itemErr) {
+          console.error("[biblioteca] Error generando anexo para planeacion", pid, itemErr);
+          if (bibliotecaState.anexosGenerating[conjuntoId]?.[pid]) {
+            bibliotecaState.anexosGenerating[conjuntoId][pid].status       = "error";
+            bibliotecaState.anexosGenerating[conjuntoId][pid].errorMessage = itemErr?.message || "No se pudo generar el anexo.";
+          }
+        }
+
+        renderBibliotecaDetailInPlace();
+      }
+
+      // Limpiar mapa si ya no queda nada generando (solo errores o vacío)
+      const remaining = bibliotecaState.anexosGenerating[conjuntoId] || {};
+      const allDone   = Object.values(remaining).every((v) => v.status === "error");
+      if (allDone && Object.keys(remaining).length === 0) {
+        delete bibliotecaState.anexosGenerating[conjuntoId];
+      }
+
+      // Reload silencioso para confirmar datos reales del servidor
+      if (anySuccess) {
+        await loadAndRenderBiblioteca({ silent: true, targetBatchId: conjuntoId, activeTab: "anexos" });
+        delete bibliotecaState.anexosGenerating[conjuntoId];
+      }
+    })();
+
+  } catch (error) {
+    console.error("[biblioteca] Error iniciando anexos:", error);
+    bibliotecaState.anexoModal.submitting = false;
+    bibliotecaState.anexoModal.error      = error.message || "No se pudieron generar los anexos.";
+    renderBibliotecaAnexoCreateModal();
+  }
+}
+
+// ---- ANEXOS ACTIONS ----
+
+async function bibGenerarAnexo(planeacionId, conjuntoId) {
+  const safePlanId  = normalizeBibliotecaId(planeacionId);
+  const safeBatchId = normalizeBibliotecaId(conjuntoId);
+  if (!safePlanId || !safeBatchId) return;
+
+  // Obtener info de la planeación para la card temporal
+  const conjunto = findConjuntoById(safeBatchId);
+  const plan = (Array.isArray(conjunto?.planeaciones) ? conjunto.planeaciones : [])
+    .find((p) => normalizeBibliotecaId(p.id) === safePlanId);
+
+  if (!bibliotecaState.anexosGenerating[safeBatchId]) {
+    bibliotecaState.anexosGenerating[safeBatchId] = {};
+  }
+  bibliotecaState.anexosGenerating[safeBatchId][safePlanId] = {
+    titulo:  plan?.tema || plan?.custom_title || "Sin titulo",
+    materia: plan?.materia || null,
+    nivel:   plan?.nivel   || null,
+    status:  "generating",
+    errorMessage: ""
+  };
+  setSelectedConjunto(safeBatchId, { tab: "anexos" });
+  renderBibliotecaDetailInPlace();
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    const res = await apiGenerarAnexo(safePlanId, session.access_token);
+
+    // Update optimista
+    const conjuntoObj = bibliotecaState.conjuntos.find(
+      (c) => normalizeBibliotecaId(c.id) === safeBatchId
+    );
+    if (conjuntoObj) {
+      if (!Array.isArray(conjuntoObj.anexos)) conjuntoObj.anexos = [];
+      const item = bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId];
+      conjuntoObj.anexos.push({
+        id:           res?.anexo_id || `tmp-${safePlanId}`,
+        planeacion_id: safePlanId,
+        titulo:        item?.titulo  || "Anexo",
+        materia:       item?.materia || null,
+        nivel:         item?.nivel   || null,
+        status:        "generated",
+        created_at:    new Date().toISOString()
+      });
+      conjuntoObj.total_anexos = conjuntoObj.anexos.length;
+    }
+
+    if (bibliotecaState.anexosGenerating[safeBatchId]) {
+      delete bibliotecaState.anexosGenerating[safeBatchId][safePlanId];
+      if (Object.keys(bibliotecaState.anexosGenerating[safeBatchId]).length === 0) {
+        delete bibliotecaState.anexosGenerating[safeBatchId];
+      }
+    }
+
+    renderBibliotecaDetailInPlace();
+    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
+  } catch (error) {
+    console.error("[biblioteca] Error generando anexo:", error);
+    if (bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId]) {
+      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].status       = "error";
+      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].errorMessage = error.message || "No se pudo generar el anexo.";
+    }
+    renderBibliotecaDetailInPlace();
+  }
+}
+
+async function bibRegenerarAnexo(anexoId, conjuntoId, planeacionId) {
+  const safeAnexoId  = normalizeBibliotecaId(anexoId);
+  const safeBatchId  = normalizeBibliotecaId(conjuntoId);
+  const safePlanId   = normalizeBibliotecaId(planeacionId);
+  if (!safeAnexoId || !safeBatchId) return;
+
+  if (!bibliotecaState.anexosGenerating[safeBatchId]) {
+    bibliotecaState.anexosGenerating[safeBatchId] = {};
+  }
+  bibliotecaState.anexosGenerating[safeBatchId][safePlanId] = {
+    titulo:  "Regenerando...",
+    materia: null,
+    nivel:   null,
+    status:  "generating",
+    errorMessage: ""
+  };
+  setSelectedConjunto(safeBatchId, { tab: "anexos" });
+  renderBibliotecaDetailInPlace();
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    await apiRegenerarAnexo(safeAnexoId, session.access_token);
+
+    if (bibliotecaState.anexosGenerating[safeBatchId]) {
+      delete bibliotecaState.anexosGenerating[safeBatchId][safePlanId];
+      if (Object.keys(bibliotecaState.anexosGenerating[safeBatchId]).length === 0) {
+        delete bibliotecaState.anexosGenerating[safeBatchId];
+      }
+    }
+    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
+  } catch (error) {
+    console.error("[biblioteca] Error regenerando anexo:", error);
+    if (bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId]) {
+      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].status       = "error";
+      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].errorMessage = error.message || "No se pudo regenerar el anexo.";
+    }
+    renderBibliotecaDetailInPlace();
+  }
+}
+
+async function bibDescargarAnexo(anexoId) {
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+    const res = await apiObtenerAnexoDetalle(anexoId, session.access_token);
+    const anexo = res?.anexo;
+    if (!anexo) throw new Error("No se pudo obtener el anexo.");
+    descargarAnexoWord(anexo);
+  } catch (error) {
+    console.error("[biblioteca] Error descargando anexo:", error);
+    alert("No se pudo descargar el anexo. Intenta nuevamente.");
+  }
+}
+
+function descargarAnexoWord(anexo) {
+  const contenido = anexo.contenido || {};
+  const tituloGeneral = contenido.titulo_general || anexo.titulo || "Anexos";
+  const descripcion   = contenido.descripcion || "";
+  const listaAnexos   = Array.isArray(contenido.anexos) ? contenido.anexos : [];
+  const materia       = anexo.materia || "";
+  const tema          = anexo.tema    || "";
+
+  function renderAnexoHtml(a) {
+    let html = `<h2 style="font-size:13pt; margin-top:18pt; margin-bottom:4pt; font-weight:bold;">ANEXO ${a.numero || ""}: ${escapeHtml(a.titulo || "")}</h2>`;
+
+    if (a.instrucciones) {
+      html += `<p style="font-style:italic; margin-bottom:8pt;"><strong>Instrucciones:</strong> ${escapeHtml(a.instrucciones)}</p>`;
+    }
+
+    if (Array.isArray(a.contenido)) {
+      for (const bloque of a.contenido) {
+        if (bloque.subtitulo) {
+          html += `<p style="font-weight:bold; margin-top:8pt;">${escapeHtml(bloque.subtitulo)}</p>`;
+        }
+        if (bloque.texto) {
+          html += `<p style="margin-bottom:6pt;">${escapeHtml(bloque.texto)}</p>`;
+        }
+        if (Array.isArray(bloque.preguntas) && bloque.preguntas.length) {
+          html += `<ol style="margin-left:20pt;">`;
+          bloque.preguntas.forEach((q) => {
+            html += `<li style="margin-bottom:4pt;">${escapeHtml(q)}</li>`;
+          });
+          html += `</ol>`;
+        }
+      }
+    }
+
+    if (a.tabla && Array.isArray(a.tabla.columnas) && Array.isArray(a.tabla.filas)) {
+      html += `<table style="border-collapse:collapse; width:100%; margin-top:8pt;">`;
+      html += `<tr>`;
+      a.tabla.columnas.forEach((col) => {
+        html += `<th style="border:1px solid #999; background:#f0f0f0; padding:4pt 6pt; font-weight:bold;">${escapeHtml(col)}</th>`;
+      });
+      html += `</tr>`;
+      a.tabla.filas.forEach((fila) => {
+        html += `<tr>`;
+        (Array.isArray(fila) ? fila : []).forEach((celda) => {
+          html += `<td style="border:1px solid #999; padding:4pt 6pt;">${escapeHtml(celda || "")}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</table>`;
+    }
+
+    return html;
+  }
+
+  const encabezado = `
+    <p style="margin-bottom:6pt;">Nombre del alumno: ___________________________&nbsp;&nbsp;&nbsp;&nbsp;Fecha: ____________</p>
+    ${materia ? `<p style="margin-bottom:2pt;"><strong>Materia:</strong> ${escapeHtml(materia)}</p>` : ""}
+    ${tema    ? `<p style="margin-bottom:10pt;"><strong>Tema:</strong> ${escapeHtml(tema)}</p>`    : ""}
+  `;
+
+  const cuerpo = listaAnexos.map(renderAnexoHtml).join("");
+
+  const htmlDoc = `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; font-size: 11pt; }
+          h1   { text-align: center; font-size: 14pt; margin-bottom: 6pt; }
+          p.descripcion { text-align: center; color: #555; margin-bottom: 16pt; font-size: 10pt; }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeHtml(tituloGeneral)}</h1>
+        ${descripcion ? `<p class="descripcion">${escapeHtml(descripcion)}</p>` : ""}
+        ${encabezado}
+        ${cuerpo}
+      </body>
+    </html>
+  `;
+
+  const blob = new Blob([htmlDoc], { type: "application/msword" });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href     = url;
+  link.download = `${tituloGeneral.replace(/[^a-zA-Z0-9\s\-_]/g, "").trim() || "Anexos"}.doc`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ---- ANEXO PREVIEW MODAL ----
+
+async function openBibliotecaAnexoPreview(anexoId) {
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    const modal = document.getElementById("biblioteca-anexo-modal");
+    if (!modal) return;
+
+    const card = modal.querySelector(".biblioteca-modal-card");
+    if (!card) return;
+
+    card.innerHTML = `
+      <div class="bib-anexo-head">
+        <h3>Cargando anexo...</h3>
+        <button type="button" id="bib-anexo-close" class="bib-lista-close">X</button>
+      </div>
+      <div class="bib-anexo-body" style="padding:1rem;">
+        <p class="text-sm text-slate-500">Un momento...</p>
+      </div>
+    `;
+    document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
+    modal.classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+
+    const res   = await apiObtenerAnexoDetalle(anexoId, session.access_token);
+    const anexo = res?.anexo;
+    if (!anexo) throw new Error("No se pudo cargar el anexo.");
+
+    renderBibliotecaAnexoModal(anexo);
+  } catch (error) {
+    console.error("[biblioteca] Error cargando anexo:", error);
+    const card = document.getElementById("biblioteca-anexo-modal")?.querySelector(".biblioteca-modal-card");
+    if (card) {
+      card.innerHTML = `
+        <div class="bib-anexo-head">
+          <h3>Error</h3>
+          <button type="button" id="bib-anexo-close" class="bib-lista-close">X</button>
+        </div>
+        <div class="bib-anexo-body" style="padding:1rem;">
+          <p class="text-sm text-rose-600">No se pudo cargar el anexo.</p>
+        </div>
+      `;
+      document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
+    }
+  }
+}
+
+function closeBibliotecaAnexoModal() {
+  const modal = document.getElementById("biblioteca-anexo-modal");
+  if (modal) modal.classList.add("hidden");
+  document.body.classList.remove("overflow-hidden");
+}
+
+function renderBibliotecaAnexoModal(anexo) {
+  const modal = document.getElementById("biblioteca-anexo-modal");
+  if (!modal) return;
+
+  const card       = modal.querySelector(".biblioteca-modal-card");
+  const contenido  = anexo.contenido || {};
+  const titulo     = contenido.titulo_general || anexo.titulo || "Anexos";
+  const descripcion = contenido.descripcion || "";
+  const listaAnexos = Array.isArray(contenido.anexos) ? contenido.anexos : [];
+
+  function renderAnexoBlock(a) {
+    let html = `<div style="margin-bottom:1.5rem;">`;
+    html += `<p style="font-weight:700; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase; color:#64748b; margin-bottom:2px;">ANEXO ${a.numero || ""}</p>`;
+    html += `<h4 style="font-size:1rem; font-weight:700; color:#1e293b; margin-bottom:6px;">${escapeHtml(a.titulo || "")}</h4>`;
+
+    if (a.instrucciones) {
+      html += `<p style="font-style:italic; color:#475569; margin-bottom:10px; font-size:0.875rem;"><em>Instrucciones:</em> ${escapeHtml(a.instrucciones)}</p>`;
+    }
+
+    if (Array.isArray(a.contenido)) {
+      for (const bloque of a.contenido) {
+        if (bloque.subtitulo) {
+          html += `<p style="font-weight:600; color:#334155; margin-top:10px; margin-bottom:4px;">${escapeHtml(bloque.subtitulo)}</p>`;
+        }
+        if (bloque.texto) {
+          html += `<p style="color:#475569; margin-bottom:6px; font-size:0.875rem;">${escapeHtml(bloque.texto)}</p>`;
+        }
+        if (Array.isArray(bloque.preguntas) && bloque.preguntas.length) {
+          html += `<ol style="padding-left:1.25rem; margin-bottom:6px;">`;
+          bloque.preguntas.forEach((q, i) => {
+            html += `<li style="color:#475569; font-size:0.875rem; margin-bottom:3px;">${escapeHtml(q)}</li>`;
+          });
+          html += `</ol>`;
+        }
+      }
+    }
+
+    if (a.tabla && Array.isArray(a.tabla.columnas) && Array.isArray(a.tabla.filas)) {
+      html += `<div style="overflow-x:auto; margin-top:8px;">`;
+      html += `<table style="border-collapse:collapse; width:100%; font-size:0.8125rem;">`;
+      html += `<thead><tr>`;
+      a.tabla.columnas.forEach((col) => {
+        html += `<th style="border:1px solid #cbd5e1; background:#f1f5f9; padding:5px 8px; text-align:left; font-weight:600;">${escapeHtml(col)}</th>`;
+      });
+      html += `</tr></thead><tbody>`;
+      a.tabla.filas.forEach((fila) => {
+        html += `<tr>`;
+        (Array.isArray(fila) ? fila : []).forEach((celda) => {
+          html += `<td style="border:1px solid #cbd5e1; padding:5px 8px;">${escapeHtml(celda || "")}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  const cuerpoHtml = listaAnexos.length
+    ? listaAnexos.map(renderAnexoBlock).join('<hr style="border:none; border-top:1px solid #e2e8f0; margin:1rem 0;">')
+    : `<p style="color:#94a3b8; font-size:0.875rem;">Este anexo no tiene contenido.</p>`;
+
+  card.innerHTML = `
+    <div class="bib-anexo-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding-bottom:0.75rem; border-bottom:1px solid #e2e8f0; margin-bottom:1rem;">
+      <div>
+        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#0891b2; margin-bottom:2px;">MATERIAL PARA ALUMNOS</p>
+        <h3 style="font-size:1.125rem; font-weight:700; color:#1e293b;">${escapeHtml(titulo)}</h3>
+        ${descripcion ? `<p style="font-size:0.8125rem; color:#64748b; margin-top:2px;">${escapeHtml(descripcion)}</p>` : ""}
+        ${anexo.materia || anexo.nivel ? `<p style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">${[anexo.materia, anexo.nivel, anexo.tema].filter(Boolean).map(escapeHtml).join(" · ")}</p>` : ""}
+      </div>
+      <button type="button" id="bib-anexo-close" class="bib-lista-close" style="flex-shrink:0;">X</button>
+    </div>
+    <div class="bib-anexo-body" style="overflow-y:auto; max-height:45vh; padding-right:4px;">
+      ${cuerpoHtml}
+    </div>
+    <div style="display:flex; justify-content:flex-end; padding-top:0.75rem; border-top:1px solid #e2e8f0; margin-top:0.75rem;">
+      <button type="button" id="bib-anexo-descargar" class="bib-lista-submit"
+        data-anexo-id="${escapeHtml(String(anexo.id))}">
+        Descargar Word
+      </button>
+    </div>
+  `;
+
+  document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
+  document.getElementById("bib-anexo-descargar")?.addEventListener("click", () => {
+    closeBibliotecaAnexoModal();
+    descargarAnexoWord(anexo);
+  });
 }
 
 // ---- DOWNLOAD HELPERS ----
@@ -1967,6 +2745,36 @@ function injectBibliotecaModals() {
     document.body.appendChild(div);
     document.getElementById("bib-agr-backdrop")
       ?.addEventListener("click", closeBibliotecaAgregarModal);
+  }
+
+  if (!document.getElementById("biblioteca-anexo-modal")) {
+    const div = document.createElement("div");
+    div.id = "biblioteca-anexo-modal";
+    div.className = "hidden";
+    div.innerHTML = `
+      <div class="biblioteca-modal-backdrop" id="bib-anexo-backdrop"></div>
+      <div class="biblioteca-modal-shell">
+        <div class="biblioteca-modal-card" style="max-width:680px; width:100%;"></div>
+      </div>
+    `;
+    document.body.appendChild(div);
+    document.getElementById("bib-anexo-backdrop")
+      ?.addEventListener("click", closeBibliotecaAnexoModal);
+  }
+
+  if (!document.getElementById("biblioteca-anexo-create-modal")) {
+    const div = document.createElement("div");
+    div.id = "biblioteca-anexo-create-modal";
+    div.className = "hidden";
+    div.innerHTML = `
+      <div class="biblioteca-modal-backdrop" id="bib-anexo-create-backdrop"></div>
+      <div class="biblioteca-modal-shell">
+        <div class="biblioteca-modal-card"></div>
+      </div>
+    `;
+    document.body.appendChild(div);
+    document.getElementById("bib-anexo-create-backdrop")
+      ?.addEventListener("click", closeBibliotecaAnexoCreateModal);
   }
 }
 
