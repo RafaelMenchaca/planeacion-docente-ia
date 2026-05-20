@@ -512,6 +512,7 @@ function renderPlaneacionesTab(conjunto) {
         const duracion = p.duracion ? `${p.duracion} min` : "";
         const fecha    = bibFormatShortDateTime(p.fecha_creacion);
         const meta     = [duracion, fecha].filter(Boolean).join(" &middot; ");
+        const pid      = escapeHtml(String(p.id));
         return `
           <div class="biblioteca-item-row">
             <div class="biblioteca-item-info">
@@ -520,6 +521,12 @@ function renderPlaneacionesTab(conjunto) {
             </div>
             <div class="biblioteca-item-actions">
               <a href="detalle.html?id=${encodeURIComponent(p.id)}" class="biblioteca-btn-link">Ver planeacion</a>
+              <button type="button" class="biblioteca-btn-link biblioteca-btn-danger-link"
+                data-bib-action="eliminar-planeacion"
+                data-planeacion-id="${pid}"
+                data-conjunto-id="${id}"
+                aria-label="Eliminar"
+                title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
             </div>
           </div>
         `;
@@ -572,6 +579,7 @@ function renderExamenesTab(conjunto) {
         const tipos     = [...new Set((Array.isArray(ex.tipos_pregunta) ? ex.tipos_pregunta : []).map(getBibliotecaExamTypeLabel).filter(Boolean))].map(escapeHtml).join(" · ");
         const temas     = getBibliotecaExamTopics(ex).map((tema) => escapeBibliotecaDisplayText(tema)).join(" · ");
         const meta      = [fecha, preguntas, tipos, temas ? `Temas: ${temas}` : ""].filter(Boolean).join(" &bull; ");
+        const exId      = escapeHtml(String(ex.id));
         return `
           <div class="biblioteca-item-row">
             <div class="biblioteca-item-info">
@@ -581,10 +589,16 @@ function renderExamenesTab(conjunto) {
             <div class="biblioteca-item-actions">
               <button type="button" class="biblioteca-btn-link"
                 data-bib-action="ver-examen"
-                data-examen-id="${escapeHtml(String(ex.id))}">Ver</button>
+                data-examen-id="${exId}">Ver</button>
               <button type="button" class="biblioteca-btn-link"
                 data-bib-action="descargar-examen"
-                data-examen-id="${escapeHtml(String(ex.id))}">Descargar</button>
+                data-examen-id="${exId}">Descargar</button>
+              <button type="button" class="biblioteca-btn-link biblioteca-btn-danger-link"
+                data-bib-action="eliminar-examen"
+                data-examen-id="${exId}"
+                data-conjunto-id="${id}"
+                aria-label="Eliminar"
+                title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
             </div>
           </div>
         `;
@@ -618,11 +632,12 @@ function renderAnexosTab(conjunto) {
 
   // Cards de anexos ya generados
   const realRowsHtml = anexos.map((anexo) => {
-    const pid    = normalizeBibliotecaId(anexo.planeacion_id);
-    const tema   = escapeBibliotecaDisplayText(anexo.tema, "Sin titulo");
-    const titulo = `Anexo &middot; ${tema}`;
-    const fecha  = bibFormatShortDateTime(anexo.created_at);
-    const meta   = fecha || "";
+    const pid     = normalizeBibliotecaId(anexo.planeacion_id);
+    const tema    = escapeBibliotecaDisplayText(anexo.tema, "Sin titulo");
+    const titulo  = `Anexo &middot; ${tema}`;
+    const fecha   = bibFormatShortDateTime(anexo.created_at);
+    const meta    = fecha || "";
+    const anexoId = escapeHtml(String(anexo.id));
     return `
       <div class="biblioteca-item-row">
         <div class="biblioteca-item-info">
@@ -632,10 +647,16 @@ function renderAnexosTab(conjunto) {
         <div class="biblioteca-item-actions">
           <button type="button" class="biblioteca-btn-link"
             data-bib-action="ver-anexo"
-            data-anexo-id="${escapeHtml(String(anexo.id))}">Ver</button>
+            data-anexo-id="${anexoId}">Ver</button>
           <button type="button" class="biblioteca-btn-link"
             data-bib-action="descargar-anexo"
-            data-anexo-id="${escapeHtml(String(anexo.id))}">Descargar</button>
+            data-anexo-id="${anexoId}">Descargar</button>
+          <button type="button" class="biblioteca-btn-link biblioteca-btn-danger-link"
+            data-bib-action="eliminar-anexo"
+            data-anexo-id="${anexoId}"
+            data-conjunto-id="${id}"
+                aria-label="Eliminar"
+                title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
         </div>
       </div>`;
   }).join("");
@@ -736,11 +757,12 @@ function renderListasCotejoTab(conjunto) {
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${listas.map(lista => {
-        const titulo = escapeBibliotecaDisplayText(lista.titulo, "Lista de cotejo");
-        const tema   = lista.tema ? escapeBibliotecaDisplayText(lista.tema) : "";
-        const puntos = lista.total_puntos ? `${lista.total_puntos} puntos` : "";
-        const fecha  = bibFormatShortDateTime(lista.created_at);
-        const meta   = [tema, puntos, fecha].filter(Boolean).join(" &middot; ");
+        const titulo  = escapeBibliotecaDisplayText(lista.titulo, "Lista de cotejo");
+        const tema    = lista.tema ? escapeBibliotecaDisplayText(lista.tema) : "";
+        const puntos  = lista.total_puntos ? `${lista.total_puntos} puntos` : "";
+        const fecha   = bibFormatShortDateTime(lista.created_at);
+        const meta    = [tema, puntos, fecha].filter(Boolean).join(" &middot; ");
+        const listaId = escapeHtml(String(lista.id));
         return `
           <div class="biblioteca-item-row">
             <div class="biblioteca-item-info">
@@ -750,10 +772,16 @@ function renderListasCotejoTab(conjunto) {
             <div class="biblioteca-item-actions">
               <button type="button" class="biblioteca-btn-link"
                 data-bib-action="ver-lista"
-                data-lista-id="${escapeHtml(String(lista.id))}">Ver</button>
+                data-lista-id="${listaId}">Ver</button>
               <button type="button" class="biblioteca-btn-link"
                 data-bib-action="descargar-lista"
-                data-lista-id="${escapeHtml(String(lista.id))}">Descargar</button>
+                data-lista-id="${listaId}">Descargar</button>
+              <button type="button" class="biblioteca-btn-link biblioteca-btn-danger-link"
+                data-bib-action="eliminar-lista"
+                data-lista-id="${listaId}"
+                data-conjunto-id="${id}"
+                aria-label="Eliminar"
+                title="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
             </div>
           </div>
         `;
@@ -885,11 +913,21 @@ function renderBibliotecaDetail(conjunto) {
   if (!conjunto) return renderBibliotecaDetailEmpty();
 
   const titulo = escapeBibliotecaDisplayText(conjunto.titulo, "Sin titulo");
+  const id = escapeHtml(String(conjunto.id));
   const metaItems = [
     { label: "Nivel", value: conjunto.nivel ? escapeBibliotecaDisplayText(conjunto.nivel) : "Sin nivel" },
     { label: "Materia", value: conjunto.materia ? escapeBibliotecaDisplayText(conjunto.materia) : "Sin materia" }
   ];
   metaItems.push({ label: "Creado", value: bibFormatDateTime(conjunto.created_at) || (conjunto.isPending ? "Generando" : "Sin fecha") });
+
+  const deleteBtn = conjunto.isPending ? "" : `
+    <button type="button" class="biblioteca-btn-danger"
+      data-bib-action="eliminar-bloque"
+      data-conjunto-id="${id}"
+      aria-label="Eliminar bloque"
+      title="Eliminar bloque">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    </button>`;
 
   return `
     <section id="biblioteca-detail-panel" class="biblioteca-detail">
@@ -906,6 +944,7 @@ function renderBibliotecaDetail(conjunto) {
             `).join("")}
           </div>
         </div>
+        ${deleteBtn ? `<div class="biblioteca-detail-actions">${deleteBtn}</div>` : ""}
       </div>
       ${renderBibliotecaTabs(conjunto)}
       ${renderBibliotecaTabContent(conjunto)}
@@ -1196,6 +1235,31 @@ function onBibliotecaClick(event) {
 
     case "regenerar-anexo": {
       if (anexoId && conjuntoId && planeacionId) bibRegenerarAnexo(anexoId, conjuntoId, planeacionId);
+      break;
+    }
+
+    case "eliminar-bloque": {
+      if (conjuntoId) bibEliminarBloque(conjuntoId);
+      break;
+    }
+
+    case "eliminar-planeacion": {
+      if (planeacionId && conjuntoId) bibEliminarPlaneacion(planeacionId, conjuntoId);
+      break;
+    }
+
+    case "eliminar-examen": {
+      if (examenId && conjuntoId) bibEliminarExamen(examenId, conjuntoId);
+      break;
+    }
+
+    case "eliminar-lista": {
+      if (listaId && conjuntoId) bibEliminarLista(listaId, conjuntoId);
+      break;
+    }
+
+    case "eliminar-anexo": {
+      if (anexoId && conjuntoId) bibEliminarAnexo(anexoId, conjuntoId);
       break;
     }
   }
@@ -2699,6 +2763,193 @@ async function submitBibliotecaAgregarModal() {
   })();
 }
 
+// ---- DELETE ACTIONS ----
+
+async function bibEliminarBloque(conjuntoId) {
+  const safeBatchId = normalizeBibliotecaId(conjuntoId);
+  if (!safeBatchId) return;
+
+  const conjunto = findConjuntoById(safeBatchId);
+  const nombre = conjunto?.titulo || "este bloque";
+
+  const confirmado = await showBibConfirm(
+    `¿Eliminar "${nombre}"?`,
+    `Se eliminará el bloque completo: planeaciones, exámenes, listas de cotejo y anexos. Esta acción no se puede deshacer.`
+  );
+  if (!confirmado) return;
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    await apiBibliotecaDeleteBloque(safeBatchId, session.access_token);
+
+    bibliotecaState.conjuntos = bibliotecaState.conjuntos.filter(
+      (c) => normalizeBibliotecaId(c.id) !== safeBatchId
+    );
+    if (normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === safeBatchId) {
+      bibliotecaState.selectedConjuntoId = bibliotecaState.conjuntos[0]?.id || null;
+    }
+    delete bibliotecaState.activeTab[safeBatchId];
+    delete bibliotecaState.pendingPlaneacionesByBatchId[safeBatchId];
+    delete bibliotecaState.pendingExamenByBatchId[safeBatchId];
+    delete bibliotecaState.pendingListaByBatchId[safeBatchId];
+    delete bibliotecaState.anexosGenerating[safeBatchId];
+
+    renderBibliotecaContent();
+    await loadAndRenderBiblioteca({ silent: true });
+  } catch (error) {
+    console.error("[biblioteca] Error eliminando bloque:", error);
+    alert(error.message || "No se pudo eliminar el bloque. Intenta nuevamente.");
+  }
+}
+
+async function bibEliminarPlaneacion(planeacionId, conjuntoId) {
+  const safePlanId  = normalizeBibliotecaId(planeacionId);
+  const safeBatchId = normalizeBibliotecaId(conjuntoId);
+  if (!safePlanId || !safeBatchId) return;
+
+  const confirmado = await showBibConfirm(
+    "¿Eliminar esta planeación?",
+    "Se eliminarán también sus listas de cotejo y anexos asociados. Esta acción no se puede deshacer."
+  );
+  if (!confirmado) return;
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    await apiDeletePlaneacionDirecta(safePlanId, session.access_token);
+
+    const conjunto = bibliotecaState.conjuntos.find(
+      (c) => normalizeBibliotecaId(c.id) === safeBatchId
+    );
+    if (conjunto) {
+      conjunto.planeaciones = (Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [])
+        .filter((p) => normalizeBibliotecaId(p.id) !== safePlanId);
+      conjunto.total_planeaciones = conjunto.planeaciones.length;
+      conjunto.listas_cotejo = (Array.isArray(conjunto.listas_cotejo) ? conjunto.listas_cotejo : [])
+        .filter((l) => normalizeBibliotecaId(l.planeacion_id) !== safePlanId);
+      conjunto.total_listas_cotejo = conjunto.listas_cotejo.length;
+      conjunto.anexos = (Array.isArray(conjunto.anexos) ? conjunto.anexos : [])
+        .filter((a) => normalizeBibliotecaId(a.planeacion_id) !== safePlanId);
+      conjunto.total_anexos = conjunto.anexos.length;
+    }
+
+    setSelectedConjunto(safeBatchId, { tab: "planeaciones" });
+    renderBibliotecaDetailInPlace();
+    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "planeaciones" });
+  } catch (error) {
+    console.error("[biblioteca] Error eliminando planeacion:", error);
+    alert(error.message || "No se pudo eliminar la planeación. Intenta nuevamente.");
+  }
+}
+
+async function bibEliminarExamen(examenId, conjuntoId) {
+  const safeExamenId = normalizeBibliotecaId(examenId);
+  const safeBatchId  = normalizeBibliotecaId(conjuntoId);
+  if (!safeExamenId || !safeBatchId) return;
+
+  const confirmado = await showBibConfirm(
+    "¿Eliminar este examen?",
+    "Esta acción no se puede deshacer."
+  );
+  if (!confirmado) return;
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    await apiDeleteExamen(safeExamenId, session.access_token);
+
+    const conjunto = bibliotecaState.conjuntos.find(
+      (c) => normalizeBibliotecaId(c.id) === safeBatchId
+    );
+    if (conjunto) {
+      conjunto.examenes = (Array.isArray(conjunto.examenes) ? conjunto.examenes : [])
+        .filter((e) => normalizeBibliotecaId(e.id) !== safeExamenId);
+      conjunto.total_examenes = conjunto.examenes.length;
+    }
+
+    setSelectedConjunto(safeBatchId, { tab: "examenes" });
+    renderBibliotecaDetailInPlace();
+    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "examenes" });
+  } catch (error) {
+    console.error("[biblioteca] Error eliminando examen:", error);
+    alert(error.message || "No se pudo eliminar el examen. Intenta nuevamente.");
+  }
+}
+
+async function bibEliminarLista(listaId, conjuntoId) {
+  const safeListaId = normalizeBibliotecaId(listaId);
+  const safeBatchId = normalizeBibliotecaId(conjuntoId);
+  if (!safeListaId || !safeBatchId) return;
+
+  const confirmado = await showBibConfirm(
+    "¿Eliminar esta lista de cotejo?",
+    "Esta acción no se puede deshacer."
+  );
+  if (!confirmado) return;
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    await apiDeleteListaCotejo(safeListaId, session.access_token);
+
+    const conjunto = bibliotecaState.conjuntos.find(
+      (c) => normalizeBibliotecaId(c.id) === safeBatchId
+    );
+    if (conjunto) {
+      conjunto.listas_cotejo = (Array.isArray(conjunto.listas_cotejo) ? conjunto.listas_cotejo : [])
+        .filter((l) => normalizeBibliotecaId(l.id) !== safeListaId);
+      conjunto.total_listas_cotejo = conjunto.listas_cotejo.length;
+    }
+
+    setSelectedConjunto(safeBatchId, { tab: "listas" });
+    renderBibliotecaDetailInPlace();
+    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "listas" });
+  } catch (error) {
+    console.error("[biblioteca] Error eliminando lista de cotejo:", error);
+    alert(error.message || "No se pudo eliminar la lista de cotejo. Intenta nuevamente.");
+  }
+}
+
+async function bibEliminarAnexo(anexoId, conjuntoId) {
+  const safeAnexoId = normalizeBibliotecaId(anexoId);
+  const safeBatchId = normalizeBibliotecaId(conjuntoId);
+  if (!safeAnexoId || !safeBatchId) return;
+
+  const confirmado = await showBibConfirm(
+    "¿Eliminar este anexo?",
+    "Esta acción no se puede deshacer."
+  );
+  if (!confirmado) return;
+
+  try {
+    const session = await window.requireSession();
+    if (!session) return;
+
+    await apiDeleteAnexo(safeAnexoId, session.access_token);
+
+    const conjunto = bibliotecaState.conjuntos.find(
+      (c) => normalizeBibliotecaId(c.id) === safeBatchId
+    );
+    if (conjunto) {
+      conjunto.anexos = (Array.isArray(conjunto.anexos) ? conjunto.anexos : [])
+        .filter((a) => normalizeBibliotecaId(a.id) !== safeAnexoId);
+      conjunto.total_anexos = conjunto.anexos.length;
+    }
+
+    setSelectedConjunto(safeBatchId, { tab: "anexos" });
+    renderBibliotecaDetailInPlace();
+    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
+  } catch (error) {
+    console.error("[biblioteca] Error eliminando anexo:", error);
+    alert(error.message || "No se pudo eliminar el anexo. Intenta nuevamente.");
+  }
+}
+
 // ---- INJECT MODALS ----
 
 function injectBibliotecaModals() {
@@ -2776,6 +3027,57 @@ function injectBibliotecaModals() {
     document.getElementById("bib-anexo-create-backdrop")
       ?.addEventListener("click", closeBibliotecaAnexoCreateModal);
   }
+
+  if (!document.getElementById("biblioteca-confirm-modal")) {
+    const div = document.createElement("div");
+    div.id = "biblioteca-confirm-modal";
+    div.className = "hidden";
+    div.innerHTML = `
+      <div class="biblioteca-modal-backdrop" id="bib-confirm-backdrop"></div>
+      <div class="biblioteca-modal-shell" style="align-items:center; padding-top:0;">
+        <div class="biblioteca-modal-card bib-confirm-card"></div>
+      </div>
+    `;
+    document.body.appendChild(div);
+  }
+}
+
+function showBibConfirm(title, message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("biblioteca-confirm-modal");
+    if (!modal) { resolve(false); return; }
+
+    const card = modal.querySelector(".biblioteca-modal-card");
+    card.innerHTML = `
+      <div class="bib-confirm-body">
+        <div class="bib-confirm-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </div>
+        <h3 class="bib-confirm-title">${escapeHtml(title)}</h3>
+        <p class="bib-confirm-msg">${escapeHtml(message)}</p>
+        <div class="bib-confirm-actions">
+          <button type="button" id="bib-confirm-cancel" class="bib-exam-cancel">Cancelar</button>
+          <button type="button" id="bib-confirm-ok" class="bib-confirm-ok">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+
+    function close(result) {
+      modal.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+      resolve(result);
+    }
+
+    document.getElementById("bib-confirm-cancel")?.addEventListener("click", () => close(false), { once: true });
+    document.getElementById("bib-confirm-ok")?.addEventListener("click",     () => close(true),  { once: true });
+    document.getElementById("bib-confirm-backdrop")?.addEventListener("click", () => close(false), { once: true });
+  });
 }
 
 // ---- INIT ----
