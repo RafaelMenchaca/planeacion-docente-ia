@@ -462,7 +462,7 @@ function renderPlaneacionesTab(conjunto) {
   const addButton = conjunto.isPending ? "" : `
     <button type="button" class="biblioteca-btn-secondary"
       data-bib-action="agregar-planeacion" data-conjunto-id="${id}">
-      + Agregar planeacion
+      + Agregar Tema
     </button>`;
 
   let pendingHtml = "";
@@ -803,9 +803,9 @@ function renderBibliotecaTabs(conjunto) {
         Planeaciones <span class="biblioteca-tab-count">${conjunto.total_planeaciones || 0}</span>
       </button>
       <button type="button" role="tab"
-        class="biblioteca-tab-btn ${activeTab === "examenes" ? "is-active" : ""}"
-        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="examenes">
-        Examenes <span class="biblioteca-tab-count">${conjunto.total_examenes || 0}</span>
+        class="biblioteca-tab-btn ${activeTab === "anexos" ? "is-active" : ""}"
+        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="anexos">
+        Anexos <span class="biblioteca-tab-count">${conjunto.total_anexos || 0}</span>
       </button>
       <button type="button" role="tab"
         class="biblioteca-tab-btn ${activeTab === "listas" ? "is-active" : ""}"
@@ -813,9 +813,9 @@ function renderBibliotecaTabs(conjunto) {
         Listas de cotejo <span class="biblioteca-tab-count">${conjunto.total_listas_cotejo || 0}</span>
       </button>
       <button type="button" role="tab"
-        class="biblioteca-tab-btn ${activeTab === "anexos" ? "is-active" : ""}"
-        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="anexos">
-        Anexos <span class="biblioteca-tab-count">${conjunto.total_anexos || 0}</span>
+        class="biblioteca-tab-btn ${activeTab === "examenes" ? "is-active" : ""}"
+        data-bib-action="switch-tab" data-conjunto-id="${id}" data-tab="examenes">
+        Examenes <span class="biblioteca-tab-count">${conjunto.total_examenes || 0}</span>
       </button>
     </div>
   `;
