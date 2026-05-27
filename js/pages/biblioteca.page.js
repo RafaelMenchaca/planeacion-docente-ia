@@ -935,13 +935,8 @@ function renderBibliotecaDetail(conjunto) {
         <div class="biblioteca-detail-summary">
           <p class="biblioteca-detail-eyebrow">BLOQUE SELECCIONADO</p>
           <h3 class="biblioteca-detail-title">${titulo}</h3>
-          <div class="biblioteca-detail-meta-grid">
-            ${metaItems.map(item => `
-              <div class="biblioteca-detail-meta-item">
-                <span class="biblioteca-detail-meta-label">${escapeHtml(item.label)}</span>
-                <span class="biblioteca-detail-meta-value">${item.value}</span>
-              </div>
-            `).join("")}
+          <div class="biblioteca-detail-meta-row">
+            ${metaItems.map((item, i) => `<span class="biblioteca-detail-meta-chip"><span class="biblioteca-detail-meta-chip-label">${escapeHtml(item.label)}:</span>&nbsp;${item.value}</span>${i < metaItems.length - 1 ? '<span class="biblioteca-detail-meta-sep" aria-hidden="true">·</span>' : ""}`).join("")}
           </div>
         </div>
         ${deleteBtn ? `<div class="biblioteca-detail-actions">${deleteBtn}</div>` : ""}
