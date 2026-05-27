@@ -971,40 +971,31 @@
   line-height: 1.2;
 }
 
-.biblioteca-detail-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.6rem;
-  margin-top: 0.9rem;
+.biblioteca-detail-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  margin-top: 0.55rem;
 }
 
-.biblioteca-detail-meta-item {
-  min-width: 0;
-  border: 1px solid rgb(226 232 240);
-  border-radius: 0.8rem;
-  background: rgba(255, 255, 255, 0.86);
-  padding: 0.65rem 0.75rem;
-}
-
-.biblioteca-detail-meta-label {
-  display: block;
-  margin-bottom: 0.2rem;
-  color: rgb(100 116 139);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.biblioteca-detail-meta-value {
-  display: block;
-  overflow: hidden;
-  color: rgb(30 41 59);
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.25;
-  text-overflow: ellipsis;
+.biblioteca-detail-meta-chip {
+  font-size: 0.78rem;
+  color: rgb(51 65 85);
   white-space: nowrap;
+}
+
+.biblioteca-detail-meta-chip-label {
+  font-weight: 700;
+  color: rgb(100 116 139);
+}
+
+.biblioteca-detail-meta-sep {
+  color: rgb(203 213 225);
+  font-weight: 400;
+  font-size: 0.9rem;
+  line-height: 1;
+  user-select: none;
 }
 
 .biblioteca-section-actions {
@@ -2049,10 +2040,6 @@
 
   .biblioteca-detail-head {
     padding: 1rem;
-  }
-
-  .biblioteca-detail-meta-grid {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .biblioteca-section-header,
