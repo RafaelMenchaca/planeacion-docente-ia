@@ -8,7 +8,7 @@
 // - Ejecutar la descarga del Word
 // Si se modifica, puede romper la descarga.
 // ===================================================
-window.descargarWord = function ({ data, tableId }) {
+window.descargarWord = function ({ data, tableId, filenameOverride }) {
   try {
     const tabla = document.getElementById(tableId);
     if (!tabla) {
@@ -174,7 +174,7 @@ const contenidoHTML = `
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Planeacion_${data.materia || "SinMateria"}.doc`;
+    a.download = `${filenameOverride || ("Planeacion_" + (data.materia || "SinMateria"))}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -187,7 +187,7 @@ const contenidoHTML = `
 };
 // ===================================================
 
-window.descargarListaCotejoWord = function (lista) {
+window.descargarListaCotejoWord = function (lista, filenameOverride) {
   try {
     const criterios = (() => {
       const raw = lista?.criterios;
@@ -280,7 +280,7 @@ window.descargarListaCotejoWord = function (lista) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `lista-cotejo-${nombreSeguro}.doc`;
+    a.download = `${filenameOverride || ("lista-cotejo-" + nombreSeguro)}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

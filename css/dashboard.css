@@ -2196,3 +2196,62 @@
   background: rgb(153 27 27);
   border-color: rgb(153 27 27);
 }
+
+/* ---- Download Name Modal ---- */
+.bib-download-modal-card {
+  max-width: 460px;
+  width: min(92vw, 460px);
+}
+
+.bib-download-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.25rem 0.25rem 0;
+}
+
+.bib-download-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.bib-download-modal-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgb(51 65 85);
+}
+
+.bib-download-modal-input-row {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+.bib-download-modal-input-row:focus-within {
+  border-color: rgb(8 145 178);
+}
+
+.bib-download-modal-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  color: rgb(15 23 42);
+}
+
+.bib-download-modal-ext {
+  padding: 0.55rem 0.75rem 0.55rem 0;
+  font-size: 0.875rem;
+  color: rgb(100 116 139);
+  white-space: nowrap;
+  flex-shrink: 0;
+}

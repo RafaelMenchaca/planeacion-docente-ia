@@ -4224,7 +4224,7 @@ function buildExamWordHtml(examen) {
   `;
 }
 
-async function downloadExamWord(examenId) {
+async function downloadExamWord(examenId, filenameOverride) {
   const examen = await ensureExamenDetalle(examenId);
   if (!examen?.examen_ia) {
     throw new Error("No hay contenido disponible para exportar.");
@@ -4235,7 +4235,8 @@ async function downloadExamWord(examenId) {
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");
   enlace.href = url;
-  enlace.download = `${(examen.titulo || "Examen_unidad").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") || "Examen_unidad"}.doc`;
+  const defaultName = (examen.titulo || "Examen_unidad").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") || "Examen_unidad";
+  enlace.download = `${filenameOverride || defaultName}.doc`;
   document.body.appendChild(enlace);
   enlace.click();
   document.body.removeChild(enlace);

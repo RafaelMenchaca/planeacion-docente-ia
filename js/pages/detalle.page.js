@@ -525,15 +525,27 @@ async function initDetallePage() {
     return;
   }
 
-  document.getElementById("btn-descargar-doc")?.addEventListener("click", () => {
+  document.getElementById("btn-descargar-doc")?.addEventListener("click", async () => {
     if (!PLANEACION_ORIGINAL) {
       mostrarToast("No hay informacion lista para exportar.", "danger");
       return;
     }
 
+    const suggested = window.AppUI?.buildDownloadSuggestedName(
+      "Planeacion",
+      PLANEACION_ORIGINAL.tema || PLANEACION_ORIGINAL.materia
+    ) || ("Planeacion_" + (PLANEACION_ORIGINAL.materia || "SinMateria"));
+
+    const filename = window.AppUI?.openDownloadNameModal
+      ? await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" })
+      : suggested;
+
+    if (filename === null) return;
+
     descargarWord({
       data: PLANEACION_ORIGINAL,
-      tableId: "tablaDetalleIA"
+      tableId: "tablaDetalleIA",
+      filenameOverride: filename
     });
   });
 

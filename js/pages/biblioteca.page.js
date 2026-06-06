@@ -494,13 +494,13 @@ function renderPlaneacionesTab(conjunto) {
 
   if (!planeaciones.length && !pendingHtml) {
     return `
-      ${renderBibliotecaSectionHeader("Planeaciones del bloque", addButton)}
+      ${renderBibliotecaSectionHeader("Planeaciones", addButton)}
       <p class="biblioteca-empty-tab">Este bloque no tiene planeaciones.</p>
     `;
   }
 
   return `
-    ${renderBibliotecaSectionHeader("Planeaciones del bloque", addButton)}
+    ${renderBibliotecaSectionHeader("Planeaciones", addButton)}
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${planeaciones.map(p => {
@@ -544,7 +544,7 @@ function renderExamenesTab(conjunto) {
 
   if (conjunto.isPending) {
     return `
-      ${renderBibliotecaSectionHeader("Examenes del bloque")}
+      ${renderBibliotecaSectionHeader("Examenes")}
       <p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear examenes cuando el bloque este listo.</p>
     `;
   }
@@ -566,13 +566,13 @@ function renderExamenesTab(conjunto) {
 
   if (!examenes.length && !pending) {
     return `
-      ${renderBibliotecaSectionHeader("Examenes del bloque", actionButton)}
+      ${renderBibliotecaSectionHeader("Examenes", actionButton)}
       <p class="biblioteca-empty-tab">Aun no hay examenes en este bloque.</p>
     `;
   }
 
   return `
-    ${renderBibliotecaSectionHeader("Examenes del bloque", actionButton)}
+    ${renderBibliotecaSectionHeader("Examenes", actionButton)}
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${examenes.map(ex => {
@@ -621,7 +621,7 @@ function renderAnexosTab(conjunto) {
 
   if (conjunto.isPending) {
     return `
-      ${renderBibliotecaSectionHeader("Anexos del bloque")}
+      ${renderBibliotecaSectionHeader("Anexos")}
       <p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear anexos cuando el bloque este listo.</p>
     `;
   }
@@ -637,7 +637,7 @@ function renderAnexosTab(conjunto) {
   const realRowsHtml = anexos.map((anexo) => {
     const pid     = normalizeBibliotecaId(anexo.planeacion_id);
     const tema    = escapeBibliotecaDisplayText(anexo.tema, "Sin titulo");
-    const titulo  = `Anexo &middot; ${tema}`;
+    const titulo  = tema;
     const fecha   = bibFormatShortDateTime(anexo.created_at);
     const meta    = fecha || "";
     const anexoId = escapeHtml(String(anexo.id));
@@ -687,13 +687,13 @@ function renderAnexosTab(conjunto) {
 
   if (!hasContent) {
     return `
-      ${renderBibliotecaSectionHeader("Anexos del bloque", actionButton)}
+      ${renderBibliotecaSectionHeader("Anexos", actionButton)}
       <p class="biblioteca-empty-tab">Este bloque todavia no tiene anexos generados.</p>
     `;
   }
 
   return `
-    ${renderBibliotecaSectionHeader("Anexos del bloque", actionButton)}
+    ${renderBibliotecaSectionHeader("Anexos", actionButton)}
     <div class="biblioteca-items-list">
       ${realRowsHtml}
       ${tempRowsHtml}
@@ -755,11 +755,10 @@ function renderListasCotejoTab(conjunto) {
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${listas.map(lista => {
-        const titulo  = escapeBibliotecaDisplayText(lista.titulo, "Lista de cotejo");
-        const tema    = lista.tema ? escapeBibliotecaDisplayText(lista.tema) : "";
+        const titulo  = escapeBibliotecaDisplayText(lista.tema || lista.titulo, "Lista de cotejo");
         const puntos  = lista.total_puntos ? `${lista.total_puntos} puntos` : "";
         const fecha   = bibFormatShortDateTime(lista.created_at);
-        const meta    = [tema, puntos, fecha].filter(Boolean).join(" &middot; ");
+        const meta    = [puntos, fecha].filter(Boolean).join(" &middot; ");
         const listaId = escapeHtml(String(lista.id));
         return `
           <div class="biblioteca-item-row">
@@ -1653,14 +1652,22 @@ async function bibDescargarAnexo(anexoId) {
     const res = await apiObtenerAnexoDetalle(anexoId, session.access_token);
     const anexo = res?.anexo;
     if (!anexo) throw new Error("No se pudo obtener el anexo.");
-    descargarAnexoWord(anexo);
+
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Anexo",
+      anexo.tema || anexo.titulo
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
+    descargarAnexoWord(anexo, filename);
   } catch (error) {
     console.error("[biblioteca] Error descargando anexo:", error);
     alert("No se pudo descargar el anexo. Intenta nuevamente.");
   }
 }
 
-function descargarAnexoWord(anexo) {
+function descargarAnexoWord(anexo, filenameOverride) {
   const contenido = anexo.contenido || {};
   const tituloGeneral = contenido.titulo_general || anexo.titulo || "Anexos";
   const descripcion   = contenido.descripcion || "";
@@ -1744,7 +1751,8 @@ function descargarAnexoWord(anexo) {
   const url  = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href     = url;
-  link.download = `${tituloGeneral.replace(/[^a-zA-Z0-9\s\-_]/g, "").trim() || "Anexos"}.doc`;
+  const defaultAnexoName = tituloGeneral.replace(/[^a-zA-Z0-9\s\-_]/g, "").trim() || "Anexos";
+  link.download = `${filenameOverride || defaultAnexoName}.doc`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -1907,6 +1915,13 @@ async function bibDescargarPlaneacion(planeacionId) {
       return;
     }
 
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Planeacion",
+      planeacion.tema || planeacion.materia
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
     const filas = Array.isArray(planeacion.tabla_ia) ? planeacion.tabla_ia : [];
     const filasHtml = filas.map(fila => `
       <tr>
@@ -1981,7 +1996,7 @@ async function bibDescargarPlaneacion(planeacionId) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Planeacion_${(planeacion.materia || "SinMateria").replace(/[^\w\s-]/g, "").trim()}.doc`;
+    a.download = `${filename}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1994,8 +2009,19 @@ async function bibDescargarPlaneacion(planeacionId) {
 
 async function bibDescargarExamen(examenId) {
   try {
+    const conjunto = bibliotecaState.conjuntos.find(c =>
+      Array.isArray(c.examenes) &&
+      c.examenes.some(e => normalizeBibliotecaId(e.id) === normalizeBibliotecaId(examenId))
+    );
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Examen",
+      conjunto?.titulo || ""
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
     if (typeof window.downloadExamWord === "function") {
-      await window.downloadExamWord(examenId);
+      await window.downloadExamWord(examenId, filename);
     }
   } catch (error) {
     console.error("[biblioteca] Error descargando examen:", error);
@@ -2005,8 +2031,16 @@ async function bibDescargarExamen(examenId) {
 async function bibDescargarLista(listaId) {
   try {
     const lista = await window.obtenerListaCoTejoDetalle(listaId);
+
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Lista_cotejo",
+      lista?.tema || lista?.titulo
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
     if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista);
+      window.descargarListaCotejoWord(lista, filename);
     }
   } catch (error) {
     console.error("[biblioteca] Error descargando lista:", error);
