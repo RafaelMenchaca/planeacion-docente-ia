@@ -2493,7 +2493,6 @@ function renderBibliotecaAgregarModal() {
                     data-local-id="${escapeHtml(t.localId)}"
                     data-momento="${escapeHtml(m.key)}"
                     class="actividad-cierre-select actividad-didactica-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none">
-                    <option value="">Sin actividad especifica</option>
                     ${opts}
                   </select>
                 </label>`;
