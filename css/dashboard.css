@@ -177,6 +177,16 @@
   scrollbar-gutter: stable;
 }
 
+#staging-temas-list {
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+#staging-temas-list::-webkit-scrollbar {
+  display: none;
+}
+
 .actividad-momento-row {
   display: grid;
   grid-template-columns: minmax(8.5rem, 12rem) minmax(0, 1fr);
@@ -197,7 +207,8 @@
 }
 
 #quick-create-panel select,
-#entity-modal select {
+#entity-modal select,
+#staging-temas-list select {
   color: rgb(15 23 42);
   background-color: rgb(255 255 255);
   font-weight: 500;
@@ -218,6 +229,17 @@
 #quick-create-panel select option[value=""],
 #entity-modal select option[value=""] {
   color: rgb(148 163 184) !important;
+}
+
+#staging-temas-list select option {
+  color: rgb(15 23 42) !important;
+  background-color: rgb(255 255 255);
+  font-weight: 700 !important;
+}
+
+#staging-temas-list select option[value=""] {
+  color: rgb(148 163 184) !important;
+  font-weight: 400 !important;
 }
 
 @media (min-width: 640px) {
