@@ -2,6 +2,51 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
+## [v2.0-frontend-biblioteca-workflow] - 2026-06-06
+
+### 🚀 Novedades
+- **Biblioteca rediseñada como flujo principal** del dashboard: sidebar de unidades de planeación con vista de detalle del conjunto a la derecha.
+- Nuevos tabs en Biblioteca: **Planeaciones**, **Anexos**, **Listas de cotejo** y **Exámenes** por conjunto.
+- **Generación de Anexos desde el modal de Biblioteca**: selección de planeaciones y generación directa sin salir de la vista.
+- **Actividades por momento**: selector de actividad para cada momento (inicio, desarrollo, cierre) al crear o editar planeaciones.
+- **Listas de cotejo** generadas en base a la actividad de cierre de cada tema.
+- **Exámenes resilientes**: sistema de jobs con validación por pregunta; generación basada en la lista de planeaciones de la unidad.
+- **Eliminación directa de bloques y documentos** desde la Biblioteca sin necesidad de ir al detalle.
+
+### 🧭 UX
+- Modal de **nombre de archivo** antes de descargar cualquier documento (Word/Excel).
+- Botón de **descarga directo en cards de planeaciones** dentro de la Biblioteca.
+- Cards de generación en Biblioteca estandarizados: etiquetas, orden de tabs y header de metadata actualizados.
+- Popups con botones estandarizados: ícono X en rose, botón Cancel explícito, sin "Cerrar" redundante.
+- **Toast notifications** reemplaza `alert()` nativo para feedback de autenticación.
+- Scroll interno en listas de detalle de la Biblioteca; scroll del sidebar preservado entre navegaciones.
+- Card de metadata en `detalle.html` compactada para reducir ruido visual.
+- Búsqueda en el sidebar de Biblioteca reparada.
+- Reutilización de bloques existentes al iniciar un nuevo flujo de creación.
+- Selector de actividades: opción Kahoot eliminada; deduplicado de opción por defecto corregido.
+- Nueva card en la sección hero de la landing page.
+- Modal de creación de planeación ajustado según feedback de usabilidad: orden y flujo de inputs más intuitivo.
+
+### 🛠️ Mejoras
+- `shared.ui.js` extraído como módulo de helpers de UI compartidos entre Biblioteca y Dashboard (elimina código duplicado).
+- Flujo de conjuntos de Biblioteca conectado y estabilizado con el estado de generación.
+- Cards del bloque seleccionado en Biblioteca unificados visualmente.
+
+### 🐛 Correcciones
+- Listas de cotejo: bug que generaba siempre el mismo resultado al regenerar corregido.
+- Listas de cotejo: ahora respeta la actividad del momento seleccionado; checkbox para elegir cuáles generar.
+- Exámenes: error `countRange` de versión anterior que crasheaba el backend corregido.
+- Exámenes: opciones múltiples con formato `A)` correcto (antes duplicaba `a) A)`).
+- Exámenes: variedad en preguntas de emparejamiento y de orden ajustada.
+- Exámenes: hoja de respuestas incluida en el Word descargable.
+- Exámenes: metadatos innecesarios (tipo de pregunta, tema de contexto) ocultados en la vista del docente.
+- Exámenes: selección de temas para creación corregida; mensajes de error en campos vacíos.
+- Popups y flujos de selección de Biblioteca actualizados para comportamiento correcto.
+
+### 🧩 Compatibilidad
+- Imágenes automáticas por momento didáctico fueron implementadas y descartadas en esta versión: la IA no garantizaba coherencia con el texto, por lo que la feature fue revertida antes del release.
+
+
 ## [v1.9-frontend-hierarchy-explorer] - 2026-02-28
 
 ### 🚀 Novedades
