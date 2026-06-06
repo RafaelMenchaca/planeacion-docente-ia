@@ -5,6 +5,23 @@
 
 window.AppUI = window.AppUI || {};
 
+window.AppUI.showToast = function showToast(message, type) {
+  var toneMap = {
+    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    info:    "border-slate-200 bg-white text-slate-700",
+    warning: "border-amber-200 bg-amber-50 text-amber-800",
+    error:   "border-rose-200 bg-rose-50 text-rose-700",
+    danger:  "border-rose-200 bg-rose-50 text-rose-700"
+  };
+  var toast = document.createElement("div");
+  toast.className = "fixed right-4 top-4 z-[90] rounded-xl border px-4 py-3 text-sm shadow-lg " +
+    (toneMap[type] || toneMap.info);
+  toast.setAttribute("role", "status");
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(function () { if (toast.parentNode) toast.remove(); }, 3000);
+};
+
 window.AppUI.statusLabelFromTone = function statusLabelFromTone(status) {
   if (status === "ready") return "Listo";
   if (status === "generating") return "Generando";

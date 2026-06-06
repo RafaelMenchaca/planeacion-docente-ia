@@ -24,12 +24,15 @@ async function requireSession() {
 supabase.auth.onAuthStateChange((event, session) => {
   // Solo redirigir si el evento es SIGNED_OUT
   if (event === "SIGNED_OUT") {
-    alert("Tu sesion ha finalizado. Ser·s redirigido al login.");
-    window.location.href = "login.html";
+    if (window.AppUI && window.AppUI.showToast) {
+      window.AppUI.showToast("Sesi√≥n cerrada correctamente. Redirigiendo al login...", "info");
+      setTimeout(function () { window.location.href = "login.html"; }, 1500);
+    } else {
+      window.location.href = "login.html";
+    }
   }
 });
 
 // Exportar funciones globalmente
 window.protegerRuta = protegerRuta;
 window.requireSession = requireSession;
-

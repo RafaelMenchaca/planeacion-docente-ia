@@ -14,10 +14,10 @@ function initLoginPage() {
     });
 
     if (error) {
-      alert("? Error al iniciar sesi�n: " + error.message);
+      window.AppUI.showToast("No se pudo iniciar sesión. Revisa tus datos.", "error");
     } else {
-      alert("? Bienvenido");
-      window.location.href = "dashboard.html";
+      window.AppUI.showToast("Sesión iniciada correctamente.", "success");
+      setTimeout(function () { window.location.href = "dashboard.html"; }, 1000);
     }
   });
 }
