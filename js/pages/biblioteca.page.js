@@ -520,7 +520,10 @@ function renderPlaneacionesTab(conjunto) {
               ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
             </div>
             <div class="biblioteca-item-actions">
-              <a href="detalle.html?id=${encodeURIComponent(p.id)}" class="biblioteca-btn-link">Ver planeacion</a>
+              <a href="detalle.html?id=${encodeURIComponent(p.id)}" class="biblioteca-btn-link">Ver</a>
+              <button type="button" class="biblioteca-btn-link"
+                data-bib-action="descargar-planeacion"
+                data-planeacion-id="${pid}">Descargar</button>
               <button type="button" class="biblioteca-btn-link biblioteca-btn-danger-link"
                 data-bib-action="eliminar-planeacion"
                 data-planeacion-id="${pid}"
@@ -1194,6 +1197,11 @@ function onBibliotecaClick(event) {
 
     case "ver-lista": {
       if (listaId) openBibliotecaListaPreview(listaId);
+      break;
+    }
+
+    case "descargar-planeacion": {
+      if (planeacionId) bibDescargarPlaneacion(planeacionId);
       break;
     }
 
@@ -1895,6 +1903,99 @@ function renderBibliotecaAnexoModal(anexo) {
 }
 
 // ---- DOWNLOAD HELPERS ----
+
+async function bibDescargarPlaneacion(planeacionId) {
+  try {
+    const planeacion = await window.obtenerPlaneacionDetalle(planeacionId);
+    if (!planeacion) {
+      alert("No se pudo obtener la planeacion.");
+      return;
+    }
+
+    const filas = Array.isArray(planeacion.tabla_ia) ? planeacion.tabla_ia : [];
+    const filasHtml = filas.map(fila => `
+      <tr>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.tiempo_sesion || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.actividades || ""}</td>
+        <td style="border:1px solid #000;padding:8px;text-align:center;font-size:10pt;vertical-align:middle;">${fila.tiempo_min || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.producto || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.instrumento || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.formativa || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.sumativa || ""}</td>
+      </tr>`).join("");
+
+    const contenidoHTML = `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page Section1 { size: 29.7cm 21cm; margin: 2cm; }
+            div.Section1 { page: Section1; }
+            body { font-family: Arial, sans-serif; font-size: 11pt; }
+            h2 { text-align: center; margin-bottom: 15px; }
+            table { border-collapse: collapse; width: 100%; }
+            th { background-color: #8ca2d2; color: white; border: 1px solid #000; padding: 8px; font-size: 10pt; text-transform: uppercase; }
+            td { border: 1px solid #000; padding: 8px; vertical-align: middle; font-size: 10pt; }
+          </style>
+        </head>
+        <body>
+          <div class="Section1">
+            <h2>Planeacion didactica</h2>
+            <table style="margin-bottom:15px;">
+              <tr>
+                <td><strong>Asignatura:</strong> ${planeacion.materia || ""}</td>
+                <td><strong>Nivel:</strong> ${planeacion.nivel || ""}</td>
+              </tr>
+              <tr>
+                <td><strong>Tema:</strong> ${planeacion.tema || ""}</td>
+                <td><strong>Subtema:</strong> ${planeacion.subtema || ""}</td>
+              </tr>
+              <tr>
+                <td><strong>Duracion:</strong> ${planeacion.duracion || ""} min</td>
+                <td><strong>Sesiones:</strong> ${planeacion.sesiones || ""}</td>
+              </tr>
+            </table>
+            <table>
+              <thead>
+                <tr>
+                  <th>Momento / Sesion</th>
+                  <th>Actividades</th>
+                  <th>Tiempo (min)</th>
+                  <th>Producto</th>
+                  <th>Instrumento</th>
+                  <th>Formativa</th>
+                  <th>Sumativa</th>
+                </tr>
+              </thead>
+              <tbody>${filasHtml}</tbody>
+            </table>
+          </div>
+        </body>
+      </html>`;
+
+    const blob = new Blob([contenidoHTML], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Planeacion_${(planeacion.materia || "SinMateria").replace(/[^\w\s-]/g, "").trim()}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("[biblioteca] Error descargando planeacion:", error);
+    alert("No se pudo descargar la planeacion. Intenta nuevamente.");
+  }
+}
 
 async function bibDescargarExamen(examenId) {
   try {
