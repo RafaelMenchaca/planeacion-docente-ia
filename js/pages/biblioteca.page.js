@@ -395,34 +395,41 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
 
 // ---- RENDER TABS ----
 
-function renderProgressItemHtml(item) {
-  const status = item.status || "pending";
-  const pill   = typeof renderProgressPill === "function"
-    ? (item.statusLabel
-        ? renderProgressPill(status, item.statusLabel)
-        : renderProgressPill(status))
+/**
+ * Card estándar de Biblioteca para estados generating/error/skipped/ready.
+ * titulo y meta deben ser HTML seguro (ya escapado).
+ * opts.errorMessage es texto plano (se escapa aquí).
+ */
+function renderBibliotecaProgressCard(titulo, meta, status, opts) {
+  opts = opts || {};
+  const resolvedStatus = (status === "pending" || !status) ? "generating" : status;
+  const pill = typeof renderProgressPill === "function"
+    ? renderProgressPill(resolvedStatus, resolvedStatus === "generating" ? "Generando" : undefined)
+    : `<span>${resolvedStatus}</span>`;
+  const rowExtra = resolvedStatus === "generating" ? " bib-item-generating"
+    : resolvedStatus === "error"     ? " bib-item-error"
     : "";
   return `
-    <div class="explorer-progress-item ${escapeHtml(status)}">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="font-semibold">${escapeBibliotecaDisplayText(item.titulo)}</p>
-        ${pill}
+    <div class="biblioteca-item-row${rowExtra}">
+      <div class="biblioteca-item-info">
+        <span class="biblioteca-item-title">${titulo}</span>
+        ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
+        ${opts.errorMessage ? `<span class="bib-item-status-msg bib-item-error-msg">${escapeHtml(opts.errorMessage)}</span>` : ""}
       </div>
-      ${item.message ? `<p class="mt-1 text-xs">${escapeHtml(item.message)}</p>` : ""}
+      <div class="biblioteca-item-actions">${pill}</div>
     </div>`;
 }
 
+function renderProgressItemHtml(item) {
+  const status   = item.status === "pending" ? "generating" : (item.status || "generating");
+  const titulo   = escapeBibliotecaDisplayText(item.titulo);
+  const errorMsg = status === "error" ? (item.message || "") : "";
+  const meta     = (status !== "error" && item.message) ? escapeHtml(item.message) : "";
+  return renderBibliotecaProgressCard(titulo, meta, status, { errorMessage: errorMsg });
+}
+
 function renderPendingSpinnerCard(message) {
-  const pill = typeof renderProgressPill === "function"
-    ? renderProgressPill("generating", "Generando")
-    : "";
-  return `
-    <div class="explorer-progress-item generating">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="font-semibold">${escapeHtml(message || "Generando...")}</p>
-        ${pill}
-      </div>
-    </div>`;
+  return renderBibliotecaProgressCard(escapeHtml(message || "Generando..."), "", "generating");
 }
 
 function renderBibliotecaSectionHeader(title, actionHtml = "") {
@@ -469,30 +476,19 @@ function renderPlaneacionesTab(conjunto) {
   if (conjunto.isPending) {
     const items = (window.explorerState?.progress?.items) || [];
     if (items.length) {
-      pendingHtml = `<div class="space-y-1.5">${items.map(renderProgressItemHtml).join("")}</div>`;
+      pendingHtml = items.map(renderProgressItemHtml).join("");
     } else {
-      const pill = typeof renderProgressPill === "function"
-        ? renderProgressPill("generating", "Generando")
-        : "";
-      pendingHtml = `
-        <div class="explorer-progress-item generating">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="font-semibold">Preparando generacion...</p>
-            ${pill}
-          </div>
-        </div>`;
+      pendingHtml = renderBibliotecaProgressCard(
+        escapeHtml("Preparando generacion..."), "", "generating"
+      );
     }
   } else {
     const pending = bibliotecaState.pendingPlaneacionesByBatchId[conjunto.id];
     if (pending) {
       const errorHtml = pending.error
-        ? `<div class="mt-2 text-xs text-rose-600">${escapeHtml(pending.error)}</div>`
+        ? `<div class="mt-1 text-xs text-rose-600">${escapeHtml(pending.error)}</div>`
         : "";
-      pendingHtml = `
-        <div class="space-y-1.5">
-          ${pending.items.map(renderProgressItemHtml).join("")}
-          ${errorHtml}
-        </div>`;
+      pendingHtml = pending.items.map(renderProgressItemHtml).join("") + errorHtml;
     }
   }
 
@@ -506,7 +502,7 @@ function renderPlaneacionesTab(conjunto) {
   return `
     ${renderBibliotecaSectionHeader("Planeaciones del bloque", addButton)}
     <div class="biblioteca-items-list">
-      ${pendingHtml ? `<div class="mb-3">${pendingHtml}</div>` : ""}
+      ${pendingHtml}
       ${planeaciones.map(p => {
         const titulo   = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
         const duracion = p.duracion ? `${p.duracion} min` : "";
@@ -558,10 +554,14 @@ function renderExamenesTab(conjunto) {
 
   let pendingHtml = "";
   if (pending) {
-    pendingHtml = renderPendingSpinnerCard(pending.message || "Generando examen...");
-    if (pending.error) {
-      pendingHtml += `<div class="text-xs text-rose-600 px-3 pb-2">${escapeHtml(pending.error)}</div>`;
-    }
+    const examTitulo = `Examen de ${escapeBibliotecaDisplayText(conjunto.titulo, "Bloque de planeacion")}`;
+    const examStatus = pending.error ? "error" : "generating";
+    pendingHtml = renderBibliotecaProgressCard(
+      examTitulo,
+      pending.message ? escapeHtml(pending.message) : "",
+      examStatus,
+      { errorMessage: pending.error || "" }
+    );
   }
 
   if (!examenes.length && !pending) {
@@ -675,26 +675,12 @@ function renderAnexosTab(conjunto) {
       ].filter(Boolean).join(" &middot; ");
 
       if (item.status === "error") {
-        return `
-          <div class="biblioteca-item-row">
-            <div class="biblioteca-item-info">
-              <span class="biblioteca-item-title">${titulo}</span>
-              ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
-              <span style="font-size:0.75rem; color:#dc2626;">${escapeHtml(item.errorMessage || "No se pudo generar el anexo.")}</span>
-            </div>
-            <div class="biblioteca-item-actions"></div>
-          </div>`;
+        return renderBibliotecaProgressCard(titulo, meta, "error", {
+          errorMessage: item.errorMessage || "No se pudo generar el anexo."
+        });
       }
 
-      return `
-        <div class="biblioteca-item-row">
-          <div class="biblioteca-item-info">
-            <span class="biblioteca-item-title">${titulo}</span>
-            ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
-            <span class="bib-lista-generated-badge" style="opacity:0.65;">Generando anexo...</span>
-          </div>
-          <div class="biblioteca-item-actions"></div>
-        </div>`;
+      return renderBibliotecaProgressCard(titulo, meta, "generating");
     }).join("");
 
   const hasContent = realRowsHtml || tempRowsHtml;
@@ -735,16 +721,25 @@ function renderListasCotejoTab(conjunto) {
 
   let pendingHtml = "";
   if (pending) {
-    pendingHtml = renderPendingSpinnerCard(pending.message || "Generando listas de cotejo...");
-    if (pending.error) {
-      pendingHtml += `<div class="text-xs text-rose-600 px-3 pb-2">${escapeHtml(pending.error)}</div>`;
-    }
-    if (pending.result) {
-      const r = pending.result;
-      pendingHtml += `<div class="text-xs text-emerald-700 px-3 pb-2">
-        ${r.created > 0 ? `${r.created} lista(s) creada(s).` : ""}
-        ${r.skipped > 0 ? ` ${r.skipped} ya existia(n).` : ""}
-      </div>`;
+    const itemStatus = pending.error ? "error" : "generating";
+    const errMsg = pending.error || "";
+    if (pending.items && pending.items.length) {
+      pendingHtml = pending.items.map(item =>
+        renderBibliotecaProgressCard(
+          escapeBibliotecaDisplayText(item.titulo, "Lista de cotejo"),
+          "",
+          itemStatus,
+          { errorMessage: errMsg }
+        )
+      ).join("");
+    } else {
+      // Fallback si no hay items (compatibilidad con estados guardados sin items)
+      pendingHtml = renderBibliotecaProgressCard(
+        escapeHtml("Lista de cotejo"),
+        "",
+        itemStatus,
+        { errorMessage: errMsg }
+      );
     }
   }
 
@@ -2487,10 +2482,17 @@ async function submitBibliotecaListaModal() {
     // Close modal immediately — progress shows in card
     closeBibliotecaListaModal();
     setSelectedConjunto(conjuntoId, { tab: "listas" });
+
+    // Build per-item data for per-card display
+    const selectedIdSet = new Set(selectedIds);
+    const pendingItems = (Array.isArray(state.planeaciones) ? state.planeaciones : [])
+      .filter(p => selectedIdSet.has(normalizeBibliotecaId(p.id)))
+      .map(p => ({ titulo: p.tema || p.custom_title || "Lista de cotejo", planeacionId: p.id }));
+
     bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-      message: `Generando ${selectedIds.length} lista(s) de cotejo...`,
-      result:  null,
-      error:   ""
+      items:  pendingItems,
+      result: null,
+      error:  ""
     };
     renderBibliotecaContent();
 
@@ -2502,13 +2504,7 @@ async function submitBibliotecaListaModal() {
         const created = res?.created ?? 0;
         const skipped = Array.isArray(res?.skipped) ? res.skipped.length : (res?.skipped ?? 0);
 
-        bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-          message: "Listo",
-          result:  { created, skipped },
-          error:   ""
-        };
-        renderBibliotecaContent();
-
+        // Keep cards visible until real data loads (1.5s grace)
         await new Promise(r => setTimeout(r, 1500));
         delete bibliotecaState.pendingListaByBatchId[conjuntoId];
         await loadAndRenderBiblioteca({
@@ -2518,8 +2514,9 @@ async function submitBibliotecaListaModal() {
         });
       } catch (genError) {
         console.error("[biblioteca] Error generando listas:", genError);
+        const currentPending = bibliotecaState.pendingListaByBatchId[conjuntoId];
         bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-          message: "",
+          items:   currentPending?.items || [],
           result:  null,
           error:   genError.message || "No se pudieron generar las listas de cotejo."
         };

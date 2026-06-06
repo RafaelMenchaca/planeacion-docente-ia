@@ -1366,6 +1366,25 @@
   border-color: rgb(186 230 253);
 }
 
+.biblioteca-item-row.bib-item-generating {
+  border-color: rgb(125 211 252);
+  background: rgb(248 254 255);
+}
+
+.biblioteca-item-row.bib-item-error {
+  border-color: rgb(253 164 175);
+  background: rgb(255 248 248);
+}
+
+.bib-item-status-msg {
+  font-size: 0.72rem;
+  margin-top: 0.12rem;
+}
+
+.bib-item-error-msg {
+  color: rgb(190 18 60);
+}
+
 .biblioteca-item-info {
   display: flex;
   flex-direction: column;
