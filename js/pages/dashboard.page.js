@@ -112,7 +112,6 @@ const ACTIVIDADES_DIDACTICAS = [
   { nombre: "Investigación documental", descripcion: "Análisis de fuentes" },
   { nombre: "Juegos de mesa educativos", descripcion: "Lógica y estrategia" },
   { nombre: "Juegos de rol", descripcion: "Perspectivas y contextos" },
-  { nombre: "Kahoot o cuestionarios interactivos", descripcion: "Evaluación dinámica" },
   { nombre: "Lectura guiada", descripcion: "Comprensión lectora" },
   { nombre: "Líneas del tiempo", descripcion: "Organización cronológica" },
   { nombre: "Lluvia de ideas", descripcion: "Participación creativa" },
