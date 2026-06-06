@@ -395,34 +395,41 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
 
 // ---- RENDER TABS ----
 
-function renderProgressItemHtml(item) {
-  const status = item.status || "pending";
-  const pill   = typeof renderProgressPill === "function"
-    ? (item.statusLabel
-        ? renderProgressPill(status, item.statusLabel)
-        : renderProgressPill(status))
+/**
+ * Card estándar de Biblioteca para estados generating/error/skipped/ready.
+ * titulo y meta deben ser HTML seguro (ya escapado).
+ * opts.errorMessage es texto plano (se escapa aquí).
+ */
+function renderBibliotecaProgressCard(titulo, meta, status, opts) {
+  opts = opts || {};
+  const resolvedStatus = (status === "pending" || !status) ? "generating" : status;
+  const pill = typeof renderProgressPill === "function"
+    ? renderProgressPill(resolvedStatus, resolvedStatus === "generating" ? "Generando" : undefined)
+    : `<span>${resolvedStatus}</span>`;
+  const rowExtra = resolvedStatus === "generating" ? " bib-item-generating"
+    : resolvedStatus === "error"     ? " bib-item-error"
     : "";
   return `
-    <div class="explorer-progress-item ${escapeHtml(status)}">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="font-semibold">${escapeBibliotecaDisplayText(item.titulo)}</p>
-        ${pill}
+    <div class="biblioteca-item-row${rowExtra}">
+      <div class="biblioteca-item-info">
+        <span class="biblioteca-item-title">${titulo}</span>
+        ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
+        ${opts.errorMessage ? `<span class="bib-item-status-msg bib-item-error-msg">${escapeHtml(opts.errorMessage)}</span>` : ""}
       </div>
-      ${item.message ? `<p class="mt-1 text-xs">${escapeHtml(item.message)}</p>` : ""}
+      <div class="biblioteca-item-actions">${pill}</div>
     </div>`;
 }
 
+function renderProgressItemHtml(item) {
+  const status   = item.status === "pending" ? "generating" : (item.status || "generating");
+  const titulo   = escapeBibliotecaDisplayText(item.titulo);
+  const errorMsg = status === "error" ? (item.message || "") : "";
+  const meta     = (status !== "error" && item.message) ? escapeHtml(item.message) : "";
+  return renderBibliotecaProgressCard(titulo, meta, status, { errorMessage: errorMsg });
+}
+
 function renderPendingSpinnerCard(message) {
-  const pill = typeof renderProgressPill === "function"
-    ? renderProgressPill("generating", "Generando")
-    : "";
-  return `
-    <div class="explorer-progress-item generating">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="font-semibold">${escapeHtml(message || "Generando...")}</p>
-        ${pill}
-      </div>
-    </div>`;
+  return renderBibliotecaProgressCard(escapeHtml(message || "Generando..."), "", "generating");
 }
 
 function renderBibliotecaSectionHeader(title, actionHtml = "") {
@@ -469,44 +476,33 @@ function renderPlaneacionesTab(conjunto) {
   if (conjunto.isPending) {
     const items = (window.explorerState?.progress?.items) || [];
     if (items.length) {
-      pendingHtml = `<div class="space-y-1.5">${items.map(renderProgressItemHtml).join("")}</div>`;
+      pendingHtml = items.map(renderProgressItemHtml).join("");
     } else {
-      const pill = typeof renderProgressPill === "function"
-        ? renderProgressPill("generating", "Generando")
-        : "";
-      pendingHtml = `
-        <div class="explorer-progress-item generating">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="font-semibold">Preparando generacion...</p>
-            ${pill}
-          </div>
-        </div>`;
+      pendingHtml = renderBibliotecaProgressCard(
+        escapeHtml("Preparando generacion..."), "", "generating"
+      );
     }
   } else {
     const pending = bibliotecaState.pendingPlaneacionesByBatchId[conjunto.id];
     if (pending) {
       const errorHtml = pending.error
-        ? `<div class="mt-2 text-xs text-rose-600">${escapeHtml(pending.error)}</div>`
+        ? `<div class="mt-1 text-xs text-rose-600">${escapeHtml(pending.error)}</div>`
         : "";
-      pendingHtml = `
-        <div class="space-y-1.5">
-          ${pending.items.map(renderProgressItemHtml).join("")}
-          ${errorHtml}
-        </div>`;
+      pendingHtml = pending.items.map(renderProgressItemHtml).join("") + errorHtml;
     }
   }
 
   if (!planeaciones.length && !pendingHtml) {
     return `
-      ${renderBibliotecaSectionHeader("Planeaciones del bloque", addButton)}
+      ${renderBibliotecaSectionHeader("Planeaciones", addButton)}
       <p class="biblioteca-empty-tab">Este bloque no tiene planeaciones.</p>
     `;
   }
 
   return `
-    ${renderBibliotecaSectionHeader("Planeaciones del bloque", addButton)}
+    ${renderBibliotecaSectionHeader("Planeaciones", addButton)}
     <div class="biblioteca-items-list">
-      ${pendingHtml ? `<div class="mb-3">${pendingHtml}</div>` : ""}
+      ${pendingHtml}
       ${planeaciones.map(p => {
         const titulo   = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
         const duracion = p.duracion ? `${p.duracion} min` : "";
@@ -520,7 +516,10 @@ function renderPlaneacionesTab(conjunto) {
               ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
             </div>
             <div class="biblioteca-item-actions">
-              <a href="detalle.html?id=${encodeURIComponent(p.id)}" class="biblioteca-btn-link">Ver planeacion</a>
+              <a href="detalle.html?id=${encodeURIComponent(p.id)}" class="biblioteca-btn-link">Ver</a>
+              <button type="button" class="biblioteca-btn-link"
+                data-bib-action="descargar-planeacion"
+                data-planeacion-id="${pid}">Descargar</button>
               <button type="button" class="biblioteca-btn-link biblioteca-btn-danger-link"
                 data-bib-action="eliminar-planeacion"
                 data-planeacion-id="${pid}"
@@ -545,7 +544,7 @@ function renderExamenesTab(conjunto) {
 
   if (conjunto.isPending) {
     return `
-      ${renderBibliotecaSectionHeader("Examenes del bloque")}
+      ${renderBibliotecaSectionHeader("Examenes")}
       <p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear examenes cuando el bloque este listo.</p>
     `;
   }
@@ -555,21 +554,25 @@ function renderExamenesTab(conjunto) {
 
   let pendingHtml = "";
   if (pending) {
-    pendingHtml = renderPendingSpinnerCard(pending.message || "Generando examen...");
-    if (pending.error) {
-      pendingHtml += `<div class="text-xs text-rose-600 px-3 pb-2">${escapeHtml(pending.error)}</div>`;
-    }
+    const examTitulo = `Examen de ${escapeBibliotecaDisplayText(conjunto.titulo, "Bloque de planeacion")}`;
+    const examStatus = pending.error ? "error" : "generating";
+    pendingHtml = renderBibliotecaProgressCard(
+      examTitulo,
+      pending.message ? escapeHtml(pending.message) : "",
+      examStatus,
+      { errorMessage: pending.error || "" }
+    );
   }
 
   if (!examenes.length && !pending) {
     return `
-      ${renderBibliotecaSectionHeader("Examenes del bloque", actionButton)}
+      ${renderBibliotecaSectionHeader("Examenes", actionButton)}
       <p class="biblioteca-empty-tab">Aun no hay examenes en este bloque.</p>
     `;
   }
 
   return `
-    ${renderBibliotecaSectionHeader("Examenes del bloque", actionButton)}
+    ${renderBibliotecaSectionHeader("Examenes", actionButton)}
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${examenes.map(ex => {
@@ -618,7 +621,7 @@ function renderAnexosTab(conjunto) {
 
   if (conjunto.isPending) {
     return `
-      ${renderBibliotecaSectionHeader("Anexos del bloque")}
+      ${renderBibliotecaSectionHeader("Anexos")}
       <p class="biblioteca-empty-tab">Las planeaciones aun se estan generando. Podras crear anexos cuando el bloque este listo.</p>
     `;
   }
@@ -634,7 +637,7 @@ function renderAnexosTab(conjunto) {
   const realRowsHtml = anexos.map((anexo) => {
     const pid     = normalizeBibliotecaId(anexo.planeacion_id);
     const tema    = escapeBibliotecaDisplayText(anexo.tema, "Sin titulo");
-    const titulo  = `Anexo &middot; ${tema}`;
+    const titulo  = tema;
     const fecha   = bibFormatShortDateTime(anexo.created_at);
     const meta    = fecha || "";
     const anexoId = escapeHtml(String(anexo.id));
@@ -672,39 +675,25 @@ function renderAnexosTab(conjunto) {
       ].filter(Boolean).join(" &middot; ");
 
       if (item.status === "error") {
-        return `
-          <div class="biblioteca-item-row">
-            <div class="biblioteca-item-info">
-              <span class="biblioteca-item-title">${titulo}</span>
-              ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
-              <span style="font-size:0.75rem; color:#dc2626;">${escapeHtml(item.errorMessage || "No se pudo generar el anexo.")}</span>
-            </div>
-            <div class="biblioteca-item-actions"></div>
-          </div>`;
+        return renderBibliotecaProgressCard(titulo, meta, "error", {
+          errorMessage: item.errorMessage || "No se pudo generar el anexo."
+        });
       }
 
-      return `
-        <div class="biblioteca-item-row">
-          <div class="biblioteca-item-info">
-            <span class="biblioteca-item-title">${titulo}</span>
-            ${meta ? `<span class="biblioteca-item-meta">${meta}</span>` : ""}
-            <span class="bib-lista-generated-badge" style="opacity:0.65;">Generando anexo...</span>
-          </div>
-          <div class="biblioteca-item-actions"></div>
-        </div>`;
+      return renderBibliotecaProgressCard(titulo, meta, "generating");
     }).join("");
 
   const hasContent = realRowsHtml || tempRowsHtml;
 
   if (!hasContent) {
     return `
-      ${renderBibliotecaSectionHeader("Anexos del bloque", actionButton)}
+      ${renderBibliotecaSectionHeader("Anexos", actionButton)}
       <p class="biblioteca-empty-tab">Este bloque todavia no tiene anexos generados.</p>
     `;
   }
 
   return `
-    ${renderBibliotecaSectionHeader("Anexos del bloque", actionButton)}
+    ${renderBibliotecaSectionHeader("Anexos", actionButton)}
     <div class="biblioteca-items-list">
       ${realRowsHtml}
       ${tempRowsHtml}
@@ -732,16 +721,25 @@ function renderListasCotejoTab(conjunto) {
 
   let pendingHtml = "";
   if (pending) {
-    pendingHtml = renderPendingSpinnerCard(pending.message || "Generando listas de cotejo...");
-    if (pending.error) {
-      pendingHtml += `<div class="text-xs text-rose-600 px-3 pb-2">${escapeHtml(pending.error)}</div>`;
-    }
-    if (pending.result) {
-      const r = pending.result;
-      pendingHtml += `<div class="text-xs text-emerald-700 px-3 pb-2">
-        ${r.created > 0 ? `${r.created} lista(s) creada(s).` : ""}
-        ${r.skipped > 0 ? ` ${r.skipped} ya existia(n).` : ""}
-      </div>`;
+    const itemStatus = pending.error ? "error" : "generating";
+    const errMsg = pending.error || "";
+    if (pending.items && pending.items.length) {
+      pendingHtml = pending.items.map(item =>
+        renderBibliotecaProgressCard(
+          escapeBibliotecaDisplayText(item.titulo, "Lista de cotejo"),
+          "",
+          itemStatus,
+          { errorMessage: errMsg }
+        )
+      ).join("");
+    } else {
+      // Fallback si no hay items (compatibilidad con estados guardados sin items)
+      pendingHtml = renderBibliotecaProgressCard(
+        escapeHtml("Lista de cotejo"),
+        "",
+        itemStatus,
+        { errorMessage: errMsg }
+      );
     }
   }
 
@@ -757,11 +755,10 @@ function renderListasCotejoTab(conjunto) {
     <div class="biblioteca-items-list">
       ${pendingHtml}
       ${listas.map(lista => {
-        const titulo  = escapeBibliotecaDisplayText(lista.titulo, "Lista de cotejo");
-        const tema    = lista.tema ? escapeBibliotecaDisplayText(lista.tema) : "";
+        const titulo  = escapeBibliotecaDisplayText(lista.tema || lista.titulo, "Lista de cotejo");
         const puntos  = lista.total_puntos ? `${lista.total_puntos} puntos` : "";
         const fecha   = bibFormatShortDateTime(lista.created_at);
-        const meta    = [tema, puntos, fecha].filter(Boolean).join(" &middot; ");
+        const meta    = [puntos, fecha].filter(Boolean).join(" &middot; ");
         const listaId = escapeHtml(String(lista.id));
         return `
           <div class="biblioteca-item-row">
@@ -1194,6 +1191,11 @@ function onBibliotecaClick(event) {
 
     case "ver-lista": {
       if (listaId) openBibliotecaListaPreview(listaId);
+      break;
+    }
+
+    case "descargar-planeacion": {
+      if (planeacionId) bibDescargarPlaneacion(planeacionId);
       break;
     }
 
@@ -1650,14 +1652,22 @@ async function bibDescargarAnexo(anexoId) {
     const res = await apiObtenerAnexoDetalle(anexoId, session.access_token);
     const anexo = res?.anexo;
     if (!anexo) throw new Error("No se pudo obtener el anexo.");
-    descargarAnexoWord(anexo);
+
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Anexo",
+      anexo.tema || anexo.titulo
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
+    descargarAnexoWord(anexo, filename);
   } catch (error) {
     console.error("[biblioteca] Error descargando anexo:", error);
     alert("No se pudo descargar el anexo. Intenta nuevamente.");
   }
 }
 
-function descargarAnexoWord(anexo) {
+function descargarAnexoWord(anexo, filenameOverride) {
   const contenido = anexo.contenido || {};
   const tituloGeneral = contenido.titulo_general || anexo.titulo || "Anexos";
   const descripcion   = contenido.descripcion || "";
@@ -1741,7 +1751,8 @@ function descargarAnexoWord(anexo) {
   const url  = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href     = url;
-  link.download = `${tituloGeneral.replace(/[^a-zA-Z0-9\s\-_]/g, "").trim() || "Anexos"}.doc`;
+  const defaultAnexoName = tituloGeneral.replace(/[^a-zA-Z0-9\s\-_]/g, "").trim() || "Anexos";
+  link.download = `${filenameOverride || defaultAnexoName}.doc`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -1896,10 +1907,121 @@ function renderBibliotecaAnexoModal(anexo) {
 
 // ---- DOWNLOAD HELPERS ----
 
+async function bibDescargarPlaneacion(planeacionId) {
+  try {
+    const planeacion = await window.obtenerPlaneacionDetalle(planeacionId);
+    if (!planeacion) {
+      alert("No se pudo obtener la planeacion.");
+      return;
+    }
+
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Planeacion",
+      planeacion.tema || planeacion.materia
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
+    const filas = Array.isArray(planeacion.tabla_ia) ? planeacion.tabla_ia : [];
+    const filasHtml = filas.map(fila => `
+      <tr>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.tiempo_sesion || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.actividades || ""}</td>
+        <td style="border:1px solid #000;padding:8px;text-align:center;font-size:10pt;vertical-align:middle;">${fila.tiempo_min || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.producto || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.instrumento || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.formativa || ""}</td>
+        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.sumativa || ""}</td>
+      </tr>`).join("");
+
+    const contenidoHTML = `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page Section1 { size: 29.7cm 21cm; margin: 2cm; }
+            div.Section1 { page: Section1; }
+            body { font-family: Arial, sans-serif; font-size: 11pt; }
+            h2 { text-align: center; margin-bottom: 15px; }
+            table { border-collapse: collapse; width: 100%; }
+            th { background-color: #8ca2d2; color: white; border: 1px solid #000; padding: 8px; font-size: 10pt; text-transform: uppercase; }
+            td { border: 1px solid #000; padding: 8px; vertical-align: middle; font-size: 10pt; }
+          </style>
+        </head>
+        <body>
+          <div class="Section1">
+            <h2>Planeacion didactica</h2>
+            <table style="margin-bottom:15px;">
+              <tr>
+                <td><strong>Asignatura:</strong> ${planeacion.materia || ""}</td>
+                <td><strong>Nivel:</strong> ${planeacion.nivel || ""}</td>
+              </tr>
+              <tr>
+                <td><strong>Tema:</strong> ${planeacion.tema || ""}</td>
+                <td><strong>Subtema:</strong> ${planeacion.subtema || ""}</td>
+              </tr>
+              <tr>
+                <td><strong>Duracion:</strong> ${planeacion.duracion || ""} min</td>
+                <td><strong>Sesiones:</strong> ${planeacion.sesiones || ""}</td>
+              </tr>
+            </table>
+            <table>
+              <thead>
+                <tr>
+                  <th>Momento / Sesion</th>
+                  <th>Actividades</th>
+                  <th>Tiempo (min)</th>
+                  <th>Producto</th>
+                  <th>Instrumento</th>
+                  <th>Formativa</th>
+                  <th>Sumativa</th>
+                </tr>
+              </thead>
+              <tbody>${filasHtml}</tbody>
+            </table>
+          </div>
+        </body>
+      </html>`;
+
+    const blob = new Blob([contenidoHTML], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("[biblioteca] Error descargando planeacion:", error);
+    alert("No se pudo descargar la planeacion. Intenta nuevamente.");
+  }
+}
+
 async function bibDescargarExamen(examenId) {
   try {
+    const conjunto = bibliotecaState.conjuntos.find(c =>
+      Array.isArray(c.examenes) &&
+      c.examenes.some(e => normalizeBibliotecaId(e.id) === normalizeBibliotecaId(examenId))
+    );
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Examen",
+      conjunto?.titulo || ""
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
     if (typeof window.downloadExamWord === "function") {
-      await window.downloadExamWord(examenId);
+      await window.downloadExamWord(examenId, filename);
     }
   } catch (error) {
     console.error("[biblioteca] Error descargando examen:", error);
@@ -1909,8 +2031,16 @@ async function bibDescargarExamen(examenId) {
 async function bibDescargarLista(listaId) {
   try {
     const lista = await window.obtenerListaCoTejoDetalle(listaId);
+
+    const suggested = window.AppUI.buildDownloadSuggestedName(
+      "Lista_cotejo",
+      lista?.tema || lista?.titulo
+    );
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
+
     if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista);
+      window.descargarListaCotejoWord(lista, filename);
     }
   } catch (error) {
     console.error("[biblioteca] Error descargando lista:", error);
@@ -2386,10 +2516,17 @@ async function submitBibliotecaListaModal() {
     // Close modal immediately — progress shows in card
     closeBibliotecaListaModal();
     setSelectedConjunto(conjuntoId, { tab: "listas" });
+
+    // Build per-item data for per-card display
+    const selectedIdSet = new Set(selectedIds);
+    const pendingItems = (Array.isArray(state.planeaciones) ? state.planeaciones : [])
+      .filter(p => selectedIdSet.has(normalizeBibliotecaId(p.id)))
+      .map(p => ({ titulo: p.tema || p.custom_title || "Lista de cotejo", planeacionId: p.id }));
+
     bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-      message: `Generando ${selectedIds.length} lista(s) de cotejo...`,
-      result:  null,
-      error:   ""
+      items:  pendingItems,
+      result: null,
+      error:  ""
     };
     renderBibliotecaContent();
 
@@ -2401,13 +2538,7 @@ async function submitBibliotecaListaModal() {
         const created = res?.created ?? 0;
         const skipped = Array.isArray(res?.skipped) ? res.skipped.length : (res?.skipped ?? 0);
 
-        bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-          message: "Listo",
-          result:  { created, skipped },
-          error:   ""
-        };
-        renderBibliotecaContent();
-
+        // Keep cards visible until real data loads (1.5s grace)
         await new Promise(r => setTimeout(r, 1500));
         delete bibliotecaState.pendingListaByBatchId[conjuntoId];
         await loadAndRenderBiblioteca({
@@ -2417,8 +2548,9 @@ async function submitBibliotecaListaModal() {
         });
       } catch (genError) {
         console.error("[biblioteca] Error generando listas:", genError);
+        const currentPending = bibliotecaState.pendingListaByBatchId[conjuntoId];
         bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-          message: "",
+          items:   currentPending?.items || [],
           result:  null,
           error:   genError.message || "No se pudieron generar las listas de cotejo."
         };
