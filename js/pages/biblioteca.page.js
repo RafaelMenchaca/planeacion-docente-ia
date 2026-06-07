@@ -1899,9 +1899,12 @@ function renderBibliotecaAnexoModal(anexo) {
   `;
 
   document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
-  document.getElementById("bib-anexo-descargar")?.addEventListener("click", () => {
+  document.getElementById("bib-anexo-descargar")?.addEventListener("click", async () => {
+    const suggested = window.AppUI.buildDownloadSuggestedName("Anexo", anexo.tema || anexo.titulo);
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
     closeBibliotecaAnexoModal();
-    descargarAnexoWord(anexo);
+    descargarAnexoWord(anexo, filename);
   });
 }
 

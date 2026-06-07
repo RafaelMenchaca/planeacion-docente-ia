@@ -5843,11 +5843,14 @@ function bindDashboardEvents() {
     });
   });
 
-  document.getElementById("lista-cotejo-preview-download")?.addEventListener("click", () => {
+  document.getElementById("lista-cotejo-preview-download")?.addEventListener("click", async () => {
     const lista = explorerState.listaCotejoPreview?.listaData;
     if (!lista) return;
+    const suggested = window.AppUI.buildDownloadSuggestedName("Lista_cotejo", lista.tema || lista.titulo);
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    if (filename === null) return;
     if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista);
+      window.descargarListaCotejoWord(lista, filename);
     }
   });
 
@@ -5865,7 +5868,12 @@ function bindDashboardEvents() {
     if (!examenId) return;
 
     try {
-      await downloadExamWord(examenId);
+      const examen = explorerState.examenDetalleById?.[examenId];
+      const suggested = window.AppUI.buildDownloadSuggestedName("Examen", examen?.titulo || "");
+      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+      if (filename === null) return;
+
+      await downloadExamWord(examenId, filename);
       notifyDashboard("Examen exportado a Word.", "success");
     } catch (error) {
       console.error("Error exportando examen:", error);
