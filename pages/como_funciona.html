@@ -14,22 +14,26 @@
   <main class="public-page">
     <section class="mx-auto w-full max-w-7xl px-4 pb-8 pt-8 sm:px-6 lg:px-8 lg:pb-12">
       <div class="public-card p-6 sm:p-8 lg:p-10">
-        <span class="public-pill">Flujo de trabajo</span>
+        <span class="public-pill">FLUJO DE TRABAJO</span>
         <div class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.92fr)] lg:items-center">
           <div>
-            <h1 class="public-display text-4xl font-semibold text-slate-950 sm:text-5xl">El sistema guía la planeación desde la jerarquía hasta la exportación.</h1>
+            <h1 class="public-display text-4xl font-semibold text-slate-950 sm:text-5xl">De una idea docente a recursos listos para clase.</h1>
             <p class="mt-5 text-base leading-8 text-slate-600">
-              No empiezas escribiendo temas al vacío. Primero ubicas el contexto, luego generas por unidad, revisas estados y finalmente editas el detalle antes de descargar.
+              Educativo IA organiza el proceso para que puedas crear, revisar y descargar materiales sin empezar desde cero cada vez.
             </p>
           </div>
-          <div class="grid gap-3 sm:grid-cols-2">
+          <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
             <article class="public-card-soft p-4">
-              <p class="public-kicker">Tiempo real</p>
-              <p class="mt-2 text-2xl font-extrabold text-slate-950">Estados por tema</p>
+              <p class="public-kicker">Proceso</p>
+              <p class="mt-2 text-xl font-extrabold text-slate-950">Menos captura repetida</p>
             </article>
             <article class="public-card-soft p-4">
               <p class="public-kicker">Resultado</p>
-              <p class="mt-2 text-2xl font-extrabold text-slate-950">Detalle editable</p>
+              <p class="mt-2 text-xl font-extrabold text-slate-950">Recursos editables</p>
+            </article>
+            <article class="public-card-soft p-4">
+              <p class="public-kicker">Salida</p>
+              <p class="mt-2 text-xl font-extrabold text-slate-950">Exportación práctica</p>
             </article>
           </div>
         </div>
@@ -41,31 +45,59 @@
         <div class="grid gap-0 lg:grid-cols-2">
           <div class="p-6 sm:p-8">
             <span class="public-step-badge">1</span>
-            <p class="public-kicker mt-5">Ubica el contexto</p>
-            <h2 class="mt-3 text-3xl font-bold text-slate-950">Abre planteles, grados, materias y unidades.</h2>
+            <p class="public-kicker mt-5">CONTEXTO</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Define el punto de partida.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
-              El explorador mantiene la ruta actual visible para que nunca pierdas de vista dónde estás trabajando.
+              Agrega la información básica de tu planeación para que la IA entienda el nivel, materia y grupo al que va dirigido el contenido.
             </p>
           </div>
-          <div class="min-h-[260px] overflow-hidden bg-slate-100">
-            <img src="../assets/paso1_v2.png" alt="Jerarquía académica en Educativo IA" class="h-full w-full object-cover" />
+          <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-8 lg:border-l lg:border-t-0">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Contexto de trabajo</p>
+              <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                <span class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800">Nivel: Secundaria</span>
+                <span class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800">Materia: Matemáticas</span>
+                <span class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800">Grupo: 2° B</span>
+                <span class="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-3 text-sm font-semibold text-cyan-900">Tema inicial: Fracciones</span>
+              </div>
+            </div>
           </div>
         </div>
       </article>
 
       <article class="public-card overflow-hidden p-0">
         <div class="grid gap-0 lg:grid-cols-2">
-          <div class="order-2 p-6 sm:p-8 lg:order-1">
-            <div class="min-h-[260px] overflow-hidden rounded-[1.4rem] bg-slate-100">
-              <img src="../assets/paso2.png" alt="Selección de materia y unidad" class="h-full w-full object-cover" />
+          <div class="order-2 border-t border-slate-200 bg-slate-50/70 p-5 sm:p-8 lg:order-1 lg:border-r lg:border-t-0">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Temas preparados</p>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">3 temas</span>
+              </div>
+              <div class="mt-4 space-y-2">
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p class="truncate text-sm font-semibold text-slate-800">Fracciones equivalentes</p>
+                  <span class="text-xs font-semibold text-emerald-700">Listo</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p class="truncate text-sm font-semibold text-slate-800">Simplificación</p>
+                  <span class="text-xs font-semibold text-amber-700">En proceso</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p class="truncate text-sm font-semibold text-slate-800">Problemas con fracciones</p>
+                  <span class="text-xs font-semibold text-slate-500">Pendiente</span>
+                </div>
+              </div>
+              <div class="mt-4 inline-flex items-center justify-center rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700">
+                Agregar tema
+              </div>
             </div>
           </div>
           <div class="order-1 p-6 sm:p-8 lg:order-2">
             <span class="public-step-badge">2</span>
-            <p class="public-kicker mt-5">Prepara la generación</p>
-            <h2 class="mt-3 text-3xl font-bold text-slate-950">Agrega temas sólo cuando decides abrir el panel.</h2>
+            <p class="public-kicker mt-5">TEMAS</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Prepara los temas de trabajo.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
-              La vista principal de la unidad se mantiene limpia. El panel de staging aparece al hacer clic en “Agregar temas”.
+              Agrega los temas que quieres desarrollar y conserva una vista clara de lo que está pendiente, en proceso o listo.
             </p>
           </div>
         </div>
@@ -75,32 +107,92 @@
         <div class="grid gap-0 lg:grid-cols-2">
           <div class="p-6 sm:p-8">
             <span class="public-step-badge">3</span>
-            <p class="public-kicker mt-5">Sigue el progreso</p>
-            <h2 class="mt-3 text-3xl font-bold text-slate-950">Observa espera, generación y listo por cada tema.</h2>
+            <p class="public-kicker mt-5">RECURSOS</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Elige qué recurso generar.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
-              El feedback visual aparece hasta que se usa y muestra el estado actual con animación mientras la IA trabaja.
+              Puedes crear planeaciones, anexos, listas de cotejo y exámenes según el material que necesites preparar.
             </p>
           </div>
-          <div class="min-h-[260px] overflow-hidden bg-slate-100">
-            <img src="../assets/paso3.png" alt="Estados de generación por tema" class="h-full w-full object-cover" />
+          <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-8 lg:border-l lg:border-t-0">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Recursos disponibles</p>
+                <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-800">IA</span>
+              </div>
+              <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                <span class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800">Planeaciones</span>
+                <span class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800">Anexos</span>
+                <span class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800">Listas de cotejo</span>
+                <span class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800">Exámenes</span>
+              </div>
+              <div class="mt-4 inline-flex items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white">
+                Generar recursos
+              </div>
+            </div>
           </div>
         </div>
       </article>
 
       <article class="public-card overflow-hidden p-0">
         <div class="grid gap-0 lg:grid-cols-2">
-          <div class="order-2 p-6 sm:p-8 lg:order-1">
-            <div class="min-h-[260px] overflow-hidden rounded-[1.4rem] bg-slate-100">
-              <img src="../assets/paso4.png" alt="Detalle editable de planeación" class="h-full w-full object-cover" />
+          <div class="order-2 border-t border-slate-200 bg-slate-50/70 p-5 sm:p-8 lg:order-1 lg:border-r lg:border-t-0">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Resultado editable</p>
+                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Listo para revisar</span>
+              </div>
+              <div class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                <div class="grid grid-cols-3 bg-slate-100 px-3 py-2 text-[10px] font-semibold text-slate-600">
+                  <span>Actividad</span>
+                  <span>Producto</span>
+                  <span>Evaluación</span>
+                </div>
+                <div class="grid grid-cols-3 border-t border-slate-200 px-3 py-2 text-[10px] text-slate-700">
+                  <span>Ejercicios guiados</span>
+                  <span>Cuaderno</span>
+                  <span>Formativa</span>
+                </div>
+                <div class="grid grid-cols-3 border-t border-slate-200 px-3 py-2 text-[10px] text-slate-700">
+                  <span>Producto final</span>
+                  <span>Entrega</span>
+                  <span>Lista de cotejo</span>
+                </div>
+              </div>
+              <div class="mt-4 inline-flex items-center justify-center rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-700">
+                Editar contenido
+              </div>
             </div>
           </div>
           <div class="order-1 p-6 sm:p-8 lg:order-2">
             <span class="public-step-badge">4</span>
-            <p class="public-kicker mt-5">Ajusta el resultado</p>
-            <h2 class="mt-3 text-3xl font-bold text-slate-950">Entra al detalle, edita y exporta.</h2>
+            <p class="public-kicker mt-5">REVISIÓN</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Ajusta el contenido antes de usarlo.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">
-              El detalle muestra la ruta jerárquica de origen, habilita edición con un estado claro y conserva Word/Excel al final del flujo.
+              Revisa la propuesta de la IA, edita lo necesario y conserva el control académico del resultado final.
             </p>
+          </div>
+        </div>
+      </article>
+
+      <article class="public-card overflow-hidden p-0">
+        <div class="grid gap-0 lg:grid-cols-2">
+          <div class="p-6 sm:p-8">
+            <span class="public-step-badge">5</span>
+            <p class="public-kicker mt-5">DESCARGA</p>
+            <h2 class="mt-3 text-3xl font-bold text-slate-950">Exporta tus materiales.</h2>
+            <p class="mt-4 text-sm leading-7 text-slate-600">
+              Descarga tus recursos en formatos prácticos para compartir, imprimir o seguir editando.
+            </p>
+          </div>
+          <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-8 lg:border-l lg:border-t-0">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Exportación</p>
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <span class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800">Descargar Word</span>
+                <span class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800">Descargar Excel</span>
+              </div>
+              <p class="mt-4 rounded-xl bg-cyan-50 px-3 py-3 text-sm font-semibold text-cyan-900">Material listo para usar en clase.</p>
+            </div>
           </div>
         </div>
       </article>
@@ -110,8 +202,11 @@
       <div class="public-card-strong p-6 sm:p-8">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div class="max-w-2xl">
-            <p class="public-kicker">Verlo en acción</p>
-            <h2 class="public-display mt-3 text-3xl font-semibold text-slate-950">Empieza con el explorador y genera tu primera unidad.</h2>
+            <p class="public-kicker">Siguiente paso</p>
+            <h2 class="public-display mt-3 text-3xl font-semibold text-slate-950">Empieza con un tema y genera tus primeros recursos.</h2>
+            <p class="mt-4 text-sm leading-7 text-slate-600">
+              Crea, revisa y descarga contenido docente con apoyo de IA, sin perder control sobre el resultado.
+            </p>
           </div>
           <div class="flex flex-col gap-3 sm:flex-row">
             <a href="registro.html" class="public-cta-primary">Crear cuenta gratis</a>
