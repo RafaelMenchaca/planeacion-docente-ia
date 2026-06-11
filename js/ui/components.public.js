@@ -131,6 +131,7 @@ function applySelectPlaceholderState(scope = document) {
 async function loadComponent(id, file) {
   const container = document.getElementById(id);
   if (!container) return;
+  container.classList.remove("is-loaded");
 
   const response = await fetch(file);
   if (!response.ok) {
@@ -142,6 +143,9 @@ async function loadComponent(id, file) {
   markActivePublicLinks(container);
   bindPublicMenu(container);
   hydratePublicYear(container);
+  requestAnimationFrame(() => {
+    container.classList.add("is-loaded");
+  });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

@@ -55,6 +55,23 @@
   z-index: 1;
 }
 
+#navbar {
+  min-height: 6.25rem;
+  position: relative;
+  z-index: 60;
+}
+
+#navbar .public-nav-shell {
+  opacity: 0;
+  transform: translateY(-0.25rem);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#navbar.is-loaded .public-nav-shell {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .public-display {
   font-family: "Fraunces", "Times New Roman", serif;
   letter-spacing: -0.03em;
