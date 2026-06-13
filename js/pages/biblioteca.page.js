@@ -3,6 +3,8 @@
 // Vista principal: conjuntos de planeaciones (planeacion_batches)
 // =========================================================
 
+const BIB_EXAM_GENERIC_FAILURE_MESSAGE = "No se pudo completar la generacion del examen. Intenta nuevamente.";
+
 const bibliotecaState = {
   conjuntos: [],
   loading: false,
@@ -2329,7 +2331,8 @@ async function submitBibliotecaExamModal() {
           }
           if (statusRes?.status === "completed") break;
           if (statusRes?.status === "failed") {
-            throw new Error(statusRes.error_message || "La generacion del examen fallo.");
+            console.error("[biblioteca] Generacion de examen fallida:", statusRes);
+            throw new Error(BIB_EXAM_GENERIC_FAILURE_MESSAGE);
           }
         }
         if (polls >= MAX_POLLS) throw new Error("La generacion tardo demasiado. Intenta de nuevo.");
@@ -2344,7 +2347,7 @@ async function submitBibliotecaExamModal() {
         console.error("[biblioteca] Error en polling de examen:", pollError);
         bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
           message: "",
-          error: pollError.message || "No se pudo completar la generacion del examen."
+          error: BIB_EXAM_GENERIC_FAILURE_MESSAGE
         };
         renderBibliotecaContent();
       }
