@@ -2031,7 +2031,7 @@ async function waitForExamGenerationCompletion(jobId, unidadId) {
     }
 
     if (statusPayload?.status === "failed" || statusPayload?.status === "partial" || statusPayload?.status === "cancelled") {
-      const error = new Error("No se pudo completar el examen. Algunas preguntas no se generaron correctamente. Intenta nuevamente.");
+      const error = new Error("No se pudo completar la generacion del examen. Intenta nuevamente.");
       error.payload = statusPayload;
       throw error;
     }
@@ -2152,7 +2152,7 @@ async function submitUnitExamModal(event) {
       progressCurrent: 0,
       progressTotal: totalPreguntas
     };
-    explorerState.errors.examenes[unidadId] = formatFetchError(error, "No se pudo completar el examen. Algunas preguntas no se generaron correctamente. Intenta nuevamente.");
+    explorerState.errors.examenes[unidadId] = "No se pudo completar la generacion del examen. Intenta nuevamente.";
     renderAll();
     scrollToExamSection();
   }
