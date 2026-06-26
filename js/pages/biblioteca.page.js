@@ -2293,13 +2293,24 @@ async function submitBibliotecaExamModal() {
       cantidades[tipo] = state.questionCounts[tipo] || 5;
     }
 
+    // Se envia planeacion_ids (no tema_ids): la seleccion de la biblioteca es
+    // por planeacion. El backend resuelve sus temas y la unidad real, asi el
+    // examen siempre usa los temas seleccionados aunque el unidad_id del batch
+    // este desactualizado.
     const payload = {
       unidad_id:           state.unidadId,
       batch_id:            state.conjuntoId,
       tipos_pregunta:      state.selectedTypes,
       cantidades_pregunta: cantidades,
-      tema_ids:            state.selectedPlaneacionIds
+      planeacion_ids:      state.selectedPlaneacionIds
     };
+
+    console.info("[examenes] payload generacion (biblioteca)", {
+      unidadId: payload.unidad_id,
+      batchId: payload.batch_id,
+      totalPlaneaciones: payload.planeacion_ids?.length,
+      planeacionIds: payload.planeacion_ids
+    });
 
     const genResponse = await apiExamenesGenerate(payload, session.access_token);
     const jobId = genResponse?.job_id;

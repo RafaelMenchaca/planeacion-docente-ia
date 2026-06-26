@@ -2070,6 +2070,26 @@ async function submitUnitExamModal(event) {
     return;
   }
 
+  // Defensa: descartar cualquier tema seleccionado que no pertenezca a la unidad
+  // actual (evita arrastrar temas de una unidad anterior sin recargar la pagina).
+  const validTopicIds = new Set(allTopicItems.map((tema) => String(tema.id)));
+  const requestedTopicIds = [...selectedTopicIds].map(String);
+  const filteredTopicIds = requestedTopicIds.filter((id) => validTopicIds.has(id));
+
+  if (filteredTopicIds.length !== requestedTopicIds.length) {
+    console.warn("[examenes] tema descartado por unidad incorrecta", {
+      expectedUnidadId: unidadId,
+      requestedTopicIds,
+      filteredTopicIds
+    });
+  }
+
+  if (filteredTopicIds.length === 0) {
+    explorerState.examModal.error = "Selecciona al menos un tema de esta unidad para generar el examen.";
+    renderUnitExamModal();
+    return;
+  }
+
   if (!questionCounts || Object.keys(questionCounts).length !== selectedTypes.length) {
     explorerState.examModal.error = "Define una cantidad mayor a 0 para cada tipo de pregunta seleccionado.";
     renderUnitExamModal();
@@ -2092,12 +2112,18 @@ async function submitUnitExamModal(event) {
   renderAll();
   scrollToExamSection();
 
+  console.info("[examenes] payload generacion (dashboard)", {
+    unidadId,
+    totalTemas: filteredTopicIds.length,
+    temas: filteredTopicIds
+  });
+
   try {
     const generationJob = await generarExamenUnidad({
       unidad_id: unidadId,
       tipos_pregunta: selectedTypes,
       cantidades_pregunta: questionCounts,
-      tema_ids: [...selectedTopicIds]
+      tema_ids: filteredTopicIds
     });
     const jobId = generationJob?.job_id || generationJob?.id;
 
