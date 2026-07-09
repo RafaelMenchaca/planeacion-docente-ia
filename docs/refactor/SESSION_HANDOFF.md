@@ -65,6 +65,68 @@ Ver registro completo en `docs/refactor/FRONTEND_AUDIT.md` sección 11. Los de m
 
 Ningún archivo JavaScript, HTML, CSS, backend, SQL ni de configuración funcional. Confirmado por `git status --porcelain` antes y después de la sesión: los únicos cambios nuevos están dentro de `docs/`. Los archivos `AGENTS.md`, `AI_CONTEXT.md`, `ai-context/`, `ai-rules/` y la modificación a `.gitignore` ya existían como cambios sin commitear **antes** de iniciar esta sesión (no fueron tocados por este trabajo).
 
-## Próxima sesión recomendada
+## Próxima sesión recomendada (registrada en la sesión 1, ver actualización en la sesión 2 más abajo)
 
 **Etapa 1 del backlog** (`docs/refactor/REFACTOR_BACKLOG.md`): confirmar en navegador real (DevTools, no solo lectura estática) los 4 fragmentos de código sin consumidores detectados en `biblioteca.page.js` y las 3 páginas/flujos muertos, antes de tocar cualquier línea de código. Es la validación de menor riesgo posible y desbloquea con evidencia sólida las etapas 2 en adelante.
+
+---
+
+# Sesión 2 — Pulido de documentación y reglas de agentes
+
+## Fecha
+
+2026-07-08
+
+## Objetivo
+
+Pulir los `.md` de reglas y auditoría para que futuras sesiones de IA trabajen de forma segura y consistente: reforzar `AGENTS.md`, distinguir explícitamente Biblioteca vigente / modelo jerárquico técnico / navegación jerárquica visual antigua / código legado, crear guías operativas nuevas y reordenar el backlog para que no empiece con eliminación de legado. Sesión únicamente de documentación — sin tocar código funcional.
+
+## Archivos `.md` revisados
+
+Todos los de la sesión 1 (`AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/FRONTEND_MAP.md`, `docs/refactor/FRONTEND_AUDIT.md`, `docs/refactor/CURRENT_BEHAVIOR.md`, `docs/refactor/LEGACY_HIERARCHY.md`, `docs/refactor/REFACTOR_BACKLOG.md`, `docs/refactor/TEST_MATRIX.md`, `docs/refactor/SESSION_HANDOFF.md`), más `README.md`, `ai-context/*.md` del frontend, y `AGENTS.md`/`AI_CONTEXT.md` del backend (`educativo_backend/Educativo-Backend/`) para verificar consistencia entre repos.
+
+**Hallazgo de la revisión cruzada con backend:** `educativo_backend/Educativo-Backend/AGENTS.md` es una copia textual idéntica del `AGENTS.md` del frontend (mismo contenido, incluidas referencias a Biblioteca/jerarquías del frontend). No se modificó — está fuera del alcance de esta sesión (enfocada en refactor frontend) y no se detectó ninguna contradicción que requiriera tocarlo; se deja como hallazgo documentado por si una sesión futura decide especializarlo para el backend.
+
+## Archivos `.md` modificados
+
+- `AGENTS.md` — nueva sección 2.1 "Conceptos que NO deben confundirse"; nueva sección 5.1 "Reglas endurecidas"; sección 21 actualizada con la lista real de documentos existentes (se quitaron referencias a `REFACTOR_RULES.md`/`DECISIONS.md`, que no existen).
+- `docs/refactor/LEGACY_HIERARCHY.md` — añadida sección "Conceptos que NO deben confundirse" (versión resumida, remite a `AGENTS.md`) y la tabla de decisión rápida solicitada.
+- `docs/refactor/REFACTOR_BACKLOG.md` — reescrito completo: 9 sesiones en el orden especificado (preview/descarga de examen y lista de cotejo primero, eliminación de legado al final), cada una con objetivo/archivos permitidos/archivos prohibidos/funciones candidatas/riesgo/dependencias/validaciones/criterio de terminado/commit sugerido.
+- `docs/refactor/TEST_MATRIX.md` — añadida fila de verificación de payload conceptual de examen (`planeacion_ids` vs `unidad_id`), nueva sección "Código legacy" (redirects, Archivados por URL directa, ausencia de navegación jerárquica visual), y nota explícita en "Dashboard carga" sobre que la navegación antigua no debe aparecer.
+- `docs/refactor/CURRENT_BEHAVIOR.md` — añadido "Resumen rápido" al inicio con los puntos que el encargo pedía asegurar explícitamente (todos ya estaban cubiertos en el detalle, se resumen para lectura rápida).
+
+## Archivos `.md` creados
+
+- `docs/refactor/AI_AGENT_RULES.md` — checklist operativo (antes/durante/después de tocar código).
+- `docs/refactor/REFACTOR_PLAYBOOK.md` — método de extracción en 10 pasos + 3 ejemplos concretos de este proyecto (preview de examen, descarga de examen, código que no debe extraerse todavía).
+- `docs/refactor/GLOSSARY.md` — definiciones de todos los términos solicitados (Biblioteca, Conjunto, Bloque, Batch, Planeación, Anexo, Lista de cotejo, Examen, Tema, Unidad, `unidad_id`, `planeacion_ids`, `tema_ids`, `BIBLIOTECA_MODE`, `explorerState`, `bibliotecaState`, Compatibilidad, Legacy confirmado, Legacy candidate, Possibly unused, Wrapper temporal, Extracción literal, Refactor seguro, Polling, Render completo, Render in-place, Mutación optimista, Reload silencioso).
+
+No se crearon otros archivos fuera de la lista sugerida por el encargo.
+
+## Cambios principales
+
+Ver "Archivos `.md` modificados" y "Archivos `.md` creados" arriba. En síntesis: se pasó de una auditoría descriptiva (sesión 1) a un conjunto de reglas operativas y accionables (sesión 2) que una sesión de refactor real puede seguir paso a paso sin volver a investigar desde cero.
+
+## Contradicciones corregidas
+
+- `AGENTS.md` sección 21 listaba `docs/refactor/REFACTOR_RULES.md` y `docs/refactor/DECISIONS.md` como lectura obligatoria, pero ninguno de los dos existe en el repositorio — corregido para listar únicamente los archivos reales, más los dos nuevos (`AI_AGENT_RULES.md`, `REFACTOR_PLAYBOOK.md`, `GLOSSARY.md`).
+- Ninguna contradicción real de contenido entre Biblioteca vigente vs. jerarquía se encontró en los documentos de la sesión 1 (ya estaban bien clasificados) — el riesgo detectado no era una contradicción existente sino la falta de una sección explícita y centralizada que previniera que una futura sesión mezclara los 7 conceptos. Esa sección ahora existe en `AGENTS.md` 2.1 y se referencia desde `LEGACY_HIERARCHY.md`.
+- El backlog original (sesión 1) empezaba con "confirmar código muerto" y "eliminar páginas muertas" como Etapas 1-2, lo cual —aunque de bajo riesgo— no seguía el orden explícito pedido en este encargo (empezar por extracciones de preview/descarga). Se reordenó a 9 sesiones que empiezan por extracción de bajo riesgo funcional (preview/descarga) y terminan con eliminación controlada.
+
+## Reglas nuevas agregadas
+
+Ver `AGENTS.md` sección 5.1 (11 reglas endurecidas) y el checklist completo de `docs/refactor/AI_AGENT_RULES.md`. Resumen: no asumir legado por nombre; no asumir unused sin búsqueda exhaustiva documentada; no tocar `wordExport.js` ni payloads de examen sin autorización explícita; no cambiar la relación `unidad_id`/`planeacion_ids`/`tema_ids`; todo wrapper temporal debe llevar comentario con fecha/motivo/consumidor; no mezclar refactor con bugfix; toda sesión debe actualizar este archivo.
+
+## Riesgos que siguen abiertos
+
+- Las preguntas abiertas de la sesión 1 (ubicación exacta de `generarPlaneacionesUnidadConProgreso`, si el modal genérico de entidad tiene botones equivalentes en Biblioteca, si `QUICK_CREATE_NEW_VALUE` tiene uso real) siguen sin resolver — esta sesión fue de documentación, no de investigación adicional de código.
+- El backend tiene un `AGENTS.md` idéntico al del frontend, lo cual puede confundir a una sesión que trabaje en el backend y encuentre reglas específicas de Biblioteca/jerarquías del frontend — queda como hallazgo, no se corrigió (fuera de alcance de esta sesión).
+- Ningún elemento de `LEGACY_CONFIRMED` fue verificado en runtime todavía — sigue pendiente la Sesión 8 del nuevo backlog (verificación runtime) antes de poder ejecutar la Sesión 9 (eliminación).
+
+## Qué NO se modificó
+
+Ningún archivo `.js`, `.html`, `.css`, backend, SQL, endpoint, payload ni configuración funcional. No se renombraron ni movieron funciones, no se cambió orden de scripts, no se instalaron dependencias, no se formateó el proyecto. Confirmado por `git status`/`git diff --stat` — ver sección de validación al final de esta sesión.
+
+## Próxima sesión recomendada
+
+**Sesión 1 del nuevo backlog** (`docs/refactor/REFACTOR_BACKLOG.md`): extraer preview y descarga de exámenes de `dashboard.page.js` a un módulo de feature dedicado, manteniendo wrappers globales tal como se especifica en `docs/refactor/REFACTOR_PLAYBOOK.md` Ejemplo A y B. Es la extracción de menor riesgo con mayor valor porque tiene un consumidor acotado y confirmado (`biblioteca.page.js`) y no toca payload ni polling.

@@ -35,6 +35,22 @@ Antes de modificar o eliminar código relacionado con jerarquías, se deben loca
 
 ---
 
+## 2.1 Conceptos que NO deben confundirse
+
+La auditoría de 2026-07-07/08 confirmó que estos siete conceptos son distintos entre sí y **no deben tratarse como sinónimos ni clasificarse en bloque**. Confundirlos es la causa más probable de que una futura sesión rompa Biblioteca o Archivados creyendo que está limpiando "jerarquía legada". Ver evidencia completa en `docs/refactor/LEGACY_HIERARCHY.md`.
+
+1. **Biblioteca vigente** — el flujo activo real de producción (`biblioteca.page.js`, tabs de Planeaciones/Anexos/Listas/Exámenes). Es lo que el usuario ve y usa hoy.
+2. **Modelo jerárquico técnico** (`js/api/jerarquia.api.js`, `js/services/jerarquia.service.js`) — CRUD de plantel/grado/materia/unidad/tema. **Sigue activo**: lo consume Archivados y partes de la creación rápida de bloques en Biblioteca. No es legado.
+3. **Página Archivados** (`pages/archivados.html`, `js/pages/archivados.page.js`) — activa y funcional, usa estructura jerárquica real para restaurar/eliminar ramas. Está **oculta de la navegación** (link comentado en `components/navbar.html`), pero oculta no significa legado ni significa que se pueda borrar.
+4. **Navegación jerárquica visual antigua del dashboard** — el árbol plantel→grado→materia→unidad, breadcrumbs y niveles renderizados dentro de `dashboard.page.js`. Es la única de las siete que la auditoría marca mayormente como **LEGACY_CONFIRMED**, porque `window.BIBLIOTECA_MODE` es siempre `true` en producción y esa rama de `initDashboardPage()` nunca se ejecuta. Aun así, no se elimina sin aislar primero el estado compartido (ver punto 5).
+5. **`explorerState` (estado compartido, MIXED)** — objeto definido en `dashboard.page.js` que mezcla subcampos de la navegación antigua (punto 4, inactivos) con subcampos que Biblioteca sigue consumiendo por `window` (`progress`, `examPreview`, `listaCotejoPreview`, `confirmDelete`). No es "todo legado" ni "todo activo": es un solo objeto con partes de ambos.
+6. **Código legacy confirmado** (`LEGACY_CONFIRMED`) — evidencia directa de que no tiene consumidores alcanzables (p. ej. ramas `if (!window.BIBLIOTECA_MODE)`, páginas `batch.html`/`planeacion.html` que solo redirigen). Documentado, no eliminado todavía.
+7. **Código posiblemente no utilizado / compatibilidad temporal** — dos cosas distintas entre sí: "posiblemente no utilizado" es una sospecha con evidencia parcial que requiere verificación en runtime antes de tocar (ver `docs/refactor/FRONTEND_AUDIT.md` sección 9); "compatibilidad temporal" es código que sí se usa hoy, pero solo como puente hacia una versión futura (wrapper), y debe conservarse hasta confirmar que ya no tiene consumidores.
+
+Regla derivada: **no clasificar ni actuar sobre código solo por encontrar las palabras "plantel/grado/materia/unidad/jerarquía"**. Siempre verificar a cuál de los 7 conceptos pertenece ese código específico antes de decidir algo.
+
+---
+
 ## 3. Regla principal
 
 Durante el refactor, preservar comportamiento antes que mejorar diseño interno.
@@ -116,6 +132,29 @@ Toda referencia a jerarquías debe clasificarse antes de tocarse:
 - `UNKNOWN`: uso no confirmado.
 
 Solo se puede eliminar código marcado como `LEGACY_CONFIRMED`.
+
+---
+
+## 5.1 Reglas endurecidas (auditoría 2026-07-07/08)
+
+Estas reglas son de cumplimiento obligatorio para cualquier sesión de Codex/IA que toque este repositorio, además de todo lo demás en este archivo:
+
+1. **No asumir que un archivo es legacy solo por su nombre o por estar en una carpeta antigua.** Verificar si carga desde algún `<script>` real (`docs/FRONTEND_MAP.md`) y si tiene consumidores confirmados (`docs/refactor/LEGACY_HIERARCHY.md`).
+2. **No asumir que una función es "unused" solo porque no aparece en una búsqueda simple.** Repetir la búsqueda con: grep en todo `js/**/*.js`, grep en todo `pages/**/*.html` y `components/**/*.html`, búsqueda de `data-*-action` que la dispare, y verificación de `window.<nombre>`. Ver metodología en `docs/refactor/FRONTEND_AUDIT.md` sección 9.
+3. **No eliminar código jerárquico sin verificar primero a cuál de los 7 conceptos de la sección 2.1 pertenece** (modelo técnico, Archivados, navegación visual antigua, etc.).
+4. **No tocar `js/ui/wordExport.js` sin autorización explícita del usuario.** Está marcada como zona protegida (ver `ai-context/07-known-bugs-and-decisions.md`).
+5. **No tocar payloads de generación de exámenes sin autorización explícita.** Esto incluye no cambiar `unidad_id`, `planeacion_ids`, `tema_ids` ni la relación entre ellos — el código actual ya documenta (comentario en `biblioteca.page.js:2296-2299`) que `planeacion_ids` es la fuente confiable y `unidad_id` puede estar desactualizado; preservar esa relación tal cual.
+6. **No modificar la lógica real de generación con IA durante sesiones de extracción/refactor estructural** (regla ya existente en sección 16, reafirmada aquí porque es la que más se ha ignorado en auditorías previas).
+7. **No agregar nuevas propiedades a `window` salvo como wrapper temporal documentado.** Cada wrapper temporal nuevo debe llevar un comentario en el propio código con: fecha de creación, motivo, y qué archivo lo consume. Ejemplo:
+   ```js
+   // wrapper temporal — creado 2026-07-08 — mantiene compatibilidad con biblioteca.page.js
+   // hasta que se confirme que ya no llama a window.downloadExamWord directamente
+   window.downloadExamWord = (...args) => window.ExamenesDownload.downloadWord(...args);
+   ```
+8. **No cambiar comportamiento visual durante un refactor** (ya cubierto en sección 17, reafirmado).
+9. **No mezclar refactor con corrección de bugs.** Si se encuentra un bug durante una sesión de refactor, documentarlo (en `SESSION_HANDOFF.md` y, si aplica, en `docs/refactor/FRONTEND_AUDIT.md`) y pedir una sesión separada — salvo que el bug bloquee físicamente completar el objetivo de la sesión actual, en cuyo caso se corrige lo mínimo indispensable y se documenta como excepción.
+10. **Toda sesión debe actualizar `docs/refactor/SESSION_HANDOFF.md` al terminar**, incluso si la sesión fue solo de documentación.
+11. **Lectura obligatoria antes de tocar código** (además de lo listado en la sección 21): `docs/refactor/AI_AGENT_RULES.md` (checklist operativo) y `docs/refactor/REFACTOR_PLAYBOOK.md` (método de extracción con ejemplos concretos de este proyecto).
 
 ---
 
@@ -539,23 +578,25 @@ Después de cada cambio, validar como mínimo:
 
 ## 21. Archivos de documentación obligatorios
 
-Antes de iniciar una modificación grande, leer cuando existan:
+Antes de iniciar una modificación grande, leer en este orden:
 
-- `README.md`
-- `AGENTS.md`
-- `docs/ARCHITECTURE.md`
-- `docs/FRONTEND_MAP.md`
-- `docs/refactor/FRONTEND_AUDIT.md`
-- `docs/refactor/CURRENT_BEHAVIOR.md`
-- `docs/refactor/REFACTOR_RULES.md`
-- `docs/refactor/LEGACY_HIERARCHY.md`
-- `docs/refactor/TEST_MATRIX.md`
-- `docs/refactor/DECISIONS.md`
-- `docs/refactor/SESSION_HANDOFF.md`
+1. `README.md`
+2. `AGENTS.md` (este archivo, completo, incluyendo sección 2.1 "Conceptos que NO deben confundirse")
+3. `docs/ARCHITECTURE.md`
+4. `docs/FRONTEND_MAP.md`
+5. `docs/refactor/FRONTEND_AUDIT.md`
+6. `docs/refactor/CURRENT_BEHAVIOR.md`
+7. `docs/refactor/LEGACY_HIERARCHY.md`
+8. `docs/refactor/REFACTOR_BACKLOG.md`
+9. `docs/refactor/TEST_MATRIX.md`
+10. `docs/refactor/AI_AGENT_RULES.md` (checklist operativo por sesión)
+11. `docs/refactor/REFACTOR_PLAYBOOK.md` (método de extracción con ejemplos)
+12. `docs/refactor/GLOSSARY.md` (términos del dominio, consultar ante cualquier ambigüedad)
+13. `docs/refactor/SESSION_HANDOFF.md` (estado de la última sesión)
 
-Si alguno no existe, no inventar su contenido.
+Si alguno no existe, no inventar su contenido. Indicar que falta y continuar únicamente si la tarea puede hacerse con seguridad.
 
-Indicar que falta y continuar únicamente si la tarea puede hacerse con seguridad.
+`docs/refactor/REFACTOR_RULES.md` y `docs/refactor/DECISIONS.md`, mencionados en versiones anteriores de esta lista, no existen en el repositorio — no se inventó su contenido. Si una sesión futura los necesita, debe crearlos explícitamente y documentar por qué.
 
 ---
 

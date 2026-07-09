@@ -11,6 +11,31 @@
 
 No se debe clasificar código como legado solo por usar las palabras "plantel/grado/materia/unidad". Cada bloque se evalúa por evidencia de alcanzabilidad real.
 
+## Conceptos que NO deben confundirse
+
+Versión resumida de `AGENTS.md` sección 2.1 (esa es la fuente canónica; si difieren, gana `AGENTS.md`):
+
+- **Biblioteca vigente** — flujo activo real, no jerárquico en su UI.
+- **Modelo jerárquico técnico** — `jerarquia.api.js`/`jerarquia.service.js`, ACTIVE, soporta Archivados y creación técnica de bloques.
+- **Página Archivados** — ACTIVE pero oculta de la navegación (no confundir "oculta" con "legado").
+- **Navegación jerárquica visual antigua del dashboard** — mayormente LEGACY_CONFIRMED, inalcanzable por `BIBLIOTECA_MODE` siempre `true`.
+- **`explorerState` completo** — MIXED, no clasificar como bloque único.
+- **Código legacy confirmado** — evidencia directa de cero consumidores alcanzables.
+- **Código posiblemente no utilizado / compatibilidad temporal** — sospecha con evidencia parcial (requiere verificación runtime) vs. puente activo hacia el futuro (wrapper) — no son lo mismo.
+
+### Tabla de decisión rápida
+
+| Concepto | Estado | Se puede eliminar ahora | Motivo |
+|---|---|---|---|
+| Modelo/API jerárquico (`jerarquia.api.js`, `jerarquia.service.js`) | ACTIVE / COMPATIBILITY | No | Puede seguir soportando Archivados, creación técnica o relaciones de datos |
+| Página Archivados (`archivados.html`, `archivados.page.js`) | ACTIVE pero oculta | No | Usa estructura jerárquica para restaurar/eliminar ramas; oculta de navbar, no de código |
+| Navegación visual jerárquica antigua en dashboard (árbol/breadcrumbs/niveles) | LEGACY_CANDIDATE / LEGACY_CONFIRMED parcial | No todavía | Primero hay que separar estado compartido (`explorerState`) de estado exclusivo de la navegación visual |
+| `explorerState` completo | MIXED | No | Algunas partes (`progress`, `examPreview`, `listaCotejoPreview`, `confirmDelete`) son activas para Biblioteca |
+| Render de árbol/sidebar legado (`renderSidebarTree`, `renderRootLevel`...) | LEGACY_CONFIRMED probable | No todavía | Requiere verificación runtime final (Etapa 8 de `REFACTOR_BACKLOG.md`) |
+| `jerarquia.api.js` | ACTIVE | No | API técnica usada por servicios y Archivados |
+| `jerarquia.service.js` | ACTIVE | No | Servicio técnico usado por dashboard/archivados |
+| `unidad_id` (campo en payload de examen) | COMPATIBILITY / ACTIVE | No | Todavía se envía en algunos payloads, aunque `planeacion_ids` sea la fuente más confiable para exámenes (ver comentario en código, `biblioteca.page.js:2296-2299`) |
+
 ---
 
 ## A. Código en `dashboard.page.js`

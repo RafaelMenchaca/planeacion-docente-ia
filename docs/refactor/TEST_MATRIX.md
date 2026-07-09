@@ -9,7 +9,7 @@
 | Landing carga | Abrir `index.html` | Navbar/footer públicos inyectados, sin errores en consola |
 | Login | Abrir `pages/login.html`, ingresar credenciales válidas | Redirige a `pages/dashboard.html` |
 | Login credenciales inválidas | Ingresar credenciales incorrectas | Mensaje de error visible, sin redirect |
-| Dashboard carga | Iniciar sesión y llegar a `pages/dashboard.html` | Vista de Biblioteca visible (sidebar + panel de detalle), sin error de consola, `window.BIBLIOTECA_MODE === true` |
+| Dashboard carga | Iniciar sesión y llegar a `pages/dashboard.html` | Vista de Biblioteca visible (sidebar + panel de detalle), sin error de consola, `window.BIBLIOTECA_MODE === true`; **no** debe aparecer ningún árbol/breadcrumb de la navegación jerárquica visual antigua |
 | Biblioteca — apertura de bloque | Click en un item del sidebar | Panel de detalle cambia sin recargar toda la lista del sidebar (verificar en Network que no hay petición GET de conjuntos completa, solo el cambio de clase activa) |
 | Biblioteca — cambio de tabs | Click en cada uno de los 4 tabs (Planeaciones, Anexos, Listas, Exámenes) | Contenido cambia, conteos correctos, sin perder la selección de bloque |
 | Logout | Click en cerrar sesión | Redirige a login, sesión invalidada (`onAuthStateChange` SIGNED_OUT dispara toast) |
@@ -58,6 +58,7 @@
 | Generación | Confirmar generación | Job creado (`job_id` recibido), card pendiente con mensaje "Iniciando..." |
 | Polling | Durante generación | Cada ~3s el mensaje se actualiza con `current_step`; verificar en Network que las llamadas a `/api/examenes/generacion/{jobId}` ocurren cada ~3000ms, máximo 60 veces |
 | Uso de temas correctos | Generar examen seleccionando planeaciones específicas | El backend debe usar los temas de esas planeaciones, no depender de `unidad_id` del batch (ver nota en `CURRENT_BEHAVIOR.md` sección 5) |
+| Payload conceptual correcto | Inspeccionar el payload enviado a `POST /api/examenes/generate` (Network tab) | Debe incluir `planeacion_ids` como selección real (fuente confiable); `unidad_id` puede seguir presente pero no debe ser la única fuente de temas. **No cambiar esta relación** entre `unidad_id`/`planeacion_ids`/`tema_ids` sin autorización explícita (`AGENTS.md` sección 5.1) |
 | Preview | Click en "Ver" de un examen completado | Modal correcto (delegado a `dashboard.page.js` vía `window.renderExamPreviewModal`) |
 | Descarga | Click en "Descargar" | Archivo `.doc` correcto, con orden de respuestas barajado de forma determinista (mismo seed → mismo orden) |
 | Eliminación | Eliminar un examen | Desaparece de la lista tras confirmación |
@@ -71,6 +72,16 @@
 | Árbol de ramas archivadas | Ver árbol jerárquico | Estructura plantel→grado→materia→unidad→planeación correcta |
 | Restaurar | Restaurar un elemento archivado | Vuelve a aparecer en Biblioteca/dashboard |
 | Eliminación permanente | Eliminar permanentemente | Confirmación con advertencia, elemento desaparece definitivamente |
+
+## Código legacy
+
+| Caso | Pasos | Resultado esperado |
+|---|---|---|
+| `pages/batch.html` redirige | Navegar manualmente a `pages/batch.html` | Redirige inmediatamente a `pages/dashboard.html` sin cargar ningún script adicional |
+| `pages/planeacion.html` redirige | Navegar manualmente a `pages/planeacion.html` | Mismo comportamiento de redirect |
+| Archivados sigue abriendo directo por URL | Navegar manualmente a `pages/archivados.html` (sin link en navbar) | Carga y funciona igual que antes de cualquier cambio |
+| Estructura de Archivados no se rompió | Ver árbol de ramas archivadas tras cualquier cambio en `dashboard.page.js`/`jerarquia.api.js` | Estructura plantel→grado→materia→unidad→planeación intacta, restaurar/eliminar permanente siguen funcionando |
+| Navegación visual jerárquica antigua sigue sin aparecer | Cargar `pages/dashboard.html` normalmente | No debe aparecer ningún árbol/breadcrumb de plantel→grado→materia→unidad en pantalla — solo la UI de Biblioteca (sidebar + tabs) |
 
 ## Consola y red
 

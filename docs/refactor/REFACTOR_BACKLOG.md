@@ -1,181 +1,207 @@
 # REFACTOR_BACKLOG.md — Backlog propuesto de sesiones futuras
 
-> Propuesta de orden de extracción. No se implementó nada de esto en esta sesión. Filosofía obligatoria (de `AGENTS.md`): documentar → crear pruebas/validaciones → extraer literalmente → mantener compatibilidad → validar → eliminar duplicados después → eliminar legado al final.
-
-Cada etapa está pensada para caber en una sola sesión de refactor (regla 19 de `AGENTS.md`: alcance concreto, no "refactorizar todo").
+> Propuesta de orden de extracción. No se implementó nada de esto en ninguna sesión de auditoría/documentación. Filosofía obligatoria (de `AGENTS.md`): documentar → crear pruebas/validaciones → extraer literalmente → mantener compatibilidad → validar → eliminar duplicados después → eliminar legado al final.
+>
+> **El backlog NO empieza con eliminación de legado.** Empieza con las extracciones de menor riesgo (preview/descarga, que son de solo-lectura de datos ya generados) y termina con la eliminación controlada, solo después de aislar y validar en runtime. Cada sesión debe caber en un solo alcance concreto (regla 19 de `AGENTS.md`).
 
 ---
 
-## Etapa 1 — Confirmar en runtime los hallazgos de código muerto de menor riesgo
+## Sesión 1 — Extraer preview y descarga de exámenes
 
-**Objetivo:** validar con DevTools (no solo lectura estática) los elementos ya identificados con confianza Alta en `FRONTEND_AUDIT.md` sección 9, antes de tocar nada.
+**Objetivo:** sacar de `dashboard.page.js` las funciones de render/cierre del modal de preview de examen (`window.renderExamPreviewModal`, `window.closeExamPreviewModal`) y de descarga (`window.downloadExamWord`) a un módulo de feature dedicado, manteniendo wrappers globales. No tocar generación ni polling.
 
-**Archivos involucrados:** `biblioteca.page.js` (`isBibliotecaTechnicalUnidad`, `getFilteredConjuntos`, `expandedIds`/`toggle-expand`, `bibRegenerarAnexo`/`regenerar-anexo`), `pages/batch.html`, `pages/planeacion.html`, `pages/dashboard_tailwind.html`.
+**Archivos permitidos:**
+- `js/pages/dashboard.page.js` (solo las funciones de preview/descarga de examen, no otras secciones)
+- nuevo módulo `js/features/examenes/exam-preview.js` y/o `js/features/examenes/exam-download.js`
+- `pages/dashboard.html` (solo si es necesario agregar un `<script>` nuevo, respetando el orden documentado en `docs/FRONTEND_MAP.md`)
+- documentación (`SESSION_HANDOFF.md`, este backlog)
 
-**Funciones candidatas:** ninguna función se toca en esta etapa — es solo verificación (abrir la app, buscar en consola/Network si algo referencia estos nombres, confirmar que `pages/batch.html`/`pages/planeacion.html` en efecto redirigen siempre).
+**Archivos prohibidos:**
+- backend, SQL
+- `js/ui/wordExport.js` (salvo autorización explícita)
+- `js/pages/biblioteca.page.js`, salvo que sea estrictamente necesario para actualizar una referencia y quede documentado por qué el wrapper no bastó
 
-**Riesgo:** Muy bajo (no se modifica código).
+**Funciones candidatas:** ver `docs/refactor/REFACTOR_PLAYBOOK.md` Ejemplo A y B para wrappers concretos y líneas exactas.
+
+**Riesgo:** Bajo — consumidor acotado y confirmado (solo `biblioteca.page.js`), no toca payload ni polling.
 
 **Dependencias:** ninguna.
 
-**Validaciones necesarias:** navegar la app real, confirmar en consola del navegador que no hay errores al no usar estas funciones; confirmar que ningún flujo de usuario visible dispara `toggle-expand` o `regenerar-anexo`.
+**Validaciones necesarias:** generar un examen, abrir preview, descargar, confirmar mismo contenido/formato/orden de respuestas que antes; `npm test`.
 
-**Criterio de finalización:** lista confirmada de "seguro eliminar" vs "requiere más evidencia", documentada como actualización de `FRONTEND_AUDIT.md`.
+**Criterio de finalización:** `window.renderExamPreviewModal`/`closeExamPreviewModal`/`downloadExamWord` siguen respondiendo igual desde `biblioteca.page.js` sin cambios en ese archivo; comportamiento visual idéntico confirmado manualmente.
 
-**Wrappers de compatibilidad:** no aplica (etapa de solo verificación).
-
----
-
-## Etapa 2 — Eliminar páginas y archivos JS completamente muertos
-
-**Objetivo:** remover del árbol activo los archivos que ya no cargan ningún HTML: `js/planeacion.js` (dejar solo si `tests/planeacion.test.js` sigue dependiendo de él — revisar primero), `js/pages/planeacion.page.js`, `js/pages/batch.page.js`, `js/ui/planeacion.ui.js`, `js/ui/batch.ui.js`, `js/ui/dashboard.ui.js`, `js/pages/dashboard-tailwind.page.js`, y las páginas `pages/batch.html`, `pages/planeacion.html`, `pages/dashboard_tailwind.html`.
-
-**Archivos involucrados:** los listados arriba.
-
-**Funciones candidatas:** archivos completos, no funciones individuales.
-
-**Riesgo:** Bajo — confirmado por dos fuentes independientes (grep de referencias entrantes + lectura de los HTML) que no hay ningún `<script>` que los cargue.
-
-**Dependencias:** Etapa 1 (confirmación en runtime), y confirmar que `tests/planeacion.test.js` no rompe si se toca `js/planeacion.js` (si depende de él, mantenerlo solo como fixture de test, documentando por qué).
-
-**Validaciones necesarias:** `npm test` después del cambio; navegar manualmente `pages/batch.html` y `pages/planeacion.html` para confirmar que el redirect sigue funcionando; grep final de que ningún otro archivo referencia los nombres de función eliminados.
-
-**Criterio de finalización:** `npm test` verde, navegación manual sin errores de consola, cero referencias residuales.
-
-**Wrappers de compatibilidad:** no se requieren — son archivos sin consumidores.
+**Commit sugerido:** `refactor(exams): extract preview and download rendering to feature module`
 
 ---
 
-## Etapa 3 — Extraer helper compartido de "eliminar recurso de Biblioteca"
+## Sesión 2 — Extraer preview y descarga de listas de cotejo
 
-**Objetivo:** unificar el patrón de 5 pasos repetido en `bibEliminarBloque`/`bibEliminarPlaneacion`/`bibEliminarExamen`/`bibEliminarLista`/`bibEliminarAnexo` (`biblioteca.page.js:2911-3094`) en una función parametrizada, sin cambiar ningún mensaje visible ni contrato de API.
+**Objetivo:** mismo tratamiento que la Sesión 1, aplicado a `window.renderListaCotejoPreviewModal`/`window.closeListaCotejoPreview` y a la descarga de lista de cotejo (`window.descargarListaCotejoWord`, si su definición real está en `dashboard.page.js`/`wordExport.js` — confirmar ubicación exacta antes de mover, ver pregunta abierta en `SESSION_HANDOFF.md`).
 
-**Archivos involucrados:** `js/pages/biblioteca.page.js` únicamente.
+**Archivos permitidos:** análogos a Sesión 1, dominio "listas de cotejo".
 
-**Funciones candidatas:** las 5 funciones de eliminación listadas.
+**Archivos prohibidos:** iguales a Sesión 1.
 
-**Riesgo:** Bajo — mismo contrato de API confirmado en las 5, mismos pasos, sin lógica condicional divergente relevante encontrada en la auditoría.
+**Funciones candidatas:** las listadas en `docs/refactor/FRONTEND_AUDIT.md` sección 4 para lista de cotejo.
 
-**Dependencias:** ninguna (no toca `dashboard.page.js`).
+**Riesgo:** Bajo, mismo argumento que Sesión 1.
 
-**Validaciones necesarias:** eliminar un item de cada uno de los 5 tipos manualmente en la app y confirmar: mensaje de confirmación idéntico al actual, mismo comportamiento de error, mismo refresh de card/lista, sin peticiones duplicadas en Network.
+**Dependencias:** ninguna (puede hacerse en paralelo o después de la Sesión 1, no depende de ella).
 
-**Criterio de finalización:** las 5 funciones delegan al helper compartido; comportamiento visible idéntico confirmado manualmente; `npm test` verde.
+**Validaciones necesarias:** generar lista de cotejo, abrir preview, descargar, confirmar prevención de duplicados intacta (checkboxes deshabilitados); `npm test`.
 
-**Wrappers de compatibilidad:** no se requieren (funciones internas del archivo, no expuestas en `window` individualmente más que como parte del switch de `onBibliotecaClick`).
+**Criterio de finalización:** mismo criterio que Sesión 1, aplicado a listas de cotejo.
+
+**Commit sugerido:** `refactor(checklists): extract preview and download rendering to feature module`
 
 ---
 
-## Etapa 4 — Extraer polling de examen a función reutilizable con cancelación
+## Sesión 3 — Normalizar helpers de descarga sin cambiar formato
 
-**Objetivo:** sacar el bucle de polling de `submitBibliotecaExamModal` (`biblioteca.page.js:2327-2365`) a una función independiente que acepte un mecanismo de cancelación (flag o `AbortController`), preservando exactamente el intervalo (3000ms), el máximo de intentos (60) y los mensajes de error actuales. Aplicar el mismo tratamiento al polling equivalente de `dashboard.page.js` (`waitForExamGenerationCompletion:2009-2041`) si el diagnóstico de la Etapa 1 confirma que ese flujo sigue siendo alcanzable.
+**Objetivo:** documentar exhaustivamente (no unificar todavía) las distintas implementaciones de sanitización de nombre de archivo y descarga de blob (`shared.ui.js`, `wordExport.js`, `detalle.page.js`, y las ya movidas en Sesiones 1-2), con ejemplos de entrada/salida reales, como paso previo a decidir si conviene unificar. Solo tras confirmar equivalencia funcional se puede crear un helper compartido, preservando MIME type, extensión y nombre exactos por tipo de documento.
 
-**Archivos involucrados:** `js/pages/biblioteca.page.js`, posiblemente `js/pages/dashboard.page.js` (evaluar por separado).
+**Archivos permitidos:** `js/ui/shared.ui.js`, `js/ui/wordExport.js` (solo con autorización explícita), `js/pages/detalle.page.js`, los módulos nuevos de la Sesión 1-2, documentación.
+
+**Archivos prohibidos:** backend, SQL, cualquier archivo que cambie el nombre de descarga visible sin autorización.
+
+**Riesgo:** Bajo si se limita a documentar; Medio si además se unifica (requiere autorización para tocar `wordExport.js`).
+
+**Dependencias:** Sesiones 1 y 2 (para tener las funciones de examen/lista ya en su módulo destino antes de tocar sus descargas).
+
+**Validaciones necesarias:** descargar cada tipo de documento y comparar contra el comportamiento previo.
+
+**Criterio de finalización:** tabla de comparación entrada→salida documentada en `docs/refactor/FRONTEND_AUDIT.md`; si se unifica, un solo helper compartido con wrapper de compatibilidad.
+
+**Commit sugerido:** `docs(refactor): document download filename sanitization implementations` (o `refactor(downloads): unify blob download helper` si se llega a unificar)
+
+---
+
+## Sesión 4 — Aislar polling de examen
+
+**Objetivo:** extraer el bucle de polling de `submitBibliotecaExamModal` (`biblioteca.page.js:2327-2365`) y de `waitForExamGenerationCompletion` (`dashboard.page.js:1995-2041`, si sigue siendo alcanzable según la Sesión 8) a una función reutilizable con mecanismo de cancelación explícito, sin cambiar endpoint, payload, intervalo (3000ms), máximo de intentos (60) ni mensajes.
+
+**Archivos permitidos:** `js/pages/biblioteca.page.js`, posiblemente `js/pages/dashboard.page.js` (evaluar por separado, no en la misma sesión si ambos requieren cambios no triviales).
+
+**Archivos prohibidos:** backend, SQL, cualquier endpoint de examen.
 
 **Funciones candidatas:** `submitBibliotecaExamModal` (extraer su IIFE de polling), `waitForExamGenerationCompletion`.
 
-**Riesgo:** Medio-Alto — es lógica de generación (regla 16 de `AGENTS.md`: "no cambiar la lógica de generación durante un refactor estructural"). Esta etapa debe limitarse estrictamente a *extraer* y *añadir cancelación*, sin tocar condiciones de finalización, intervalos ni mensajes.
+**Riesgo:** Medio-Alto — es lógica de generación (`AGENTS.md` sección 16 y 5.1). Limitarse estrictamente a extraer y añadir cancelación.
 
-**Dependencias:** Etapa 3 completada (para tener el archivo ya más ordenado).
+**Dependencias:** Sesión 1 completada (preview de examen ya extraído, contexto más ordenado).
 
-**Validaciones necesarias:** generar un examen y confirmar que el polling funciona igual; cerrar el modal/navegar fuera a mitad de polling y confirmar que ya no sigue llamando a la API en Network; generar dos exámenes seguidos para el mismo bloque y confirmar que no hay condición de carrera visible.
+**Validaciones necesarias:** generar examen y confirmar polling idéntico; navegar fuera a mitad de polling y confirmar que ya no sigue llamando a la API (Network tab); generar dos exámenes seguidos para el mismo bloque sin condición de carrera visible.
 
-**Criterio de finalización:** polling cancelable confirmado en Network tab, sin cambios en mensajes ni tiempos, `npm test` verde.
+**Criterio de finalización:** polling cancelable confirmado en Network, sin cambios en mensajes/tiempos/payload.
 
-**Wrappers de compatibilidad:** ninguno necesario si se mantiene dentro del mismo archivo.
-
----
-
-## Etapa 5 — Centralizar sanitización de nombre de archivo y descarga de blob (solo lectura de comportamiento, sin unificar aún)
-
-**Objetivo:** documentar exhaustivamente las 3 implementaciones de sanitización de nombre (`shared.ui.js`, `wordExport.js`, `detalle.page.js`) con ejemplos de entrada/salida reales, como paso previo a decidir cuál es la canónica. **No modificar código en esta etapa** — es investigación dirigida a decidir la Etapa 6.
-
-**Archivos involucrados:** `js/ui/shared.ui.js`, `js/ui/wordExport.js`, `js/pages/detalle.page.js` (solo lectura).
-
-**Riesgo:** Ninguno (etapa de documentación).
-
-**Dependencias:** ninguna.
-
-**Validaciones necesarias:** ninguna (no hay cambio de código).
-
-**Criterio de finalización:** tabla de comparación entrada→salida para casos reales (nombres con acentos, espacios, caracteres especiales) añadida a `FRONTEND_AUDIT.md`.
+**Commit sugerido:** `refactor(exams): extract cancellable polling for generation status`
 
 ---
 
-## Etapa 6 — Unificar descarga de blob (Word/Excel) tras validar Etapa 5
+## Sesión 5 — Aislar generación de anexos
 
-**Objetivo:** crear un único helper de "generar y descargar documento desde HTML/Blob", preservando MIME type, extensión y comportamiento de descarga exactos por tipo de documento. Mantener wrapper de compatibilidad si alguna función sigue expuesta en `window`.
+**Objetivo:** extraer el loop secuencial de generación de anexos (`submitBibliotecaAnexoCreateModal`, `biblioteca.page.js:1414-1537`) a una función independiente, preservando el feedback en tiempo real card-por-card y el orden secuencial (no paralelo) de las llamadas a `/api/anexos/generate`.
 
-**Archivos involucrados:** `js/ui/wordExport.js`, `js/pages/biblioteca.page.js` (`descargarAnexoWord`, `bibDescargarPlaneacion`), `js/pages/detalle.page.js` (`exportarExcelActual`).
+**Archivos permitidos:** `js/pages/biblioteca.page.js`, nuevo módulo `js/features/anexos/anexos-generation.js`.
 
-**Funciones candidatas:** las funciones de descarga listadas en `FRONTEND_AUDIT.md` sección 7.
+**Archivos prohibidos:** backend, SQL, endpoint de anexos.
 
-**Riesgo:** Medio — `wordExport.js` está marcada como "zona protegida" en `ai-context/07-known-bugs-and-decisions.md`; requiere autorización explícita antes de tocar.
+**Riesgo:** Medio — mezcla estado, render por iteración y llamada API; requiere cuidado para no romper el feedback en tiempo real.
 
-**Dependencias:** Etapa 5, y autorización explícita para tocar `wordExport.js`.
+**Dependencias:** Sesiones 1-2 completadas.
 
-**Validaciones necesarias:** descargar cada tipo de documento (planeación, anexo, lista de cotejo, examen, Excel) y comparar el archivo resultante byte a byte o al menos visualmente contra el comportamiento previo.
+**Validaciones necesarias:** generar anexos para 2+ planeaciones simultáneamente y confirmar que las cards se actualizan una por una, en el mismo orden, con el mismo comportamiento ante error parcial.
 
-**Criterio de finalización:** un solo helper compartido, mismo nombre de archivo/extensión/contenido confirmado para los 5 tipos de descarga, wrapper de compatibilidad documentado si aplica.
+**Criterio de finalización:** mismo comportamiento visual confirmado, llamadas API siguen siendo secuenciales.
 
-**Wrappers de compatibilidad:** sí, si `descargarWord`/`descargarListaCotejoWord` siguen siendo llamadas desde `window` por otro archivo.
+**Commit sugerido:** `refactor(attachments): extract sequential generation loop`
 
 ---
 
-## Etapa 7 — Separar `explorerState` en sub-estados con propietario claro
+## Sesión 6 — Aislar eliminación genérica en Biblioteca
 
-**Objetivo:** dividir el objeto monolítico `explorerState` (`dashboard.page.js:1-53`) en un sub-estado exclusivo de navegación jerárquica legado y un sub-estado compartido con Biblioteca (`progress`, `examPreview`, `listaCotejoPreview`, `confirmDelete`), sin cambiar ninguna referencia externa (mantener `window.explorerState` funcionando igual mediante getters si es necesario).
+**Objetivo:** unificar el patrón de 5 pasos repetido en `bibEliminarBloque`/`bibEliminarPlaneacion`/`bibEliminarExamen`/`bibEliminarLista`/`bibEliminarAnexo` (`biblioteca.page.js:2911-3094`) en una función parametrizada, sin cambiar ningún mensaje visible ni contrato de API.
 
-**Archivos involucrados:** `js/pages/dashboard.page.js`, `js/pages/biblioteca.page.js` (solo lectura de las referencias, para no romperlas).
+**Archivos permitidos:** `js/pages/biblioteca.page.js` únicamente.
+
+**Archivos prohibidos:** todo lo demás, incluyendo `dashboard.page.js` (la eliminación de jerarquías en `submitDeleteConfirm` es un caso distinto y de mayor riesgo, no se toca en esta sesión).
+
+**Riesgo:** Bajo — mismo contrato de API confirmado en las 5 funciones.
+
+**Dependencias:** ninguna (puede hacerse en cualquier momento, incluso antes de las Sesiones 1-5).
+
+**Validaciones necesarias:** eliminar un item de cada uno de los 5 tipos manualmente y confirmar mensaje de confirmación, comportamiento de error y refresh idénticos; `npm test`.
+
+**Criterio de finalización:** las 5 funciones delegan al helper compartido; comportamiento visible idéntico.
+
+**Commit sugerido:** `refactor(biblioteca): extract shared resource deletion helper`
+
+---
+
+## Sesión 7 — Separar estado compartido `explorerState`
+
+**Objetivo:** dividir el objeto monolítico `explorerState` (`dashboard.page.js:1-53`) en un sub-estado exclusivo de navegación jerárquica visual antigua y un sub-estado compartido con Biblioteca (`progress`, `examPreview`, `listaCotejoPreview`, `confirmDelete`), sin cambiar ninguna referencia externa (`window.explorerState` debe seguir respondiendo igual).
+
+**Archivos permitidos:** `js/pages/dashboard.page.js`; lectura (no escritura) de `js/pages/biblioteca.page.js` para no romper sus referencias.
+
+**Archivos prohibidos:** todo lo demás.
 
 **Riesgo:** Alto — es el corazón del acoplamiento entre los dos archivos más grandes del proyecto.
 
-**Dependencias:** Etapas 1-2 completadas (contexto más limpio), y debe hacerse en una sesión dedicada exclusivamente a esto, sin mezclar con otras extracciones (regla 19 de `AGENTS.md`).
+**Dependencias:** Sesiones 1, 2, 4, 5, 6 completadas (contexto ya más ordenado en ambos archivos).
 
-**Validaciones necesarias:** matriz de pruebas completa (ver `TEST_MATRIX.md`), especialmente generación/preview de examen y lista de cotejo desde Biblioteca.
+**Validaciones necesarias:** matriz de pruebas completa de `docs/refactor/TEST_MATRIX.md`, especial atención a generación/preview de examen y lista de cotejo desde Biblioteca.
 
-**Criterio de finalización:** `biblioteca.page.js` sigue funcionando sin cambios en su propio código; `window.explorerState` sigue existiendo con la misma forma observable desde fuera.
+**Criterio de finalización:** `biblioteca.page.js` sigue funcionando sin ningún cambio en su propio código; `window.explorerState` sigue existiendo con la misma forma observable desde fuera.
 
-**Wrappers de compatibilidad:** obligatorio — `window.explorerState` debe seguir respondiendo igual mientras existan consumidores externos.
-
----
-
-## Etapa 8 — Aislar (no eliminar) el árbol de navegación jerárquica legado en `dashboard.page.js`
-
-**Objetivo:** mover las funciones clasificadas `LEGACY_CONFIRMED` en `LEGACY_HIERARCHY.md` sección A a un archivo separado (p. ej. `js/pages/dashboard-legacy-explorer.js`), cargado condicionalmente solo si `BIBLIOTECA_MODE` es `false`, sin eliminarlas todavía.
-
-**Archivos involucrados:** `js/pages/dashboard.page.js`, `pages/dashboard.html` (para el nuevo `<script>` condicional, si aplica).
-
-**Funciones candidatas:** todas las listadas como `LEGACY_CONFIRMED` en `LEGACY_HIERARCHY.md` sección A.
-
-**Riesgo:** Alto — tocar el archivo más grande y crítico del proyecto.
-
-**Dependencias:** Etapa 7 completada (estado ya separado).
-
-**Validaciones necesarias:** matriz de pruebas completa; confirmar que `dashboard.html` sigue cargando y funcionando idéntico en modo Biblioteca (que es el único modo real de producción hoy).
-
-**Criterio de finalización:** `dashboard.page.js` reducido significativamente en líneas; comportamiento de Biblioteca sin cambios confirmados.
-
-**Wrappers de compatibilidad:** mantener durante al menos una sesión adicional antes de considerar eliminación real.
+**Commit sugerido:** `refactor(dashboard): split explorerState into legacy-navigation and shared-with-biblioteca substates`
 
 ---
 
-## Etapa 9 — Eliminar legado confirmado (solo tras Etapa 8 validada en producción)
+## Sesión 8 — Verificación runtime de navegación jerárquica antigua
 
-**Objetivo:** eliminar definitivamente el código aislado en la Etapa 8, una vez confirmado que no tiene consumidores tras un periodo de observación.
+**Objetivo:** confirmar en navegador real (DevTools, no solo lectura estática) que los contenedores `#explorer-tree`/`#explorer-breadcrumbs`/niveles legado efectivamente no existen ni se disparan en el DOM servido por `dashboard.html` en modo Biblioteca. Aislar (no eliminar todavía) las funciones `LEGACY_CONFIRMED` de `docs/refactor/LEGACY_HIERARCHY.md` sección A en un archivo separado, cargado condicionalmente solo si `BIBLIOTECA_MODE` fuera `false`.
 
-**Riesgo:** Medio (ya aislado, pero es la eliminación final).
+**Archivos permitidos:** `js/pages/dashboard.page.js`, nuevo archivo `js/pages/dashboard-legacy-explorer.js`, `pages/dashboard.html` (script condicional).
 
-**Dependencias:** Etapa 8 validada en producción durante al menos un ciclo de uso real.
+**Archivos prohibidos:** todo lo demás.
 
-**Validaciones necesarias:** repetir matriz completa de pruebas.
+**Riesgo:** Alto — toca el archivo más grande y crítico del proyecto.
 
-**Criterio de finalización:** líneas eliminadas, `AGENTS.md`/`LEGACY_HIERARCHY.md` actualizados para reflejar la eliminación.
+**Dependencias:** Sesión 7 completada (estado ya separado).
+
+**Validaciones necesarias:** matriz de pruebas completa; confirmar que `dashboard.html` sigue funcionando idéntico en modo Biblioteca (único modo real de producción hoy).
+
+**Criterio de finalización:** `dashboard.page.js` reducido significativamente en líneas; comportamiento de Biblioteca sin cambios confirmados; evidencia runtime de que el código aislado no tiene consumidores, documentada en `docs/refactor/LEGACY_HIERARCHY.md`.
+
+**Commit sugerido:** `refactor(dashboard): isolate unreachable legacy hierarchy navigation behind explicit flag`
+
+---
+
+## Sesión 9 — Eliminación controlada de legado confirmado
+
+**Objetivo:** eliminar definitivamente el código aislado en la Sesión 8, y los fragmentos de `docs/refactor/FRONTEND_AUDIT.md` sección 9 con confianza Alta (páginas muertas `batch.html`/`planeacion.html`/`dashboard_tailwind.html` y su JS asociado; `isBibliotecaTechnicalUnidad`, `getFilteredConjuntos`, `expandedIds`/`toggle-expand`, `bibRegenerarAnexo`/`regenerar-anexo` en `biblioteca.page.js`), solo tras confirmar en producción/staging que no tienen consumidores.
+
+**Archivos permitidos:** los archivos legado confirmados listados arriba.
+
+**Archivos prohibidos:** cualquier archivo no explícitamente clasificado `LEGACY_CONFIRMED` con evidencia runtime.
+
+**Riesgo:** Medio (ya aislado y verificado, pero es la eliminación final e irreversible sin control de versiones).
+
+**Dependencias:** Sesión 8 validada, y un periodo de observación en uso real antes de eliminar.
+
+**Validaciones necesarias:** repetir matriz completa de `docs/refactor/TEST_MATRIX.md`.
+
+**Criterio de finalización:** líneas eliminadas; `AGENTS.md`, `docs/refactor/LEGACY_HIERARCHY.md` y `docs/FRONTEND_MAP.md` actualizados para reflejar la eliminación.
+
+**Commit sugerido:** `refactor(cleanup): remove confirmed dead legacy hierarchy code and orphaned pages`
 
 ---
 
 ## Fuera de alcance de este backlog (requiere decisión de producto, no solo técnica)
 
-- Recuperar el link a `pages/archivados.html` en `components/navbar.html` (está comentado) — es una decisión de producto, no de refactor.
-- Decidir si `pages/registro.html`/`recuperar.html`/`contacto.html` deben tener lógica de submit real — están fuera del alcance de "refactor sin romper comportamiento" porque hoy no tienen comportamiento funcional que preservar.
+- Recuperar el link a `pages/archivados.html` en `components/navbar.html` (está comentado) — decisión de producto, no de refactor.
+- Decidir si `pages/registro.html`/`recuperar.html`/`contacto.html` deben tener lógica de submit real — hoy no tienen comportamiento funcional que preservar.
 - Unificar formato de fechas — requiere decidir un formato canónico único, es una decisión de UX no solo técnica.
+- Confirmar la ubicación exacta de `generarPlaneacionesUnidadConProgreso` (pregunta abierta en `SESSION_HANDOFF.md`) antes de tocar generación de planeaciones en cualquier sesión futura.
