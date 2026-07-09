@@ -2,6 +2,19 @@
 
 > Describe lo que el código actual **intenta hacer**, con evidencia de archivo:línea. No es una especificación de comportamiento deseado.
 
+## Resumen rápido (para orientarse antes de leer el detalle)
+
+- **Biblioteca es el flujo activo** en producción — no la navegación jerárquica visual del dashboard (ver `docs/ARCHITECTURE.md` sección 6 y `docs/refactor/LEGACY_HIERARCHY.md`).
+- Carga de bloques → selección de bloque → 4 tabs → render parcial in-place (no recarga toda la lista al cambiar de tab/bloque).
+- Cada tipo de documento sigue: generación optimista (card temporal) → reload silencioso (`loadAndRenderBiblioteca({silent:true})`) para confirmar con datos reales del backend.
+- Previews de examen y lista de cotejo **dependen de funciones definidas en `dashboard.page.js`** (`window.renderExamPreviewModal`, `window.renderListaCotejoPreviewModal`) — Biblioteca no los renderiza por sí sola.
+- Descargas usan helpers externos (`window.obtenerPlaneacionDetalle`, `window.downloadExamWord`, `window.descargarListaCotejoWord`, definidos fuera de `biblioteca.page.js`).
+- Eliminaciones (bloque/planeación/examen/lista/anexo) repiten el mismo patrón de 5 pasos.
+- Examen: polling de hasta 60 intentos (~3 min), cada 3000ms, sin cancelación si el usuario navega fuera.
+- Lista de cotejo: sin polling, espera fija de 1500ms antes de recargar.
+- Anexos: generación secuencial en loop (uno a la vez, no en paralelo), con feedback card-por-card en tiempo real.
+- Exámenes usan `planeacion_ids` como selección confiable; `unidad_id` se sigue enviando en el payload pero el propio código documenta que puede estar desactualizado — no es la fuente principal de temas.
+
 ## 1. Flujo Biblioteca — árbol de llamadas reconstruido
 
 ```
