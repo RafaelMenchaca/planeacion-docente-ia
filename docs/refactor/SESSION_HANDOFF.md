@@ -130,3 +130,58 @@ Ningún archivo `.js`, `.html`, `.css`, backend, SQL, endpoint, payload ni confi
 ## Próxima sesión recomendada
 
 **Sesión 1 del nuevo backlog** (`docs/refactor/REFACTOR_BACKLOG.md`): extraer preview y descarga de exámenes de `dashboard.page.js` a un módulo de feature dedicado, manteniendo wrappers globales tal como se especifica en `docs/refactor/REFACTOR_PLAYBOOK.md` Ejemplo A y B. Es la extracción de menor riesgo con mayor valor porque tiene un consumidor acotado y confirmado (`biblioteca.page.js`) y no toca payload ni polling.
+
+---
+
+# Sesión 3 — Auditoría y refuerzo de observabilidad (logs)
+
+## Fecha
+
+2026-07-10
+
+## Objetivo
+
+Sesión dedicada exclusivamente a auditar los logs existentes de Educativo IA (frontend y backend) y completar únicamente los huecos, para poder seguir en terminal el ciclo completo de creación de planeaciones, anexos, listas de cotejo, exámenes (jobs/reintentos/duplicados), guardado en DB, errores, eliminaciones, acciones de Biblioteca y métricas de IA. Esta sesión **sí tocó backend** (`educativo_backend/Educativo-Backend`), autorizado explícitamente por el encargo de la sesión — es una excepción puntual a la restricción de "no modificar el backend" de `AGENTS.md` sección 4, limitada estrictamente a sentencias `console.*`, sin tocar lógica, payloads, endpoints, SQL ni comportamiento. No se refactorizó arquitectura ni se movieron funciones.
+
+## Archivos revisados (lectura completa o casi completa)
+
+Backend: `app.js`, `middleware/auth.middleware.js`, todos los `controllers/*.js`, todos los `services/*.js` (`anexos`, `biblioteca`, `examenes` completo — 2750 líneas —, `listas_cotejo`, `planeaciones` completo — 1805 líneas —, `aiMetrics`, `jerarquia` parcial).
+Frontend: `js/api/planeaciones.api.js`, `js/api/jerarquia.api.js` completos; `js/pages/biblioteca.page.js` completo (las secciones de generación, descarga, preview y eliminación); inventario por grep de `console.*` en el resto de `js/**`.
+
+## Archivos modificados
+
+Backend: `src/services/anexos.service.js`, `src/services/listas_cotejo.service.js`, `src/services/examenes.service.js`, `src/services/biblioteca.service.js`, `src/services/planeaciones.service.js`, `src/services/aiMetrics.service.js`, `src/controllers/planeaciones.controller.js`, `src/controllers/jerarquia.controller.js`.
+Frontend: `js/api/planeaciones.api.js`, `js/api/jerarquia.api.js`, `js/pages/biblioteca.page.js`.
+
+Todos los cambios son adiciones/ajustes de sentencias `console.*` (mensajes y datos que reciben), variables `startedAt`/`durationMs` derivadas, y en 2 casos (`anexos.service.js`, `planeaciones.service.js`) una variable local extra para acumular un conteo ya calculado antes de loguearlo. Ningún `throw`, `return`, condición, payload o endpoint fue modificado.
+
+## Documentos creados
+
+- `docs/observability/LOG_AUDIT.md` (en la raíz del proyecto, `educativo_ia/docs/observability/`, porque cubre frontend y backend).
+- `docs/observability/LOG_CONVENTIONS.md` (misma ubicación).
+
+## Hallazgo de seguridad/ruido corregido (el más relevante de la sesión)
+
+`generarTablaIa` (`planeaciones.service.js`) y los helpers `logPlaneacionDebug`/`debugPlaneacionRequest` (en ambos controllers de backend y en `planeaciones.api.js`/`jerarquia.api.js` del frontend) imprimían el **prompt completo enviado a OpenAI** y la **respuesta completa generada** en cada llamada de generación de planeaciones (individual y por unidad). Se corrigió en los 3 archivos backend y 2 archivos frontend, reemplazando el volcado completo por resúmenes (materia/nivel/tema/conteos/IDs). Ver detalle completo en `docs/observability/LOG_AUDIT.md` sección 4. También se recortaron 4 sitios en `examenes.service.js` que logueaban `rawResponse: rawText` (respuesta cruda de IA) ante fallos de parseo, reemplazado por `rawLength`.
+
+## Compatibilidad
+
+No se crearon wrappers nuevos ni se tocó ninguna propiedad de `window`. `debugPlaneacionRequest` (`jerarquia.api.js`) quedó definida pero sin consumidores tras el fix de logs sensibles — no se eliminó (fuera de alcance de una sesión de logs), documentado como pendiente de limpieza.
+
+## Validaciones ejecutadas
+
+`node --check` sobre los 11 archivos modificados (backend y frontend) — todos OK. `npm test` en frontend — 2/2 tests pasaron (no relacionados con los cambios; backend no tiene suite de tests configurada). `git diff --check` y `git status --porcelain` en ambos repos — sin problemas de whitespace, solo los archivos listados arriba modificados. Revisión manual del diff completo de cada archivo para confirmar que ningún `catch` dejó de re-lanzar su error.
+
+## Riesgos encontrados
+
+- No existe manejador global de errores en Express (`app.js`) ni listeners de `window.error`/`unhandledrejection` en el frontend — documentados como huecos abiertos, no implementados esta sesión (agregar cualquiera de los dos cambia comportamiento observable ante errores no capturados, fuera del alcance de "solo logs").
+- `generateExamWithIa`/`generateMissingQuestionsWithIa` (`examenes.service.js`) parecen no tener consumidores (posible código legado del flujo de examen "todo de una vez", reemplazado por el flujo por-pregunta). No se tocó su lógica, solo se corrigieron sus logs sensibles por precaución.
+- `dashboard.page.js` (el archivo más grande y crítico, 6066 líneas) no fue auditado en esta sesión — su flujo de examen "por unidad" (`waitForExamGenerationCompletion`, `submitUnitExamModal`) y su navegación jerárquica quedan pendientes para una sesión de logs separada.
+
+## Pendientes
+
+Ver sección 8 "Huecos que siguen abiertos" de `docs/observability/LOG_AUDIT.md` (6 puntos: manejador global de errores backend, listener global de errores frontend, `dashboard.page.js` sin auditar, `archivados.page.js`/`jerarquia.service.js`/`detalle.page.js` sin auditar a fondo, código posiblemente sin consumidores en `examenes.service.js`, y `debugPlaneacionRequest` sin consumidores).
+
+## Próximo paso recomendado
+
+Ejecutar la validación manual pendiente (sección 10 de `LOG_AUDIT.md`): correr el backend y el frontend localmente, realizar el ciclo completo (crear planeación → generar anexo → generar lista de cotejo → generar examen → eliminar un recurso) y confirmar que la secuencia de logs en terminal coincide con lo documentado.

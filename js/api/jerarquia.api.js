@@ -320,7 +320,10 @@ async function apiTemasDelete(id, accessToken) {
 }
 
 async function apiUnidadGenerar(unidadId, payload, accessToken) {
-  debugPlaneacionRequest(`request POST /api/unidades/${unidadId}/generar`, payload);
+  console.log("[planeaciones] generate:start", {
+    unidadId,
+    temasCount: Array.isArray(payload?.temas) ? payload.temas.length : 0
+  });
 
   const responsePayload = await requestJson(
     `${API_BASE_URL}/api/unidades/${encodeURIComponent(unidadId)}/generar`,
@@ -332,12 +335,20 @@ async function apiUnidadGenerar(unidadId, payload, accessToken) {
     "No se pudieron generar las planeaciones"
   );
 
-  debugPlaneacionRequest(`response POST /api/unidades/${unidadId}/generar`, responsePayload);
+  console.log("[planeaciones] generate:success", {
+    unidadId,
+    batchId: responsePayload?.batch_id,
+    successCount: responsePayload?.success_count
+  });
   return responsePayload;
 }
 
 async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEvent) {
-  debugPlaneacionRequest(`request POST /api/unidades/${unidadId}/generar?stream=1`, payload);
+  console.log("[planeaciones] generate:start", {
+    unidadId,
+    temasCount: Array.isArray(payload?.temas) ? payload.temas.length : 0,
+    stream: true
+  });
 
   const response = await fetch(`${API_BASE_URL}/api/unidades/${encodeURIComponent(unidadId)}/generar?stream=1`, {
     method: "POST",
@@ -357,7 +368,12 @@ async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEve
   const contentType = (response.headers.get("content-type") || "").toLowerCase();
   if (contentType.includes("application/json")) {
     const responsePayload = await parseApiJson(response);
-    debugPlaneacionRequest(`response POST /api/unidades/${unidadId}/generar?stream=1`, responsePayload);
+    console.log("[planeaciones] generate:success", {
+      unidadId,
+      batchId: responsePayload?.batch_id,
+      successCount: responsePayload?.success_count,
+      stream: true
+    });
     return responsePayload;
   }
 
@@ -412,7 +428,12 @@ async function apiUnidadGenerarConProgreso(unidadId, payload, accessToken, onEve
     throw streamError;
   }
 
-  debugPlaneacionRequest(`response POST /api/unidades/${unidadId}/generar?stream=1`, donePayload);
+  console.log("[planeaciones] generate:success", {
+    unidadId,
+    batchId: donePayload?.batch_id,
+    successCount: donePayload?.success_count,
+    stream: true
+  });
   return donePayload;
 }
 

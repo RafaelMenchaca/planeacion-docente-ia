@@ -1474,6 +1474,8 @@ async function submitBibliotecaAnexoCreateModal() {
 
     ;(async () => {
       let anySuccess = false;
+      let successCount = 0;
+      console.info("[anexos] generate:start", { batchId: conjuntoId, planeacionesCount: selectedIds.length });
 
       for (const pid of selectedIds) {
         try {
@@ -1503,6 +1505,7 @@ async function submitBibliotecaAnexoCreateModal() {
             delete bibliotecaState.anexosGenerating[conjuntoId][pid];
           }
           anySuccess = true;
+          successCount += 1;
         } catch (itemErr) {
           console.error("[biblioteca] Error generando anexo para planeacion", pid, itemErr);
           if (bibliotecaState.anexosGenerating[conjuntoId]?.[pid]) {
@@ -1520,6 +1523,12 @@ async function submitBibliotecaAnexoCreateModal() {
       if (allDone && Object.keys(remaining).length === 0) {
         delete bibliotecaState.anexosGenerating[conjuntoId];
       }
+
+      console.info("[anexos] generate:success", {
+        batchId: conjuntoId,
+        successCount,
+        totalSolicitados: selectedIds.length
+      });
 
       // Reload silencioso para confirmar datos reales del servidor
       if (anySuccess) {
@@ -1648,6 +1657,7 @@ async function bibRegenerarAnexo(anexoId, conjuntoId, planeacionId) {
 }
 
 async function bibDescargarAnexo(anexoId) {
+  console.debug("[downloads] anexo:start", { anexoId });
   try {
     const session = await window.requireSession();
     if (!session) return;
@@ -1663,8 +1673,9 @@ async function bibDescargarAnexo(anexoId) {
     if (filename === null) return;
 
     descargarAnexoWord(anexo, filename);
+    console.debug("[downloads] anexo:success", { anexoId });
   } catch (error) {
-    console.error("[biblioteca] Error descargando anexo:", error);
+    console.error("[downloads] anexo:error", { anexoId, message: error?.message });
     alert("No se pudo descargar el anexo. Intenta nuevamente.");
   }
 }
@@ -1913,6 +1924,7 @@ function renderBibliotecaAnexoModal(anexo) {
 // ---- DOWNLOAD HELPERS ----
 
 async function bibDescargarPlaneacion(planeacionId) {
+  console.debug("[downloads] planeacion:start", { planeacionId });
   try {
     const planeacion = await window.obtenerPlaneacionDetalle(planeacionId);
     if (!planeacion) {
@@ -2006,13 +2018,15 @@ async function bibDescargarPlaneacion(planeacionId) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    console.debug("[downloads] planeacion:success", { planeacionId });
   } catch (error) {
-    console.error("[biblioteca] Error descargando planeacion:", error);
+    console.error("[downloads] planeacion:error", { planeacionId, message: error?.message });
     alert("No se pudo descargar la planeacion. Intenta nuevamente.");
   }
 }
 
 async function bibDescargarExamen(examenId) {
+  console.debug("[downloads] exam:start", { examenId });
   try {
     const conjunto = bibliotecaState.conjuntos.find(c =>
       Array.isArray(c.examenes) &&
@@ -2028,12 +2042,14 @@ async function bibDescargarExamen(examenId) {
     if (typeof window.downloadExamWord === "function") {
       await window.downloadExamWord(examenId, filename);
     }
+    console.debug("[downloads] exam:success", { examenId });
   } catch (error) {
-    console.error("[biblioteca] Error descargando examen:", error);
+    console.error("[downloads] exam:error", { examenId, message: error?.message });
   }
 }
 
 async function bibDescargarLista(listaId) {
+  console.debug("[downloads] lista:start", { listaId });
   try {
     const lista = await window.obtenerListaCoTejoDetalle(listaId);
 
@@ -2047,8 +2063,9 @@ async function bibDescargarLista(listaId) {
     if (typeof window.descargarListaCotejoWord === "function") {
       window.descargarListaCotejoWord(lista, filename);
     }
+    console.debug("[downloads] lista:success", { listaId });
   } catch (error) {
-    console.error("[biblioteca] Error descargando lista:", error);
+    console.error("[downloads] lista:error", { listaId, message: error?.message });
   }
 }
 
@@ -2056,6 +2073,8 @@ async function bibDescargarLista(listaId) {
 
 async function openBibliotecaExamenPreview(examenId) {
   if (!window.explorerState) return;
+
+  console.debug("[preview] exam:open", { examenId });
 
   window.explorerState.examPreview = { open: true, examenId, loading: true, error: "" };
   if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
@@ -2067,7 +2086,7 @@ async function openBibliotecaExamenPreview(examenId) {
     window.explorerState.examPreview.loading = false;
     if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
   } catch (error) {
-    console.error("[biblioteca] Error cargando examen:", error);
+    console.error("[preview] exam:error", { examenId, message: error?.message });
     window.explorerState.examPreview.loading = false;
     window.explorerState.examPreview.error   = "No se pudo cargar el examen.";
     if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
@@ -2079,6 +2098,8 @@ async function openBibliotecaExamenPreview(examenId) {
 async function openBibliotecaListaPreview(listaId) {
   if (!window.explorerState) return;
 
+  console.debug("[preview] lista:open", { listaId });
+
   window.explorerState.listaCotejoPreview = { open: true, listaId, listaData: null, loading: true, error: "" };
   if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
 
@@ -2087,7 +2108,7 @@ async function openBibliotecaListaPreview(listaId) {
     window.explorerState.listaCotejoPreview = { open: true, listaId, listaData: lista, loading: false, error: "" };
     if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
   } catch (error) {
-    console.error("[biblioteca] Error cargando lista de cotejo:", error);
+    console.error("[preview] lista:error", { listaId, message: error?.message });
     window.explorerState.listaCotejoPreview = {
       ...window.explorerState.listaCotejoPreview,
       loading: false,
@@ -2316,6 +2337,8 @@ async function submitBibliotecaExamModal() {
     const jobId = genResponse?.job_id;
     if (!jobId) throw new Error("No se recibio job_id del servidor.");
 
+    console.info("[examenes] job:created", { jobId, batchId: payload.batch_id });
+
     // Close modal immediately — progress will show in the card
     const conjuntoId = state.conjuntoId;
     closeBibliotecaExamModal();
@@ -2325,6 +2348,7 @@ async function submitBibliotecaExamModal() {
 
     // Poll in background
     ;(async () => {
+      console.debug("[polling] examen:start", { jobId, batchId: conjuntoId });
       try {
         const POLL_MS  = 3000;
         const MAX_POLLS = 60;
@@ -2347,6 +2371,8 @@ async function submitBibliotecaExamModal() {
           }
         }
         if (polls >= MAX_POLLS) throw new Error("La generacion tardo demasiado. Intenta de nuevo.");
+
+        console.debug("[polling] examen:finished", { jobId, batchId: conjuntoId, polls });
 
         delete bibliotecaState.pendingExamenByBatchId[conjuntoId];
         await loadAndRenderBiblioteca({
@@ -2554,6 +2580,8 @@ async function submitBibliotecaListaModal() {
         const res = await apiListasCoTejoGenerate(payload, session.access_token);
         const created = res?.created ?? 0;
         const skipped = Array.isArray(res?.skipped) ? res.skipped.length : (res?.skipped ?? 0);
+
+        console.info("[listas-cotejo] generate:success", { batchId: conjuntoId, created, skipped });
 
         // Keep cards visible until real data loads (1.5s grace)
         await new Promise(r => setTimeout(r, 1500));
@@ -2926,6 +2954,7 @@ async function bibEliminarBloque(conjuntoId) {
     if (!session) return;
 
     await apiBibliotecaDeleteBloque(safeBatchId, session.access_token);
+    console.info("[biblioteca] delete:success", { resourceType: "bloque", batchId: safeBatchId });
 
     bibliotecaState.conjuntos = bibliotecaState.conjuntos.filter(
       (c) => normalizeBibliotecaId(c.id) !== safeBatchId
@@ -2963,6 +2992,7 @@ async function bibEliminarPlaneacion(planeacionId, conjuntoId) {
     if (!session) return;
 
     await apiDeletePlaneacionDirecta(safePlanId, session.access_token);
+    console.info("[biblioteca] delete:success", { resourceType: "planeacion", planeacionId: safePlanId, batchId: safeBatchId });
 
     const conjunto = bibliotecaState.conjuntos.find(
       (c) => normalizeBibliotecaId(c.id) === safeBatchId
@@ -3004,6 +3034,7 @@ async function bibEliminarExamen(examenId, conjuntoId) {
     if (!session) return;
 
     await apiDeleteExamen(safeExamenId, session.access_token);
+    console.info("[biblioteca] delete:success", { resourceType: "examen", examenId: safeExamenId, batchId: safeBatchId });
 
     const conjunto = bibliotecaState.conjuntos.find(
       (c) => normalizeBibliotecaId(c.id) === safeBatchId
@@ -3039,6 +3070,7 @@ async function bibEliminarLista(listaId, conjuntoId) {
     if (!session) return;
 
     await apiDeleteListaCotejo(safeListaId, session.access_token);
+    console.info("[biblioteca] delete:success", { resourceType: "lista_cotejo", listaId: safeListaId, batchId: safeBatchId });
 
     const conjunto = bibliotecaState.conjuntos.find(
       (c) => normalizeBibliotecaId(c.id) === safeBatchId
@@ -3074,6 +3106,7 @@ async function bibEliminarAnexo(anexoId, conjuntoId) {
     if (!session) return;
 
     await apiDeleteAnexo(safeAnexoId, session.access_token);
+    console.info("[biblioteca] delete:success", { resourceType: "anexo", anexoId: safeAnexoId, batchId: safeBatchId });
 
     const conjunto = bibliotecaState.conjuntos.find(
       (c) => normalizeBibliotecaId(c.id) === safeBatchId
