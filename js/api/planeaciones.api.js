@@ -143,7 +143,11 @@ async function apiPlaneacionesPermanentDeleteBatch(batchId, accessToken) {
 }
 
 async function apiPlaneacionesGenerate(payload, accessToken) {
-  console.log("[planeacion-debug] request POST /api/planeaciones/generate", payload);
+  console.log("[planeaciones] generate:start", {
+    temasCount: Array.isArray(payload?.temas) ? payload.temas.length : 0,
+    materia: payload?.materia,
+    nivel: payload?.nivel
+  });
 
   const res = await fetch(`${API_BASE_URL}/api/planeaciones/generate`, {
     method: "POST",
@@ -155,12 +159,20 @@ async function apiPlaneacionesGenerate(payload, accessToken) {
   });
   if (!res.ok) throw new Error("No se pudo generar la planeacion con IA");
   const responsePayload = await res.json();
-  console.log("[planeacion-debug] response POST /api/planeaciones/generate", responsePayload);
+  console.log("[planeaciones] generate:success", {
+    batchId: responsePayload?.batch_id,
+    total: responsePayload?.total
+  });
   return responsePayload;
 }
 
 async function apiPlaneacionesGenerateWithProgress(payload, accessToken, onEvent) {
-  console.log("[planeacion-debug] request POST /api/planeaciones/generate?stream=1", payload);
+  console.log("[planeaciones] generate:start", {
+    temasCount: Array.isArray(payload?.temas) ? payload.temas.length : 0,
+    materia: payload?.materia,
+    nivel: payload?.nivel,
+    stream: true
+  });
 
   const res = await fetch(`${API_BASE_URL}/api/planeaciones/generate?stream=1`, {
     method: "POST",
@@ -179,7 +191,11 @@ async function apiPlaneacionesGenerateWithProgress(payload, accessToken, onEvent
 
   if (contentType.includes("application/json")) {
     const responsePayload = await res.json();
-    console.log("[planeacion-debug] response POST /api/planeaciones/generate?stream=1", responsePayload);
+    console.log("[planeaciones] generate:success", {
+      batchId: responsePayload?.batch_id,
+      total: responsePayload?.total,
+      stream: true
+    });
     return responsePayload;
   }
 
@@ -222,7 +238,11 @@ async function apiPlaneacionesGenerateWithProgress(payload, accessToken, onEvent
   }
 
   if (donePayload) {
-    console.log("[planeacion-debug] response POST /api/planeaciones/generate?stream=1", donePayload);
+    console.log("[planeaciones] generate:success", {
+      batchId: donePayload?.batch_id,
+      total: donePayload?.total,
+      stream: true
+    });
     return donePayload;
   }
   return null;
