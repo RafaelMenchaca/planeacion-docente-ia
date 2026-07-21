@@ -1,5 +1,7 @@
 # 📦 CHANGELOG
 
+> Estado: histórico. Las entradas describen versiones en su fecha y no el flujo visual vigente. El flujo actual y único objetivo de nuevas implementaciones es Biblioteca; el explorador jerárquico descrito en versiones anteriores es legacy visual.
+
 Historial de cambios para la aplicación Educativo IA.
 
 ## [v2.0-frontend-biblioteca-workflow] - 2026-06-06

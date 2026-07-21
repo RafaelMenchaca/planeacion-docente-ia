@@ -2,93 +2,110 @@
 
 Este documento describe la arquitectura frontend observada en el código actual. Las reglas obligatorias están en [`AGENTS.md`](../AGENTS.md).
 
-## Stack
+## Regla arquitectónica central
+
+Solo existe un flujo visual principal vigente: **Biblioteca**.
+
+La jerarquía técnica puede seguir existiendo como modelo de datos, API, selector, compatibilidad o soporte de Archivados. El explorador visual jerárquico antiguo no debe mezclarse con Biblioteca ni utilizarse para nuevas implementaciones.
+
+## Stack y carpetas
 
 - HTML multipágina y JavaScript Vanilla mediante scripts clásicos.
-- CSS propio, Bootstrap 5.3.3 y Tailwind CSS mediante CDN según la página.
-- Supabase JS para autenticación y operaciones puntuales de Storage.
+- CSS propio, Bootstrap y Tailwind según la página.
+- Supabase JS para autenticación y Storage puntual.
 - API backend consumida con `fetch`.
-- Librerías puntuales cargadas por CDN, como SheetJS en la página de detalle.
-
-No hay un framework SPA ni un empaquetador de módulos. La carpeta `js/features/` no existe en el estado auditado.
-
-## Estructura de carpetas
 
 | Ruta | Responsabilidad actual |
 | --- | --- |
-| `pages/` | Páginas privadas, login, redirecciones y vistas auxiliares. |
-| `js/core/` | Configuración de API, cliente Supabase y utilidades comunes. |
-| `js/api/` | Wrappers `fetch` por recurso. |
-| `js/services/` | Orquestación de autenticación, jerarquía, planeaciones, exámenes y listas. |
-| `js/pages/` | Estado, render e inicialización específica de páginas. |
-| `js/ui/` | Componentes, modales, helpers compartidos y exportación Word. |
-| `assets/`, `css/`, `components/` | Recursos visuales, estilos y fragmentos estáticos. |
-| `tests/` | Pruebas automatizadas existentes. |
+| `pages/` | Páginas privadas, login, redirects y vistas auxiliares. |
+| `js/core/` | Configuración de API, Supabase y utilidades. |
+| `js/api/` | Wrappers HTTP por recurso. |
+| `js/services/` | Autenticación y orquestación. |
+| `js/pages/` | Estado, eventos e inicialización de páginas. |
+| `js/ui/` | Componentes, modales, helpers y descargas. |
+| `tests/` | Suite automatizada existente. |
 
-## Páginas principales
+`js/features/` no existe en el estado auditado.
 
-| Página | Scripts o función principal |
+## Flujo principal: Biblioteca
+
+`pages/dashboard.html` carga, entre otros, `dashboard.page.js`, `biblioteca.page.js` y `main.js`, en ese orden. `main.js` invoca `window.initDashboardPage()`.
+
+Como `biblioteca.page.js` ya publicó `window.initBiblioteca`, `initDashboardPage()`:
+
+1. establece `window.BIBLIOTECA_MODE = true`;
+2. inyecta el layout y componentes privados;
+3. registra los eventos compartidos;
+4. llama `window.initBiblioteca()`;
+5. retorna antes de ejecutar `hydrateExplorerData()`.
+
+Biblioteca controla el render principal: carga conjuntos, renderiza sidebar y detalle, conserva el tab por conjunto y coordina planeaciones, anexos, listas y exámenes. Toda funcionalidad visual nueva debe incorporarse a este flujo.
+
+`dashboard.page.js` todavía contiene utilidades, creación rápida, estado y previews consumidos por Biblioteca. Es deuda técnica de compatibilidad, no un segundo modo de uso. El objetivo del refactor es separar las dependencias activas y retirar gradualmente el código visual obsoleto; nunca mover lógica de Biblioteca hacia el explorador antiguo.
+
+## Páginas
+
+| Página | Clasificación |
 | --- | --- |
-| `index.html` y páginas públicas raíz | Componentes públicos y estilos Tailwind propios. |
-| `pages/login.html` | Supabase, autenticación, UI compartida, `login.page.js` y `main.js`. |
-| `pages/dashboard.html` | Configuración, Supabase/Auth, APIs, services, UI, `dashboard.page.js`, `biblioteca.page.js` y `main.js`, en ese orden. |
-| `pages/archivados.html` | Jerarquía y planeaciones, componentes privados, `archivados.page.js` y `main.js`. |
-| `pages/detalle.html` | Biblioteca/planeaciones, Storage, exportación Word, UI y página de detalle. |
-| `pages/batch.html`, `pages/planeacion.html` | Redirigen actualmente a `dashboard.html`. |
-| `pages/dashboard_tailwind.html` | Vista alternativa con un conjunto propio de scripts; no se asume obsoleta por su nombre. |
+| `pages/dashboard.html` | Contenedor vigente de Biblioteca. |
+| `pages/detalle.html` | Flujo auxiliar vigente para planeaciones. |
+| `pages/archivados.html` | Flujo separado; puede usar jerarquía técnica. |
+| `pages/batch.html`, `pages/planeacion.html` | Redirects históricos. |
+| `pages/dashboard_tailwind.html` | Histórica/por confirmar; no activar ni eliminar sin auditoría. |
 
-Los HTML no contienen handlers inline en el estado auditado. Los atributos `data-*` y listeners creados desde JavaScript siguen siendo consumidores que deben buscarse antes de extraer o retirar funciones.
+## Código legacy y compatibilidad
 
-## Flujo de inicio
+| Área | Estado | Regla |
+| --- | --- | --- |
+| Explorador visual jerárquico del dashboard | Legacy visual | No recibir funciones nuevas ni convertirse en arquitectura objetivo. |
+| `explorerState` | Mixto | Separar consumidores; no eliminar como bloque. |
+| Wrappers `window.*` | Compatibilidad activa | Mantener hasta migrar y verificar consumidores. |
+| Estado y helpers compartidos de Dashboard | Compartidos activos/por clasificar | Extraer hacia Biblioteca modular sin cambiar contratos. |
+| Archivados | Activo separado | Mantener sus dependencias mientras tenga consumidores. |
+| Páginas históricas | Por confirmar | No activar ni eliminar sin evidencia. |
+| Endpoints jerárquicos | Jerarquía técnica | No confundir con soporte al explorador visual antiguo. |
 
-1. `js/core/config.js` publica `window.API_BASE_URL`: usa el backend local en `localhost`/`127.0.0.1` y la API de producción en otros hosts.
-2. El CDN de Supabase carga antes de `js/core/supabase.client.js`, que publica `window.supabase`.
-3. `js/services/auth.service.js` protege páginas privadas, obtiene la sesión y publica `window.currentUser`.
-4. Los wrappers API y services se cargan antes de las páginas que los consumen.
-5. `js/main.js` selecciona el inicializador según el nombre del HTML.
-6. En el dashboard, `initDashboardPage` activa el modo Biblioteca y llama `window.initBiblioteca` cuando está disponible.
-7. Los componentes de navbar se cargan según la página pública o privada.
+La ruta visual antigua incluye árbol, breadcrumbs y render por niveles. Su código no se ejecuta en la inicialización principal confirmada, pero ninguna pieza debe eliminarse únicamente por nombre: algunas funciones jerárquicas sostienen creación, datos, Archivados o compatibilidad.
 
-El orden de scripts forma parte del acoplamiento actual: debe conservarse o validarse explícitamente al extraer módulos.
+## Estado global conocido
 
-## Biblioteca y dashboard
+- Biblioteca publica `window.biblioteca`, `window.initBiblioteca` y `window.renderBibliotecaContent`.
+- Dashboard publica `window.explorerState` y wrappers de preview/descarga usados por Biblioteca.
+- `window.AppUI` concentra helpers compartidos.
+- `window.API_BASE_URL`, `window.supabase` y `window.currentUser` sostienen configuración y sesión.
 
-Biblioteca es el flujo visual vigente dentro del dashboard. `dashboard.page.js` aún contiene estado y funciones compartidas; `biblioteca.page.js` consume globals y wrappers expuestos por Dashboard, y Dashboard consume el namespace `window.biblioteca` para generación y actualización de conjuntos.
+El acoplamiento bidireccional entre `dashboard.page.js` y `biblioteca.page.js` debe reducirse hacia módulos propiedad de Biblioteca, conservando wrappers temporales mientras existan consumidores.
 
-`window.explorerState` conserva partes activas para progreso y previews. No debe eliminarse completo sin separar y verificar sus consumidores. La jerarquía técnica también sigue participando en archivados y flujos de selección aunque una navegación visual anterior no esté activa.
+## Terminología canónica
 
-## APIs frontend
+- **Biblioteca:** flujo visual principal vigente para administrar recursos del usuario.
+- **Bloque o conjunto de Biblioteca:** agrupación visual y funcional basada en los datos del conjunto. No equivale automáticamente a una entidad jerárquica específica.
+- **Jerarquía técnica:** datos y endpoints de planteles, grados, materias, unidades y temas. Puede seguir activa sin que el explorador visual lo esté.
+- **Explorador visual jerárquico:** interfaz antigua por niveles; legacy y prohibida para nuevas implementaciones.
+- **Compatibilidad legacy:** globals, wrappers, estado o código conservado porque aún tiene consumidores; no es arquitectura objetivo.
+- **Archivados:** flujo separado que puede conservar estructuras jerárquicas.
+- **`unidad_id`:** identificador técnico de determinados contratos; no es automáticamente la fuente única de selección visual o temática.
+- **`planeacion_ids`:** selección explícita de planeaciones usada, entre otros casos, por la generación vigente de exámenes desde Biblioteca.
+- **`tema_id` / `tema_ids`:** identificadores de temas; nunca reciben IDs de planeaciones.
 
-| Wrapper | Responsabilidad |
-| --- | --- |
-| `planeaciones.api.js` | CRUD, archivo/restauración, generación normal/SSE y exportación. |
-| `biblioteca.api.js` | Conjuntos, bloques, detalle y eliminación de recursos de Biblioteca. |
-| `jerarquia.api.js` | Planteles, grados, materias, unidades, temas y generación por unidad. |
-| `anexos.api.js` | Generación, consulta, eliminación y regeneración de anexos. |
-| `listas_cotejo.api.js` | Generación, consulta y eliminación de listas. |
-| `examenes.api.js` | Creación de generación, consulta de job, listado y eliminación de exámenes. |
+## Matriz de estado funcional
 
-Estos wrappers reflejan consumo frontend, pero no son la fuente canónica del contrato. Los endpoints y payloads deben contrastarse con el backend antes de modificarse.
-
-## Estado global y compatibilidad
-
-Las globals activas incluyen `window.API_BASE_URL`, `window.supabase`, `window.currentUser`, `window.AppUI`, APIs/services, inicializadores de página y wrappers temporales. En Dashboard/Biblioteca destacan:
-
-- `window.biblioteca` y `window.renderBibliotecaContent`;
-- `window.explorerState`;
-- wrappers de preview de exámenes y listas;
-- wrappers de descarga, incluidos los expuestos por `wordExport.js`.
-
-Hay dependencias bidireccionales entre `dashboard.page.js` y `biblioteca.page.js`. Su retiro exige migrar consumidores, conservar wrappers durante la transición y validar el orden de carga.
+| Área | Estado | Puede recibir funciones nuevas | Puede eliminarse | Notas |
+| --- | --- | ---: | ---: | --- |
+| Biblioteca | Vigente | Sí | No | Flujo principal. |
+| Explorador visual jerárquico | Legacy | No | Solo tras auditoría | No usar en nuevos módulos. |
+| Jerarquía técnica backend | Activa/compatibilidad | Solo según contrato | No asumir | Datos y endpoints. |
+| Archivados | Activo separado | Solo mantenimiento | No asumir | Puede usar jerarquía. |
+| `explorerState` | Mixto | No como arquitectura | Parcialmente | Separar consumidores. |
+| Wrappers `window.*` | Compatibilidad | No ampliar sin necesidad | Tras migrar consumidores | Documentar retiro. |
+| Páginas históricas | Por confirmar | No | Tras auditoría | No activar. |
 
 ## Dependencias del backend
 
-### La documentación canónica de datos y generación vive en el backend
+La documentación canónica de datos y generación vive en `educativo_backend/Educativo-Backend`:
 
-Repositorio canónico: `educativo_backend/Educativo-Backend`.
+- [`DATABASE_SCHEMA.md`](../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md)
+- [`AI_GENERATION_CONTRACTS.md`](../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md)
+- [`03-backend-guide.md`](../../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md)
 
-- [Schema y relaciones: `DATABASE_SCHEMA.md`](../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md)
-- [Prompts y contratos IA: `AI_GENERATION_CONTRACTS.md`](../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md)
-- [Arquitectura y rutas backend: `03-backend-guide.md`](../../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md)
-
-Este repositorio no replica esas definiciones. Cualquier cambio de payloads, IDs, polling, jobs, generación o persistencia debe consultar primero dichas fuentes y el código ejecutable del backend.
+El frontend no redefine schema, relaciones, prompts, jobs ni métricas.
