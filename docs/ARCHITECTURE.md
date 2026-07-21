@@ -1,92 +1,94 @@
-# ARCHITECTURE.md — Educativo IA Frontend
+# Arquitectura del frontend
 
-> Generado por auditoría de solo lectura. No se modificó código funcional. Ver metodología y limitaciones en `docs/refactor/SESSION_HANDOFF.md`.
+Este documento describe la arquitectura frontend observada en el código actual. Las reglas obligatorias están en [`AGENTS.md`](../AGENTS.md).
 
-Etiquetas usadas: `Hecho:` (evidencia directa en código), `Inferencia:` (deducción razonable no 100% confirmada), `Pendiente de confirmar:` (falta evidencia).
+## Stack
 
-## 1. Arquitectura general actual
+- HTML multipágina y JavaScript Vanilla mediante scripts clásicos.
+- CSS propio, Bootstrap 5.3.3 y Tailwind CSS mediante CDN según la página.
+- Supabase JS para autenticación y operaciones puntuales de Storage.
+- API backend consumida con `fetch`.
+- Librerías puntuales cargadas por CDN, como SheetJS en la página de detalle.
 
-El frontend es HTML + JavaScript vanilla (scripts clásicos, sin `type="module"`, sin bundler) organizado por capas dentro de `js/`:
+No hay un framework SPA ni un empaquetador de módulos. La carpeta `js/features/` no existe en el estado auditado.
 
-```
-js/core/     → config global, cliente Supabase, utilidades (escapeHtml)
-js/api/      → wrappers fetch por dominio de backend
-js/services/ → orquestación de sesión + normalización de payloads
-js/pages/    → controladores de página (uno por página o vista)
-js/ui/       → renderizado, componentes, toasts, exportación Word
-```
+## Estructura de carpetas
 
-`Hecho:` No hay imports/exports ES6 — todo módulo expone sus funciones asignándolas a `window.<nombre>` al final del archivo, y el orden de carga de `<script>` en cada HTML es lo único que garantiza que una función exista cuando otro script la usa.
+| Ruta | Responsabilidad actual |
+| --- | --- |
+| `pages/` | Páginas privadas, login, redirecciones y vistas auxiliares. |
+| `js/core/` | Configuración de API, cliente Supabase y utilidades comunes. |
+| `js/api/` | Wrappers `fetch` por recurso. |
+| `js/services/` | Orquestación de autenticación, jerarquía, planeaciones, exámenes y listas. |
+| `js/pages/` | Estado, render e inicialización específica de páginas. |
+| `js/ui/` | Componentes, modales, helpers compartidos y exportación Word. |
+| `assets/`, `css/`, `components/` | Recursos visuales, estilos y fragmentos estáticos. |
+| `tests/` | Pruebas automatizadas existentes. |
 
-## 2. Páginas y su estado
+## Páginas principales
 
-| Página | Ruta HTML | Estado | Evidencia |
-|---|---|---|---|
-| Landing | `index.html` | ACTIVE | Carga solo `components.public.js` |
-| Login | `pages/login.html` | ACTIVE | Stack completo de auth |
-| Registro / Recuperar | `pages/registro.html`, `pages/recuperar.html` | ACTIVE (UI), sin lógica de submit conectada | `Hecho:` sin `<form>` con listener de submit — son maquetas |
-| Beneficios / Cómo funciona / Precios / Contacto | `pages/*.html` | ACTIVE (marketing estático) | Solo `components.public.js` |
-| Dashboard (contenedor de Biblioteca) | `pages/dashboard.html` | ACTIVE | Ver sección 6 |
-| Archivados | `pages/archivados.html` | ACTIVE pero **inalcanzable desde la navegación** | `Hecho:` link comentado en `components/navbar.html:27-28` (`<!-- Archivados: temporalmente oculto -->`) |
-| Detalle de planeación | `pages/detalle.html` | ACTIVE | Botón `#btn-export-excel` referenciado en JS no existe en este HTML (no-op silencioso, `detalle.page.js:552`) |
-| Batch (legacy) | `pages/batch.html` | **MUERTA** | `Hecho:` solo `<meta http-equiv="refresh">` + `location.replace("dashboard.html")`, sin cargar ningún script |
-| Planeación standalone (legacy) | `pages/planeacion.html` | **MUERTA** | Igual patrón de redirect |
-| Dashboard Tailwind (alterno) | `pages/dashboard_tailwind.html` | **HUÉRFANA** | `Hecho:` no referenciada por ningún link ni por `main.js` |
+| Página | Scripts o función principal |
+| --- | --- |
+| `index.html` y páginas públicas raíz | Componentes públicos y estilos Tailwind propios. |
+| `pages/login.html` | Supabase, autenticación, UI compartida, `login.page.js` y `main.js`. |
+| `pages/dashboard.html` | Configuración, Supabase/Auth, APIs, services, UI, `dashboard.page.js`, `biblioteca.page.js` y `main.js`, en ese orden. |
+| `pages/archivados.html` | Jerarquía y planeaciones, componentes privados, `archivados.page.js` y `main.js`. |
+| `pages/detalle.html` | Biblioteca/planeaciones, Storage, exportación Word, UI y página de detalle. |
+| `pages/batch.html`, `pages/planeacion.html` | Redirigen actualmente a `dashboard.html`. |
+| `pages/dashboard_tailwind.html` | Vista alternativa con un conjunto propio de scripts; no se asume obsoleta por su nombre. |
 
-## 3. Entry points y orquestación
+Los HTML no contienen handlers inline en el estado auditado. Los atributos `data-*` y listeners creados desde JavaScript siguen siendo consumidores que deben buscarse antes de extraer o retirar funciones.
 
-`js/main.js` es un router mínimo: al cargar, detecta el nombre de archivo HTML actual y llama a la función `init*` correspondiente (`initLoginPage`, `initDashboardPage`, `initArchivadosPage`, `initDetallePage`, `initBatchPage`, `planeacionPage.init`), todas expuestas en `window`. `Hecho:` este mapeo referencia `initBatchPage`/`planeacionPage.init`, que nunca se ejecutan porque sus páginas HTML redirigen antes de cargar `main.js`.
+## Flujo de inicio
 
-## 4. Comunicación con backend
+1. `js/core/config.js` publica `window.API_BASE_URL`: usa el backend local en `localhost`/`127.0.0.1` y la API de producción en otros hosts.
+2. El CDN de Supabase carga antes de `js/core/supabase.client.js`, que publica `window.supabase`.
+3. `js/services/auth.service.js` protege páginas privadas, obtiene la sesión y publica `window.currentUser`.
+4. Los wrappers API y services se cargan antes de las páginas que los consumen.
+5. `js/main.js` selecciona el inicializador según el nombre del HTML.
+6. En el dashboard, `initDashboardPage` activa el modo Biblioteca y llama `window.initBiblioteca` cuando está disponible.
+7. Los componentes de navbar se cargan según la página pública o privada.
 
-`Hecho:` Todas las llamadas API pasan por `js/api/*.js`, un archivo por dominio (`anexos`, `biblioteca`, `examenes`, `jerarquia`, `listas_cotejo`, `planeaciones`). Cada uno implementa su propio `buildXHeaders`/`parseXJson`/`createXApiError`/`requestXJson` — patrón duplicado 5-6 veces casi idéntico (ver `FRONTEND_AUDIT.md`). El token se obtiene siempre en la capa `js/services/*.js` vía `window.requireSession()` y se pasa como `Authorization: Bearer <token>`; la capa `api/*.js` nunca accede a Supabase directamente.
+El orden de scripts forma parte del acoplamiento actual: debe conservarse o validarse explícitamente al extraer módulos.
 
-`js/core/config.js` define `API_BASE_URL` según hostname (`localhost`/`127.0.0.1` → `http://localhost:3000`; cualquier otro host → producción).
+## Biblioteca y dashboard
 
-## 5. Autenticación
+Biblioteca es el flujo visual vigente dentro del dashboard. `dashboard.page.js` aún contiene estado y funciones compartidas; `biblioteca.page.js` consume globals y wrappers expuestos por Dashboard, y Dashboard consume el namespace `window.biblioteca` para generación y actualización de conjuntos.
 
-`Hecho:` `js/services/auth.service.js` expone `protegerRuta()` y `requireSession()` en `window`, y suscribe `onAuthStateChange` de Supabase (logout automático + toast + redirect en `SIGNED_OUT`). El cliente Supabase (`js/core/supabase.client.js`) usa la clave pública anon (no la service role).
+`window.explorerState` conserva partes activas para progreso y previews. No debe eliminarse completo sin separar y verificar sus consumidores. La jerarquía técnica también sigue participando en archivados y flujos de selección aunque una navegación visual anterior no esté activa.
 
-## 6. Relación Dashboard ↔ Biblioteca (hallazgo estructural clave)
+## APIs frontend
 
-`Hecho:` `pages/dashboard.html` carga en este orden al final: `dashboard.page.js` → `biblioteca.page.js` → `main.js`. `main.js` llama `window.initDashboardPage()`.
+| Wrapper | Responsabilidad |
+| --- | --- |
+| `planeaciones.api.js` | CRUD, archivo/restauración, generación normal/SSE y exportación. |
+| `biblioteca.api.js` | Conjuntos, bloques, detalle y eliminación de recursos de Biblioteca. |
+| `jerarquia.api.js` | Planteles, grados, materias, unidades, temas y generación por unidad. |
+| `anexos.api.js` | Generación, consulta, eliminación y regeneración de anexos. |
+| `listas_cotejo.api.js` | Generación, consulta y eliminación de listas. |
+| `examenes.api.js` | Creación de generación, consulta de job, listado y eliminación de exámenes. |
 
-Dentro de `initDashboardPage()` (`dashboard.page.js:6019-6023`):
+Estos wrappers reflejan consumo frontend, pero no son la fuente canónica del contrato. Los endpoints y payloads deben contrastarse con el backend antes de modificarse.
 
-```js
-const hasBiblioteca = typeof window.initBiblioteca === "function";
-if (hasBiblioteca) { window.BIBLIOTECA_MODE = true; }
-```
+## Estado global y compatibilidad
 
-Como `biblioteca.page.js` siempre se carga antes en el mismo HTML, `window.initBiblioteca` siempre existe, por lo que **`window.BIBLIOTECA_MODE` es siempre `true` en producción**, y `initDashboardPage` termina en `await window.initBiblioteca()` (línea 6044) sin llegar nunca a `hydrateExplorerData()` (rama alcanzable solo si `BIBLIOTECA_MODE` fuera `false`).
+Las globals activas incluyen `window.API_BASE_URL`, `window.supabase`, `window.currentUser`, `window.AppUI`, APIs/services, inicializadores de página y wrappers temporales. En Dashboard/Biblioteca destacan:
 
-Consecuencia directa: dentro de `dashboard.page.js` coexisten dos sistemas:
+- `window.biblioteca` y `window.renderBibliotecaContent`;
+- `window.explorerState`;
+- wrappers de preview de exámenes y listas;
+- wrappers de descarga, incluidos los expuestos por `wordExport.js`.
 
-1. **Un sistema de navegación jerárquica completo y autocontenido** (árbol planteles→grados→materias→unidades, breadcrumbs, render por nivel, modal CRUD de entidades) que, según esta bifurcación, **no se activa nunca en el flujo real de carga**. Ver clasificación detallada en `docs/refactor/LEGACY_HIERARCHY.md`.
-2. **Un sub-estado (`explorerState`) y un conjunto de funciones que SÍ siguen activos** porque Biblioteca los consume vía `window`: `explorerState.progress`, `.examPreview`, `.listaCotejoPreview`, `.confirmDelete`; funciones como `ensureExamenes`, `ensureListasCotejo`, `ensureDefaultPlantel`, `generatePlaneacionesFromStaging`; y los wrappers `window.renderExamPreviewModal`, `window.closeExamPreviewModal`, `window.renderListaCotejoPreviewModal`, `window.closeListaCotejoPreview`, `window.downloadExamWord`.
+Hay dependencias bidireccionales entre `dashboard.page.js` y `biblioteca.page.js`. Su retiro exige migrar consumidores, conservar wrappers durante la transición y validar el orden de carga.
 
-`Inferencia:` esto significa que `explorerState` **no puede tratarse como un bloque monolítico legado** — cualquier extracción futura debe separar el sub-estado realmente compartido con Biblioteca del sub-estado exclusivo de la navegación jerárquica antigua.
+## Dependencias del backend
 
-`Pendiente de confirmar:` si existe algún otro punto de entrada (test, script de migración, bookmarklet) que cargue `dashboard.page.js` sin `biblioteca.page.js` y active la rama alternativa.
+### La documentación canónica de datos y generación vive en el backend
 
-## 7. Flujo Biblioteca (resumen — detalle completo en CURRENT_BEHAVIOR.md)
+Repositorio canónico: `educativo_backend/Educativo-Backend`.
 
-`biblioteca.page.js` define `window.initBiblioteca`, invocado por `dashboard.page.js`. Internamente mantiene su propio estado (`bibliotecaState`, no exportado directo) y expone una API controlada en `window.biblioteca = {...}` (getters/setters específicos) para que `dashboard.page.js` pueda coordinar creación rápida de bloques. También lee/escribe `window.explorerState` (definido en `dashboard.page.js`) para exámenes y listas de cotejo — acoplamiento bidireccional confirmado en 11 puntos distintos de `dashboard.page.js`.
+- [Schema y relaciones: `DATABASE_SCHEMA.md`](../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md)
+- [Prompts y contratos IA: `AI_GENERATION_CONTRACTS.md`](../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md)
+- [Arquitectura y rutas backend: `03-backend-guide.md`](../../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md)
 
-## 8. Dependencias globales importantes (`window`)
-
-Ver inventario completo en `docs/refactor/FRONTEND_AUDIT.md`, sección "Uso de window". Resumen de los puentes más críticos entre archivos:
-
-| Propiedad | Definida en | Consumida en |
-|---|---|---|
-| `window.explorerState` | `dashboard.page.js` | `biblioteca.page.js` |
-| `window.biblioteca` | `biblioteca.page.js` | `dashboard.page.js` |
-| `window.initBiblioteca` / `window.renderBibliotecaContent` | `biblioteca.page.js` | `dashboard.page.js` |
-| `window.renderExamPreviewModal` / `window.closeExamPreviewModal` / `window.renderListaCotejoPreviewModal` / `window.closeListaCotejoPreview` / `window.downloadExamWord` | `dashboard.page.js` | `biblioteca.page.js` |
-| `window.AppUI.*` (toasts, modal de nombre de descarga, progress pill) | `js/ui/shared.ui.js` | `dashboard.page.js`, `biblioteca.page.js` |
-| `window.requireSession` / `window.protegerRuta` | `js/services/auth.service.js` | prácticamente todos los `js/pages/*.js` |
-| `window.isArchivedHierarchyScopeHidden` / `window.registerArchivedHierarchyScope` | `js/services/planeaciones.service.js` (registro en `localStorage`) | `dashboard.page.js`, `archivados.page.js` |
-
-## 9. Reglas para no romper la arquitectura durante el refactor
-
-Heredadas de `AGENTS.md` de este repositorio — no se repiten aquí en detalle, solo se referencian: no mover responsabilidades entre capas sin permiso, no cambiar contratos de API, no eliminar código sin clasificarlo primero como `LEGACY_CONFIRMED`, no romper el orden de carga de `<script>`.
+Este repositorio no replica esas definiciones. Cualquier cambio de payloads, IDs, polling, jobs, generación o persistencia debe consultar primero dichas fuentes y el código ejecutable del backend.
