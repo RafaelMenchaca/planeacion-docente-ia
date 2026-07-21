@@ -12,6 +12,22 @@ El frontend no es la fuente de verdad del schema, RLS, prompts, modelos, retries
 
 Repositorio canónico: `educativo_backend/Educativo-Backend`.
 
+## Flujo visual canónico
+
+**Biblioteca es el único flujo visual principal vigente.** Toda función nueva del área privada debe integrarse a Biblioteca.
+
+El explorador visual jerárquico antiguo (`plantel → grado → materia → unidad → tema`) es **legacy visual / obsoleto / no usar para nuevas implementaciones**. No es un segundo modo soportado y no debe recibir funciones nuevas, decidir dónde renderizar contenido ni compartir nuevos estados o eventos con Biblioteca.
+
+- Si una tarea puede resolverse usando Biblioteca o reutilizando el explorador jerárquico antiguo, se debe implementar en Biblioteca.
+- No crear un “modo dual”, nuevos flags para alternar Biblioteca y jerarquía ni reactivar el árbol visual por accidente.
+- No reutilizar funciones legacy solo porque ya existen; primero identificar su consumidor vigente.
+- Antes de extraer una función, clasificar su consumidor como Biblioteca, compartido activo, Archivados, compatibilidad temporal, explorador visual legacy o desconocido.
+- No mover ni eliminar una función desconocida.
+- No eliminar helpers jerárquicos sin buscar todos los consumidores: la jerarquía técnica puede seguir sosteniendo persistencia, selectores, creación o Archivados.
+- Archivados es un flujo separado; sus dependencias jerárquicas no convierten al explorador antiguo en flujo principal.
+- Durante un refactor, el código legacy solo puede conservarse como compatibilidad; no puede convertirse nuevamente en arquitectura principal.
+- No modificar contratos backend para adaptar Biblioteca a código legacy.
+
 ## Fuentes obligatorias
 
 | Tema | Fuente |
@@ -47,6 +63,7 @@ El backend se encuentra en `../../educativo_backend/Educativo-Backend`, relativo
 - Cada wrapper temporal debe documentar su razón, consumidor y condición de retiro.
 - Mantener commits pequeños y actualizar `docs/refactor/SESSION_HANDOFF.md` después de cada sesión.
 - No tocar `js/ui/wordExport.js` salvo autorización explícita.
+- Las extracciones deben avanzar hacia una Biblioteca modular, no hacia restaurar o modularizar el explorador visual antiguo.
 
 ## Reglas de datos e IA
 
