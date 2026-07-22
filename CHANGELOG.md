@@ -4,6 +4,26 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
+## [pre-biblioteca-modular-refactor] - 2026-07-22
+
+### 🏷️ Línea base
+- **Baseline estable del frontend antes del refactor modular de Biblioteca**, registrado con el tag anotado `pre-biblioteca-modular-refactor`.
+- Este punto conserva Biblioteca como único flujo visual principal vigente y sirve como referencia de retorno antes de iniciar extracciones modulares.
+
+### 🧭 UX
+- Landing y páginas públicas actualizadas para comunicar con mayor claridad el flujo docente y los recursos disponibles.
+- Navbar público equilibrado y corregido para evitar el destello de contenido durante su carga y permitir renderizado consistente en entorno local.
+- Descargas iniciadas desde previews integradas con el modal estándar de nombre de archivo.
+
+### 🛠️ Mejoras
+- Configuración del dominio de producción de la API actualizada con fallback compatible para desarrollo local.
+- Instrumentación de observabilidad incorporada en llamadas de jerarquía, planeaciones y Biblioteca, sin registrar tokens ni datos sensibles.
+- Documentación consolidada para arquitectura, reglas de refactor, matriz de pruebas y continuidad entre sesiones.
+
+### 🐛 Correcciones
+- Generación de exámenes limitada al contexto de la unidad seleccionada para evitar mezclar planeaciones de otros conjuntos.
+- Flujo de reintento de preguntas duplicadas ajustado para mantener feedback estable sin exponer detalles internos de validación.
+
 ## [v2.0-frontend-biblioteca-workflow] - 2026-06-06
 
 ### 🚀 Novedades
