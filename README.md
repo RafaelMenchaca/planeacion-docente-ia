@@ -80,6 +80,8 @@ Para servir los archivos estáticos puede usarse un servidor local. El backend d
 - Reglas: [`AGENTS.md`](AGENTS.md)
 - Arquitectura actual: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Método de refactor: [`docs/refactor/REFACTOR_PLAYBOOK.md`](docs/refactor/REFACTOR_PLAYBOOK.md)
+- Fases y criterios de avance: [`docs/refactor/REFACTOR_ROADMAP.md`](docs/refactor/REFACTOR_ROADMAP.md)
+- Decisiones del refactor: [`docs/refactor/REFACTOR_DECISIONS.md`](docs/refactor/REFACTOR_DECISIONS.md)
 - Estado de sesión: [`docs/refactor/SESSION_HANDOFF.md`](docs/refactor/SESSION_HANDOFF.md)
 - Pruebas manuales: [`docs/refactor/TEST_MATRIX.md`](docs/refactor/TEST_MATRIX.md)
 

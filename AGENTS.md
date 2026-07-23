@@ -34,7 +34,9 @@ El explorador visual jerárquico antiguo (`plantel → grado → materia → uni
 | --- | --- |
 | Reglas frontend | `AGENTS.md` |
 | Arquitectura frontend | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
-| Plan de refactor | [`docs/refactor/REFACTOR_PLAYBOOK.md`](docs/refactor/REFACTOR_PLAYBOOK.md) |
+| Método de refactor | [`docs/refactor/REFACTOR_PLAYBOOK.md`](docs/refactor/REFACTOR_PLAYBOOK.md) |
+| Fases y criterios de avance | [`docs/refactor/REFACTOR_ROADMAP.md`](docs/refactor/REFACTOR_ROADMAP.md) |
+| Decisiones del refactor | [`docs/refactor/REFACTOR_DECISIONS.md`](docs/refactor/REFACTOR_DECISIONS.md) |
 | Estado de sesión | [`docs/refactor/SESSION_HANDOFF.md`](docs/refactor/SESSION_HANDOFF.md) |
 | Reglas backend | [repositorio backend: `AGENTS.md`](../../educativo_backend/Educativo-Backend/AGENTS.md) |
 | Schema y relaciones | [repositorio backend: `docs/DATABASE_SCHEMA.md`](../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md) |
@@ -49,7 +51,23 @@ El backend se encuentra en `../../educativo_backend/Educativo-Backend`, relativo
 - Para estilos o layout, leer `AGENTS.md` y `docs/ARCHITECTURE.md`.
 - Para payloads, IDs, generación, polling, jobs o persistencia, leer además `DATABASE_SCHEMA.md`, `AI_GENERATION_CONTRACTS.md` y la guía de arquitectura del backend.
 - Para logs relacionados con el backend, revisar sus convenciones de observabilidad.
-- Para extraer una función durante el refactor, revisar `REFACTOR_PLAYBOOK.md` y `SESSION_HANDOFF.md` antes de editar.
+- Para extraer una función durante el refactor, revisar `REFACTOR_ROADMAP.md`, `REFACTOR_PLAYBOOK.md` y `SESSION_HANDOFF.md` antes de editar.
+
+## Roadmap obligatorio
+
+Antes de iniciar cualquier refactor, leer:
+
+[`docs/refactor/REFACTOR_ROADMAP.md`](docs/refactor/REFACTOR_ROADMAP.md)
+
+Cada tarea debe indicar:
+
+- fase;
+- sesión;
+- alcance;
+- criterios de salida;
+- pruebas.
+
+No se puede saltar directamente a eliminación de legacy. Biblioteca modular es la dirección del refactor.
 
 ## Reglas de refactor
 
