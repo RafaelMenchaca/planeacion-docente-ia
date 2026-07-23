@@ -1,6 +1,6 @@
 # Refactor Playbook
 
-Este playbook gobierna las extracciones modulares del frontend. Debe leerse junto con [`AGENTS.md`](../../AGENTS.md), la [arquitectura](../ARCHITECTURE.md) y el [handoff](SESSION_HANDOFF.md).
+Este playbook explica cómo ejecutar cada sesión de refactor. Debe leerse junto con [`AGENTS.md`](../../AGENTS.md), el [roadmap](REFACTOR_ROADMAP.md), la [arquitectura](../ARCHITECTURE.md) y el [handoff](SESSION_HANDOFF.md).
 
 ## Dirección obligatoria
 
@@ -70,3 +70,22 @@ Toda extracción debe registrar:
 ## Retiro de wrappers
 
 Cada wrapper debe documentar razón, consumidores, implementación canónica y condición de retiro. Solo puede retirarse cuando todos los consumidores estén migrados, una búsqueda global no encuentre referencias, las pruebas pasen, el retiro ocurra en una sesión separada y el handoff quede actualizado.
+
+## Checklist por sesión
+
+- [ ] Leer `AGENTS.md`.
+- [ ] Leer roadmap.
+- [ ] Leer handoff.
+- [ ] Identificar fase actual.
+- [ ] Definir alcance de una sola sesión.
+- [ ] Buscar consumidores.
+- [ ] Clasificar código.
+- [ ] Confirmar zonas protegidas.
+- [ ] Hacer extracción literal.
+- [ ] Mantener wrappers.
+- [ ] Ejecutar validaciones.
+- [ ] Probar Biblioteca.
+- [ ] Revisar consola y terminal.
+- [ ] Actualizar roadmap si cambia el estado.
+- [ ] Actualizar handoff.
+- [ ] No hacer commit automático.

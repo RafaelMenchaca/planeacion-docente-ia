@@ -2,6 +2,10 @@
 
 Este documento describe la arquitectura frontend observada en el código actual. Las reglas obligatorias están en [`AGENTS.md`](../AGENTS.md).
 
+## Estado actual
+
+La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
+
 ## Regla arquitectónica central
 
 Solo existe un flujo visual principal vigente: **Biblioteca**.
@@ -109,3 +113,18 @@ La documentación canónica de datos y generación vive en `educativo_backend/Ed
 - [`03-backend-guide.md`](../../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md)
 
 El frontend no redefine schema, relaciones, prompts, jobs ni métricas.
+
+## Arquitectura objetivo
+
+La arquitectura objetivo es una **Biblioteca modular** con:
+
+- estado delimitado;
+- módulos por dominio;
+- capa API frontend;
+- generación y polling separados del render general;
+- render y eventos separados;
+- compatibilidad temporal controlada;
+- explorador visual legacy aislado y, solo después de confirmar que no tiene consumidores, eliminado;
+- jerarquía técnica preservada cuando siga siendo necesaria para datos, contratos, selectores o Archivados.
+
+Este apartado describe una meta, no el estado ya implementado. El orden, los criterios y las pruebas están en el [`REFACTOR_ROADMAP.md`](refactor/REFACTOR_ROADMAP.md).
