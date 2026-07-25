@@ -13,10 +13,10 @@
 
 - **Fase actual:** 1 — Extracciones aisladas.
 - **Estado:** En progreso.
-- **Sesión actual:** 1.2 — Preview y descarga de listas de cotejo.
-- **Próxima sesión recomendada:** 1.3 — siguiente extracción aislada, solo después de una nueva auditoría de consumidores.
+- **Sesión actual:** 1.3 — Preview y descarga de anexos.
+- **Próxima sesión recomendada:** siguiente extracción aislada, solo después de una nueva auditoría de consumidores.
 
-La Fase 0 no está completada: la línea base manual completa continúa pendiente. La Fase 1 queda en progreso; las sesiones 1.1 y 1.2 se completaron en código, con pruebas manuales de navegador pendientes.
+La Fase 0 no está completada: la línea base manual completa continúa pendiente. La Fase 1 queda en progreso; las sesiones 1.1, 1.2 y 1.3 se completaron en código, con pruebas manuales de navegador pendientes.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -93,6 +93,46 @@ Los módulos de listas solo definen namespaces durante la carga; al invocarse co
 - `missing_closing_activity` sigue siendo un reason legacy que representa ausencia de actividades evaluables; no se reinterpretó.
 - El hallazgo de métricas de planeaciones hacia `public.ia_metrics` frente a `public.ia_metrics_legacy` sigue fuera de alcance y no se modificó.
 
+## Sesión 1.3 — Preview y descarga de anexos
+
+### Resultado
+
+- Se creó `js/features/anexos/anexo-preview.js` con apertura, render y cierre del modal dinámico de Biblioteca.
+- Se creó `js/features/anexos/anexo-download.js` con la descarga desde card y el exportador Word propio de anexos.
+- Se retiró únicamente la implementación duplicada de preview y descarga de `biblioteca.page.js`.
+- `js/ui/wordExport.js` no participa en anexos y no fue modificado.
+
+### Consumidores y wrappers
+
+- `openBibliotecaAnexoPreview(anexoId)`: handler `data-bib-action="ver-anexo"`; wrapper local conservado en `biblioteca.page.js`.
+- `closeBibliotecaAnexoModal()`: backdrop, botones de cierre y render del preview; wrapper local conservado en `biblioteca.page.js`.
+- `renderBibliotecaAnexoModal(anexo)`: apertura y compatibilidad local; wrapper conservado en `biblioteca.page.js`.
+- `bibDescargarAnexo(anexoId)`: handler `data-bib-action="descargar-anexo"`; wrapper local conservado en `biblioteca.page.js`.
+- `descargarAnexoWord(anexo, filenameOverride)`: card y botón del preview; wrapper local conservado en `biblioteca.page.js`.
+
+No había wrappers globales de anexos antes de la sesión. Los wrappers locales se retiran únicamente tras migrar sus consumidores y confirmar una búsqueda global sin referencias; corresponde a Fase 10.
+
+### Dependencias y orden
+
+`wordExport.js` → módulos de examen → módulos de listas → `components.private.js` → `shared.ui.js` → APIs de Biblioteca/anexos → `anexo-download.js` → `anexo-preview.js` → `dashboard.page.js` → `biblioteca.page.js` → `main.js`/inicialización.
+
+Los módulos de anexos dependen al invocarse de `window.requireSession`, `apiObtenerAnexoDetalle`, `window.AppUI`, `escapeHtml`, el modal dinámico de Biblioteca y, para el preview, `window.AnexoDownload`.
+
+### Validación y pendientes
+
+- `node --check` pasó en `anexo-preview.js`, `anexo-download.js` y `biblioteca.page.js`.
+- `npm test -- --runInBand` pasó: 1 suite y 2 pruebas.
+- `git diff --check` pasó.
+- Smoke test JSDOM pasó: namespaces, apertura/render/cierre y descarga propia del anexo.
+- Navegador real, login, preview, descarga desde card y preview, nombre/archivo, consola, tabs, recarga y regresión acumulativa quedan pendientes porque no se ejecutó un navegador en esta sesión.
+
+### Riesgos y hallazgos
+
+- El modal de anexos es dinámico y se inyecta durante `initBiblioteca`; no responde a Escape en el flujo previo y se preservó así.
+- El exportador de anexos es propio y no consume `wordExport.js`; unificarlo sería un cambio fuera de alcance.
+- La estructura de `anexos` conserva `id` UUID, `planeacion_id` bigint único, `tema_id`, `unidad_id`, `batch_id`, `contenido`, `prompt_version` y fechas; no hubo contradicción entre schema, controller y service para los campos consumidos.
+- Regeneración, generación, métricas y el hallazgo `public.ia_metrics`/`public.ia_metrics_legacy` permanecen fuera de alcance.
+
 ## Evidencia confirmada de Fase 0
 
 - Frontend y backend estaban limpios al iniciar la sesión del 2026-07-23.
@@ -162,4 +202,4 @@ No se deben fijar nombres definitivos de archivos hasta completar la clasificaci
 
 ## Última sesión
 
-2026-07-25 — Sesión 1.2: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo; no se modificó ningún contrato funcional.
+2026-07-25 — Sesión 1.3: se extrajeron preview, cierre y descarga de anexos; no se modificó ningún contrato funcional.

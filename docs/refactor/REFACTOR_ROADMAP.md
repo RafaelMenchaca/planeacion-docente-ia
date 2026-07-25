@@ -120,7 +120,7 @@ Crear los primeros módulos de Biblioteca mediante extracciones literales, peque
 
 **En progreso.**
 
-Sesión 1.1 completada: se extrajeron preview, cierre de preview y descarga Word de examen a `js/features/examenes/`. Sesión 1.2 completada: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo a `js/features/listas-cotejo/`, conservando `wordExport.js` como generador Word protegido. La Fase 1 continúa en progreso porque sus demás candidatos y la validación manual acumulativa siguen pendientes.
+Sesión 1.1 completada: se extrajeron preview, cierre de preview y descarga Word de examen a `js/features/examenes/`. Sesión 1.2 completada: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo a `js/features/listas-cotejo/`, conservando `wordExport.js` como generador Word protegido. Sesión 1.3 completada en código: se extrajeron preview, cierre y descarga de anexos a `js/features/anexos/`, conservando su exportador Word propio. La Fase 1 continúa en progreso porque sus demás candidatos y la validación manual acumulativa siguen pendientes.
 
 ### Dependencias
 

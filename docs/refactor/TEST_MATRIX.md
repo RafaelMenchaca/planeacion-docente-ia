@@ -11,8 +11,8 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 | Planeación | generar | card completa | SSE/backend success | 0, 4 | Pendiente |
 | Planeación | abrir | detalle correcto | navegación sin error | 0, 2 | Pendiente |
 | Anexo | generar | card nueva | backend success | 0, 4 | Pendiente |
-| Anexo | abrir preview | modal correcto | sin error frontend | 0, 1-2 | Pendiente |
-| Anexo | descargar | archivo generado | download success | 0, 1-2 | Pendiente |
+| Anexo | abrir preview | modal correcto | sin error frontend | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.3 |
+| Anexo | descargar | archivo generado | download success | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.3 |
 | Lista | generar | card o `skipped` correcto | backend success/skipped | 0, 4 | Pendiente |
 | Lista | abrir preview | modal correcto | wrapper disponible | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.2 |
 | Lista | descargar | archivo generado | download success | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.2 |
@@ -35,6 +35,16 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - `node --check js/pages/biblioteca.page.js`: pasó.
 - `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
 - `git diff --check`: pasó.
+- Pruebas manuales de navegador: pendientes; no se marcaron como completadas.
+
+## Evidencia automatizada de sesión 1.3
+
+- `node --check js/features/anexos/anexo-preview.js`: pasó.
+- `node --check js/features/anexos/anexo-download.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- `git diff --check`: pasó.
+- Smoke test JSDOM de namespaces, modal y descarga propia: pasó.
 - Pruebas manuales de navegador: pendientes; no se marcaron como completadas.
 
 ## Evidencia automatizada de sesión 1.2
