@@ -23,8 +23,8 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 
 | Fase | Nombre | Objetivo principal | Riesgo | Estado |
 | --- | --- | --- | --- | --- |
-| 0 | Línea base y protección | Establecer punto seguro | Bajo | En progreso |
-| 1 | Extracciones aisladas | Crear primeros módulos | Bajo | En progreso |
+| 0 | Línea base y protección | Establecer punto seguro | Bajo | Completada |
+| 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Pendiente |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Pendiente |
 | 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
@@ -45,7 +45,7 @@ Asegurar un estado conocido, documentado y recuperable antes de modificar códig
 
 ### Estado
 
-**En progreso.** Al 2026-07-23 se confirmaron repositorios inicialmente limpios, documentación canónica, auditoría de logs y tags remotos de recuperación apuntando al `HEAD`. La línea base manual completa sigue pendiente y esta sesión documental no genera commit.
+**Completada.** Se confirmaron repositorios limpios, commits recuperables, tags previos al refactor, documentación canónica y validación manual acumulativa del flujo vigente. El usuario confirmó generación principal, navegación, previews, descargas, apertura de archivos, tabs, recarga y ausencia de regresiones relacionadas. Las deudas backend conocidas no bloquean esta línea base.
 
 ### Dependencias
 
@@ -120,7 +120,11 @@ Crear los primeros módulos de Biblioteca mediante extracciones literales, peque
 
 **En progreso.**
 
-Sesión 1.1 completada: se extrajeron preview, cierre de preview y descarga Word de examen a `js/features/examenes/`. Sesión 1.2 completada: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo a `js/features/listas-cotejo/`, conservando `wordExport.js` como generador Word protegido. Sesión 1.3 completada en código: se extrajeron preview, cierre y descarga de anexos a `js/features/anexos/`, conservando su exportador Word propio. La Fase 1 continúa en progreso porque sus demás candidatos y la validación manual acumulativa siguen pendientes.
+Sesión 1.1 completada: se extrajeron preview, cierre de preview y descarga Word de examen a `js/features/examenes/`. Sesión 1.2 completada: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo a `js/features/listas-cotejo/`, conservando `wordExport.js` como generador Word protegido. Sesión 1.3 completada: se extrajeron preview, cierre y descarga de anexos a `js/features/anexos/`, conservando su exportador Word propio. La validación manual acumulativa de esas tres sesiones fue aprobada por el usuario.
+
+Sesión 1.4 completada en código: `bibDescargarPlaneacion(planeacionId)` se extrajo literalmente a `js/features/planeaciones/planeacion-download.js`, con namespace y wrapper de compatibilidad. Las validaciones estáticas, la suite y el smoke de equivalencia contra la implementación anterior pasaron.
+
+La auditoría final no encontró más candidatos aislados de bajo riesgo. La Fase 1 permanece **En progreso** únicamente hasta aprobar en navegador la descarga de planeación desde Biblioteca y la regresión acumulativa posterior a la Sesión 1.4. Permanecieron excluidos navegación y detalle de planeación, edición, exportaciones de `detalle.page.js`, generación, polling, eliminación, API, estado, render general y legacy.
 
 ### Dependencias
 

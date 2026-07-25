@@ -13,10 +13,10 @@
 
 - **Fase actual:** 1 — Extracciones aisladas.
 - **Estado:** En progreso.
-- **Sesión actual:** 1.3 — Preview y descarga de anexos.
-- **Próxima sesión recomendada:** siguiente extracción aislada, solo después de una nueva auditoría de consumidores.
+- **Sesión actual:** 1.4 — Descarga de planeación desde Biblioteca.
+- **Próxima acción recomendada:** validación manual de la Sesión 1.4 y cierre documental de Fase 1.
 
-La Fase 0 no está completada: la línea base manual completa continúa pendiente. La Fase 1 queda en progreso; las sesiones 1.1, 1.2 y 1.3 se completaron en código, con pruebas manuales de navegador pendientes.
+La Fase 0 está completada. Las sesiones 1.1, 1.2 y 1.3 y su validación manual acumulativa están completadas. La Sesión 1.4 está completada en código; su validación manual y la regresión acumulativa posterior quedan pendientes, por lo que Fase 1 todavía no se cierra.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -45,7 +45,7 @@ Los wrappers se retiran únicamente cuando una búsqueda global confirme que no 
 - `node --check` pasó en los cuatro JavaScript modificados/creados.
 - `npm test -- --runInBand` pasó: 1 suite y 2 pruebas.
 - `git diff --check` pasó.
-- Navegador real, login, preview, cierre, descargas, nombre/archivo, consola y regresión de tabs/recarga quedan pendientes porque no se ejecutó un navegador en esta sesión.
+- La validación manual posterior fue aprobada por el usuario: preview, cierre/reapertura, descarga desde card y preview, apertura del archivo, tabs y recarga sin regresiones visibles.
 
 ### Riesgos y hallazgos
 
@@ -84,7 +84,7 @@ Los módulos de listas solo definen namespaces durante la carga; al invocarse co
 - `npm test -- --runInBand` pasó: 1 suite y 2 pruebas.
 - `git diff --check` pasó.
 - Smoke test JSDOM pasó: namespaces, apertura/render/cierre y delegación de descarga.
-- Navegador real, login, preview, cierre con Escape, descargas desde card/preview, nombre/archivo, consola y regresión de tabs/recarga/exámenes quedan pendientes porque no se ejecutó un navegador en esta sesión.
+- La validación manual posterior fue aprobada por el usuario: preview, cierre/reapertura, descarga desde card y preview, apertura del archivo, tabs y recarga sin regresiones visibles.
 
 ### Riesgos y hallazgos
 
@@ -124,7 +124,7 @@ Los módulos de anexos dependen al invocarse de `window.requireSession`, `apiObt
 - `npm test -- --runInBand` pasó: 1 suite y 2 pruebas.
 - `git diff --check` pasó.
 - Smoke test JSDOM pasó: namespaces, apertura/render/cierre y descarga propia del anexo.
-- Navegador real, login, preview, descarga desde card y preview, nombre/archivo, consola, tabs, recarga y regresión acumulativa quedan pendientes porque no se ejecutó un navegador en esta sesión.
+- La validación manual posterior fue aprobada por el usuario: preview, cierre/reapertura, descarga desde card y preview, apertura del archivo, tabs y recarga sin regresiones visibles.
 
 ### Riesgos y hallazgos
 
@@ -140,30 +140,60 @@ Los módulos de anexos dependen al invocarse de `window.requireSession`, `apiObt
 - El tag existe en el remoto `origin` de ambos repositorios.
 - Las reglas, arquitectura, roadmap, playbook y matriz protegen Biblioteca, contratos backend y jerarquía técnica.
 - El refuerzo backend previo y sus pendientes están documentados en `LOG_AUDIT.md`, `LOG_CONVENTIONS.md` y el handoff backend.
+- Los commits de las sesiones 1.1, 1.2 y 1.3 existen y ambos repositorios estaban limpios al iniciar esta auditoría.
+- El usuario confirmó la validación manual del flujo vigente, incluidos generación principal, navegación, previews, descargas, archivos, tabs, recarga y ausencia de regresiones relacionadas.
 
-## Pendientes de Fase 0
+## Cierre de Fase 0
 
-- Ejecutar la línea base manual completa de [`TEST_MATRIX.md`](TEST_MATRIX.md).
-- Registrar resultados reales de Biblioteca, generación, polling, previews, descargas y eliminación.
-- Confirmar ausencia de errores inesperados en consola y terminal durante la línea base.
-- Dejar los cambios documentales revisados en un commit pequeño, solo cuando el usuario lo autorice.
-- Mantener la línea base manual pendiente y no declarar Fase 0 completada por esta extracción parcial.
+**Completada.** Los hallazgos `public.ia_metrics` frente a `public.ia_metrics_legacy` y `outputSummary.anexos_creados` posiblemente incorrecto permanecen como deudas backend no bloqueantes.
 
-## Alcance de la primera sesión sugerida
+## Auditoría de cierre de Fase 1
 
-Clasificar y extraer literalmente el preview y la descarga de examen que Biblioteca consume hoy desde wrappers publicados por Dashboard.
+Decisión ejecutada: la última extracción aislada fue la Sesión 1.4. Su código está completado y solo falta la validación manual para cerrar Fase 1.
 
-Condición de salida:
+| Candidato | Archivo actual | Consumidor activo | Dependencias | Riesgo | Fase correcta | Decisión |
+| --- | --- | --- | --- | --- | --- | --- |
+| Preview de examen | `js/features/examenes/exam-preview.js` | Biblioteca y compatibilidad legacy | `explorerState`, API y DOM | Bajo | 1 | Completado |
+| Descarga de examen | `js/features/examenes/exam-download.js` | Card, preview y compatibilidad legacy | detalle de examen y Blob propio | Bajo | 1 | Completado |
+| Coordinador de descarga de examen desde card | `js/pages/biblioteca.page.js` | `data-bib-action="descargar-examen"` | `bibliotecaState` y módulo de examen | Bajo/medio | 2 | Fase posterior |
+| Preview de lista | `js/features/listas-cotejo/lista-cotejo-preview.js` | Biblioteca y compatibilidad legacy | `explorerState`, API y DOM | Bajo | 1 | Completado |
+| Descarga de lista | `js/features/listas-cotejo/lista-cotejo-download.js` | Card y preview | `AppUI` y `wordExport.js` | Bajo | 1 | Completado |
+| Preview de anexo | `js/features/anexos/anexo-preview.js` | Biblioteca | API, DOM y módulo de descarga | Bajo | 1 | Completado |
+| Descarga de anexo | `js/features/anexos/anexo-download.js` | Card y preview | API, `AppUI` y Blob propio | Bajo | 1 | Completado |
+| Preview/detalle de planeación | `js/pages/biblioteca.page.js`, `js/pages/detalle.page.js` | Enlace `detalle.html?id=...` | navegación, carga, edición y estado de página | Medio | 7 | Fase posterior |
+| Descarga de planeación desde card | `js/features/planeaciones/planeacion-download.js` | `data-bib-action="descargar-planeacion"` mediante wrapper | detalle por ID, `AppUI` y Blob propio | Bajo | 1 | Completado en código; manual pendiente |
+| Word de planeación desde detalle | `js/pages/detalle.page.js`, `js/ui/wordExport.js` | `#btn-descargar-doc` | `PLANEACION_ORIGINAL`, tabla DOM y exportador protegido | Medio | 2 | Fase posterior |
+| Excel de planeación desde detalle | `js/pages/detalle.page.js` | Sin botón activo en `detalle.html` | estado de detalle, API y Blob | Medio | 2 | Legacy / no aplica en Fase 1 |
+| Modal de nombre documental | `js/ui/shared.ui.js` | Examen, lista, anexo y planeación | `AppUI`, DOM compartido | Bajo | Compartido | Ya aislado |
+| Modales de generación | `js/pages/dashboard.page.js`, `js/pages/biblioteca.page.js` | Generación de recursos | estado, jobs, polling y render | Alto | 4/6 | Fase posterior |
+| Confirmaciones de eliminación | `js/pages/dashboard.page.js`, `js/pages/biblioteca.page.js` | Acciones delete | estado y actualización de cards | Medio | 2/6 | Fase posterior |
+| Modal jerárquico general | `js/pages/dashboard.page.js` | Explorador visual antiguo | `explorerState` y eventos generales | Medio | 8 | Legacy |
 
-- consumidores confirmados en JS, HTML, `window.*` y `data-*`;
-- firmas y wrappers preservados;
-- `js/ui/wordExport.js` sin cambios;
-- orden de scripts equivalente;
-- preview abre/cierra y la descarga conserva nombre y contenido;
-- Login, carga de Biblioteca, tabs y recarga sin regresiones;
-- consola y terminal sin errores inesperados.
+No quedó ningún candidato desconocido.
 
-No se deben fijar nombres definitivos de archivos hasta completar la clasificación al inicio de esa sesión.
+## Sesión 1.4 — Descarga de planeación desde Biblioteca
+
+- Se creó `js/features/planeaciones/planeacion-download.js`.
+- Se trasladó literalmente `bibDescargarPlaneacion(planeacionId)` a `window.PlaneacionDownload.downloadFromBiblioteca`.
+- `biblioteca.page.js` conserva un wrapper `async` con la firma, promesa, argumentos y retorno actuales.
+- `pages/dashboard.html` carga el módulo después de los módulos de anexos y antes de `dashboard.page.js`/`biblioteca.page.js`.
+- `wordExport.js`, detalle, edición, Word/Excel de detalle, backend y contratos permanecieron intactos.
+
+### Validaciones
+
+- `node --check` pasó en `planeacion-download.js` y `biblioteca.page.js`.
+- `npm test -- --runInBand` pasó: 1 suite y 2 pruebas.
+- `git diff --check` pasó.
+- Smoke JSDOM pasó: namespace, wrapper, delegación, modal de nombre, Blob y descarga simulada.
+- La comparación automatizada contra la función de `HEAD` confirmó HTML, MIME, nombre, URL temporal, revocación y resultado equivalentes.
+
+### Pendiente para cerrar Fase 1
+
+- Ejecutar en navegador autenticado la descarga desde card, editar el nombre, abrir el `.doc` y comparar contenido/formato.
+- Repetir la regresión acumulativa de examen, lista, anexo, tabs, recarga y otra planeación.
+- Confirmar consola sin errores, sin descarga doble, sin listeners duplicados y sin activación del explorador legacy.
+
+No quedan candidatos aislados de bajo riesgo ni consumidores desconocidos. Tras aprobar estas pruebas se puede marcar Fase 1 como completada y recomendar Fase 2 — Acciones por dominio, sin implementarla en esta sesión.
 
 ## Dependencias conocidas
 
@@ -178,6 +208,7 @@ No se deben fijar nombres definitivos de archivos hasta completar la clasificaci
 - `window.explorerState` es mixto y no puede eliminarse completo.
 - `window.renderExamPreviewModal` y `window.renderListaCotejoPreviewModal` sirven a Biblioteca.
 - `window.downloadExamWord`, `window.renderBibliotecaContent` y `window.biblioteca` conservan consumidores.
+- `bibDescargarPlaneacion(planeacionId)` conserva un wrapper modular hasta migrar el handler y confirmar una búsqueda global sin consumidores en Fase 10.
 
 ## Zonas protegidas
 
@@ -202,4 +233,4 @@ No se deben fijar nombres definitivos de archivos hasta completar la clasificaci
 
 ## Última sesión
 
-2026-07-25 — Sesión 1.3: se extrajeron preview, cierre y descarga de anexos; no se modificó ningún contrato funcional.
+2026-07-25 — Sesión 1.4: se extrajo la descarga de planeación desde Biblioteca; código y validaciones automáticas completados, validación manual pendiente antes de cerrar Fase 1.
