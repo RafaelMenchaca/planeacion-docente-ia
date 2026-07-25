@@ -95,11 +95,11 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 
 | Flujo | Acción | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| Examen | descargar desde card | conserva nombre sugerido, modal editable, `.doc`, contenido y logs | Smoke aprobado; navegador pendiente |
-| Examen | cancelar nombre | no descarga y conserva retorno/promesa | Smoke aprobado; navegador pendiente |
-| Examen | error de exportación | conserva `console.error` y no altera estado/render | Smoke aprobado; navegador pendiente |
-| Examen | descargar desde preview | flujo aprobado de Fase 1 sin regresión | Pendiente de regresión manual |
-| Biblioteca | tabs, recarga y otra descarga | sin listeners, globals o descargas duplicadas | Pendiente de regresión manual |
+| Examen | descargar desde card | conserva nombre sugerido, modal editable, `.doc`, contenido y logs | Aprobada manualmente |
+| Examen | cancelar nombre | no descarga y conserva retorno/promesa | Aprobada manualmente |
+| Examen | error de exportación | conserva `console.error` y no altera estado/render | Sin errores relacionados observados |
+| Examen | descargar desde preview | flujo aprobado de Fase 1 sin regresión | Aprobada manualmente |
+| Biblioteca | tabs, recarga y otra descarga | sin listeners, globals o descargas duplicadas | Aprobada manualmente |
 
 ## Evidencia automatizada de sesión 2.1
 
@@ -109,7 +109,28 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - Smoke JSDOM: pasó para namespace, wrapper, búsqueda en caché, fallback a `obtenerExamenDetalle`, cancelación del modal, nombre editado, delegación al exportador, retorno de promesa, manejo de error, logs y resolución real entre scripts clásicos.
 - Búsqueda global post-cambio: una implementación canónica, wrapper conocido, consumidor conocido y cero referencias desconocidas.
 - Orden de scripts: confirmado sin cambios; `exam-download.js` carga antes de `dashboard.page.js` y `biblioteca.page.js`.
-- Validación manual de descarga desde card, fallback real, preview y regresión acumulativa: pendiente.
+- Validación manual: aprobada por el usuario para descarga y cancelación desde card, nombre sugerido/editado, `.doc` válido, preview y descarga desde preview, descargas de planeación/lista/anexo, tabs, recarga, segunda descarga, cero duplicados, cero errores relacionados y legacy visual no ejecutado.
+
+## Sesión 2.2 — Eliminación individual de examen
+
+| Flujo | Acción | Resultado esperado | Estado |
+| --- | --- | --- | --- |
+| Examen | cancelar eliminación | conserva card y no llama `DELETE` | Smoke aprobado; navegador pendiente |
+| Examen | confirmar eliminación | una llamada `DELETE`, card fuera del array y contador actualizado | Smoke aprobado; navegador pendiente |
+| Biblioteca | conservar bloque y tab | selección estable y tab `examenes` después de render/recarga | Smoke aprobado; navegador pendiente |
+| Examen | persistencia tras recarga | examen no reaparece; otros recursos permanecen | Pendiente de navegador |
+| Examen | API con error | no muta estado y conserva alerta/log | Smoke aprobado; navegador pendiente |
+| Regresión | preview, descargas, tabs y otros dominios | sin regresiones ni ejecución de legacy | Pendiente de navegador |
+
+### Evidencia automatizada
+
+- Comparación literal del cuerpo contra `HEAD`: pasó, ignorando únicamente indentación del nuevo contenedor.
+- `node --check js/features/examenes/exam-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- Smoke JSDOM: pasó para namespace, wrapper, cancelación, sesión, API/UUID, array, contador, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, conjunto ausente y cero llamadas dobles.
+- Smoke de scripts clásicos: `ExamDelete` y `bibEliminarExamen` disponibles sin excepciones inmediatas.
+- Validación manual de cancelación, eliminación real, persistencia y regresión: pendiente.
 
 ## Regresión acumulativa
 

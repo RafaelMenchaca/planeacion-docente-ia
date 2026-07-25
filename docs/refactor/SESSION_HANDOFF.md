@@ -13,11 +13,12 @@
 
 - **Fase actual:** 2 — Acciones por dominio.
 - **Estado:** En progreso.
-- **Sesión actual:** 2.1 — Coordinador de descarga de examen desde Biblioteca, completada en código.
-- **Validación manual:** pendiente.
-- **Próxima sesión recomendada:** 2.2 — Eliminación individual de examen.
+- **Sesión actual:** 2.2 — Eliminación individual de examen, completada en código.
+- **Validación manual 2.1:** aprobada.
+- **Validación manual 2.2:** pendiente.
+- **Próxima sesión recomendada:** 2.3 — Eliminación individual de lista de cotejo.
 
-Las Fases 0 y 1 están completadas. La Sesión 2.0 quedó completada como auditoría documental y la Sesión 2.1 conserva el alcance de un solo coordinador. La Fase 2 permanece en progreso.
+Las Fases 0 y 1 están completadas. Las sesiones 2.0 y 2.1 están completadas; la Sesión 2.2 quedó completada en código y pendiente de validación manual. La Fase 2 permanece en progreso.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -399,11 +400,66 @@ No quedaron consumidores desconocidos. El wrapper de Biblioteca se retira en Fas
 - `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
 - Smoke JSDOM: pasó para namespace, wrapper, caché, fallback, cancelación, delegación, retorno, error, logs y resolución real entre scripts clásicos en el orden de `dashboard.html`.
 - Búsqueda global post-cambio: una implementación canónica, un wrapper y un consumidor activo; cero desconocidos.
-- Validación manual de navegador y regresión acumulativa: pendientes.
+- Validación manual de navegador y regresión acumulativa: aprobadas por el usuario. Se confirmaron descarga y cancelación desde card, nombre sugerido y editado, archivo `.doc` válido, preview y descarga desde preview, descargas de los otros documentos, tabs, recarga, ausencia de descargas duplicadas y errores relacionados, y legacy visual no ejecutado.
 
 ### Exclusiones confirmadas
 
 No se modificaron preview, `wordExport.js`, delete, generación, polling, estado, render, event delegation, APIs, backend, detalle, Archivados ni legacy. La Sesión 2.2 queda definida, pero no implementada.
+
+## Sesión 2.2 — Eliminación individual de examen
+
+### Resultado
+
+- Se creó `js/features/examenes/exam-delete.js`.
+- `window.ExamDelete.deleteFromBiblioteca(examenId, conjuntoId)` es la implementación canónica.
+- `bibEliminarExamen(examenId, conjuntoId)` permanece como wrapper en `js/pages/biblioteca.page.js`.
+- `pages/dashboard.html` carga `exam-delete.js` junto a los módulos de examen y antes de `biblioteca.page.js`.
+- La firma real conserva dos UUID strings: examen y conjunto/batch. No se redujo a un argumento.
+
+### Consumidores y contrato
+
+| Función | Consumidor | Evento | Estado/render | Clasificación |
+| --- | --- | --- | --- | --- |
+| `bibEliminarExamen(examenId, conjuntoId)` | `onBibliotecaClick` | `data-bib-action="eliminar-examen"` | Delegación sin cambios | Compatibilidad de Biblioteca |
+| `ExamDelete.deleteFromBiblioteca(examenId, conjuntoId)` | wrapper anterior | Confirmación de la card | Muta examen/contador, fija tab, renderiza y recarga | Biblioteca activa |
+| `apiDeleteExamen(id, accessToken)` | implementación canónica | Después de confirmar y obtener sesión | `DELETE /api/examenes/:id` | Compartida activa |
+
+No quedaron consumidores desconocidos, legacy ni de Archivados. El wrapper se retira en Fase 10 después de migrar el handler y confirmar búsqueda global limpia.
+
+### Comportamiento conservado
+
+1. Normaliza `examenId` y `conjuntoId`; retorna si falta cualquiera.
+2. Muestra `¿Eliminar este examen?` y `Esta acción no se puede deshacer.`.
+3. Cancelar retorna sin pedir sesión ni llamar API.
+4. Obtiene sesión y llama una sola vez `apiDeleteExamen(safeExamenId, token)`.
+5. Registra `[biblioteca] delete:success`.
+6. Busca el conjunto por UUID; si existe, filtra `conjunto.examenes` y recalcula `total_examenes`.
+7. Fija selección/tab `examenes`, ejecuta `renderBibliotecaDetailInPlace()` y después espera `loadAndRenderBiblioteca({ silent: true, targetBatchId, activeTab: "examenes" })`.
+8. Si el conjunto no está localmente, conserva selección, render y recarga.
+9. Si falla la API, no muta estado y conserva `console.error` más `alert(error.message || mensaje vigente)`.
+
+### API y persistencia verificadas
+
+- Frontend: `apiDeleteExamen` permanece en `js/api/biblioteca.api.js`.
+- Backend: `DELETE /api/examenes/:id`, protegido por `requireAuth`.
+- `examenes.id` y `batch_id` son UUID; el service filtra por `id` y `user_id`.
+- Éxito: `200 { ok: true }`.
+- ID vacío: 400; sin token o usuario: 401; inexistente o de otro usuario: 404 `Examen no encontrado.`.
+- Solo se elimina la fila de `examenes`. No se elimina el job relacionado; `examen_generation_jobs.examen_id` usa `ON DELETE SET NULL`.
+
+### Validación
+
+- Comparación literal contra `HEAD`: pasó ignorando solo indentación del IIFE.
+- `node --check js/features/examenes/exam-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Smoke JSDOM: pasó para namespace, wrapper, cancelación, UUID/API, array, contador, selección/tab, render, recarga, orden, error, promesa, ausencia local y cero llamadas dobles.
+- Smoke de scripts clásicos: pasó.
+- Validación manual y regresión: pendientes.
+
+### Exclusiones confirmadas
+
+No se modificaron preview, descarga, Word, generación, polling, estado general, renderers, event delegation, API frontend, backend, otros deletes, Archivados ni legacy. La Sesión 2.3 quedó definida, pero no implementada.
 
 ## Dependencias conocidas
 
@@ -420,6 +476,7 @@ No se modificaron preview, `wordExport.js`, delete, generación, polling, estado
 - `window.downloadExamWord`, `window.renderBibliotecaContent` y `window.biblioteca` conservan consumidores.
 - `bibDescargarPlaneacion(planeacionId)` conserva un wrapper modular hasta migrar el handler y confirmar una búsqueda global sin consumidores en Fase 10.
 - `bibDescargarExamen(examenId)` conserva un wrapper modular hasta migrar `data-bib-action="descargar-examen"` y confirmar una búsqueda global sin consumidores en Fase 10.
+- `bibEliminarExamen(examenId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-examen"` y confirmar una búsqueda global sin consumidores en Fase 10.
 
 ## Zonas protegidas
 
@@ -444,4 +501,4 @@ No se modificaron preview, `wordExport.js`, delete, generación, polling, estado
 
 ## Última sesión
 
-2026-07-25 — Sesión 2.1: se extrajo el coordinador de descarga de examen desde Biblioteca al módulo existente; validaciones automáticas aprobadas y validación manual pendiente.
+2026-07-25 — Sesión 2.2: se extrajo la eliminación individual de examen a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.

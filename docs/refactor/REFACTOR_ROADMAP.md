@@ -198,14 +198,18 @@ Separar gradualmente las acciones específicas de planeaciones, anexos, listas d
 Sesión 2.0 completada en auditoría: se localizaron y clasificaron las acciones activas de Planeaciones, Anexos, Listas de cotejo, Exámenes y bloques de Biblioteca; se confirmaron consumidores, APIs, IDs, estado, renders, confirmaciones y efectos backend. No quedaron acciones desconocidas.
 
 ```text
-Sesión 2.1 — Completada en código
-Validación manual — Pendiente
-Próxima sesión — 2.2 — Eliminación individual de examen
+Sesión 2.1 — Completada
+Validación manual 2.1 — Aprobada
+Sesión 2.2 — Completada en código
+Validación manual 2.2 — Pendiente
+Próxima sesión — 2.3 — Eliminación individual de lista de cotejo
 ```
 
-En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite y el smoke técnico pasaron; la validación manual de navegador y la regresión acumulativa quedan pendientes y no bloquean el registro de “completada en código”.
+En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite, el smoke técnico y la validación manual acumulativa fueron aprobadas.
 
-La Sesión 2.2 queda definida para la eliminación individual de examen. No se implementó delete en la Sesión 2.1. Las demás eliminaciones individuales se abordarán después por dominio y la eliminación de bloque permanecerá separada.
+En la Sesión 2.2 se trasladó literalmente `bibEliminarExamen(examenId, conjuntoId)` a `js/features/examenes/exam-delete.js` como `ExamDelete.deleteFromBiblioteca(examenId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación local, contador, tab, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite y el smoke técnico fueron aprobados; la validación manual de navegador queda pendiente.
+
+La Sesión 2.3 queda definida para la eliminación individual de lista de cotejo, pero no fue implementada. Las eliminaciones de anexo, planeación y bloque permanecen separadas.
 
 ### Dependencias
 
