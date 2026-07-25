@@ -13,10 +13,10 @@
 
 - **Fase actual:** 1 — Extracciones aisladas.
 - **Estado:** En progreso.
-- **Sesión actual:** 1.1 — Preview y descarga de examen.
-- **Próxima sesión recomendada:** 1.2 — siguiente extracción aislada confirmada por auditoría.
+- **Sesión actual:** 1.2 — Preview y descarga de listas de cotejo.
+- **Próxima sesión recomendada:** 1.3 — siguiente extracción aislada, solo después de una nueva auditoría de consumidores.
 
-La Fase 0 no está completada: la línea base manual completa continúa pendiente. La Fase 1 queda en progreso; la sesión 1.1 se completó en código, con pruebas manuales de navegador pendientes.
+La Fase 0 no está completada: la línea base manual completa continúa pendiente. La Fase 1 queda en progreso; las sesiones 1.1 y 1.2 se completaron en código, con pruebas manuales de navegador pendientes.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -52,6 +52,46 @@ Los wrappers se retiran únicamente cuando una búsqueda global confirme que no 
 - El flujo conserva globals y depende de `explorerState`, `obtenerExamenDetalle`, `AppUI` y el DOM del layout.
 - El backend no contiene migraciones SQL visibles; no se modificó ni se infirió schema.
 - El examen actualmente no consume `wordExport.js`; cambiarlo estaría fuera de la extracción literal.
+
+## Sesión 1.2 — Preview y descarga de listas de cotejo
+
+### Resultado
+
+- Se creó `js/features/listas-cotejo/lista-cotejo-preview.js` con render, apertura, cierre y el camino de Biblioteca.
+- Se creó `js/features/listas-cotejo/lista-cotejo-download.js` con los coordinadores de descarga de card y preview.
+- Se retiró únicamente la implementación duplicada de preview de `dashboard.page.js` y los coordinadores locales de lista de `biblioteca.page.js`.
+- `js/ui/wordExport.js` conserva sin cambios `window.descargarListaCotejoWord(lista, filenameOverride)`, el generador Word canónico protegido.
+
+### Consumidores y wrappers
+
+- `window.renderListaCotejoPreviewModal`: `renderAll()`, Biblioteca y el explorador jerárquico; wrapper conservado en `dashboard.page.js`.
+- `window.closeListaCotejoPreview`: backdrop, botón cerrar, Escape y compatibilidad global; wrapper conservado en `dashboard.page.js`.
+- `openListaCotejoPreview(listaId)`: handler `data-content-action="preview-lista-cotejo"` del explorador visual legacy; wrapper local conservado en `dashboard.page.js`.
+- `openBibliotecaListaPreview(listaId)`: handler `data-bib-action="ver-lista"`; wrapper local conservado en `biblioteca.page.js`.
+- `bibDescargarLista(listaId)`: handler `data-bib-action="descargar-lista"`; wrapper local conservado en `biblioteca.page.js`.
+
+Los wrappers se retiran únicamente cuando una búsqueda global confirme que no quedan consumidores; el wrapper del explorador legacy requiere antes el aislamiento de Fase 8-9 y los demás corresponden a Fase 10.
+
+### Dependencias y orden
+
+`wordExport.js` → `exam-download.js` → `exam-preview.js` → `lista-cotejo-download.js` → `lista-cotejo-preview.js` → `components.private.js`/`shared.ui.js`/APIs → `dashboard.page.js` → `biblioteca.page.js` → `main.js`/inicialización.
+
+Los módulos de listas solo definen namespaces durante la carga; al invocarse consumen el DOM del layout, `window.explorerState`, `window.obtenerListaCoTejoDetalle`, `window.AppUI` y `window.descargarListaCotejoWord` ya disponibles por ese orden.
+
+### Validación y pendientes
+
+- `node --check` pasó en `lista-cotejo-preview.js`, `lista-cotejo-download.js`, `dashboard.page.js` y `biblioteca.page.js`.
+- `npm test -- --runInBand` pasó: 1 suite y 2 pruebas.
+- `git diff --check` pasó.
+- Smoke test JSDOM pasó: namespaces, apertura/render/cierre y delegación de descarga.
+- Navegador real, login, preview, cierre con Escape, descargas desde card/preview, nombre/archivo, consola y regresión de tabs/recarga/exámenes quedan pendientes porque no se ejecutó un navegador en esta sesión.
+
+### Riesgos y hallazgos
+
+- El preview conserva los estados existentes: el renderer no muestra `loading` ni `error` aunque la apertura de Biblioteca los actualiza; se preservó literalmente y no se corrigió.
+- La estructura real de `listas_cotejo` conserva `id` UUID, `planeacion_id` bigint único, `tema_id`, `unidad_id`, `batch_id`, `criterios`, `actividades_evaluadas` y total de 10; no hubo contradicción entre schema y servicio para los campos consumidos.
+- `missing_closing_activity` sigue siendo un reason legacy que representa ausencia de actividades evaluables; no se reinterpretó.
+- El hallazgo de métricas de planeaciones hacia `public.ia_metrics` frente a `public.ia_metrics_legacy` sigue fuera de alcance y no se modificó.
 
 ## Evidencia confirmada de Fase 0
 
@@ -122,4 +162,4 @@ No se deben fijar nombres definitivos de archivos hasta completar la clasificaci
 
 ## Última sesión
 
-2026-07-23 — Se creó el roadmap canónico de Fases 0–10 y se alinearon reglas, arquitectura, playbook, handoff, test matrix y decisiones. No se modificó código ni ningún contrato funcional.
+2026-07-25 — Sesión 1.2: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo; no se modificó ningún contrato funcional.

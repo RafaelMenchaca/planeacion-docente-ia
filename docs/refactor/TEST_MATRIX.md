@@ -14,8 +14,8 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 | Anexo | abrir preview | modal correcto | sin error frontend | 0, 1-2 | Pendiente |
 | Anexo | descargar | archivo generado | download success | 0, 1-2 | Pendiente |
 | Lista | generar | card o `skipped` correcto | backend success/skipped | 0, 4 | Pendiente |
-| Lista | abrir preview | modal correcto | wrapper disponible | 0, 1-2 | Pendiente |
-| Lista | descargar | archivo generado | download success | 0, 1-2 | Pendiente |
+| Lista | abrir preview | modal correcto | wrapper disponible | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.2 |
+| Lista | descargar | archivo generado | download success | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.2 |
 | Examen | generar | job creado | respuesta 202 | 0, 4 | Pendiente |
 | Examen | polling | progreso termina | job completed/failed | 0, 4 | Pendiente |
 | Examen | abrir/cerrar preview | modal correcto | wrapper disponible | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.1 |
@@ -35,6 +35,17 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - `node --check js/pages/biblioteca.page.js`: pasó.
 - `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
 - `git diff --check`: pasó.
+- Pruebas manuales de navegador: pendientes; no se marcaron como completadas.
+
+## Evidencia automatizada de sesión 1.2
+
+- `node --check js/features/listas-cotejo/lista-cotejo-preview.js`: pasó.
+- `node --check js/features/listas-cotejo/lista-cotejo-download.js`: pasó.
+- `node --check js/pages/dashboard.page.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- `git diff --check`: pasó.
+- Smoke test JSDOM de namespaces, modal y delegación de descarga: pasó.
 - Pruebas manuales de navegador: pendientes; no se marcaron como completadas.
 
 ## Regresión acumulativa

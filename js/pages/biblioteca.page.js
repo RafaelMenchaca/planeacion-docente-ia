@@ -2048,25 +2048,13 @@ async function bibDescargarExamen(examenId) {
   }
 }
 
+// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
+// Motivo: mantener el handler data-bib-action="descargar-lista" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function bibDescargarLista(listaId) {
-  console.debug("[downloads] lista:start", { listaId });
-  try {
-    const lista = await window.obtenerListaCoTejoDetalle(listaId);
-
-    const suggested = window.AppUI.buildDownloadSuggestedName(
-      "Lista_cotejo",
-      lista?.tema || lista?.titulo
-    );
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-
-    if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista, filename);
-    }
-    console.debug("[downloads] lista:success", { listaId });
-  } catch (error) {
-    console.error("[downloads] lista:error", { listaId, message: error?.message });
-  }
+  return window.ListaCotejoDownload.downloadBiblioteca(listaId);
 }
 
 // Compatibilidad temporal: conserva la apertura local de Biblioteca durante la extracción.
@@ -2078,29 +2066,13 @@ async function openBibliotecaExamenPreview(examenId) {
   return window.ExamPreview.openBiblioteca(examenId);
 }
 
-// ---- LISTA PREVIEW (reusa modal existente de dashboard.page.js) ----
-
+// Compatibilidad temporal: conserva la apertura local de Biblioteca durante la extracción.
+// Motivo: mantener el handler data-bib-action="ver-lista" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function openBibliotecaListaPreview(listaId) {
-  if (!window.explorerState) return;
-
-  console.debug("[preview] lista:open", { listaId });
-
-  window.explorerState.listaCotejoPreview = { open: true, listaId, listaData: null, loading: true, error: "" };
-  if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
-
-  try {
-    const lista = await window.obtenerListaCoTejoDetalle(listaId);
-    window.explorerState.listaCotejoPreview = { open: true, listaId, listaData: lista, loading: false, error: "" };
-    if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
-  } catch (error) {
-    console.error("[preview] lista:error", { listaId, message: error?.message });
-    window.explorerState.listaCotejoPreview = {
-      ...window.explorerState.listaCotejoPreview,
-      loading: false,
-      error: "No se pudo cargar la lista de cotejo."
-    };
-    if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
-  }
+  return window.ListaCotejoPreview.openBiblioteca(listaId);
 }
 
 // ---- BIBLIOTECA EXAM GENERATION MODAL ----

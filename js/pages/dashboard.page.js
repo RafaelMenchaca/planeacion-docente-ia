@@ -1773,80 +1773,31 @@ function renderActividadesEvaluadasHtml(lista) {
   `;
 }
 
-function renderListaCotejoPreviewBody(lista) {
-  if (!lista) return '<p class="text-sm text-slate-500">No se pudo cargar la lista.</p>';
-  const criterios = Array.isArray(lista.criterios) ? lista.criterios : [];
-  return `
-    <div class="space-y-3">
-      <div class="overflow-x-auto rounded-xl border border-slate-200">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Criterio</th>
-              <th class="w-20 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">Si (2 pts)</th>
-              <th class="w-20 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">No (0 pts)</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            ${criterios.map((c, i) => `
-              <tr class="${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}">
-                <td class="px-3 py-2.5 text-slate-700">${escapeHtml(c.criterio || "")}</td>
-                <td class="px-3 py-2.5 text-center text-slate-500">${escapeHtml(String(c.si ?? 2))}</td>
-                <td class="px-3 py-2.5 text-center text-slate-500">${escapeHtml(String(c.no ?? 0))}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-          <tfoot class="bg-slate-50">
-            <tr>
-              <td class="px-3 py-2.5 text-xs font-semibold text-slate-600">Total</td>
-              <td class="px-3 py-2.5 text-center text-xs font-semibold text-slate-700">${escapeHtml(String(lista.total_puntos || 10))} pts</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
+// Compatibilidad temporal: conserva la firma pública y los consumidores del dashboard/Biblioteca.
+// Motivo: mantener la API global durante la extracción.
+// Consumidores actuales: renderAll(), Biblioteca y el explorador jerárquico.
+// Condición para retirarlo: búsqueda global sin consumidores de window.renderListaCotejoPreviewModal.
+// Fase prevista de retiro: Fase 10.
 function renderListaCotejoPreviewModal() {
-  const modal = document.getElementById("lista-cotejo-preview-modal");
-  const title = document.getElementById("lista-cotejo-preview-title");
-  const meta = document.getElementById("lista-cotejo-preview-meta");
-  const body = document.getElementById("lista-cotejo-preview-body");
-  const error = document.getElementById("lista-cotejo-preview-error");
-  if (!modal || !title || !meta || !body || !error) return;
-
-  const state = explorerState.listaCotejoPreview;
-  modal.classList.toggle("hidden", !state.open);
-  syncBodyScrollLock();
-
-  if (!state.open) {
-    error.classList.add("hidden");
-    error.textContent = "";
-    body.innerHTML = "";
-    return;
-  }
-
-  const lista = state.listaData;
-  title.textContent = lista?.titulo || "Lista de cotejo";
-  meta.textContent = lista?.tema ? `Tema: ${escapeHtml(lista.tema)}` : "";
-  error.classList.add("hidden");
-  body.innerHTML = renderListaCotejoPreviewBody(lista);
+  return window.ListaCotejoPreview.render();
 }
 
+// Compatibilidad temporal: conserva la apertura usada por el explorador histórico.
+// Motivo: mantener la firma local durante la extracción del preview.
+// Consumidores actuales: handleContentClick del explorador jerárquico.
+// Condición para retirarlo: retiro separado del consumidor legacy confirmado.
+// Fase prevista de retiro: Fase 8-9.
 function openListaCotejoPreview(listaId) {
-  if (!listaId) return;
-  const unidadId = explorerState.current.unidadId;
-  const listas = explorerState.listasCotejoByUnidad[unidadId] || [];
-  const lista = listas.find((l) => l.id === listaId) || null;
-  explorerState.listaCotejoPreview = { open: true, listaId, listaData: lista, loading: false, error: "" };
-  renderListaCotejoPreviewModal();
+  return window.ListaCotejoPreview.open(listaId);
 }
 
+// Compatibilidad temporal: conserva la firma pública de cierre del modal.
+// Motivo: mantener listeners y Escape sin cambiar el flujo de cierre.
+// Consumidores actuales: listeners de Dashboard y compatibilidad global.
+// Condición para retirarlo: búsqueda global sin consumidores de window.closeListaCotejoPreview.
+// Fase prevista de retiro: Fase 10.
 function closeListaCotejoPreview() {
-  explorerState.listaCotejoPreview = { open: false, listaId: null, listaData: null, loading: false, error: "" };
-  renderListaCotejoPreviewModal();
+  return window.ListaCotejoPreview.close();
 }
 
 function shouldShowListaCotejoSection(unidadId) {
@@ -5550,12 +5501,7 @@ function bindDashboardEvents() {
   document.getElementById("lista-cotejo-preview-download")?.addEventListener("click", async () => {
     const lista = explorerState.listaCotejoPreview?.listaData;
     if (!lista) return;
-    const suggested = window.AppUI.buildDownloadSuggestedName("Lista_cotejo", lista.tema || lista.titulo);
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-    if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista, filename);
-    }
+    return window.ListaCotejoDownload.download(lista);
   });
 
   document.getElementById("unit-exam-form")?.addEventListener("submit", (event) => {
