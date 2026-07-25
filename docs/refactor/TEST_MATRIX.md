@@ -18,14 +18,24 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 | Lista | descargar | archivo generado | download success | 0, 1-2 | Pendiente |
 | Examen | generar | job creado | respuesta 202 | 0, 4 | Pendiente |
 | Examen | polling | progreso termina | job completed/failed | 0, 4 | Pendiente |
-| Examen | abrir/cerrar preview | modal correcto | wrapper disponible | 0, 1-2 | Pendiente |
-| Examen | descargar | archivo generado | download success | 0, 1-2 | Pendiente |
+| Examen | abrir/cerrar preview | modal correcto | wrapper disponible | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.1 |
+| Examen | descargar | archivo generado | download success | 0, 1-2 | Pendiente — navegador no ejecutado en sesión 1.1 |
 | Recursos | eliminar | card desaparece | backend success | 0, 2 | Pendiente |
 | Bloque | eliminar | conjunto desaparece | backend success | 0, 2 | Pendiente |
 | Tabs | navegar | conserva bloque y tab esperado | sin doble render | 0, 5-6 | Pendiente |
 | Recarga | recargar dashboard | Biblioteca vuelve a cargar | sin activar árbol legacy | 0, 6-9 | Pendiente |
 | Legacy visual | cargar ruta vigente | no se muestra ni ejecuta el explorador | Biblioteca sigue activa | 8-9 | Pendiente |
 | Archivados | acceso separado y operaciones vigentes | flujo separado funciona | sin afectar Biblioteca | 0, 7-10 | Pendiente |
+
+## Evidencia automatizada de sesión 1.1
+
+- `node --check js/features/examenes/exam-preview.js`: pasó.
+- `node --check js/features/examenes/exam-download.js`: pasó.
+- `node --check js/pages/dashboard.page.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- `git diff --check`: pasó.
+- Pruebas manuales de navegador: pendientes; no se marcaron como completadas.
 
 ## Regresión acumulativa
 

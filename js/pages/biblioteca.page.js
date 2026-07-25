@@ -2069,28 +2069,13 @@ async function bibDescargarLista(listaId) {
   }
 }
 
-// ---- EXAM PREVIEW (reusa modal existente de dashboard.page.js) ----
-
+// Compatibilidad temporal: conserva la apertura local de Biblioteca durante la extracción.
+// Motivo: mantener el handler data-bib-action="ver-examen" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function openBibliotecaExamenPreview(examenId) {
-  if (!window.explorerState) return;
-
-  console.debug("[preview] exam:open", { examenId });
-
-  window.explorerState.examPreview = { open: true, examenId, loading: true, error: "" };
-  if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
-
-  try {
-    const examen = await window.obtenerExamenDetalle(examenId);
-    window.explorerState.examenDetalleById = window.explorerState.examenDetalleById || {};
-    window.explorerState.examenDetalleById[examenId] = examen;
-    window.explorerState.examPreview.loading = false;
-    if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
-  } catch (error) {
-    console.error("[preview] exam:error", { examenId, message: error?.message });
-    window.explorerState.examPreview.loading = false;
-    window.explorerState.examPreview.error   = "No se pudo cargar el examen.";
-    if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
-  }
+  return window.ExamPreview.openBiblioteca(examenId);
 }
 
 // ---- LISTA PREVIEW (reusa modal existente de dashboard.page.js) ----

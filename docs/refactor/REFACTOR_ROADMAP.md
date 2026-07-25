@@ -24,7 +24,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | Fase | Nombre | Objetivo principal | Riesgo | Estado |
 | --- | --- | --- | --- | --- |
 | 0 | Línea base y protección | Establecer punto seguro | Bajo | En progreso |
-| 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Pendiente |
+| 1 | Extracciones aisladas | Crear primeros módulos | Bajo | En progreso |
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Pendiente |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Pendiente |
 | 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
@@ -118,7 +118,9 @@ Crear los primeros módulos de Biblioteca mediante extracciones literales, peque
 
 ### Estado
 
-**Pendiente.**
+**En progreso.**
+
+Sesión 1.1 completada: se extrajeron preview, cierre de preview y descarga Word de examen a `js/features/examenes/`. La Fase 1 continúa en progreso porque sus demás candidatos y la validación manual acumulativa siguen pendientes.
 
 ### Dependencias
 

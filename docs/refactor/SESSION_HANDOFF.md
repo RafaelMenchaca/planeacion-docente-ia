@@ -11,12 +11,47 @@
 
 ## Estado del roadmap
 
-- **Fase actual:** 0 — Línea base y protección.
+- **Fase actual:** 1 — Extracciones aisladas.
 - **Estado:** En progreso.
-- **Próxima fase:** 1 — Extracciones aisladas de bajo riesgo.
-- **Primera sesión sugerida:** preview y descarga de examen.
+- **Sesión actual:** 1.1 — Preview y descarga de examen.
+- **Próxima sesión recomendada:** 1.2 — siguiente extracción aislada confirmada por auditoría.
 
-La Fase 0 no está completada: la línea base manual completa continúa pendiente y los cambios documentales de esta sesión no tienen commit por instrucción del usuario.
+La Fase 0 no está completada: la línea base manual completa continúa pendiente. La Fase 1 queda en progreso; la sesión 1.1 se completó en código, con pruebas manuales de navegador pendientes.
+
+## Sesión 1.1 — Preview y descarga de examen
+
+### Resultado
+
+- Se creó `js/features/examenes/exam-preview.js` con preview, apertura/cierre y el camino de compatibilidad usado por Biblioteca.
+- Se creó `js/features/examenes/exam-download.js` con la descarga Word existente.
+- Se retiró únicamente la implementación duplicada de `dashboard.page.js` y la implementación local de apertura de `biblioteca.page.js`.
+- `js/ui/wordExport.js` no fue modificado.
+
+### Consumidores y wrappers
+
+- `window.renderExamPreviewModal`: `renderAll()`, Biblioteca y el explorador jerárquico; wrapper conservado en `dashboard.page.js`.
+- `window.closeExamPreviewModal`: listeners del modal, Escape y compatibilidad global; wrapper conservado en `dashboard.page.js`.
+- `window.downloadExamWord(examenId, filenameOverride)`: cards de Biblioteca, botón del preview y explorador jerárquico; wrapper conservado en `dashboard.page.js`.
+- `openBibliotecaExamenPreview(examenId)`: handler `data-bib-action="ver-examen"`; wrapper local conservado en `biblioteca.page.js`.
+
+Los wrappers se retiran únicamente cuando una búsqueda global confirme que no quedan consumidores; el retiro corresponde a una sesión posterior de Fase 10, salvo el wrapper del explorador legacy, que requiere aislamiento de Fase 8-9.
+
+### Dependencias y orden
+
+`wordExport.js` → `exam-download.js` → `exam-preview.js` → `components.private.js`/`shared.ui.js`/APIs → `dashboard.page.js` → `biblioteca.page.js` → `main.js`/inicialización. El módulo de examen conserva su Blob Word actual y no llama a `window.descargarWord`; esa función de `wordExport.js` pertenece a otros consumidores.
+
+### Validación y pendientes
+
+- `node --check` pasó en los cuatro JavaScript modificados/creados.
+- `npm test -- --runInBand` pasó: 1 suite y 2 pruebas.
+- `git diff --check` pasó.
+- Navegador real, login, preview, cierre, descargas, nombre/archivo, consola y regresión de tabs/recarga quedan pendientes porque no se ejecutó un navegador en esta sesión.
+
+### Riesgos y hallazgos
+
+- El flujo conserva globals y depende de `explorerState`, `obtenerExamenDetalle`, `AppUI` y el DOM del layout.
+- El backend no contiene migraciones SQL visibles; no se modificó ni se infirió schema.
+- El examen actualmente no consume `wordExport.js`; cambiarlo estaría fuera de la extracción literal.
 
 ## Evidencia confirmada de Fase 0
 
@@ -32,7 +67,7 @@ La Fase 0 no está completada: la línea base manual completa continúa pendient
 - Registrar resultados reales de Biblioteca, generación, polling, previews, descargas y eliminación.
 - Confirmar ausencia de errores inesperados en consola y terminal durante la línea base.
 - Dejar los cambios documentales revisados en un commit pequeño, solo cuando el usuario lo autorice.
-- Volver a confirmar ambos repositorios limpios antes de iniciar Fase 1.
+- Mantener la línea base manual pendiente y no declarar Fase 0 completada por esta extracción parcial.
 
 ## Alcance de la primera sesión sugerida
 
