@@ -25,7 +25,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | --- | --- | --- | --- | --- |
 | 0 | Línea base y protección | Establecer punto seguro | Bajo | Completada |
 | 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
-| 2 | Acciones por dominio | Separar documentos | Bajo/medio | Pendiente |
+| 2 | Acciones por dominio | Separar documentos | Bajo/medio | En progreso |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Pendiente |
 | 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
@@ -118,13 +118,13 @@ Crear los primeros módulos de Biblioteca mediante extracciones literales, peque
 
 ### Estado
 
-**En progreso.**
+**Completada.**
 
 Sesión 1.1 completada: se extrajeron preview, cierre de preview y descarga Word de examen a `js/features/examenes/`. Sesión 1.2 completada: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo a `js/features/listas-cotejo/`, conservando `wordExport.js` como generador Word protegido. Sesión 1.3 completada: se extrajeron preview, cierre y descarga de anexos a `js/features/anexos/`, conservando su exportador Word propio. La validación manual acumulativa de esas tres sesiones fue aprobada por el usuario.
 
-Sesión 1.4 completada en código: `bibDescargarPlaneacion(planeacionId)` se extrajo literalmente a `js/features/planeaciones/planeacion-download.js`, con namespace y wrapper de compatibilidad. Las validaciones estáticas, la suite y el smoke de equivalencia contra la implementación anterior pasaron.
+Sesión 1.4 completada: `bibDescargarPlaneacion(planeacionId)` se extrajo literalmente a `js/features/planeaciones/planeacion-download.js`, con namespace y wrapper de compatibilidad. Las validaciones estáticas, la suite, el smoke de equivalencia y la validación acumulativa requerida quedaron aprobados antes de abrir la Fase 2.
 
-La auditoría final no encontró más candidatos aislados de bajo riesgo. La Fase 1 permanece **En progreso** únicamente hasta aprobar en navegador la descarga de planeación desde Biblioteca y la regresión acumulativa posterior a la Sesión 1.4. Permanecieron excluidos navegación y detalle de planeación, edición, exportaciones de `detalle.page.js`, generación, polling, eliminación, API, estado, render general y legacy.
+La auditoría final no encontró más candidatos aislados propios de Fase 1 ni consumidores desconocidos. Permanecieron excluidos navegación y detalle de planeación, edición, exportaciones de `detalle.page.js`, generación, polling, eliminación, API, estado, render general y legacy. Esos trabajos quedaron asignados a fases posteriores.
 
 ### Dependencias
 
@@ -193,7 +193,19 @@ Separar gradualmente las acciones específicas de planeaciones, anexos, listas d
 
 ### Estado
 
-**Pendiente.**
+**En progreso.**
+
+Sesión 2.0 completada en auditoría: se localizaron y clasificaron las acciones activas de Planeaciones, Anexos, Listas de cotejo, Exámenes y bloques de Biblioteca; se confirmaron consumidores, APIs, IDs, estado, renders, confirmaciones y efectos backend. No quedaron acciones desconocidas.
+
+```text
+Sesión 2.1 — Completada en código
+Validación manual — Pendiente
+Próxima sesión — 2.2 — Eliminación individual de examen
+```
+
+En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite y el smoke técnico pasaron; la validación manual de navegador y la regresión acumulativa quedan pendientes y no bloquean el registro de “completada en código”.
+
+La Sesión 2.2 queda definida para la eliminación individual de examen. No se implementó delete en la Sesión 2.1. Las demás eliminaciones individuales se abordarán después por dominio y la eliminación de bloque permanecerá separada.
 
 ### Dependencias
 

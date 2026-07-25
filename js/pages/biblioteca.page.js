@@ -1714,27 +1714,12 @@ async function bibDescargarPlaneacion(planeacionId) {
   return window.PlaneacionDownload.downloadFromBiblioteca(planeacionId);
 }
 
+// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="descargar-examen".
+// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
 async function bibDescargarExamen(examenId) {
-  console.debug("[downloads] exam:start", { examenId });
-  try {
-    const conjunto = bibliotecaState.conjuntos.find(c =>
-      Array.isArray(c.examenes) &&
-      c.examenes.some(e => normalizeBibliotecaId(e.id) === normalizeBibliotecaId(examenId))
-    );
-    const suggested = window.AppUI.buildDownloadSuggestedName(
-      "Examen",
-      conjunto?.titulo || ""
-    );
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-
-    if (typeof window.downloadExamWord === "function") {
-      await window.downloadExamWord(examenId, filename);
-    }
-    console.debug("[downloads] exam:success", { examenId });
-  } catch (error) {
-    console.error("[downloads] exam:error", { examenId, message: error?.message });
-  }
+  return window.ExamDownload.downloadFromBiblioteca(examenId);
 }
 
 // Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.

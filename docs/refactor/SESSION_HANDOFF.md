@@ -11,12 +11,13 @@
 
 ## Estado del roadmap
 
-- **Fase actual:** 1 — Extracciones aisladas.
+- **Fase actual:** 2 — Acciones por dominio.
 - **Estado:** En progreso.
-- **Sesión actual:** 1.4 — Descarga de planeación desde Biblioteca.
-- **Próxima acción recomendada:** validación manual de la Sesión 1.4 y cierre documental de Fase 1.
+- **Sesión actual:** 2.1 — Coordinador de descarga de examen desde Biblioteca, completada en código.
+- **Validación manual:** pendiente.
+- **Próxima sesión recomendada:** 2.2 — Eliminación individual de examen.
 
-La Fase 0 está completada. Las sesiones 1.1, 1.2 y 1.3 y su validación manual acumulativa están completadas. La Sesión 1.4 está completada en código; su validación manual y la regresión acumulativa posterior quedan pendientes, por lo que Fase 1 todavía no se cierra.
+Las Fases 0 y 1 están completadas. La Sesión 2.0 quedó completada como auditoría documental y la Sesión 2.1 conserva el alcance de un solo coordinador. La Fase 2 permanece en progreso.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -149,7 +150,7 @@ Los módulos de anexos dependen al invocarse de `window.requireSession`, `apiObt
 
 ## Auditoría de cierre de Fase 1
 
-Decisión ejecutada: la última extracción aislada fue la Sesión 1.4. Su código está completado y solo falta la validación manual para cerrar Fase 1.
+Decisión ejecutada: la última extracción aislada fue la Sesión 1.4. Su código, validaciones automáticas y validación acumulativa quedaron completados; la Fase 1 está cerrada.
 
 | Candidato | Archivo actual | Consumidor activo | Dependencias | Riesgo | Fase correcta | Decisión |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -161,7 +162,7 @@ Decisión ejecutada: la última extracción aislada fue la Sesión 1.4. Su códi
 | Preview de anexo | `js/features/anexos/anexo-preview.js` | Biblioteca | API, DOM y módulo de descarga | Bajo | 1 | Completado |
 | Descarga de anexo | `js/features/anexos/anexo-download.js` | Card y preview | API, `AppUI` y Blob propio | Bajo | 1 | Completado |
 | Preview/detalle de planeación | `js/pages/biblioteca.page.js`, `js/pages/detalle.page.js` | Enlace `detalle.html?id=...` | navegación, carga, edición y estado de página | Medio | 7 | Fase posterior |
-| Descarga de planeación desde card | `js/features/planeaciones/planeacion-download.js` | `data-bib-action="descargar-planeacion"` mediante wrapper | detalle por ID, `AppUI` y Blob propio | Bajo | 1 | Completado en código; manual pendiente |
+| Descarga de planeación desde card | `js/features/planeaciones/planeacion-download.js` | `data-bib-action="descargar-planeacion"` mediante wrapper | detalle por ID, `AppUI` y Blob propio | Bajo | 1 | Completado |
 | Word de planeación desde detalle | `js/pages/detalle.page.js`, `js/ui/wordExport.js` | `#btn-descargar-doc` | `PLANEACION_ORIGINAL`, tabla DOM y exportador protegido | Medio | 2 | Fase posterior |
 | Excel de planeación desde detalle | `js/pages/detalle.page.js` | Sin botón activo en `detalle.html` | estado de detalle, API y Blob | Medio | 2 | Legacy / no aplica en Fase 1 |
 | Modal de nombre documental | `js/ui/shared.ui.js` | Examen, lista, anexo y planeación | `AppUI`, DOM compartido | Bajo | Compartido | Ya aislado |
@@ -187,13 +188,222 @@ No quedó ningún candidato desconocido.
 - Smoke JSDOM pasó: namespace, wrapper, delegación, modal de nombre, Blob y descarga simulada.
 - La comparación automatizada contra la función de `HEAD` confirmó HTML, MIME, nombre, URL temporal, revocación y resultado equivalentes.
 
-### Pendiente para cerrar Fase 1
+### Cierre de Fase 1
 
-- Ejecutar en navegador autenticado la descarga desde card, editar el nombre, abrir el `.doc` y comparar contenido/formato.
-- Repetir la regresión acumulativa de examen, lista, anexo, tabs, recarga y otra planeación.
-- Confirmar consola sin errores, sin descarga doble, sin listeners duplicados y sin activación del explorador legacy.
+La validación acumulativa requerida quedó aprobada antes de abrir la Fase 2. No quedaron candidatos aislados de bajo riesgo ni consumidores desconocidos.
 
-No quedan candidatos aislados de bajo riesgo ni consumidores desconocidos. Tras aprobar estas pruebas se puede marcar Fase 1 como completada y recomendar Fase 2 — Acciones por dominio, sin implementarla en esta sesión.
+## Sesión 2.0 — Auditoría y mapa de acciones
+
+### Estado de entrada
+
+- Frontend: rama `refactor-front`, `HEAD` `fa0f3b1`, working tree limpio.
+- Sesiones confirmadas por historial: 1.1 `609d6fd`, 1.2 `6124a6f`, 1.3 `e0c3e85`, 1.4 `fa0f3b1`.
+- Backend: rama `refactor-back`, working tree limpio.
+- Roadmap recibido: Fase 0 completada, Fase 1 completada y Fase 2 pendiente. Las líneas internas obsoletas de Fase 1 se reconciliaron en esta sesión.
+- Biblioteca sigue siendo el único flujo visual principal. Dashboard aporta compatibilidad activa; el explorador jerárquico permanece legacy y Archivados es un flujo separado.
+
+### Tabla maestra de acciones
+
+| Dominio | Acción | Función o coordinador | Consumidor | API | Estado afectado | Render o navegación posterior | Confirmación o feedback | Riesgo | Clasificación |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Planeaciones | Ver detalle | enlace generado por `renderPlaneacionesTab` | `href="detalle.html?id=..."` | Ninguna antes de navegar; detalle carga `GET /api/planeaciones/:id` | Ninguno en Biblioteca | Navega a `detalle.html` | Sin confirmación | Bajo | Biblioteca activa |
+| Planeaciones | Descargar | `bibDescargarPlaneacion` → `PlaneacionDownload.downloadFromBiblioteca` | `data-bib-action="descargar-planeacion"` | `GET /api/planeaciones/:id` | Ninguno | Sin render | Modal `AppUI.openDownloadNameModal`; logs de descarga | Bajo | Compatibilidad |
+| Planeaciones | Eliminar | `bibEliminarPlaneacion(planeacionId, conjuntoId)` | `data-bib-action="eliminar-planeacion"` | `DELETE /api/planeaciones/:id/directo` | Quita planeación, listas y anexos asociados del conjunto; actualiza tres contadores y tab | Render parcial y recarga silenciosa del bloque | `showBibConfirm`; `console.info`; `alert` en error | Medio | Biblioteca activa |
+| Planeaciones | Abrir/cerrar alta en bloque | `openBibliotecaAgregarModal`, `closeBibliotecaAgregarModal`, renderer y helpers | `data-bib-action="agregar-planeacion"` y controles del modal | Ninguna al abrir/cerrar | `agregarModal` y temas temporales | Render del modal | Errores inline | Medio | Biblioteca activa |
+| Planeaciones | Generar en bloque existente | `submitBibliotecaAgregarModal` | submit del modal | `POST /api/unidades/:unidadId/generar?stream=1`, con fallback al mismo endpoint sin stream | `pendingPlaneacionesByBatchId`, selección/tab y contenido optimista | Render general repetido y recarga silenciosa | Progreso inline y `console.error` | Alto | Biblioteca activa |
+| Planeaciones | Crear bloque y generar | `openQuickCreatePanel`, `submitQuickCreateForm`, `generatePlaneacionesFromStaging` | `data-bib-action="crear-planeaciones"` y formulario de creación rápida | APIs jerárquicas de plantel/grado/materia/unidad y `POST /api/unidades/:unidadId/generar` | `explorerState`, `window.biblioteca`, pending del bloque y planeaciones | Render Biblioteca y progreso | Error del panel y consola | Alto | Compartida activa |
+| Planeaciones | Editar/guardar | `detalle.page.js` | página `detalle.html` | `PUT /api/planeaciones/:id` | Estado propio de detalle | Render de detalle | Feedback propio de detalle | Medio | Compartida activa |
+| Anexos | Abrir/cerrar modal de generación | `openBibliotecaAnexoCreateModal`, `closeBibliotecaAnexoCreateModal`, renderer | `data-bib-action="abrir-modal-anexos"` y controles del modal | Ninguna al abrir/cerrar | `anexoModal` | Render del modal | Error inline | Medio | Biblioteca activa |
+| Anexos | Generar seleccionados | `submitBibliotecaAnexoCreateModal` | submit del modal | `POST /api/anexos/generate`, una vez por `planeacion_id` | `anexosGenerating`, array `anexos` y contador | Render parcial por elemento y recarga silenciosa | Logs start/success; errores inline por card | Alto | Biblioteca activa |
+| Anexos | Generar uno | `bibGenerarAnexo(planeacionId, conjuntoId)` | rama `data-bib-action="generar-anexo"` sin emisor DOM actual | `POST /api/anexos/generate` | `anexosGenerating`, array y contador | Render parcial y recarga | Error inline en card | Medio/alto | Compatibilidad |
+| Anexos | Regenerar | `bibRegenerarAnexo(anexoId, conjuntoId, planeacionId)` | rama `data-bib-action="regenerar-anexo"` sin emisor DOM actual | `POST /api/anexos/:id/regenerate` | `anexosGenerating` | Render parcial y recarga | Error inline en card | Alto | Compatibilidad |
+| Anexos | Ver preview | `openBibliotecaAnexoPreview` → `AnexoPreview.open` | `data-bib-action="ver-anexo"` | `GET /api/anexos/:id` | DOM del modal dinámico | Render del preview | Errores visibles del preview | Bajo | Compatibilidad |
+| Anexos | Descargar | `bibDescargarAnexo` → `AnexoDownload.downloadBiblioteca` | card y botón del preview | `GET /api/anexos/:id` desde card; preview reutiliza el objeto cargado | Ninguno | Cierra preview en ese camino; sin render general | Modal de nombre y logs de descarga | Bajo | Compatibilidad |
+| Anexos | Eliminar | `bibEliminarAnexo(anexoId, conjuntoId)` | `data-bib-action="eliminar-anexo"` | `DELETE /api/anexos/:id` | Quita anexo y actualiza `total_anexos` | Render parcial y recarga silenciosa | `showBibConfirm`; log de éxito; `alert` en error | Bajo/medio | Biblioteca activa |
+| Listas de cotejo | Abrir/cerrar modal de generación | `openBibliotecaListaModal`, `closeBibliotecaListaModal`, renderer | `data-bib-action="generar-lista"` y controles del modal | Ninguna al abrir/cerrar | `listaModal` | Render del modal | Error inline | Medio | Biblioteca activa |
+| Listas de cotejo | Generar | `submitBibliotecaListaModal` | submit del modal | `POST /api/listas-cotejo/generate` con `planeacion_ids` | `pendingListaByBatchId` y tab | Render general, espera local de 1.5 s y recarga | Log success; error inline | Alto | Biblioteca activa |
+| Listas de cotejo | Ver preview | `openBibliotecaListaPreview` → `ListaCotejoPreview.openBiblioteca` | `data-bib-action="ver-lista"` | `GET /api/listas-cotejo/:id` | `explorerState.listaCotejoPreview` por compatibilidad | Render del modal | Errores visibles del preview | Bajo | Compatibilidad |
+| Listas de cotejo | Descargar | `bibDescargarLista` → `ListaCotejoDownload.downloadBiblioteca` | card y botón del preview | `GET /api/listas-cotejo/:id` desde card | Ninguno | Sin render general | Modal de nombre; exportador protegido `wordExport.js` | Bajo | Compatibilidad |
+| Listas de cotejo | Eliminar | `bibEliminarLista(listaId, conjuntoId)` | `data-bib-action="eliminar-lista"` | `DELETE /api/listas-cotejo/:id` | Quita lista y actualiza `total_listas_cotejo` | Render parcial y recarga silenciosa | `showBibConfirm`; log de éxito; `alert` en error | Bajo/medio | Biblioteca activa |
+| Exámenes | Abrir/cerrar modal de generación | `openBibliotecaExamModal`, `closeBibliotecaExamModal`, renderer | `data-bib-action="generar-examen"` y controles del modal | Ninguna al abrir/cerrar | `examModal` | Render del modal | Error inline | Medio | Biblioteca activa |
+| Exámenes | Generar | `submitBibliotecaExamModal` | submit del modal | `POST /api/examenes/generate` | `examModal`, `pendingExamenByBatchId` y tab | Render general y recarga al completar | Logs de payload/job; error inline | Alto | Biblioteca activa |
+| Exámenes | Consultar estado | bucle interno de `submitBibliotecaExamModal` | job creado por generación | `GET /api/examenes/generacion/:jobId` cada 3 s, máximo 60 intentos | `pendingExamenByBatchId` | Render general en cada paso | Logs `[polling]`; error genérico visible | Alto | Biblioteca activa |
+| Exámenes | Cancelar | `closeBibliotecaExamModal` | botones, cierre y backdrop del modal previo al submit | Ninguna; no existe cancelación de job en Biblioteca | `examModal.open` | Oculta modal | Sin feedback | Bajo | Biblioteca activa |
+| Exámenes | Ver preview | `openBibliotecaExamenPreview` → `ExamPreview.openBiblioteca` | `data-bib-action="ver-examen"` | `GET /api/examenes/:id` | `explorerState.examPreview` y caché por compatibilidad | Render del modal | Errores visibles del preview | Bajo | Compatibilidad |
+| Exámenes | Descargar | `bibDescargarExamen(examenId)` → `window.downloadExamWord` | `data-bib-action="descargar-examen"` | `GET /api/examenes/:id` si no está en caché | Solo lectura de `bibliotecaState.conjuntos`; el exportador usa caché compartida | Sin render | Modal de nombre; logs start/success/error | Bajo | Biblioteca activa |
+| Exámenes | Eliminar | `bibEliminarExamen(examenId, conjuntoId)` | `data-bib-action="eliminar-examen"` | `DELETE /api/examenes/:id` | Quita examen y actualiza `total_examenes` | Render parcial y recarga silenciosa | `showBibConfirm`; log de éxito; `alert` en error | Bajo/medio | Biblioteca activa |
+| Bloques | Abrir/seleccionar | `setSelectedConjunto` desde `select-conjunto` | item del sidebar | Ninguna | `selectedConjuntoId`, `activeTab` | Actualiza sidebar y detalle | Sin feedback | Bajo | Biblioteca activa |
+| Bloques | Cambiar tab | `setSelectedConjunto` desde `switch-tab` | tabs del detalle | Ninguna | `selectedConjuntoId`, `activeTab` | Render parcial del detalle | Sin feedback | Bajo | Biblioteca activa |
+| Bloques | Buscar | `onBibliotecaSearch` | `#biblioteca-search` | Ninguna | `searchQuery` | Render parcial de lista lateral | Estado vacío | Bajo | Biblioteca activa |
+| Bloques | Recargar/reintentar | `loadAndRenderBiblioteca` | `retry` y `window.biblioteca.refresh` | `GET /api/biblioteca/conjuntos` | Carga/error, conjuntos, selección y pending reconciliado | Render general | Estado loading/error y log | Medio | Compartida activa |
+| Bloques | Eliminar bloque | `bibEliminarBloque(conjuntoId)` | `data-bib-action="eliminar-bloque"` | `DELETE /api/biblioteca/bloques/:batchId` | Quita conjunto; cambia selección; limpia tab y cuatro mapas pending | Render general y recarga silenciosa | Confirmación crítica; log de éxito; `alert` en error | Alto | Biblioteca activa |
+| Bloques | `toggle-expand` | rama de `onBibliotecaClick` | Sin atributo emisor actual | Ninguna | Equivale hoy a seleccionar | Render parcial | Sin feedback | Bajo | Compatibilidad |
+
+No quedaron acciones con clasificación desconocida.
+
+No existen acciones activas de renombrar o cerrar un bloque, regenerar una planeación, regenerar una lista ni cancelar un job de examen. `closeBibliotecaExamModal` solo cancela/cierra el modal previo; no llama a backend.
+
+### Eliminaciones por dominio
+
+| Eliminación | Disparador e ID real | API y respuesta | Confirmación exacta | Feedback y logs | Mutación local, render y recarga | Dependencias | Recursos relacionados y error parcial |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Planeación individual | Card `eliminar-planeacion`; `planeacionId` llega como string DOM y representa `planeaciones.id` `bigint`; `conjuntoId` representa UUID de batch | `DELETE /api/planeaciones/:id/directo`; 200 `{ ok: true }`; 400 sin ID, 401 sin token, 404 si no existe o no pertenece al usuario | Título `¿Eliminar esta planeación?`; mensaje `Se eliminarán también sus listas de cotejo y anexos asociados. Esta acción no se puede deshacer.` | Frontend: `[biblioteca] delete:success` o `[biblioteca] Error eliminando planeacion:`; éxito sin toast; error con `alert("No se pudo eliminar la planeación. Intenta nuevamente.")`. Backend: start/success | Filtra `planeaciones`, listas y anexos por `planeacion_id`; actualiza tres contadores; fija tab `planeaciones`; render parcial; vuelve a consultar Biblioteca | Lectura/mutación de `bibliotecaState.conjuntos`; `showBibConfirm`, `requireSession`, `normalizeBibliotecaId`, `setSelectedConjunto`, API y loader. Sin `explorerState` directo | Backend elimina anexos, luego listas y luego planeación; no elimina exámenes. No hay transacción visible: un fallo intermedio puede dejar hijos ya eliminados sin mutación local. Si falla la recarga posterior, el loader muestra el error general y conserva la actualización local; no propaga al `catch` del delete |
+| Anexo individual | Card `eliminar-anexo`; UUID string de anexo y UUID string de batch | `DELETE /api/anexos/:id`; 200 `{ ok: true }`; 400/401/404 equivalentes | Título `¿Eliminar este anexo?`; mensaje `Esta acción no se puede deshacer.` | Frontend success/error; éxito sin toast; alerta `No se pudo eliminar el anexo. Intenta nuevamente.`. Backend solo log success | Filtra `anexos`, actualiza contador, fija tab `anexos`, render parcial y recarga | Mismas dependencias locales; sin `explorerState` ni Dashboard directos | Elimina solo el anexo. Si falla la recarga posterior, el loader muestra error general y no revierte la actualización local |
+| Lista individual | Card `eliminar-lista`; UUID string de lista y UUID string de batch | `DELETE /api/listas-cotejo/:id`; 200 `{ ok: true }`; 400/401/404 equivalentes | Título `¿Eliminar esta lista de cotejo?`; mensaje `Esta acción no se puede deshacer.` | Frontend success/error; éxito sin toast; alerta `No se pudo eliminar la lista de cotejo. Intenta nuevamente.`. Backend solo log success | Filtra `listas_cotejo`, actualiza contador, fija tab `listas`, render parcial y recarga | Mismas dependencias locales; sin `explorerState` ni Dashboard directos | Elimina solo la lista. No altera planeación ni anexo; un fallo de recarga se maneja como error general del loader |
+| Examen individual | Card `eliminar-examen`; UUID string de examen y UUID string de batch | `DELETE /api/examenes/:id`; 200 `{ ok: true }`; 400/401/404 equivalentes | Título `¿Eliminar este examen?`; mensaje `Esta acción no se puede deshacer.` | Frontend success/error; éxito sin toast; alerta `No se pudo eliminar el examen. Intenta nuevamente.`. Backend solo log success | Filtra `examenes`, actualiza contador, fija tab `examenes`, render parcial y recarga | Mismas dependencias locales; sin `explorerState` ni Dashboard directos | Elimina solo el examen. El job relacionado no es eliminado por este servicio; sus referencias usan `ON DELETE SET NULL`. Un fallo de recarga se maneja como error general del loader |
+| Bloque completo | Botón del encabezado `eliminar-bloque`; UUID string de `planeacion_batches.id` | `DELETE /api/biblioteca/bloques/:batchId`; 200 `{ ok: true, deleted: { batch: boolean } }`; 400/401/404 equivalentes | Título dinámico `¿Eliminar "<nombre>"?`; mensaje `Se eliminará el bloque completo: planeaciones, exámenes, listas de cotejo y anexos. Esta acción no se puede deshacer.` | Frontend success/error; éxito sin toast; alerta `No se pudo eliminar el bloque. Intenta nuevamente.`. Backend start/success y warning si falla el batch | Filtra el conjunto; si estaba seleccionado elige el primero; limpia `activeTab`, pending de planeaciones/examen/lista y `anexosGenerating`; render general y recarga | Muta varias ramas de `bibliotecaState`; usa confirmación, sesión, API, render y loader. Sin `explorerState` directo | Backend borra secuencialmente anexos, listas, exámenes y planeaciones —incluidas archivadas que conserven ese batch— por batch/usuario, después intenta el batch. No borra jerarquía, jobs o métricas. No hay transacción visible; un fallo final del batch devuelve `ok: true`, `deleted.batch:false`, y la recarga puede volver a mostrar el batch vacío |
+
+Todas las rutas usan `requireAuth`: token ausente devuelve 401 `Token requerido` y token inválido devuelve 401 `Token invalido`. La consulta de propiedad filtra por `user_id`; un recurso ajeno se presenta como 404, no como 403.
+
+### APIs e IDs protegidos
+
+| Recurso | ID persistido | ID en Biblioteca | Relación relevante | Endpoint de acción |
+| --- | --- | --- | --- | --- |
+| Planeación | `bigint` | string de `data-planeacion-id`, normalizado con `String(...).trim()` | `batch_id` UUID; anexo y lista usan `planeacion_id` único/cascade | `GET /api/planeaciones/:id`; `DELETE /api/planeaciones/:id/directo` |
+| Anexo | UUID | string de `data-anexo-id` | uno por planeación; `planeacion_id` bigint; `batch_id`, `unidad_id`, `tema_id` UUID nullable | GET/DELETE `/api/anexos/:id`; POST `/api/anexos/generate`; POST `/api/anexos/:id/regenerate` |
+| Lista de cotejo | UUID | string de `data-lista-id` | una por planeación; `planeacion_id` bigint; batch/unidad/tema UUID nullable | GET/DELETE `/api/listas-cotejo/:id`; POST `/api/listas-cotejo/generate` |
+| Examen | UUID | string de `data-examen-id` | `batch_id` UUID nullable; `unidad_id` UUID; selección de generación en `planeacion_ids` | GET/DELETE `/api/examenes/:id`; POST `/api/examenes/generate`; GET `/api/examenes/generacion/:jobId` |
+| Bloque | UUID | string de `data-conjunto-id` | `planeacion_batches.id`; agrupa por `batch_id` | GET `/api/biblioteca/conjuntos`; DELETE `/api/biblioteca/bloques/:batchId` |
+
+El schema documental y el código ejecutable coinciden en los tipos y relaciones usados por estas acciones. Las claves foráneas de batch usan principalmente `ON DELETE SET NULL`; por eso el servicio de bloque borra explícitamente los recursos antes del batch. No se inventó normalización ni se reinterpretaron `planeacion_ids`, `tema_ids`, `unidad_id` o `batch_id`.
+
+### Dependencias de estado
+
+| Dependencia | Acciones | Tipo | Decisión |
+| --- | --- | --- | --- |
+| `bibliotecaState.conjuntos` | selección, descarga de examen, deletes, generación optimista y carga | Lectura/mutación | Mantener dentro de Biblioteca hasta Fase 5; una extracción debe recibir acceso explícito sin exponer el store completo |
+| `selectedConjuntoId` | selección, carga y delete de bloque | Mutación | Fase 5/6 |
+| `activeTab` | tabs, generación, deletes y delete de bloque | Mutación/render | Fase 5/6 |
+| `pendingPlaneacionesByBatchId` | generación de planeaciones y delete de bloque | Mutación/render | Fase 4/5 |
+| `pendingExamenByBatchId` | generación/polling de examen y delete de bloque | Mutación/render | Fase 4/5 |
+| `pendingListaByBatchId` | generación de listas y delete de bloque | Mutación/render | Fase 4/5 |
+| `anexosGenerating` | generación/regeneración de anexos y delete de bloque | Mutación/render | Fase 4/5 |
+| Estados `examModal`, `listaModal`, `anexoModal`, `agregarModal` | modales y submit de generación | Mutación/render | Fase 4/6 |
+| `window.explorerState` | creación rápida, progreso, previews de examen/lista | Compatibilidad/legacy mixto | No mover en Fase 2; auditar en Fase 5 y desacoplar en Fase 7 |
+| `window.biblioteca` | creación rápida de Dashboard y refresh compartido | Compatibilidad | Conservar contrato hasta Fase 7/10 |
+| `selectedBatchId` | Ninguna acción auditada | No aplica | No existe como dependencia del flujo actual |
+| `AppUI` | modal de nombre y toasts de consumidores compartidos | Compartida activa | Conservar |
+
+### Dependencias de render
+
+| Render o efecto | Acciones que lo disparan | Tipo | Fase natural |
+| --- | --- | --- | --- |
+| `renderBibliotecaDetailInPlace` | selección, tabs, generación/regeneración de anexos, deletes individuales | Render parcial | 6 |
+| `renderBibliotecaContent` | carga, generación/polling, creación rápida, errores y delete de bloque | Render general | 6 |
+| `loadAndRenderBiblioteca` | retry, refresh, generación completada y todos los deletes | Reconsulta + render | 3/6 |
+| renderers de modal de recurso | generación de examen/lista/anexo/planeación | Render de dominio | 4/6 |
+| `renderAll` de Dashboard | solo explorador visual/compatibilidad; no es post-render de los deletes de Biblioteca | Legacy | 8 |
+| navegación a `detalle.html` | ver planeación | Navegación | 7 |
+
+### Matriz de candidatos
+
+| Candidato | Acciones incluidas | Archivos actuales | Dependencias | Riesgo | Sesión sugerida | Decisión |
+| --- | --- | --- | --- | --- | --- | --- |
+| Coordinador de descarga de examen | Solo `bibDescargarExamen(examenId)` | `biblioteca.page.js`, `exam-download.js` | lectura de conjuntos, `AppUI`, wrapper global de descarga | Bajo | 2.1 | Primera sesión de Fase 2 |
+| Delete de examen | `bibEliminarExamen` | `biblioteca.page.js`, `biblioteca.api.js` | confirmación, conjunto, contador, tab, render y reload | Bajo/medio | 2.2 | Sesión posterior de Fase 2 |
+| Delete de lista | `bibEliminarLista` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.3 | Sesión posterior de Fase 2 |
+| Delete de anexo | `bibEliminarAnexo` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.4 | Sesión posterior de Fase 2 |
+| Delete de planeación | `bibEliminarPlaneacion` | `biblioteca.page.js`, `biblioteca.api.js` | tres arrays/contadores y cascada manual backend | Medio | 2.5 | Sesión posterior de Fase 2 |
+| Delete de bloque | `bibEliminarBloque` | `biblioteca.page.js`, `biblioteca.api.js` | selección, tab, cuatro pending maps, render general y backend secuencial | Alto | 2.6 o auditoría específica | Sesión posterior de Fase 2 |
+| Coordinadores de preview restantes | Ninguno de Biblioteca sin módulo | módulos de Fase 1 y wrappers | compatibilidad existente | Bajo | — | No aplica |
+| Coordinadores de descarga restantes | Solo el de examen; planeación, anexo y lista ya delegan | `biblioteca.page.js` | lectura de estado y módulos existentes | Bajo | 2.1 | Primera sesión de Fase 2 |
+| Regeneración de anexo | rama sin emisor DOM y `bibRegenerarAnexo` | `biblioteca.page.js` | generación IA, estado pending, render y reload | Alto | Fase 4 | Fase posterior |
+| Generación de documentos | planeaciones, anexos, listas y exámenes | Biblioteca, Dashboard, APIs/services | jobs, polling, SSE, estado y render | Alto | Fase 4 | Fase posterior |
+| Selección, tabs y búsqueda | bloque y navegación local | `biblioteca.page.js` | estado y render general/parcial | Medio/alto | Fases 5-6 | Fase posterior |
+| Creación de bloque | quick create y generación | Dashboard/Biblioteca | jerarquía, `explorerState`, generación y render | Alto | Fases 4, 5 y 7 | Fase posterior |
+| Acciones del explorador antiguo | previews, archive/delete jerárquico y navegación | `dashboard.page.js` | `explorerState`, render/event delegation legacy | Alto | Fase 8 | Legacy |
+| Archivados | restaurar y eliminar definitivamente | `archivados.page.js`, APIs/services de planeaciones | estado y UI separados | Medio/alto | Fuera del roadmap inmediato de Biblioteca | Archivados |
+
+Las eliminaciones individuales no se agrupan en la primera sesión: aunque examen, lista y anexo tienen una forma parecida, cada dominio conserva API, mensajes, array, contador, tab y pruebas propios; planeación añade eliminación relacionada. No se recomienda un helper universal.
+
+### Primera sesión seleccionada
+
+```text
+Sesión 2.1 — Coordinador de descarga de examen desde Biblioteca
+```
+
+- Función: `async function bibDescargarExamen(examenId)`.
+- Consumidor: rama `data-bib-action="descargar-examen"` de `onBibliotecaClick` y cards activas de examen.
+- Archivos candidatos: `js/features/examenes/exam-download.js`, `js/pages/biblioteca.page.js` y documentación. No requiere un script nuevo ni reordenar `dashboard.html`.
+- Namespace: ampliar el propietario existente `window.ExamDownload` con una operación específica de Biblioteca; no crear exportador universal.
+- Wrapper: conservar `bibDescargarExamen(examenId)` con un argumento, promesa, retorno `undefined`, errores capturados y efectos actuales. Retiro en Fase 10 después de migrar el handler y confirmar búsqueda global sin consumidores.
+- Dependencias explícitas: acceso de solo lectura a los conjuntos para el título sugerido, `window.AppUI.openDownloadNameModal`, `window.AppUI.buildDownloadSuggestedName` y `window.downloadExamWord`.
+- Exclusiones: preview, delete, generación, polling, caché de examen, HTML/Blob Word, `wordExport.js`, otros dominios, render, estado general, API y backend.
+- Riesgo: bajo; no muta estado ni dispara render.
+- Pruebas obligatorias: nombre sugerido, cancelación del modal, nombre editado, descarga desde card, archivo `.doc`, logs start/success/error, error del exportador, retorno/promesa, ausencia de descarga doble y regresión de preview/descarga desde preview, tabs y recarga.
+- Criterio de salida: una implementación canónica en el módulo de examen, wrapper preservado, cero consumidores desconocidos, comportamiento equivalente y documentación/pruebas reales registradas.
+
+### Trabajos posteriores
+
+| Trabajo | Destino |
+| --- | --- |
+| Deletes individuales por dominio | Sesiones 2.2 a 2.5, empezando por examen |
+| Delete de bloque | Sesión 2.6 o auditoría específica posterior; nunca junto al primer delete individual |
+| Centralización de wrappers HTTP | Fase 3 |
+| Generación, regeneración, polling, jobs y retries | Fase 4 |
+| `bibliotecaState`, pending y `explorerState` | Fase 5 |
+| Render general, tabs y event delegation | Fase 6 |
+| Quick create y dependencias activas de Dashboard | Fase 7 |
+| Explorador visual jerárquico | Fase 8; eliminación solo en Fase 9 |
+| Retiro de wrappers | Fase 10 |
+
+### Código legacy y Archivados
+
+- `dashboard.page.js` conserva previews y descargas de compatibilidad para el explorador, además de creación rápida compartida con Biblioteca.
+- `batch.page.js` conserva un archivado de planeación propio de esa página; no consume los coordinadores delete de Biblioteca.
+- `initDashboardPage()` activa Biblioteca y retorna después de `window.initBiblioteca()`, sin hidratar el explorador visual.
+- Las ramas `data-content-action`, delete/archive jerárquico y `renderAll()` se clasificaron como legacy visual o compatibilidad, no como acciones de Biblioteca para extraer ahora.
+- `pages/archivados.html` y `archivados.page.js` mantienen restauración y eliminación definitiva en un flujo separado. No consumen los cinco coordinadores delete de Biblioteca.
+- No se eliminó ni mezcló ninguna de estas áreas.
+
+### Hallazgos fuera de alcance
+
+- El delete de bloque no es transaccional en el código visible y tolera el fallo final del registro de batch mediante `deleted.batch:false`.
+- El delete directo de planeación elimina anexos y listas secuencialmente antes de la planeación; no elimina exámenes.
+- Las ramas `generar-anexo`, `regenerar-anexo` y `toggle-expand` no tienen emisor DOM actual en Biblioteca.
+- Cancelar el modal de examen no cancela un job; no existe acción visual de cancelación del job en Biblioteca.
+- Permanecen las deudas conocidas `public.ia_metrics` frente a `public.ia_metrics_legacy` y `outputSummary.anexos_creados` posiblemente incorrecto.
+
+## Sesión 2.1 — Coordinador de descarga de examen desde Biblioteca
+
+### Resultado
+
+- `bibDescargarExamen(examenId)` conserva su firma global como wrapper en `js/pages/biblioteca.page.js`.
+- La implementación canónica vive en `window.ExamDownload.downloadFromBiblioteca(examenId)` dentro de `js/features/examenes/exam-download.js`.
+- La extracción fue literal: conserva búsqueda en `bibliotecaState.conjuntos`, comparación mediante `normalizeBibliotecaId`, nombre sugerido, modal, cancelación, delegación a `window.downloadExamWord`, logs y `try/catch`.
+- `pages/dashboard.html` no cambió porque `exam-download.js` ya carga antes de `dashboard.page.js` y `biblioteca.page.js`.
+
+### Consumidores y contrato
+
+| Función | Consumidor | Evento | Retorno | Clasificación |
+| --- | --- | --- | --- | --- |
+| `bibDescargarExamen(examenId)` | `onBibliotecaClick` | `data-bib-action="descargar-examen"` con `data-examen-id` | Promesa que resuelve `undefined`; errores capturados | Compatibilidad de Biblioteca |
+| `ExamDownload.downloadFromBiblioteca(examenId)` | wrapper anterior | delegación directa | Mismo retorno, logs y efectos | Biblioteca activa |
+| `window.downloadExamWord(examenId, filenameOverride)` | coordinador de card, preview y explorador legacy | exportación final | Promesa del exportador | Compartida activa |
+| `ExamDownload.download(examenId, filenameOverride)` | wrapper `window.downloadExamWord` | descarga desde card/preview/legacy | Promesa; puede lanzar errores de detalle/contenido | Implementación canónica compartida |
+
+No quedaron consumidores desconocidos. El wrapper de Biblioteca se retira en Fase 10, después de migrar el handler y confirmar una búsqueda global limpia.
+
+### Dependencias conservadas
+
+- Estado: lectura sin mutación de `bibliotecaState.conjuntos`.
+- UI: `window.AppUI.buildDownloadSuggestedName` y `window.AppUI.openDownloadNameModal`.
+- Exportador: `window.downloadExamWord`, cuyo wrapper delega a `ExamDownload.download`.
+- Detalle: caché `window.explorerState.examenDetalleById`; fallback `window.obtenerExamenDetalle(examenId)` → service/API → `GET /api/examenes/:id`.
+- Backend: UUID `examenes.id`, Bearer auth, filtro por `user_id` y respuesta `{ examen }`; sin cambios.
+
+### Validación
+
+- `node --check js/features/examenes/exam-download.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Smoke JSDOM: pasó para namespace, wrapper, caché, fallback, cancelación, delegación, retorno, error, logs y resolución real entre scripts clásicos en el orden de `dashboard.html`.
+- Búsqueda global post-cambio: una implementación canónica, un wrapper y un consumidor activo; cero desconocidos.
+- Validación manual de navegador y regresión acumulativa: pendientes.
+
+### Exclusiones confirmadas
+
+No se modificaron preview, `wordExport.js`, delete, generación, polling, estado, render, event delegation, APIs, backend, detalle, Archivados ni legacy. La Sesión 2.2 queda definida, pero no implementada.
 
 ## Dependencias conocidas
 
@@ -209,6 +419,7 @@ No quedan candidatos aislados de bajo riesgo ni consumidores desconocidos. Tras 
 - `window.renderExamPreviewModal` y `window.renderListaCotejoPreviewModal` sirven a Biblioteca.
 - `window.downloadExamWord`, `window.renderBibliotecaContent` y `window.biblioteca` conservan consumidores.
 - `bibDescargarPlaneacion(planeacionId)` conserva un wrapper modular hasta migrar el handler y confirmar una búsqueda global sin consumidores en Fase 10.
+- `bibDescargarExamen(examenId)` conserva un wrapper modular hasta migrar `data-bib-action="descargar-examen"` y confirmar una búsqueda global sin consumidores en Fase 10.
 
 ## Zonas protegidas
 
@@ -233,4 +444,4 @@ No quedan candidatos aislados de bajo riesgo ni consumidores desconocidos. Tras 
 
 ## Última sesión
 
-2026-07-25 — Sesión 1.4: se extrajo la descarga de planeación desde Biblioteca; código y validaciones automáticas completados, validación manual pendiente antes de cerrar Fase 1.
+2026-07-25 — Sesión 2.1: se extrajo el coordinador de descarga de examen desde Biblioteca al módulo existente; validaciones automáticas aprobadas y validación manual pendiente.

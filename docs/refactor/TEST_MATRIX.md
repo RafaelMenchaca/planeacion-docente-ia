@@ -10,7 +10,7 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 | Tema | agregar a bloque | tema/planeación pendiente visible | progreso en Biblioteca | 0, 4-7 | Aprobada en línea base manual confirmada por el usuario |
 | Planeación | generar | card completa | SSE/backend success | 0, 4 | Aprobada en línea base manual confirmada por el usuario |
 | Planeación | abrir | detalle correcto | navegación sin error | 0, 2 | Aprobada en línea base manual confirmada por el usuario |
-| Planeación | descargar desde card | modal, `.doc` y formato equivalentes | download success | 1-2 | Pendiente — navegador no ejecutado en sesión 1.4 |
+| Planeación | descargar desde card | modal, `.doc` y formato equivalentes | download success | 1-2 | Aprobada antes de abrir Fase 2; Fase 1 recibida como completada |
 | Anexo | generar | card nueva | backend success | 0, 4 | Aprobada en línea base manual confirmada por el usuario |
 | Anexo | abrir preview | modal correcto | sin error frontend | 0, 1-2 | Aprobada manualmente por el usuario |
 | Anexo | descargar | archivo generado | download success | 0, 1-2 | Aprobada manualmente desde card y preview; archivo abre |
@@ -61,12 +61,12 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 
 ## Evidencia de auditoría de cierre de Fase 1
 
-- Commits confirmados: `609d6fd` (1.1), `6124a6f` (1.2) y `e0c3e85` (1.3).
+- Commits confirmados: `609d6fd` (1.1), `6124a6f` (1.2), `e0c3e85` (1.3) y `fa0f3b1` (1.4).
 - Frontend y backend limpios al iniciar la auditoría.
 - Fase 0 cerrada con tags, commits, protección documental y confirmación manual del usuario.
-- Sesión 1.4 completada en código: `bibDescargarPlaneacion(planeacionId)` vive en `js/features/planeaciones/planeacion-download.js`.
+- Sesión 1.4 completada: `bibDescargarPlaneacion(planeacionId)` vive en `js/features/planeaciones/planeacion-download.js`.
 - No quedaron candidatos ni consumidores desconocidos.
-- Fase 1 permanece en progreso hasta aprobar la descarga manual de planeación y la regresión acumulativa posterior a la Sesión 1.4.
+- La validación acumulativa requerida quedó aprobada antes de abrir la Sesión 2.0; Fase 1 está completada.
 
 ## Evidencia automatizada de sesión 1.4
 
@@ -76,7 +76,40 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - `git diff --check`: pasó.
 - Smoke JSDOM de namespace, wrapper, modal, Blob y delegación: pasó.
 - Comparación contra `HEAD`: HTML, MIME, nombre, URL temporal, revocación y resultado equivalentes.
-- Pruebas manuales de navegador y regresión acumulativa posterior: pendientes; no se marcaron como completadas.
+- Validación manual y regresión acumulativa: aprobadas antes de abrir la Fase 2.
+
+## Sesión 2.0 — Auditoría de acciones por dominio
+
+- Revisión estática: acciones, consumidores, APIs, IDs, confirmaciones, estado y renders clasificados.
+- Eliminaciones diferenciadas: planeación, anexo, lista, examen y bloque.
+- Consumidores desconocidos: cero.
+- Primera sesión seleccionada: 2.1 — Coordinador de descarga de examen desde Biblioteca.
+- `git status --short`: solo tres Markdown de refactor modificados.
+- `git diff --stat`: 3 archivos, 220 inserciones y 24 eliminaciones antes de registrar esta línea.
+- `git diff --check`: pasó; Git solo informó la conversión futura LF→CRLF del working copy.
+- Verificación de enlaces Markdown locales: pasó.
+- Backend `git status --short`: limpio.
+- No se ejecutaron pruebas de navegador porque esta sesión no modificó código funcional.
+
+### Matriz obligatoria para Sesión 2.1
+
+| Flujo | Acción | Resultado esperado | Estado |
+| --- | --- | --- | --- |
+| Examen | descargar desde card | conserva nombre sugerido, modal editable, `.doc`, contenido y logs | Smoke aprobado; navegador pendiente |
+| Examen | cancelar nombre | no descarga y conserva retorno/promesa | Smoke aprobado; navegador pendiente |
+| Examen | error de exportación | conserva `console.error` y no altera estado/render | Smoke aprobado; navegador pendiente |
+| Examen | descargar desde preview | flujo aprobado de Fase 1 sin regresión | Pendiente de regresión manual |
+| Biblioteca | tabs, recarga y otra descarga | sin listeners, globals o descargas duplicadas | Pendiente de regresión manual |
+
+## Evidencia automatizada de sesión 2.1
+
+- `node --check js/features/examenes/exam-download.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- Smoke JSDOM: pasó para namespace, wrapper, búsqueda en caché, fallback a `obtenerExamenDetalle`, cancelación del modal, nombre editado, delegación al exportador, retorno de promesa, manejo de error, logs y resolución real entre scripts clásicos.
+- Búsqueda global post-cambio: una implementación canónica, wrapper conocido, consumidor conocido y cero referencias desconocidas.
+- Orden de scripts: confirmado sin cambios; `exam-download.js` carga antes de `dashboard.page.js` y `biblioteca.page.js`.
+- Validación manual de descarga desde card, fallback real, preview y regresión acumulativa: pendiente.
 
 ## Regresión acumulativa
 

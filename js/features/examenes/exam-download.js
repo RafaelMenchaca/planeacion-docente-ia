@@ -208,7 +208,31 @@
     URL.revokeObjectURL(url);
   }
 
+  async function downloadFromBiblioteca(examenId) {
+    console.debug("[downloads] exam:start", { examenId });
+    try {
+      const conjunto = bibliotecaState.conjuntos.find(c =>
+        Array.isArray(c.examenes) &&
+        c.examenes.some(e => normalizeBibliotecaId(e.id) === normalizeBibliotecaId(examenId))
+      );
+      const suggested = window.AppUI.buildDownloadSuggestedName(
+        "Examen",
+        conjunto?.titulo || ""
+      );
+      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+      if (filename === null) return;
+
+      if (typeof window.downloadExamWord === "function") {
+        await window.downloadExamWord(examenId, filename);
+      }
+      console.debug("[downloads] exam:success", { examenId });
+    } catch (error) {
+      console.error("[downloads] exam:error", { examenId, message: error?.message });
+    }
+  }
+
   window.ExamDownload = {
-    download
+    download,
+    downloadFromBiblioteca
   };
 })();
