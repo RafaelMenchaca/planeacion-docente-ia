@@ -13,12 +13,13 @@
 
 - **Fase actual:** 2 — Acciones por dominio.
 - **Estado:** En progreso.
-- **Sesión actual:** 2.2 — Eliminación individual de examen, completada en código.
+- **Sesión actual:** 2.3 — Eliminación individual de lista de cotejo, completada en código.
 - **Validación manual 2.1:** aprobada.
-- **Validación manual 2.2:** pendiente.
-- **Próxima sesión recomendada:** 2.3 — Eliminación individual de lista de cotejo.
+- **Validación manual 2.2:** aprobada.
+- **Validación manual 2.3:** pendiente.
+- **Próxima sesión recomendada:** 2.4 — Eliminación individual de anexo.
 
-Las Fases 0 y 1 están completadas. Las sesiones 2.0 y 2.1 están completadas; la Sesión 2.2 quedó completada en código y pendiente de validación manual. La Fase 2 permanece en progreso.
+Las Fases 0 y 1 están completadas. Las sesiones 2.0, 2.1 y 2.2 están completadas; la Sesión 2.3 quedó completada en código y pendiente de validación manual. La Fase 2 permanece en progreso.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -455,11 +456,68 @@ No quedaron consumidores desconocidos, legacy ni de Archivados. El wrapper se re
 - `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
 - Smoke JSDOM: pasó para namespace, wrapper, cancelación, UUID/API, array, contador, selección/tab, render, recarga, orden, error, promesa, ausencia local y cero llamadas dobles.
 - Smoke de scripts clásicos: pasó.
-- Validación manual y regresión: pendientes.
+- Validación manual y regresión: aprobadas por el usuario. Cancelación, eliminación individual, permanencia en bloque/tab, conservación de otros recursos, persistencia tras recarga y eliminación de la fila correcta en Supabase fueron confirmadas sin errores relacionados.
 
 ### Exclusiones confirmadas
 
 No se modificaron preview, descarga, Word, generación, polling, estado general, renderers, event delegation, API frontend, backend, otros deletes, Archivados ni legacy. La Sesión 2.3 quedó definida, pero no implementada.
+
+## Sesión 2.3 — Eliminación individual de lista de cotejo
+
+### Resultado
+
+- Se creó `js/features/listas-cotejo/lista-cotejo-delete.js`.
+- `window.ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId)` es la implementación canónica.
+- `bibEliminarLista(listaId, conjuntoId)` permanece como wrapper en `js/pages/biblioteca.page.js`.
+- `pages/dashboard.html` carga el módulo después de preview/descarga de listas y antes de los consumidores.
+- La firma real conserva dos UUID strings: lista y conjunto/batch.
+
+### Consumidores y contrato
+
+| Función | Consumidor | Evento | Estado/render | Clasificación |
+| --- | --- | --- | --- | --- |
+| `bibEliminarLista(listaId, conjuntoId)` | `onBibliotecaClick` | `data-bib-action="eliminar-lista"` | Delegación sin cambios | Compatibilidad de Biblioteca |
+| `ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId)` | wrapper anterior | Confirmación desde card | Muta lista/contador, fija tab, renderiza y recarga | Biblioteca activa |
+| `apiDeleteListaCotejo(id, accessToken)` | implementación canónica | Después de confirmar y obtener sesión | `DELETE /api/listas-cotejo/:id` | Compartida activa |
+
+No quedaron consumidores desconocidos, de Archivados ni del explorador legacy. El wrapper se retira en Fase 10 después de migrar el handler y confirmar búsqueda global limpia.
+
+### Comportamiento conservado
+
+1. Normaliza `listaId` y `conjuntoId`; retorna si falta cualquiera.
+2. Muestra `¿Eliminar esta lista de cotejo?` y `Esta acción no se puede deshacer.`.
+3. Cancelar retorna sin pedir sesión ni llamar API.
+4. Obtiene sesión y llama una sola vez `apiDeleteListaCotejo(safeListaId, token)`.
+5. Registra `[biblioteca] delete:success` con `resourceType: "lista_cotejo"`.
+6. Busca el conjunto por UUID; si existe, filtra `conjunto.listas_cotejo` y recalcula `total_listas_cotejo`.
+7. Conserva el bloque y fija el tab `"listas"`.
+8. Ejecuta `renderBibliotecaDetailInPlace()` y después espera `loadAndRenderBiblioteca({ silent: true, targetBatchId, activeTab: "listas" })`.
+9. Si la lista no está localmente, conserva selección, render y recarga.
+10. Si falla la API, no muta estado y conserva el log y la alerta existentes.
+
+### API y persistencia verificadas
+
+- Frontend: `apiDeleteListaCotejo` permanece en `js/api/biblioteca.api.js`.
+- Backend: `DELETE /api/listas-cotejo/:id`, protegido por `requireAuth`.
+- `listas_cotejo.id` y `batch_id` son UUID; `planeacion_id` es bigint y no se usa como ID de delete.
+- El service filtra por `id` y `user_id`.
+- Éxito: `200 { ok: true }`.
+- ID vacío: 400; sin token o usuario: 401; inexistente o de otro usuario: 404 `Lista de cotejo no encontrada.`.
+- Solo se elimina la fila de `listas_cotejo`; no se modifican planeación, anexo, examen ni batch.
+
+### Validación
+
+- Comparación literal contra `HEAD`: pasó ignorando solo indentación del IIFE.
+- `node --check js/features/listas-cotejo/lista-cotejo-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, UUID/API, array, contador, selección/tab, render, recarga, orden, error, promesa, ausencia local y cero llamadas dobles.
+- Smoke de scripts clásicos: pasó.
+- Validación manual y regresión: pendientes.
+
+### Exclusiones confirmadas
+
+No se modificaron preview, descarga, Word, generación, estado general, renderers, event delegation, APIs, backend, `exam-delete.js`, otros deletes, Archivados ni legacy. La Sesión 2.4 quedó definida, pero no implementada.
 
 ## Dependencias conocidas
 
@@ -477,6 +535,7 @@ No se modificaron preview, descarga, Word, generación, polling, estado general,
 - `bibDescargarPlaneacion(planeacionId)` conserva un wrapper modular hasta migrar el handler y confirmar una búsqueda global sin consumidores en Fase 10.
 - `bibDescargarExamen(examenId)` conserva un wrapper modular hasta migrar `data-bib-action="descargar-examen"` y confirmar una búsqueda global sin consumidores en Fase 10.
 - `bibEliminarExamen(examenId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-examen"` y confirmar una búsqueda global sin consumidores en Fase 10.
+- `bibEliminarLista(listaId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-lista"` y confirmar una búsqueda global sin consumidores en Fase 10.
 
 ## Zonas protegidas
 
@@ -501,4 +560,4 @@ No se modificaron preview, descarga, Word, generación, polling, estado general,
 
 ## Última sesión
 
-2026-07-25 — Sesión 2.2: se extrajo la eliminación individual de examen a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.
+2026-07-25 — Sesión 2.3: se extrajo la eliminación individual de lista de cotejo a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.

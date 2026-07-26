@@ -115,12 +115,12 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 
 | Flujo | Acción | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| Examen | cancelar eliminación | conserva card y no llama `DELETE` | Smoke aprobado; navegador pendiente |
-| Examen | confirmar eliminación | una llamada `DELETE`, card fuera del array y contador actualizado | Smoke aprobado; navegador pendiente |
-| Biblioteca | conservar bloque y tab | selección estable y tab `examenes` después de render/recarga | Smoke aprobado; navegador pendiente |
-| Examen | persistencia tras recarga | examen no reaparece; otros recursos permanecen | Pendiente de navegador |
-| Examen | API con error | no muta estado y conserva alerta/log | Smoke aprobado; navegador pendiente |
-| Regresión | preview, descargas, tabs y otros dominios | sin regresiones ni ejecución de legacy | Pendiente de navegador |
+| Examen | cancelar eliminación | conserva card y no llama `DELETE` | Aprobada manualmente |
+| Examen | confirmar eliminación | una llamada `DELETE`, card fuera del array y contador actualizado | Aprobada manualmente |
+| Biblioteca | conservar bloque y tab | selección estable y tab `examenes` después de render/recarga | Aprobada manualmente |
+| Examen | persistencia tras recarga | examen no reaparece; otros recursos permanecen | Aprobada manualmente |
+| Examen | API con error | no muta estado y conserva alerta/log | Smoke aprobado; sin errores relacionados observados |
+| Regresión | preview, descargas, tabs y otros dominios | sin regresiones ni ejecución de legacy | Aprobada manualmente |
 
 ### Evidencia automatizada
 
@@ -130,6 +130,27 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
 - Smoke JSDOM: pasó para namespace, wrapper, cancelación, sesión, API/UUID, array, contador, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, conjunto ausente y cero llamadas dobles.
 - Smoke de scripts clásicos: `ExamDelete` y `bibEliminarExamen` disponibles sin excepciones inmediatas.
+- Validación manual: aprobada por el usuario. Se confirmó cancelación sin eliminación, eliminación exclusiva del examen, card retirada, bloque/tab conservados, otros recursos intactos, persistencia tras recarga y fila eliminada en Supabase, sin errores relacionados.
+
+## Sesión 2.3 — Eliminación individual de lista de cotejo
+
+| Flujo | Acción | Resultado esperado | Estado |
+| --- | --- | --- | --- |
+| Lista | cancelar eliminación | conserva card y no llama `DELETE` | Smoke aprobado; navegador pendiente |
+| Lista | confirmar eliminación | una llamada `DELETE`, lista fuera del array y contador actualizado | Smoke aprobado; navegador pendiente |
+| Biblioteca | conservar bloque y tab | selección estable y tab `listas` después de render/recarga | Smoke aprobado; navegador pendiente |
+| Lista | persistencia tras recarga | lista no reaparece; planeación y otros recursos permanecen | Pendiente de navegador |
+| Lista | API con error | no muta estado y conserva alerta/log | Smoke aprobado; navegador pendiente |
+| Regresión | preview/descarga de lista, examen modularizado y otros dominios | sin regresiones ni ejecución de legacy | Pendiente de navegador |
+
+### Evidencia automatizada
+
+- Comparación literal del cuerpo contra `HEAD`: pasó, ignorando únicamente indentación del nuevo contenedor.
+- `node --check js/features/listas-cotejo/lista-cotejo-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/UUID, array, `total_listas_cotejo`, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, lista ausente y cero llamadas dobles.
+- Smoke de scripts clásicos: `ListaCotejoDelete` y `bibEliminarLista` disponibles sin excepciones inmediatas.
 - Validación manual de cancelación, eliminación real, persistencia y regresión: pendiente.
 
 ## Regresión acumulativa
