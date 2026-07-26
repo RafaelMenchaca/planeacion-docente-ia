@@ -2665,40 +2665,12 @@ async function bibEliminarLista(listaId, conjuntoId) {
   return window.ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId);
 }
 
+// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="eliminar-anexo".
+// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
 async function bibEliminarAnexo(anexoId, conjuntoId) {
-  const safeAnexoId = normalizeBibliotecaId(anexoId);
-  const safeBatchId = normalizeBibliotecaId(conjuntoId);
-  if (!safeAnexoId || !safeBatchId) return;
-
-  const confirmado = await showBibConfirm(
-    "¿Eliminar este anexo?",
-    "Esta acción no se puede deshacer."
-  );
-  if (!confirmado) return;
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    await apiDeleteAnexo(safeAnexoId, session.access_token);
-    console.info("[biblioteca] delete:success", { resourceType: "anexo", anexoId: safeAnexoId, batchId: safeBatchId });
-
-    const conjunto = bibliotecaState.conjuntos.find(
-      (c) => normalizeBibliotecaId(c.id) === safeBatchId
-    );
-    if (conjunto) {
-      conjunto.anexos = (Array.isArray(conjunto.anexos) ? conjunto.anexos : [])
-        .filter((a) => normalizeBibliotecaId(a.id) !== safeAnexoId);
-      conjunto.total_anexos = conjunto.anexos.length;
-    }
-
-    setSelectedConjunto(safeBatchId, { tab: "anexos" });
-    renderBibliotecaDetailInPlace();
-    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
-  } catch (error) {
-    console.error("[biblioteca] Error eliminando anexo:", error);
-    alert(error.message || "No se pudo eliminar el anexo. Intenta nuevamente.");
-  }
+  return window.AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId);
 }
 
 // ---- INJECT MODALS ----

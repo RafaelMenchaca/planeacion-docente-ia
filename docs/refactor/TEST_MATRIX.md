@@ -136,12 +136,12 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 
 | Flujo | Acción | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| Lista | cancelar eliminación | conserva card y no llama `DELETE` | Smoke aprobado; navegador pendiente |
-| Lista | confirmar eliminación | una llamada `DELETE`, lista fuera del array y contador actualizado | Smoke aprobado; navegador pendiente |
-| Biblioteca | conservar bloque y tab | selección estable y tab `listas` después de render/recarga | Smoke aprobado; navegador pendiente |
-| Lista | persistencia tras recarga | lista no reaparece; planeación y otros recursos permanecen | Pendiente de navegador |
+| Lista | cancelar eliminación | conserva card y no llama `DELETE` | Aprobado |
+| Lista | confirmar eliminación | una llamada `DELETE`, lista fuera del array y contador actualizado | Aprobado |
+| Biblioteca | conservar bloque y tab | selección estable y tab `listas` después de render/recarga | Aprobado |
+| Lista | persistencia tras recarga | lista no reaparece; planeación y otros recursos permanecen | Aprobado |
 | Lista | API con error | no muta estado y conserva alerta/log | Smoke aprobado; navegador pendiente |
-| Regresión | preview/descarga de lista, examen modularizado y otros dominios | sin regresiones ni ejecución de legacy | Pendiente de navegador |
+| Regresión | preview/descarga de lista, examen modularizado y otros dominios | sin regresiones ni ejecución de legacy | Aprobado |
 
 ### Evidencia automatizada
 
@@ -151,6 +151,26 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
 - Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/UUID, array, `total_listas_cotejo`, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, lista ausente y cero llamadas dobles.
 - Smoke de scripts clásicos: `ListaCotejoDelete` y `bibEliminarLista` disponibles sin excepciones inmediatas.
+- Validación manual de cancelación, eliminación real, persistencia y regresión: aprobada por el usuario. Se confirmó una única eliminación exitosa (`[listas-cotejo] delete:success`), permanencia del bloque y tab, persistencia tras recarga, conservación de planeación, anexo, exámenes y otras listas, y ausencia de errores relacionados.
+
+## Sesión 2.4 — Eliminación individual de anexo
+
+| Flujo | Acción | Resultado esperado | Estado |
+| --- | --- | --- | --- |
+| Anexo | cancelar eliminación | conserva card y no llama `DELETE` | Smoke aprobado; navegador pendiente |
+| Anexo | confirmar eliminación | una llamada `DELETE`, anexo fuera del array y contador actualizado | Smoke aprobado; navegador pendiente |
+| Biblioteca | conservar bloque y tab | selección estable y tab `anexos` después de render/recarga | Smoke aprobado; navegador pendiente |
+| Anexo | persistencia tras recarga | anexo no reaparece; planeación y otros recursos permanecen | Pendiente de navegador |
+| Anexo | API con error | no muta estado y conserva alerta/log | Smoke aprobado; navegador pendiente |
+| Regresión | preview/descarga de anexo, deletes modularizados y otros dominios | sin regresiones ni ejecución de legacy | Pendiente de navegador |
+
+### Evidencia automatizada
+
+- Comparación literal del cuerpo contra `HEAD`: pasó, ignorando únicamente indentación del nuevo contenedor.
+- `node --check js/features/anexos/anexo-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/UUID, array, `total_anexos`, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, anexo ausente y cero llamadas dobles.
 - Validación manual de cancelación, eliminación real, persistencia y regresión: pendiente.
 
 ## Regresión acumulativa

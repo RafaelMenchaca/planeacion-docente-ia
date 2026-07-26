@@ -202,18 +202,22 @@ Sesión 2.1 — Completada
 Validación manual 2.1 — Aprobada
 Sesión 2.2 — Completada
 Validación manual 2.2 — Aprobada
-Sesión 2.3 — Completada en código
-Validación manual 2.3 — Pendiente
-Próxima sesión — 2.4 — Eliminación individual de anexo
+Sesión 2.3 — Completada
+Validación manual 2.3 — Aprobada
+Sesión 2.4 — Completada en código
+Validación manual 2.4 — Pendiente
+Próxima sesión — 2.5 — Eliminación individual de planeación
 ```
 
 En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite, el smoke técnico y la validación manual acumulativa fueron aprobadas.
 
 En la Sesión 2.2 se trasladó literalmente `bibEliminarExamen(examenId, conjuntoId)` a `js/features/examenes/exam-delete.js` como `ExamDelete.deleteFromBiblioteca(examenId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación local, contador, tab, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobadas.
 
-En la Sesión 2.3 se trasladó literalmente `bibEliminarLista(listaId, conjuntoId)` a `js/features/listas-cotejo/lista-cotejo-delete.js` como `ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación de `listas_cotejo`, contador, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite y el smoke técnico fueron aprobados; la validación manual queda pendiente.
+En la Sesión 2.3 se trasladó literalmente `bibEliminarLista(listaId, conjuntoId)` a `js/features/listas-cotejo/lista-cotejo-delete.js` como `ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación de `listas_cotejo`, contador, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobados.
 
-La Sesión 2.4 queda definida para la eliminación individual de anexo, pero no fue implementada. Las eliminaciones de planeación y bloque permanecen separadas.
+En la Sesión 2.4 se trasladó literalmente `bibEliminarAnexo(anexoId, conjuntoId)` a `js/features/anexos/anexo-delete.js` como `AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación de `anexos`, contador, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite y el smoke técnico fueron aprobados; la validación manual queda pendiente.
+
+La Sesión 2.5 queda definida para la eliminación individual de planeación, pero no fue implementada. La eliminación de bloque permanece separada.
 
 ### Dependencias
 

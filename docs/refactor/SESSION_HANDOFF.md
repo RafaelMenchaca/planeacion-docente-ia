@@ -13,13 +13,14 @@
 
 - **Fase actual:** 2 — Acciones por dominio.
 - **Estado:** En progreso.
-- **Sesión actual:** 2.3 — Eliminación individual de lista de cotejo, completada en código.
+- **Sesión actual:** 2.4 — Eliminación individual de anexo, completada en código.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
-- **Validación manual 2.3:** pendiente.
-- **Próxima sesión recomendada:** 2.4 — Eliminación individual de anexo.
+- **Validación manual 2.3:** aprobada.
+- **Validación manual 2.4:** pendiente.
+- **Próxima sesión recomendada:** 2.5 — Eliminación individual de planeación.
 
-Las Fases 0 y 1 están completadas. Las sesiones 2.0, 2.1 y 2.2 están completadas; la Sesión 2.3 quedó completada en código y pendiente de validación manual. La Fase 2 permanece en progreso.
+Las Fases 0 y 1 están completadas. Las sesiones 2.0, 2.1, 2.2 y 2.3 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.4 quedó completada en código y pendiente de validación manual. La Fase 2 permanece en progreso.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -513,11 +514,68 @@ No quedaron consumidores desconocidos, de Archivados ni del explorador legacy. E
 - `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
 - Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, UUID/API, array, contador, selección/tab, render, recarga, orden, error, promesa, ausencia local y cero llamadas dobles.
 - Smoke de scripts clásicos: pasó.
+- Validación manual y regresión: aprobadas por el usuario. Se confirmó cancelación sin eliminación, eliminación exclusiva de la lista, card retirada, bloque/tab conservados, persistencia tras recarga, recursos relacionados intactos, una única eliminación exitosa en backend y ausencia de errores relacionados.
+
+### Exclusiones confirmadas
+
+No se modificaron preview, descarga, Word, generación, estado general, renderers, event delegation, APIs, backend, `exam-delete.js`, otros deletes, Archivados ni legacy. La Sesión 2.4 quedó definida como siguiente alcance.
+
+## Sesión 2.4 — Eliminación individual de anexo
+
+### Resultado
+
+- Se creó `js/features/anexos/anexo-delete.js`.
+- `window.AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId)` es la implementación canónica.
+- `bibEliminarAnexo(anexoId, conjuntoId)` permanece como wrapper en `js/pages/biblioteca.page.js`.
+- `pages/dashboard.html` carga el módulo después de preview/descarga de anexos y antes de los consumidores.
+- La firma real conserva dos UUID strings: anexo y conjunto/batch.
+
+### Consumidores y contrato
+
+| Función | Consumidor | Evento | Estado/render | Clasificación |
+| --- | --- | --- | --- | --- |
+| `bibEliminarAnexo(anexoId, conjuntoId)` | `onBibliotecaClick` | `data-bib-action="eliminar-anexo"` | Delegación sin cambios | Compatibilidad de Biblioteca |
+| `AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId)` | wrapper anterior | Confirmación desde card | Muta anexo/contador, fija tab, renderiza y recarga | Biblioteca activa |
+| `apiDeleteAnexo(id, accessToken)` | implementación canónica | Después de confirmar y obtener sesión | `DELETE /api/anexos/:id` | Compartida activa |
+
+No quedaron consumidores desconocidos, de Archivados ni del explorador legacy. El wrapper se retira en Fase 10 después de migrar el handler y confirmar búsqueda global limpia.
+
+### Comportamiento conservado
+
+1. Normaliza `anexoId` y `conjuntoId`; retorna si falta cualquiera.
+2. Muestra `¿Eliminar este anexo?` y `Esta acción no se puede deshacer.`.
+3. Cancelar retorna sin pedir sesión ni llamar API.
+4. Obtiene sesión y llama una sola vez `apiDeleteAnexo(safeAnexoId, token)`.
+5. Registra `[biblioteca] delete:success` con `resourceType: "anexo"`.
+6. Busca el conjunto por UUID; si existe, filtra `conjunto.anexos` y recalcula `total_anexos`.
+7. Conserva el bloque y fija el tab `"anexos"`.
+8. Ejecuta `renderBibliotecaDetailInPlace()` y después espera `loadAndRenderBiblioteca({ silent: true, targetBatchId, activeTab: "anexos" })`.
+9. Si el anexo no está localmente, conserva selección, render y recarga.
+10. Si falla la API, no muta estado y conserva el log y la alerta existentes.
+
+### API y persistencia verificadas
+
+- Frontend: `apiDeleteAnexo` permanece en `js/api/biblioteca.api.js`; no existe `js/services/anexos.service.js`.
+- Backend: `DELETE /api/anexos/:id`, protegido por `requireAuth`.
+- `anexos.id` y `batch_id` son UUID; `planeacion_id` es bigint y no se usa como ID de delete.
+- El service filtra por `id` y `user_id`.
+- Éxito: `200 { ok: true }`.
+- ID vacío: 400; sin token o usuario: 401; inexistente o de otro usuario: 404 `Anexo no encontrado.`.
+- Solo se elimina la fila de `anexos`; no se modifican planeación, lista, examen ni batch.
+- La relación uno a uno vigente se apoya en el índice único de `planeacion_id`; esa FK apunta a planeaciones con `ON DELETE CASCADE`.
+
+### Validación
+
+- Comparación literal contra `HEAD`: pasó ignorando solo indentación del IIFE.
+- `node --check js/features/anexos/anexo-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/UUID, array, `total_anexos`, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, anexo ausente y cero llamadas dobles.
 - Validación manual y regresión: pendientes.
 
 ### Exclusiones confirmadas
 
-No se modificaron preview, descarga, Word, generación, estado general, renderers, event delegation, APIs, backend, `exam-delete.js`, otros deletes, Archivados ni legacy. La Sesión 2.4 quedó definida, pero no implementada.
+No se modificaron preview, descarga, generación, regeneración, estado general, renderers, event delegation, APIs, backend, deletes de examen/lista/planeación/bloque, Archivados ni legacy. La Sesión 2.5 quedó definida, pero no implementada.
 
 ## Dependencias conocidas
 
@@ -560,4 +618,4 @@ No se modificaron preview, descarga, Word, generación, estado general, renderer
 
 ## Última sesión
 
-2026-07-25 — Sesión 2.3: se extrajo la eliminación individual de lista de cotejo a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.
+2026-07-26 — Sesión 2.4: se extrajo la eliminación individual de anexo a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.
