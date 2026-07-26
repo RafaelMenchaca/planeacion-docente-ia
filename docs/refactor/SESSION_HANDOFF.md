@@ -13,14 +13,15 @@
 
 - **Fase actual:** 2 — Acciones por dominio.
 - **Estado:** En progreso.
-- **Sesión actual:** 2.4 — Eliminación individual de anexo, completada en código.
+- **Sesión actual:** 2.5 — Eliminación individual de planeación, completada en código.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
-- **Validación manual 2.4:** pendiente.
-- **Próxima sesión recomendada:** 2.5 — Eliminación individual de planeación.
+- **Validación manual 2.4:** aprobada.
+- **Validación manual 2.5:** pendiente.
+- **Próxima sesión recomendada:** 2.6 — Auditoría específica de eliminación de bloque.
 
-Las Fases 0 y 1 están completadas. Las sesiones 2.0, 2.1, 2.2 y 2.3 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.4 quedó completada en código y pendiente de validación manual. La Fase 2 permanece en progreso.
+Las Fases 0 y 1 están completadas. Las sesiones 2.0 a 2.4 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.5 quedó completada en código con validación manual pendiente. La Fase 2 permanece en progreso.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -571,15 +572,76 @@ No quedaron consumidores desconocidos, de Archivados ni del explorador legacy. E
 - `node --check js/pages/biblioteca.page.js`: pasó.
 - `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
 - Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/UUID, array, `total_anexos`, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, anexo ausente y cero llamadas dobles.
-- Validación manual y regresión: pendientes.
+- Validación manual y regresión: aprobadas por el usuario. Se confirmó cancelación sin eliminación, eliminación exclusiva del anexo, card y contador actualizados, bloque/tab conservados, persistencia tras recarga, recursos relacionados intactos y eliminación de una sola fila en Supabase, sin errores relacionados.
 
 ### Exclusiones confirmadas
 
-No se modificaron preview, descarga, generación, regeneración, estado general, renderers, event delegation, APIs, backend, deletes de examen/lista/planeación/bloque, Archivados ni legacy. La Sesión 2.5 quedó definida, pero no implementada.
+No se modificaron preview, descarga, generación, regeneración, estado general, renderers, event delegation, APIs, backend, deletes de examen/lista/planeación/bloque, Archivados ni legacy. La Sesión 2.5 quedó definida como siguiente alcance.
+
+## Sesión 2.5 — Eliminación individual de planeación
+
+### Resultado
+
+- Se creó `js/features/planeaciones/planeacion-delete.js`.
+- `window.PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId)` es la implementación canónica.
+- `bibEliminarPlaneacion(planeacionId, conjuntoId)` permanece como wrapper en `js/pages/biblioteca.page.js`.
+- `pages/dashboard.html` carga el módulo después de `planeacion-download.js` y antes de `dashboard.page.js` y `biblioteca.page.js`.
+- La firma real conserva `planeacionId` bigint representado desde el DOM como string y `conjuntoId`/batch como UUID string.
+
+### Consumidores y contrato
+
+| Función | Consumidor | Evento | Estado/render | Clasificación |
+| --- | --- | --- | --- | --- |
+| `bibEliminarPlaneacion(planeacionId, conjuntoId)` | `onBibliotecaClick` | `data-bib-action="eliminar-planeacion"` | Delegación sin cambios | Compatibilidad de Biblioteca |
+| `PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId)` | wrapper anterior | Confirmación desde card | Muta tres arrays/contadores, fija tab, renderiza y recarga | Biblioteca activa |
+| `apiDeletePlaneacionDirecta(id, accessToken)` | implementación canónica | Después de confirmar y obtener sesión | `DELETE /api/planeaciones/:id/directo` | Compartida activa |
+| `eliminarPlaneacionApi(id)` | Dashboard jerárquico | Confirmación legacy | Endpoint ordinario y render legacy | Legacy visual; excluido |
+| `eliminarPlaneacionPermanentementeApi(id)` | Archivados | Eliminación permanente | Endpoint y flujo separados | Archivados; excluido |
+
+No quedaron consumidores desconocidos. El wrapper se retira en Fase 10 tras migrar el handler y confirmar búsqueda global limpia.
+
+### Comportamiento conservado
+
+1. Normaliza `planeacionId` y `conjuntoId`; retorna si falta cualquiera.
+2. Muestra `¿Eliminar esta planeación?` y `Se eliminarán también sus listas de cotejo y anexos asociados. Esta acción no se puede deshacer.`.
+3. Cancelar retorna sin pedir sesión ni llamar API.
+4. Obtiene sesión y llama una sola vez `apiDeletePlaneacionDirecta(safePlanId, token)`.
+5. Registra `[biblioteca] delete:success` con recurso, planeación y batch.
+6. Busca el conjunto por UUID; si existe, filtra `planeaciones`, las listas cuyo `planeacion_id` coincide y los anexos relacionados, y recalcula sus tres contadores.
+7. No modifica `examenes` ni `total_examenes`.
+8. Conserva el bloque y fija el tab `"planeaciones"`.
+9. Ejecuta `renderBibliotecaDetailInPlace()` y después espera `loadAndRenderBiblioteca({ silent: true, targetBatchId, activeTab: "planeaciones" })`.
+10. Si la planeación no está localmente, conserva selección, render y recarga.
+11. Si falla la API, no inicia la mutación local y conserva el log y la alerta existentes.
+
+### API y persistencia verificadas
+
+- Frontend: `apiDeletePlaneacionDirecta` permanece en `js/api/biblioteca.api.js`.
+- Backend: `DELETE /api/planeaciones/:id/directo`, protegido por `requireAuth`.
+- `planeaciones.id` es bigint; `batch_id` y `tema_id` son UUID; IDs de anexos, listas y exámenes son UUID.
+- El service busca la planeación por `id` y `user_id`; inexistente o perteneciente a otro usuario produce 404.
+- Elimina secuencialmente anexos asociados, listas asociadas y planeación, comprobando cada error.
+- No existe transacción ni rollback; un fallo intermedio puede dejar eliminaciones parciales ya confirmadas.
+- Éxito: `200 { ok: true }`; ID vacío: 400; falta de autenticación: 401; recurso no encontrado: 404.
+- No elimina exámenes ni batch. La relación con `batch_id` y `tema_id` no se reinterpretó.
+
+### Validación
+
+- Comparación literal contra `HEAD`: pasó ignorando solo indentación del IIFE.
+- `node --check js/features/planeaciones/planeacion-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API, IDs, tres arrays/contadores, exámenes intactos, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, planeación ausente y cero llamadas dobles.
+- Smoke de scripts clásicos: pasó.
+- Validación manual de cancelación, eliminación real, persistencia, relaciones, Supabase y regresión: pendiente.
+
+### Exclusiones confirmadas
+
+No se modificaron descarga de planeación, detalle, edición, Word/Excel, generación, estado general, renderers, event delegation, APIs, backend, otros deletes, delete de bloque, Archivados ni legacy. La Sesión 2.6 quedó definida como auditoría específica, pero no implementada.
 
 ## Dependencias conocidas
 
-- `dashboard.html` carga `dashboard.page.js`, después `biblioteca.page.js` y finalmente `main.js`.
+- `dashboard.html` carga `planeacion-download.js`, después `planeacion-delete.js`, `dashboard.page.js`, `biblioteca.page.js` y finalmente `main.js`.
 - `initDashboardPage()` delega a `window.initBiblioteca()` y retorna antes de hidratar el explorador.
 - Biblioteca consume partes de `window.explorerState` y wrappers de preview/descarga publicados por Dashboard.
 - Dashboard consume `window.biblioteca` durante creación y progreso de planeaciones.
@@ -594,6 +656,8 @@ No se modificaron preview, descarga, generación, regeneración, estado general,
 - `bibDescargarExamen(examenId)` conserva un wrapper modular hasta migrar `data-bib-action="descargar-examen"` y confirmar una búsqueda global sin consumidores en Fase 10.
 - `bibEliminarExamen(examenId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-examen"` y confirmar una búsqueda global sin consumidores en Fase 10.
 - `bibEliminarLista(listaId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-lista"` y confirmar una búsqueda global sin consumidores en Fase 10.
+- `bibEliminarAnexo(anexoId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-anexo"` y confirmar una búsqueda global sin consumidores en Fase 10.
+- `bibEliminarPlaneacion(planeacionId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-planeacion"` y confirmar una búsqueda global sin consumidores en Fase 10.
 
 ## Zonas protegidas
 
@@ -618,4 +682,4 @@ No se modificaron preview, descarga, generación, regeneración, estado general,
 
 ## Última sesión
 
-2026-07-26 — Sesión 2.4: se extrajo la eliminación individual de anexo a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.
+2026-07-26 — Sesión 2.5: se extrajo la eliminación individual de planeación a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.

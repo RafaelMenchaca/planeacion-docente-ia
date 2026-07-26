@@ -157,12 +157,12 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 
 | Flujo | Acción | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| Anexo | cancelar eliminación | conserva card y no llama `DELETE` | Smoke aprobado; navegador pendiente |
-| Anexo | confirmar eliminación | una llamada `DELETE`, anexo fuera del array y contador actualizado | Smoke aprobado; navegador pendiente |
-| Biblioteca | conservar bloque y tab | selección estable y tab `anexos` después de render/recarga | Smoke aprobado; navegador pendiente |
-| Anexo | persistencia tras recarga | anexo no reaparece; planeación y otros recursos permanecen | Pendiente de navegador |
+| Anexo | cancelar eliminación | conserva card y no llama `DELETE` | Aprobado |
+| Anexo | confirmar eliminación | una llamada `DELETE`, anexo fuera del array y contador actualizado | Aprobado |
+| Biblioteca | conservar bloque y tab | selección estable y tab `anexos` después de render/recarga | Aprobado |
+| Anexo | persistencia tras recarga | anexo no reaparece; planeación y otros recursos permanecen | Aprobado |
 | Anexo | API con error | no muta estado y conserva alerta/log | Smoke aprobado; navegador pendiente |
-| Regresión | preview/descarga de anexo, deletes modularizados y otros dominios | sin regresiones ni ejecución de legacy | Pendiente de navegador |
+| Regresión | preview/descarga de anexo, deletes modularizados y otros dominios | sin regresiones ni ejecución de legacy | Aprobado |
 
 ### Evidencia automatizada
 
@@ -171,7 +171,30 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - `node --check js/pages/biblioteca.page.js`: pasó.
 - `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
 - Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/UUID, array, `total_anexos`, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, anexo ausente y cero llamadas dobles.
-- Validación manual de cancelación, eliminación real, persistencia y regresión: pendiente.
+- Validación manual de cancelación, eliminación real, persistencia y regresión: aprobada por el usuario. Se confirmó eliminación exclusiva del anexo, contador y bloque/tab conservados, persistencia tras recarga, planeación/listas/exámenes y otros anexos intactos, una sola fila eliminada en Supabase y ausencia de errores relacionados.
+
+## Sesión 2.5 — Eliminación individual de planeación
+
+| Flujo | Acción | Resultado esperado | Estado |
+| --- | --- | --- | --- |
+| Planeación | cancelar eliminación | conserva planeación, anexo y lista; no solicita sesión ni llama `DELETE` | Smoke aprobado; navegador pendiente |
+| Planeación | confirmar eliminación | una llamada al endpoint directo; planeación y relaciones locales fuera de sus arrays | Smoke aprobado; navegador pendiente |
+| Biblioteca | actualizar contadores | `total_planeaciones`, `total_anexos` y `total_listas_cotejo` equivalen a sus arrays | Smoke aprobado; navegador pendiente |
+| Biblioteca | conservar bloque y tab | selección estable y tab `planeaciones` después de render/recarga | Smoke aprobado; navegador pendiente |
+| Examen | conservar relación no eliminada | `examenes` y `total_examenes` permanecen intactos | Smoke aprobado; navegador/Supabase pendiente |
+| Planeación | persistencia y contrato backend | planeación, anexos y listas no reaparecen; examen y batch permanecen | Pendiente manual |
+| Planeación | API con error | no inicia mutación local y conserva alerta/log | Smoke aprobado; navegador pendiente |
+| Regresión | descarga, deletes anteriores, previews y tabs | sin regresiones ni ejecución de legacy | Pendiente manual |
+
+### Evidencia automatizada
+
+- Comparación literal del cuerpo contra `HEAD`: pasó, ignorando únicamente indentación del nuevo contenedor.
+- `node --check js/features/planeaciones/planeacion-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/IDs, tres arrays/contadores, exámenes intactos, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, estado local ausente y cero llamadas dobles.
+- Smoke de scripts clásicos: `PlaneacionDelete`, `bibEliminarPlaneacion` e `initBiblioteca` disponibles sin excepciones inmediatas.
+- Validación manual de cancelación, eliminación real, persistencia, Supabase, relaciones y regresión: pendiente.
 
 ## Regresión acumulativa
 
