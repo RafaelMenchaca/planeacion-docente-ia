@@ -13,15 +13,16 @@
 
 - **Fase actual:** 2 — Acciones por dominio.
 - **Estado:** En progreso.
-- **Sesión actual:** 2.5 — Eliminación individual de planeación, completada en código.
+- **Sesión actual:** 2.6 — Auditoría específica de eliminación de bloque, completada.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
 - **Validación manual 2.4:** aprobada.
-- **Validación manual 2.5:** pendiente.
-- **Próxima sesión recomendada:** 2.6 — Auditoría específica de eliminación de bloque.
+- **Validación manual 2.5:** aprobada.
+- **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
+- **Próxima sesión recomendada:** 2.7 — Eliminación de bloque desde Biblioteca.
 
-Las Fases 0 y 1 están completadas. Las sesiones 2.0 a 2.4 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.5 quedó completada en código con validación manual pendiente. La Fase 2 permanece en progreso.
+Las Fases 0 y 1 están completadas. Las sesiones 2.0 a 2.5 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.6 quedó completada como auditoría documental y definió una única continuación: Sesión 2.7. La Fase 2 permanece en progreso.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -308,7 +309,7 @@ El schema documental y el código ejecutable coinciden en los tipos y relaciones
 | Delete de lista | `bibEliminarLista` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.3 | Sesión posterior de Fase 2 |
 | Delete de anexo | `bibEliminarAnexo` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.4 | Sesión posterior de Fase 2 |
 | Delete de planeación | `bibEliminarPlaneacion` | `biblioteca.page.js`, `biblioteca.api.js` | tres arrays/contadores y cascada manual backend | Medio | 2.5 | Sesión posterior de Fase 2 |
-| Delete de bloque | `bibEliminarBloque` | `biblioteca.page.js`, `biblioteca.api.js` | selección, tab, cuatro pending maps, render general y backend secuencial | Alto | 2.6 o auditoría específica | Sesión posterior de Fase 2 |
+| Delete de bloque | `bibEliminarBloque` | `biblioteca.page.js`, `biblioteca.api.js` | selección, tab, cuatro pending maps, render general y backend secuencial | Alto | 2.7, después de auditoría 2.6 | Próxima sesión de Fase 2 |
 | Coordinadores de preview restantes | Ninguno de Biblioteca sin módulo | módulos de Fase 1 y wrappers | compatibilidad existente | Bajo | — | No aplica |
 | Coordinadores de descarga restantes | Solo el de examen; planeación, anexo y lista ya delegan | `biblioteca.page.js` | lectura de estado y módulos existentes | Bajo | 2.1 | Primera sesión de Fase 2 |
 | Regeneración de anexo | rama sin emisor DOM y `bibRegenerarAnexo` | `biblioteca.page.js` | generación IA, estado pending, render y reload | Alto | Fase 4 | Fase posterior |
@@ -342,7 +343,7 @@ Sesión 2.1 — Coordinador de descarga de examen desde Biblioteca
 | Trabajo | Destino |
 | --- | --- |
 | Deletes individuales por dominio | Sesiones 2.2 a 2.5, empezando por examen |
-| Delete de bloque | Sesión 2.6 o auditoría específica posterior; nunca junto al primer delete individual |
+| Delete de bloque | Sesión 2.7, con alcance definido por la auditoría específica 2.6 |
 | Centralización de wrappers HTTP | Fase 3 |
 | Generación, regeneración, polling, jobs y retries | Fase 4 |
 | `bibliotecaState`, pending y `explorerState` | Fase 5 |
@@ -633,11 +634,152 @@ No quedaron consumidores desconocidos. El wrapper se retira en Fase 10 tras migr
 - `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
 - Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API, IDs, tres arrays/contadores, exámenes intactos, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, planeación ausente y cero llamadas dobles.
 - Smoke de scripts clásicos: pasó.
-- Validación manual de cancelación, eliminación real, persistencia, relaciones, Supabase y regresión: pendiente.
+- Validación manual de cancelación, eliminación real, persistencia, relaciones, Supabase y regresión: aprobada por el usuario. Se confirmó que cancelar conserva todos los recursos; aceptar elimina la planeación, su anexo y su lista; mantiene examen, batch y recursos de otras planeaciones; actualiza contadores, bloque y tab; persiste tras recarga y no produce errores relacionados.
 
 ### Exclusiones confirmadas
 
-No se modificaron descarga de planeación, detalle, edición, Word/Excel, generación, estado general, renderers, event delegation, APIs, backend, otros deletes, delete de bloque, Archivados ni legacy. La Sesión 2.6 quedó definida como auditoría específica, pero no implementada.
+No se modificaron descarga de planeación, detalle, edición, Word/Excel, generación, estado general, renderers, event delegation, APIs, backend, otros deletes, delete de bloque, Archivados ni legacy. La Sesión 2.6 quedó definida como auditoría específica.
+
+## Sesión 2.6 — Auditoría específica de eliminación de bloque
+
+### Decisión
+
+**A. La eliminación de bloque puede extraerse en una Sesión 2.7.**
+
+Existe una sola función coordinadora, un consumidor activo conocido, firma y API estables, dependencias de estado/render identificadas y un wrapper viable. La extracción puede ser literal y no requiere migrar `bibliotecaState`, reescribir render, cambiar la API ni corregir las respuestas parciales del backend.
+
+### Consumidores
+
+| Función | Definición | Consumidor | Evento | Estado/render | Clasificación |
+| --- | --- | --- | --- | --- | --- |
+| `bibEliminarBloque(conjuntoId)` | `js/pages/biblioteca.page.js` | `onBibliotecaClick` | `data-bib-action="eliminar-bloque"` | Coordina confirmación, API, estado, render general y recarga | Biblioteca activa |
+| `apiBibliotecaDeleteBloque(batchId, accessToken)` | `js/api/biblioteca.api.js` | `bibEliminarBloque` | Después de confirmar y obtener sesión | `DELETE /api/biblioteca/bloques/:batchId` | Compartida activa |
+| `deleteBibliotecaBloque(...)` | backend `biblioteca.service.js` | controller `deleteBloque` | Route autenticada | Borrado secuencial y respuesta parcial | Compartida activa |
+| `apiPlaneacionesPermanentDeleteBatch` / `eliminarRutaBatchPermanentementeApi` | API/service de planeaciones | Archivados | Eliminación permanente de planeaciones archivadas | Endpoint y contrato diferentes | Archivados; excluido |
+
+No existen handlers inline, listeners adicionales, tests directos, consumidores legacy visuales ni consumidores desconocidos de `bibEliminarBloque`.
+
+### Comportamiento frontend actual
+
+1. Recibe `conjuntoId`, UUID string de `data-conjunto-id`, y lo normaliza.
+2. Busca el conjunto local para obtener el título; si no existe usa `"este bloque"`.
+3. Muestra `¿Eliminar "<nombre>"?` y `Se eliminará el bloque completo: planeaciones, exámenes, listas de cotejo y anexos. Esta acción no se puede deshacer.`.
+4. Cancelar retorna sin solicitar sesión ni llamar API.
+5. Obtiene sesión mediante `window.requireSession()` y llama `apiBibliotecaDeleteBloque`.
+6. No inspecciona `{ ok, deleted }`; cualquier JSON de una respuesta HTTP 2xx permite continuar.
+7. Registra `[biblioteca] delete:success`.
+8. Filtra el bloque completo de `bibliotecaState.conjuntos`.
+9. Si era el seleccionado, selecciona el primer bloque restante o `null`.
+10. Elimina su tab y cuatro entradas de progreso.
+11. Ejecuta `renderBibliotecaContent()` y después espera `loadAndRenderBiblioteca({ silent: true })`.
+12. No navega a otra URL ni muestra feedback de éxito adicional.
+13. Un error HTTP conserva el estado local previo y muestra log más `alert`.
+14. Si el bloque no existe localmente pero sí en backend, usa el título fallback, ejecuta el delete, limpia las claves por batch y recarga; si tampoco existe en backend recibe 404 y no muta estado.
+15. La función `async` resuelve `undefined`; captura sus errores y no expone el JSON recibido.
+
+Globals consumidos: `normalizeBibliotecaId`, `findConjuntoById`, `showBibConfirm`, `window.requireSession`, `apiBibliotecaDeleteBloque`, `bibliotecaState`, `renderBibliotecaContent` y `loadAndRenderBiblioteca`. No expone una propiedad `window.*` propia; su nombre queda global por script clásico. La carga vigente requiere `biblioteca.api.js` antes de `biblioteca.page.js`; `dashboard.page.js` carga antes y `main.js` después.
+
+### Contrato backend
+
+- Endpoint: `DELETE /api/biblioteca/bloques/:batchId`.
+- Frontend: no existe `js/services/biblioteca.service.js`; Biblioteca consume directamente el wrapper clásico de `js/api/biblioteca.api.js`.
+- Autenticación: `requireAuth`; token ausente o inválido produce 401.
+- `batchId`: UUID de `planeacion_batches.id`.
+- Propiedad: consulta inicial por `id` y `user_id`; inexistente o de otro usuario produce 404 `Bloque no encontrado.`.
+- Orden: `anexos` → `listas_cotejo` → `examenes` → `planeaciones` → intento de `planeacion_batches`.
+- Cada delete de recurso filtra por `batch_id` y `user_id`.
+- No existe transacción, RPC ni rollback.
+- Un error en anexos, listas, exámenes o planeaciones detiene el flujo y llega como error HTTP; los deletes anteriores ya confirmados permanecen.
+- Un error exclusivo al eliminar el batch se convierte en warning y HTTP 200 `{ ok: true, deleted: { batch: false } }`.
+- Éxito completo: HTTP 200 `{ ok: true, deleted: { batch: true } }`.
+
+### Recursos y relaciones
+
+| Recurso | Efecto actual |
+| --- | --- |
+| Anexos | Elimina todas las filas del usuario con el mismo `batch_id`. |
+| Listas de cotejo | Elimina todas las filas del usuario con el mismo `batch_id`. |
+| Exámenes | Elimina todas las filas del usuario con el mismo `batch_id`. |
+| Planeaciones | Elimina todas las filas del usuario con el mismo `batch_id`, incluidas archivadas. |
+| Batch | Se intenta al final; puede permanecer vacío con `deleted.batch:false`. |
+| Archivados | Planeaciones archivadas con ese `batch_id` también son eliminadas; el endpoint no filtra `is_archived`. |
+| Jobs de métricas IA | Permanecen; `ai_generation_jobs.batch_id` no es eliminado por el service. |
+| Jobs de examen e items | Permanecen; al eliminar exámenes, referencias `examen_id` pueden quedar en `null` según FK. |
+| Métricas/calls | Permanecen; no hay deletes sobre tablas de métricas. |
+| Jerarquía | Planteles, grados, materias, unidades y temas permanecen. |
+| `unidad_id` y `tema_id` | No se usan como criterio de delete y sus entidades jerárquicas permanecen. |
+
+### Estado auditado
+
+| Propiedad real | Operación inmediata | Resultado tras recarga |
+| --- | --- | --- |
+| `bibliotecaState.conjuntos` | Filtra el batch completo | Se reemplaza con `GET /api/biblioteca/conjuntos`. |
+| `selectedConjuntoId` | Si coincide, primer conjunto restante o `null`; si no, se conserva | El loader conserva la selección existente o elige el primer conjunto disponible. |
+| `activeTab[safeBatchId]` | Elimina la clave | Si el batch reaparece y queda seleccionado sin tab, el loader usa `planeaciones`. |
+| `pendingPlaneacionesByBatchId[safeBatchId]` | Elimina la clave | No se restaura. |
+| `pendingExamenByBatchId[safeBatchId]` | Elimina la clave | No se restaura. |
+| `pendingListaByBatchId[safeBatchId]` | Elimina la clave | No se restaura. |
+| `anexosGenerating[safeBatchId]` | Elimina la clave | No se restaura. |
+| `pendingBatchId`, `pendingConjunto`, `expandedIds` | Sin cambios | Conservan el comportamiento actual. |
+
+Los nombres conceptuales `anexosPending`, `listasPending`, `examenesPending` y `planeacionesPending` no existen. Las propiedades reales son las indicadas arriba.
+
+### Render, recarga y respuestas parciales
+
+| Paso | Función | Efecto |
+| --- | --- | --- |
+| 1 | `renderBibliotecaContent()` | Render completo inmediato de sidebar y detalle usando el estado filtrado. |
+| 2 | `loadAndRenderBiblioteca({ silent: true })` | Solicita sesión otra vez, ejecuta `GET /api/biblioteca/conjuntos`, reemplaza conjuntos y renderiza de nuevo. |
+| 3 | Selección | Si se eliminó el seleccionado, usa el primer bloque restante; si no quedan, muestra detalle vacío. |
+| 3a | Bloque no seleccionado | La función lo filtra y limpia sus claves, pero conserva la selección actual; no existe emisor activo para este caso. |
+| 4 | `deleted.batch:false` con otros bloques | El batch vacío reaparece en sidebar después de la recarga, normalmente sin recuperar la selección. |
+| 5 | `deleted.batch:false` sin otros bloques | El loader vuelve a seleccionar el batch vacío al ser el primer elemento disponible. |
+| 6 | Fallo de recarga | El loader captura su propio error, muestra el estado general de error y no revierte el delete ni entra al `catch` del coordinador. |
+
+`renderBibliotecaDetailInPlace`, `setSelectedConjunto` y `updateBibliotecaSidebarActive` no son llamados directamente por el delete de bloque. `renderBibliotecaSidebar` se ejecuta indirectamente dentro del render general. No existe navegación.
+
+### Comparación con deletes individuales
+
+| Aspecto | Delete individual | Delete de bloque |
+| --- | --- | --- |
+| Recursos afectados | Uno; planeación incluye anexo/lista asociados | Cuatro dominios y el batch |
+| Estado afectado | Array/contador del recurso y tab | Conjunto completo, selección, tab y cuatro mapas pending |
+| Render | Parcial de detalle | General de sidebar y detalle |
+| Recarga | Silenciosa con batch/tab objetivo | Silenciosa sin objetivo |
+| Riesgo backend | Uno o tres deletes secuenciales | Cinco deletes secuenciales |
+| Riesgo parcial | Limitado; planeación no transaccional | Alto; puede vaciar recursos y conservar batch |
+| Confirmación | Recurso individual | Nombra todos los dominios y el bloque |
+| Wrapper | Ya comprobado | Viable con firma de un argumento |
+| Extracción literal | Completada | Viable, sin reutilizar abstracción universal |
+
+### Sesión 2.7 definida
+
+```text
+Sesión 2.7 — Eliminación de bloque desde Biblioteca
+Módulo: js/features/biblioteca/biblioteca-block-delete.js
+Namespace: window.BibliotecaBlockDelete
+Función: deleteFromBiblioteca(conjuntoId)
+Wrapper: bibEliminarBloque(conjuntoId)
+Retiro del wrapper: Fase 10
+Riesgo: Medio/alto
+```
+
+Dependencias conservadas: `normalizeBibliotecaId`, `findConjuntoById`, `showBibConfirm`, `requireSession`, `apiBibliotecaDeleteBloque`, `bibliotecaState`, `renderBibliotecaContent` y `loadAndRenderBiblioteca`.
+
+Exclusiones: backend, respuesta parcial, transacciones, rollback, API, store, renderers, event delegation, deletes individuales, Archivados, jobs, métricas, jerarquía y legacy.
+
+Validaciones previstas:
+
+- comparación literal contra el commit previo;
+- `node --check` del módulo y `biblioteca.page.js`;
+- `npm test -- --runInBand`;
+- búsqueda global de namespace, wrapper y consumidor;
+- smoke JSDOM para cancelación, sesión, API única, respuesta `batch:true`, respuesta `batch:false`, selección, limpieza de mapas, orden de renders, errores y bloque local ausente;
+- carga clásica sin excepciones.
+
+Prueba manual prevista: usar un bloque creado para prueba con los cuatro dominios; cubrir cancelación, eliminación real, persistencia, selección con otros bloques y sin otros bloques, una sola petición DELETE, recursos archivados asociados cuando sea seguro, consola y regresión acumulativa. La respuesta parcial solo se forzará en un entorno controlado; no se provocará un fallo destructivo en datos reales.
+
+Criterio de salida: implementación canónica única, wrapper disponible, comportamiento literal incluido `deleted.batch:false`, scripts en orden, estado/render/API/backend intactos, pruebas estáticas aprobadas y validación manual registrada honestamente.
 
 ## Dependencias conocidas
 
@@ -682,4 +824,4 @@ No se modificaron descarga de planeación, detalle, edición, Word/Excel, genera
 
 ## Última sesión
 
-2026-07-26 — Sesión 2.5: se extrajo la eliminación individual de planeación a un módulo propio; validaciones automáticas aprobadas y validación manual pendiente.
+2026-07-26 — Sesión 2.6: se auditó la eliminación de bloque y se aprobó su extracción literal para la Sesión 2.7; la validación manual 2.5 quedó aprobada.

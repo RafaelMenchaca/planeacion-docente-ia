@@ -177,14 +177,14 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 
 | Flujo | Acción | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| Planeación | cancelar eliminación | conserva planeación, anexo y lista; no solicita sesión ni llama `DELETE` | Smoke aprobado; navegador pendiente |
-| Planeación | confirmar eliminación | una llamada al endpoint directo; planeación y relaciones locales fuera de sus arrays | Smoke aprobado; navegador pendiente |
-| Biblioteca | actualizar contadores | `total_planeaciones`, `total_anexos` y `total_listas_cotejo` equivalen a sus arrays | Smoke aprobado; navegador pendiente |
-| Biblioteca | conservar bloque y tab | selección estable y tab `planeaciones` después de render/recarga | Smoke aprobado; navegador pendiente |
-| Examen | conservar relación no eliminada | `examenes` y `total_examenes` permanecen intactos | Smoke aprobado; navegador/Supabase pendiente |
-| Planeación | persistencia y contrato backend | planeación, anexos y listas no reaparecen; examen y batch permanecen | Pendiente manual |
+| Planeación | cancelar eliminación | conserva planeación, anexo y lista; no solicita sesión ni llama `DELETE` | Aprobado |
+| Planeación | confirmar eliminación | una llamada al endpoint directo; planeación y relaciones locales fuera de sus arrays | Aprobado |
+| Biblioteca | actualizar contadores | `total_planeaciones`, `total_anexos` y `total_listas_cotejo` equivalen a sus arrays | Aprobado |
+| Biblioteca | conservar bloque y tab | selección estable y tab `planeaciones` después de render/recarga | Aprobado |
+| Examen | conservar relación no eliminada | `examenes` y `total_examenes` permanecen intactos | Aprobado |
+| Planeación | persistencia y contrato backend | planeación, anexos y listas no reaparecen; examen y batch permanecen | Aprobado |
 | Planeación | API con error | no inicia mutación local y conserva alerta/log | Smoke aprobado; navegador pendiente |
-| Regresión | descarga, deletes anteriores, previews y tabs | sin regresiones ni ejecución de legacy | Pendiente manual |
+| Regresión | descarga, deletes anteriores, previews y tabs | sin regresiones ni ejecución de legacy | Aprobado |
 
 ### Evidencia automatizada
 
@@ -194,7 +194,23 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 - `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
 - Smoke JSDOM: pasó para namespace, wrapper, firma, cancelación, sesión, API/IDs, tres arrays/contadores, exámenes intactos, selección/tab, render parcial, recarga silenciosa, orden, error, promesa, estado local ausente y cero llamadas dobles.
 - Smoke de scripts clásicos: `PlaneacionDelete`, `bibEliminarPlaneacion` e `initBiblioteca` disponibles sin excepciones inmediatas.
-- Validación manual de cancelación, eliminación real, persistencia, Supabase, relaciones y regresión: pendiente.
+- Validación manual de cancelación, eliminación real, persistencia, Supabase, relaciones y regresión: aprobada por el usuario. Se confirmó planeación/anexo/lista eliminados, examen y batch intactos, otros recursos conservados, contadores/bloque/tab correctos, persistencia tras recarga y ausencia de errores relacionados.
+
+## Sesión 2.6 — Auditoría específica de eliminación de bloque
+
+| Área auditada | Evidencia | Resultado |
+| --- | --- | --- |
+| Consumidor | Botón del detalle → `data-bib-action="eliminar-bloque"` → `bibEliminarBloque` | Único consumidor activo; sin desconocidos |
+| API | `apiBibliotecaDeleteBloque` → `DELETE /api/biblioteca/bloques/:batchId` | Contrato confirmado |
+| Backend | anexos → listas → exámenes → planeaciones → batch | Secuencial, sin transacción ni rollback |
+| Respuesta parcial | fallo final devuelve `ok:true`, `deleted.batch:false` | Frontend ignora el campo y recarga |
+| Estado | conjunto, selección, tab y cuatro mapas pending | Dependencias identificadas |
+| Render | render general inmediato y recarga silenciosa | Orden identificado |
+| Archivados | planeaciones archivadas con el batch también se eliminan | Impacto confirmado |
+| Jobs/métricas/jerarquía | no existen deletes en el servicio | Permanecen |
+| Viabilidad | wrapper, namespace y extracción literal posibles | Sesión 2.7 aprobada |
+
+No se ejecutaron pruebas funcionales en 2.6 porque la sesión solo modificó documentación. La validación estática se limita a estado, diff, enlaces y alcance Markdown.
 
 ## Regresión acumulativa
 

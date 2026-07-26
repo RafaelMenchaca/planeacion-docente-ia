@@ -206,9 +206,11 @@ Sesión 2.3 — Completada
 Validación manual 2.3 — Aprobada
 Sesión 2.4 — Completada
 Validación manual 2.4 — Aprobada
-Sesión 2.5 — Completada en código
-Validación manual 2.5 — Pendiente
-Próxima sesión — 2.6 — Auditoría específica de eliminación de bloque
+Sesión 2.5 — Completada
+Validación manual 2.5 — Aprobada
+Sesión 2.6 — Completada
+Decisión 2.6 — La eliminación de bloque puede extraerse
+Próxima sesión — 2.7 — Eliminación de bloque desde Biblioteca
 ```
 
 En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite, el smoke técnico y la validación manual acumulativa fueron aprobadas.
@@ -219,9 +221,11 @@ En la Sesión 2.3 se trasladó literalmente `bibEliminarLista(listaId, conjuntoI
 
 En la Sesión 2.4 se trasladó literalmente `bibEliminarAnexo(anexoId, conjuntoId)` a `js/features/anexos/anexo-delete.js` como `AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación de `anexos`, contador, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobados.
 
-En la Sesión 2.5 se trasladó literalmente `bibEliminarPlaneacion(planeacionId, conjuntoId)` a `js/features/planeaciones/planeacion-delete.js` como `PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId)`. Se conservaron confirmación, sesión, endpoint directo, mutaciones de planeaciones/anexos/listas, contadores, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. El contrato backend continúa siendo secuencial y no transaccional; los exámenes y el batch permanecen intactos. Las validaciones estáticas, la suite y el smoke técnico fueron aprobados; la validación manual está pendiente.
+En la Sesión 2.5 se trasladó literalmente `bibEliminarPlaneacion(planeacionId, conjuntoId)` a `js/features/planeaciones/planeacion-delete.js` como `PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId)`. Se conservaron confirmación, sesión, endpoint directo, mutaciones de planeaciones/anexos/listas, contadores, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. El contrato backend continúa siendo secuencial y no transaccional; los exámenes y el batch permanecen intactos. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobados.
 
-La Sesión 2.6 queda definida como auditoría específica de eliminación de bloque. El delete de bloque no fue extraído ni modificado.
+La Sesión 2.6 auditó específicamente `bibEliminarBloque(conjuntoId)`, su único consumidor activo, la API, las mutaciones de estado, el render general, la recarga y los efectos backend. No quedaron consumidores desconocidos. La extracción literal es viable sin migrar estado, reescribir render ni modificar backend, por lo que se definió la Sesión 2.7 — Eliminación de bloque desde Biblioteca.
+
+La auditoría confirmó que el backend elimina secuencialmente anexos, listas, exámenes y planeaciones antes de intentar eliminar `planeacion_batches`. No existe transacción ni rollback. Un fallo exclusivo del último delete devuelve HTTP 200 con `{ ok: true, deleted: { batch: false } }`; el frontend actual ignora ese campo, trata la operación como éxito y la recarga puede volver a mostrar un bloque vacío. Jobs, métricas y jerarquía no se eliminan. Estos comportamientos se conservarán y probarán en 2.7, sin corregirlos dentro de la extracción.
 
 ### Dependencias
 
