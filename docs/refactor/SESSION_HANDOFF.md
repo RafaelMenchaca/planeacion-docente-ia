@@ -13,16 +13,17 @@
 
 - **Fase actual:** 2 — Acciones por dominio.
 - **Estado:** En progreso.
-- **Sesión actual:** 2.6 — Auditoría específica de eliminación de bloque, completada.
+- **Sesión actual:** 2.7 — Eliminación de bloque desde Biblioteca, completada en código.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
 - **Validación manual 2.4:** aprobada.
 - **Validación manual 2.5:** aprobada.
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
-- **Próxima sesión recomendada:** 2.7 — Eliminación de bloque desde Biblioteca.
+- **Validación manual 2.7:** pendiente.
+- **Próxima sesión recomendada:** auditoría de cierre de Fase 2, después de la validación manual 2.7.
 
-Las Fases 0 y 1 están completadas. Las sesiones 2.0 a 2.5 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.6 quedó completada como auditoría documental y definió una única continuación: Sesión 2.7. La Fase 2 permanece en progreso.
+Las Fases 0 y 1 están completadas. Las sesiones 2.0 a 2.5 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.6 quedó completada como auditoría documental y la Sesión 2.7 quedó completada en código. La Fase 2 permanece en progreso hasta la validación manual 2.7 y su auditoría de cierre.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -309,7 +310,7 @@ El schema documental y el código ejecutable coinciden en los tipos y relaciones
 | Delete de lista | `bibEliminarLista` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.3 | Sesión posterior de Fase 2 |
 | Delete de anexo | `bibEliminarAnexo` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.4 | Sesión posterior de Fase 2 |
 | Delete de planeación | `bibEliminarPlaneacion` | `biblioteca.page.js`, `biblioteca.api.js` | tres arrays/contadores y cascada manual backend | Medio | 2.5 | Sesión posterior de Fase 2 |
-| Delete de bloque | `bibEliminarBloque` | `biblioteca.page.js`, `biblioteca.api.js` | selección, tab, cuatro pending maps, render general y backend secuencial | Alto | 2.7, después de auditoría 2.6 | Próxima sesión de Fase 2 |
+| Delete de bloque | `bibEliminarBloque` | `biblioteca-block-delete.js`, `biblioteca.page.js`, `biblioteca.api.js` | selección, tab, cuatro pending maps, render general y backend secuencial | Alto | 2.7, después de auditoría 2.6 | Completada en código; validación manual pendiente |
 | Coordinadores de preview restantes | Ninguno de Biblioteca sin módulo | módulos de Fase 1 y wrappers | compatibilidad existente | Bajo | — | No aplica |
 | Coordinadores de descarga restantes | Solo el de examen; planeación, anexo y lista ya delegan | `biblioteca.page.js` | lectura de estado y módulos existentes | Bajo | 2.1 | Primera sesión de Fase 2 |
 | Regeneración de anexo | rama sin emisor DOM y `bibRegenerarAnexo` | `biblioteca.page.js` | generación IA, estado pending, render y reload | Alto | Fase 4 | Fase posterior |
@@ -652,8 +653,9 @@ Existe una sola función coordinadora, un consumidor activo conocido, firma y AP
 
 | Función | Definición | Consumidor | Evento | Estado/render | Clasificación |
 | --- | --- | --- | --- | --- | --- |
-| `bibEliminarBloque(conjuntoId)` | `js/pages/biblioteca.page.js` | `onBibliotecaClick` | `data-bib-action="eliminar-bloque"` | Coordina confirmación, API, estado, render general y recarga | Biblioteca activa |
-| `apiBibliotecaDeleteBloque(batchId, accessToken)` | `js/api/biblioteca.api.js` | `bibEliminarBloque` | Después de confirmar y obtener sesión | `DELETE /api/biblioteca/bloques/:batchId` | Compartida activa |
+| `BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId)` | `js/features/biblioteca/biblioteca-block-delete.js` | wrapper `bibEliminarBloque` | Después de `data-bib-action="eliminar-bloque"` | Coordina confirmación, API, estado, render general y recarga | Biblioteca activa |
+| `bibEliminarBloque(conjuntoId)` | `js/pages/biblioteca.page.js` | `onBibliotecaClick` | `data-bib-action="eliminar-bloque"` | Delega literalmente al módulo propietario | Compatibilidad |
+| `apiBibliotecaDeleteBloque(batchId, accessToken)` | `js/api/biblioteca.api.js` | `BibliotecaBlockDelete.deleteFromBiblioteca` | Después de confirmar y obtener sesión | `DELETE /api/biblioteca/bloques/:batchId` | Compartida activa |
 | `deleteBibliotecaBloque(...)` | backend `biblioteca.service.js` | controller `deleteBloque` | Route autenticada | Borrado secuencial y respuesta parcial | Compartida activa |
 | `apiPlaneacionesPermanentDeleteBatch` / `eliminarRutaBatchPermanentementeApi` | API/service de planeaciones | Archivados | Eliminación permanente de planeaciones archivadas | Endpoint y contrato diferentes | Archivados; excluido |
 
@@ -677,7 +679,7 @@ No existen handlers inline, listeners adicionales, tests directos, consumidores 
 14. Si el bloque no existe localmente pero sí en backend, usa el título fallback, ejecuta el delete, limpia las claves por batch y recarga; si tampoco existe en backend recibe 404 y no muta estado.
 15. La función `async` resuelve `undefined`; captura sus errores y no expone el JSON recibido.
 
-Globals consumidos: `normalizeBibliotecaId`, `findConjuntoById`, `showBibConfirm`, `window.requireSession`, `apiBibliotecaDeleteBloque`, `bibliotecaState`, `renderBibliotecaContent` y `loadAndRenderBiblioteca`. No expone una propiedad `window.*` propia; su nombre queda global por script clásico. La carga vigente requiere `biblioteca.api.js` antes de `biblioteca.page.js`; `dashboard.page.js` carga antes y `main.js` después.
+Globals consumidos: `normalizeBibliotecaId`, `findConjuntoById`, `showBibConfirm`, `window.requireSession`, `apiBibliotecaDeleteBloque`, `bibliotecaState`, `renderBibliotecaContent` y `loadAndRenderBiblioteca`. Expone `window.BibliotecaBlockDelete`; `bibEliminarBloque` permanece global por script clásico como wrapper. La carga vigente requiere `biblioteca.api.js` antes de `biblioteca-block-delete.js`, y este módulo antes de `dashboard.page.js`, `biblioteca.page.js` y `main.js`.
 
 ### Contrato backend
 
@@ -752,38 +754,51 @@ Los nombres conceptuales `anexosPending`, `listasPending`, `examenesPending` y `
 | Wrapper | Ya comprobado | Viable con firma de un argumento |
 | Extracción literal | Completada | Viable, sin reutilizar abstracción universal |
 
-### Sesión 2.7 definida
+## Sesión 2.7 — Eliminación de bloque desde Biblioteca
+
+### Resultado
 
 ```text
-Sesión 2.7 — Eliminación de bloque desde Biblioteca
 Módulo: js/features/biblioteca/biblioteca-block-delete.js
 Namespace: window.BibliotecaBlockDelete
 Función: deleteFromBiblioteca(conjuntoId)
 Wrapper: bibEliminarBloque(conjuntoId)
 Retiro del wrapper: Fase 10
 Riesgo: Medio/alto
+Estado de código: completado
+Validación manual: pendiente
 ```
 
-Dependencias conservadas: `normalizeBibliotecaId`, `findConjuntoById`, `showBibConfirm`, `requireSession`, `apiBibliotecaDeleteBloque`, `bibliotecaState`, `renderBibliotecaContent` y `loadAndRenderBiblioteca`.
+La implementación activa se trasladó literalmente desde `js/pages/biblioteca.page.js`. El wrapper conserva el único consumidor activo, `data-bib-action="eliminar-bloque"`, y no quedaron consumidores desconocidos.
 
-Exclusiones: backend, respuesta parcial, transacciones, rollback, API, store, renderers, event delegation, deletes individuales, Archivados, jobs, métricas, jerarquía y legacy.
+### Dependencias y comportamiento conservados
 
-Validaciones previstas:
+- `normalizeBibliotecaId`, `findConjuntoById`, `showBibConfirm` y `requireSession`.
+- `apiBibliotecaDeleteBloque(batchId, accessToken)` sin cambios.
+- `bibliotecaState.conjuntos`, `selectedConjuntoId`, `activeTab`, `pendingPlaneacionesByBatchId`, `pendingExamenByBatchId`, `pendingListaByBatchId` y `anexosGenerating`.
+- `renderBibliotecaContent()` seguido de `loadAndRenderBiblioteca({ silent: true })`.
+- La respuesta de API no se inspecciona: `deleted.batch:false` continúa tratándose igual que `deleted.batch:true`.
+- Se mantienen el texto de confirmación, el fallback `"este bloque"`, los logs, la alerta, la promesa y el retorno.
 
-- comparación literal contra el commit previo;
-- `node --check` del módulo y `biblioteca.page.js`;
-- `npm test -- --runInBand`;
-- búsqueda global de namespace, wrapper y consumidor;
-- smoke JSDOM para cancelación, sesión, API única, respuesta `batch:true`, respuesta `batch:false`, selección, limpieza de mapas, orden de renders, errores y bloque local ausente;
-- carga clásica sin excepciones.
+### Orden de scripts
 
-Prueba manual prevista: usar un bloque creado para prueba con los cuatro dominios; cubrir cancelación, eliminación real, persistencia, selección con otros bloques y sin otros bloques, una sola petición DELETE, recursos archivados asociados cuando sea seguro, consola y regresión acumulativa. La respuesta parcial solo se forzará en un entorno controlado; no se provocará un fallo destructivo en datos reales.
+`planeacion-delete.js` → `biblioteca-block-delete.js` → `dashboard.page.js` → `biblioteca.page.js` → `main.js`.
 
-Criterio de salida: implementación canónica única, wrapper disponible, comportamiento literal incluido `deleted.batch:false`, scripts en orden, estado/render/API/backend intactos, pruebas estáticas aprobadas y validación manual registrada honestamente.
+### Validaciones
+
+- Comparación literal contra `HEAD`: aprobada, ignorando solo la indentación del contenedor.
+- `node --check` del módulo y `biblioteca.page.js`: aprobado.
+- `npm test -- --runInBand`: aprobado (1 suite, 2 pruebas).
+- Smoke JSDOM: aprobado; cubrió namespace, wrapper, UUID, título/fallback, cancelación, sesión, API única, error HTTP, selección, estado vacío, limpieza y conservación de mapas, orden de render/recarga y respuestas `deleted.batch:true/false`.
+- Validación manual de cancelación, eliminación real, Supabase, selección y regresión: pendiente; no se ejecutó navegador real en esta sesión.
+
+### Exclusiones confirmadas
+
+No se modificaron backend, respuesta parcial, transacciones, rollback, API, store, renderers, event delegation, deletes individuales, Archivados, jobs, métricas, jerarquía ni legacy. La siguiente sesión es la auditoría de cierre de Fase 2, no su cierre automático.
 
 ## Dependencias conocidas
 
-- `dashboard.html` carga `planeacion-download.js`, después `planeacion-delete.js`, `dashboard.page.js`, `biblioteca.page.js` y finalmente `main.js`.
+- `dashboard.html` carga `planeacion-download.js`, después `planeacion-delete.js`, `biblioteca-block-delete.js`, `dashboard.page.js`, `biblioteca.page.js` y finalmente `main.js`.
 - `initDashboardPage()` delega a `window.initBiblioteca()` y retorna antes de hidratar el explorador.
 - Biblioteca consume partes de `window.explorerState` y wrappers de preview/descarga publicados por Dashboard.
 - Dashboard consume `window.biblioteca` durante creación y progreso de planeaciones.
@@ -800,6 +815,7 @@ Criterio de salida: implementación canónica única, wrapper disponible, compor
 - `bibEliminarLista(listaId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-lista"` y confirmar una búsqueda global sin consumidores en Fase 10.
 - `bibEliminarAnexo(anexoId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-anexo"` y confirmar una búsqueda global sin consumidores en Fase 10.
 - `bibEliminarPlaneacion(planeacionId, conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-planeacion"` y confirmar una búsqueda global sin consumidores en Fase 10.
+- `bibEliminarBloque(conjuntoId)` conserva un wrapper modular hasta migrar `data-bib-action="eliminar-bloque"` y confirmar una búsqueda global sin consumidores en Fase 10.
 
 ## Zonas protegidas
 
@@ -824,4 +840,4 @@ Criterio de salida: implementación canónica única, wrapper disponible, compor
 
 ## Última sesión
 
-2026-07-26 — Sesión 2.6: se auditó la eliminación de bloque y se aprobó su extracción literal para la Sesión 2.7; la validación manual 2.5 quedó aprobada.
+2026-07-26 — Sesión 2.7: se extrajo literalmente la eliminación de bloque a `BibliotecaBlockDelete`; las validaciones automatizadas pasaron y la validación manual quedó pendiente.

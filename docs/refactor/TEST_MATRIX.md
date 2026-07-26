@@ -212,6 +212,33 @@ Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblio
 
 No se ejecutaron pruebas funcionales en 2.6 porque la sesión solo modificó documentación. La validación estática se limita a estado, diff, enlaces y alcance Markdown.
 
+## Sesión 2.7 — Eliminación de bloque desde Biblioteca
+
+| Escenario | Validación | Resultado |
+| --- | --- | --- |
+| Namespace y wrapper | `BibliotecaBlockDelete.deleteFromBiblioteca` y `bibEliminarBloque` disponibles | Aprobado en smoke JSDOM |
+| UUID, título y fallback | normalización, título local y `"este bloque"` | Aprobado en smoke JSDOM |
+| Cancelación y sesión ausente | sin llamada DELETE ni mutación | Aprobado en smoke JSDOM |
+| Eliminación seleccionada | filtra conjunto y selecciona el primero restante | Aprobado en smoke JSDOM |
+| Eliminación no seleccionada | conserva la selección actual | Aprobado en smoke JSDOM |
+| Último bloque | selección final `null` | Aprobado en smoke JSDOM |
+| Estado | limpia tab y cuatro mapas del batch; conserva claves y propiedades ajenas | Aprobado en smoke JSDOM |
+| Render y recarga | render general seguido de recarga `{ silent: true }` | Aprobado en smoke JSDOM |
+| Respuesta parcial | `deleted.batch:false` se trata igual que `true` | Aprobado en smoke JSDOM |
+| Error HTTP | sin mutación local; conserva log y alerta | Aprobado en smoke JSDOM |
+| Cancelación manual | bloque y recursos permanecen; cero DELETE | Pendiente |
+| Eliminación manual | recursos, batch, selección, persistencia y Supabase | Pendiente |
+| Regresión manual | previews, descargas, deletes individuales, tabs y legacy | Pendiente |
+
+### Evidencia automatizada
+
+- Comparación literal del cuerpo contra `HEAD`: pasó, ignorando únicamente la indentación del nuevo contenedor.
+- `node --check js/features/biblioteca/biblioteca-block-delete.js`: pasó.
+- `node --check js/pages/biblioteca.page.js`: pasó.
+- `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
+- Smoke JSDOM: pasó con 27 comprobaciones funcionales agrupadas.
+- La validación manual 2.7 no se ejecutó en esta sesión y permanece pendiente.
+
 ## Regresión acumulativa
 
 - Cada fase ejecuta sus pruebas propias y las pruebas críticas de todas las fases anteriores.

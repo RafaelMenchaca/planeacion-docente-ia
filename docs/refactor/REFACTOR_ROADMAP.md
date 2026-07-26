@@ -210,7 +210,9 @@ Sesión 2.5 — Completada
 Validación manual 2.5 — Aprobada
 Sesión 2.6 — Completada
 Decisión 2.6 — La eliminación de bloque puede extraerse
-Próxima sesión — 2.7 — Eliminación de bloque desde Biblioteca
+Sesión 2.7 — Completada en código
+Validación manual 2.7 — Pendiente
+Próxima sesión — Auditoría de cierre de Fase 2
 ```
 
 En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite, el smoke técnico y la validación manual acumulativa fueron aprobadas.
@@ -225,7 +227,9 @@ En la Sesión 2.5 se trasladó literalmente `bibEliminarPlaneacion(planeacionId,
 
 La Sesión 2.6 auditó específicamente `bibEliminarBloque(conjuntoId)`, su único consumidor activo, la API, las mutaciones de estado, el render general, la recarga y los efectos backend. No quedaron consumidores desconocidos. La extracción literal es viable sin migrar estado, reescribir render ni modificar backend, por lo que se definió la Sesión 2.7 — Eliminación de bloque desde Biblioteca.
 
-La auditoría confirmó que el backend elimina secuencialmente anexos, listas, exámenes y planeaciones antes de intentar eliminar `planeacion_batches`. No existe transacción ni rollback. Un fallo exclusivo del último delete devuelve HTTP 200 con `{ ok: true, deleted: { batch: false } }`; el frontend actual ignora ese campo, trata la operación como éxito y la recarga puede volver a mostrar un bloque vacío. Jobs, métricas y jerarquía no se eliminan. Estos comportamientos se conservarán y probarán en 2.7, sin corregirlos dentro de la extracción.
+La auditoría confirmó que el backend elimina secuencialmente anexos, listas, exámenes y planeaciones antes de intentar eliminar `planeacion_batches`. No existe transacción ni rollback. Un fallo exclusivo del último delete devuelve HTTP 200 con `{ ok: true, deleted: { batch: false } }`; el frontend actual ignora ese campo, trata la operación como éxito y la recarga puede volver a mostrar un bloque vacío. Jobs, métricas y jerarquía no se eliminan.
+
+En la Sesión 2.7 se trasladó literalmente `bibEliminarBloque(conjuntoId)` a `js/features/biblioteca/biblioteca-block-delete.js` como `BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId)`. Se conservaron confirmación, sesión, API, ausencia de inspección de `deleted.batch`, filtrado de conjuntos, selección, tab, cuatro mapas pending, render general, recarga silenciosa, logs, alerta y retorno. La comparación literal, la sintaxis, la suite y el smoke técnico —incluido `deleted.batch:false`— fueron aprobados. La validación manual permanece pendiente y la Fase 2 continúa en progreso hasta su auditoría de cierre.
 
 ### Dependencias
 
