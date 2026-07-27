@@ -17,8 +17,9 @@
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
-- **Sesión 3.2:** Consolidación interna de deletes de Biblioteca, completada en código.
-- **Validación manual 3.2:** pendiente.
+- **Sesión 3.2:** Consolidación interna de deletes de Biblioteca, completada.
+- **Validación manual 3.2:** aprobada.
+- **Sesión 3.3:** Auditoría puntual de APIs de anexos, completada.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -27,11 +28,11 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.3 — Auditoría puntual de APIs de anexos.
+- **Próxima sesión seleccionada:** 3.4 — Consolidación interna de lecturas de anexos.
 
 Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
-Sesión 3.2 conserva validación manual pendiente y no autoriza el cierre de la
-fase ni el inicio de generación, polling, Archivados o legacy.
+Sesión 3.3 es documental y no autoriza el cierre de la fase ni el inicio de
+generación, regeneración, polling, Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -1304,11 +1305,12 @@ el batch; si solo falla ese último paso conserva HTTP 200 y
 
 ### Validación manual
 
-Pendiente. No se ejecutó navegador durante esta sesión automatizada. Quedan por
-validar cancelaciones sin DELETE, eliminaciones reales con recursos
-desechables, una sola petición por acción, recurso/tab/bloque correctos,
-persistencia tras recarga y regresión de Biblioteca, Detalle, previews,
-descargas y `bibliotecaGet`. No se declara aprobado ningún caso 3.2.
+Aprobada por el usuario antes de abrir 3.3. Las cancelaciones de examen, lista,
+anexo, planeación y bloque no ejecutaron DELETE. Los cinco deletes reales
+eliminaron el recurso esperado; la base de datos fue revisada y confirmó cada
+eliminación. Se observaron los eventos backend de éxito de exámenes, listas,
+anexos, planeación directa y bloque, incluido `deletedBatch: true`, sin errores
+relacionados con el refactor.
 
 ### Exclusiones y hallazgos conservados
 
@@ -1324,7 +1326,211 @@ dependencia del orden de scripts y posibilidad de `deleted.batch:false`.
 
 **Sesión 3.3 — Auditoría puntual de APIs de anexos.**
 
-Es la única siguiente sesión seleccionada y no está implementada. La auditoría
-3.0 encontró lecturas sin consumidor, detalle activo y regeneración compatible
-en el mismo archivo; 3.3 debe confirmar esos límites antes de consolidar.
-Fase 3 continúa en progreso.
+Completada como auditoría documental. Sus resultados se registran a
+continuación. Fase 3 continúa en progreso.
+
+## Sesión 3.3 — Auditoría puntual de APIs de anexos
+
+### Estado de entrada
+
+- Frontend: `refactor-front`, HEAD `6a96d79`, working tree limpio.
+- Commit 3.2: `6a96d79 refactor(frontend): consolidate Biblioteca delete requests`.
+- Backend: `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; sesiones 3.0–3.2 completadas.
+- Validaciones manuales 3.1 y 3.2 aprobadas.
+- `js/services/anexos.service.js` no existe.
+
+### Inventario de funciones y consumidores
+
+| Función | Propietario | Contrato | Consumidores confirmados | Clasificación |
+| --- | --- | --- | --- | --- |
+| `apiGenerarAnexo(planeacionId, accessToken)` | `js/api/anexos.api.js` | POST `/api/anexos/generate` | `submitBibliotecaAnexoCreateModal` activo; `bibGenerarAnexo` compatible sin emisor propio | Generación activa |
+| `apiObtenerAnexosPorBatch(batchId, accessToken)` | `js/api/anexos.api.js` | GET `/api/anexos/batch/:batchId` | Ninguno, incluidas búsquedas de aliases y wrappers | Sin consumidor confirmado |
+| `apiObtenerAnexoPorPlaneacion(planeacionId, accessToken)` | `js/api/anexos.api.js` | GET `/api/anexos/planeacion/:planeacionId` | Ninguno, incluidas búsquedas de aliases y wrappers | Sin consumidor confirmado |
+| `apiObtenerAnexoDetalle(anexoId, accessToken)` | `js/api/anexos.api.js` | GET `/api/anexos/:anexoId` | `AnexoPreview.open` y `AnexoDownload.downloadBiblioteca` | Preview/descarga activa |
+| `apiRegenerarAnexo(anexoId, accessToken)` | `js/api/anexos.api.js` | POST `/api/anexos/:anexoId/regenerate` | `bibRegenerarAnexo`; rama `data-bib-action` sin emisor DOM | Regeneración de compatibilidad |
+| `apiDeleteAnexo(id, accessToken)` | `js/api/biblioteca.api.js` | DELETE `/api/anexos/:id` | `AnexoDelete.deleteFromBiblioteca` | Biblioteca activa |
+
+No existen consumidores de estas API en Detalle, Archivados ni el explorador
+visual legacy. `dashboard.page.js` no contiene llamadas de anexos; el dashboard
+solo aporta el shell que carga los scripts antes de `biblioteca.page.js`.
+
+| API | Archivo y función consumidora | Argumentos | Retorno usado | Error del consumidor |
+| --- | --- | --- | --- | --- |
+| `apiGenerarAnexo` | `biblioteca.page.js` — `submitBibliotecaAnexoCreateModal` | ID bigint normalizado + token | `anexo_id`; crea card optimista | Error por item en `anexosGenerating` |
+| `apiGenerarAnexo` | `biblioteca.page.js` — `bibGenerarAnexo` | ID bigint normalizado + token | `anexo_id` opcional | Error inline en card; rama compatible |
+| `apiObtenerAnexosPorBatch` | — | — | — | Sin consumidor confirmado |
+| `apiObtenerAnexoPorPlaneacion` | — | — | — | Sin consumidor confirmado |
+| `apiObtenerAnexoDetalle` | `anexo-preview.js` — `AnexoPreview.open` | UUID de anexo + token | `res?.anexo` | Log y mensaje dentro del modal |
+| `apiObtenerAnexoDetalle` | `anexo-download.js` — `AnexoDownload.downloadBiblioteca` | UUID de anexo + token | `res?.anexo` | Log y alerta |
+| `apiRegenerarAnexo` | `biblioteca.page.js` — `bibRegenerarAnexo` | UUID normalizado + token | Ignorado | Error inline en pending; sin emisor DOM |
+| `apiDeleteAnexo` | `anexo-delete.js` — `AnexoDelete.deleteFromBiblioteca` | UUID normalizado + token | Ignorado | Log y alerta; Biblioteca activa |
+
+### Contratos HTTP frontend
+
+| Función | ID y encoding | Headers/body/cache | Éxito | Error observable |
+| --- | --- | --- | --- | --- |
+| `apiGenerarAnexo` | `planeacionId`, bigint como string/número; no va en URL | JSON + Bearer; body `{planeacion_id}`; sin cache | Payload sin transformar: `{ok, anexo_id, status, anexo?}` | `error` → `message` → `"No se pudo generar el anexo"`; adjunta `status` y `payload` |
+| `apiObtenerAnexosPorBatch` | UUID; `encodeURIComponent` | Solo Bearer; sin body; `cache:"no-store"` | `{anexos}`; array dentro del contenedor | `error` → `message` → fallback propio; adjunta metadata |
+| `apiObtenerAnexoPorPlaneacion` | bigint como string/número; `encodeURIComponent` | Igual | `{anexo}`; objeto dentro del contenedor | Igual, con fallback propio |
+| `apiObtenerAnexoDetalle` | UUID; `encodeURIComponent` | Igual | `{anexo}`; objeto completo dentro del contenedor | Igual, con fallback propio |
+| `apiRegenerarAnexo` | UUID; `encodeURIComponent` | JSON + Bearer; sin body ni cache | `{ok:true, anexo}` sin transformar | `error` → `message` → `"No se pudo regenerar el anexo"`; adjunta metadata |
+| `apiDeleteAnexo` | UUID; `encodeURIComponent` | Solo Bearer; sin body ni cache | `response.json()`; `{ok:true}` | Solo `payload.error` o `HTTP <status>`; sin metadata |
+
+Las cinco funciones de `anexos.api.js` pasan por `requestAnexosJson`. Este
+helper lee primero `response.text()`: cuerpo vacío o JSON inválido produce
+`null`. En HTTP exitoso ese `null` se devuelve; en HTTP de error se usa el
+fallback específico. En cambio, `apiDeleteAnexo` conserva el parsing de
+Biblioteca: JSON inválido o vacío en 2xx rechaza mediante `response.json()`.
+
+### Contratos backend y relaciones
+
+Todas las rutas usan `requireAuth`, Bearer, `createUserClient(req.accessToken)`
+y `req.user.id`. Las consultas principales filtran por `user_id`; las
+operaciones posteriores siguen sujetas al cliente de usuario/RLS.
+
+| Operación | Status de éxito | Errores confirmados | Relación |
+| --- | --- | --- | --- |
+| Generar | 201 `generated`; 200 `already_exists` | 400 ID ausente, 401 auth, 404 planeación, 502 salida IA inválida, 504 timeout, 500 inesperado | Carga planeación propia y copia `planeacion_id`, `batch_id`, `tema_id` y contexto |
+| Regenerar | 200 `{ok:true, anexo}` | 400, 401, 404 anexo/planeación, 502, 504, 500 | Actualiza la misma fila; no crea otra |
+| Listar por batch | 200 `{anexos:[]}` | 400, 401, 500 | Filtra `batch_id` y `user_id`; orden ascendente |
+| Obtener por planeación | 200 `{anexo}` | 400, 401, 404, 500 | Filtra `planeacion_id` y `user_id` |
+| Obtener detalle | 200 `{anexo}` | 400, 401, 404, 500 | Filtra UUID de anexo y `user_id` |
+| Eliminar | 200 `{ok:true}` | 400, 401, 404, 500 | Verifica y elimina por UUID + `user_id` |
+
+`anexos.id` y `batch_id` son UUID; `planeacion_id` es bigint. Existe FK
+`anexos.planeacion_id → planeaciones.id ON DELETE CASCADE` e índice único
+`unique_anexo_por_planeacion`, por lo que hay como máximo un anexo por
+planeación. `batch_id` está indexado y se copia desde la planeación, pero el
+schema documentado no declara una FK desde anexos al batch.
+
+### Helpers internos
+
+| Helper | Responsabilidad | Consumidores | Global | Duplicación |
+| --- | --- | --- | --- | --- |
+| `buildAnexosHeaders` | `Content-Type: application/json` + Bearer | Generar y regenerar | Implícita por script clásico; sin asignación `window` | No; es específico de POST JSON |
+| `parseAnexosApiJson` | Texto → JSON; vacío/inválido → `null` | `requestAnexosJson` | Implícita | No |
+| `createAnexosApiError` | `Error` con `status` y `payload` | `requestAnexosJson` | Implícita | No |
+| `requestAnexosJson` | Fetch, parsing, validación HTTP y mensaje | Las cinco API de `anexos.api.js` | Implícita | Ya concentra la mecánica común |
+
+`buildAnexosHeaders` no debe reutilizarse para GET: añadiría
+`Content-Type: application/json`, ausente en las tres lecturas actuales.
+
+### Comparación de lecturas
+
+| Aspecto | Por batch | Por planeación | Detalle |
+| --- | --- | --- | --- |
+| Consumidor | Ninguno | Ninguno | Preview y descarga |
+| Endpoint | `/batch/:batchId` | `/planeacion/:planeacionId` | `/:anexoId` |
+| ID | UUID | bigint | UUID |
+| Retorno | `{anexos}` | `{anexo}` | `{anexo}` |
+| Error | Metadata + fallback de batch | Metadata + fallback de planeación | Metadata + fallback de detalle |
+| Encoding | Sí | Sí | Sí |
+| GET/Bearer/cache/parsing | Equivalente | Equivalente | Equivalente |
+| Consolidación viable | Sí, conservando global y contenedor | Sí, conservando global y contenedor | Sí, conservando dos consumidores |
+
+La duplicación reducible es solo la construcción de las opciones GET y la
+delegación a `requestAnexosJson`. Los paths, fallbacks y contenedores permanecen
+propiedad de cada wrapper.
+
+### Generación, regeneración y estado
+
+La generación activa parte del modal de Biblioteca, selecciona planeaciones,
+crea entradas en `anexosGenerating`, ejecuta POST secuenciales y usa
+`anexo_id`. Muestra feedback por card, registra éxitos/errores y recarga el
+bloque. El wrapper individual `bibGenerarAnexo` permanece como compatibilidad
+de una rama sin emisor propio.
+
+Regeneración usa el mismo estado pending y recarga, pero su rama
+`data-bib-action="regenerar-anexo"` no tiene emisor DOM vigente. El retorno se
+ignora. Ambos contratos ejecutan IA síncrona, métricas y prompt version
+`v1_anexos_desde_planeacion`; no usan polling ni SSE. La versión, tokens y
+métricas no forman parte del retorno nuevo utilizado por Biblioteca. Ambos
+pertenecen a Fase 4 y quedan fuera de 3.4.
+
+### Preview, descarga y delete
+
+Flujo de card:
+
+```text
+card → wrapper de compatibilidad → AnexoPreview o AnexoDownload
+     → apiObtenerAnexoDetalle → {anexo} → render o Word
+```
+
+Preview y descarga directa comparten la misma lectura. Cada acción de card
+realiza una sola petición con `cache:"no-store"`; no existe cache de objeto ni
+fallback de endpoint. Descargar desde el preview usa el objeto ya cargado y no
+repite la petición. Preview consume `id`, metadata y `contenido`; download
+consume título, materia, tema y la estructura completa de contenido. Preview
+muestra error dentro del modal; descarga registra y muestra alerta.
+
+`apiDeleteAnexo` permanece en `biblioteca.api.js`, ya delega en
+`bibliotecaDelete` desde 3.2 y fue validado manualmente. No se mueve ni duplica
+en esta auditoría. Una reorganización por propietario de dominio solo puede
+evaluarse después de migrar consumidores y globals, como retiro de
+compatibilidad en Fase 10.
+
+### Globals protegidas
+
+| Global | Firma/superficie | Propietario | Estado | Fase futura |
+| --- | --- | --- | --- | --- |
+| `window.apiGenerarAnexo` | `(planeacionId, accessToken)` | API anexos | Generación activa | 4 |
+| `window.apiObtenerAnexosPorBatch` | `(batchId, accessToken)` | API anexos | Sin consumidor confirmado; protegida | 3.4 conserva |
+| `window.apiObtenerAnexoPorPlaneacion` | `(planeacionId, accessToken)` | API anexos | Sin consumidor confirmado; protegida | 3.4 conserva |
+| `window.apiObtenerAnexoDetalle` | `(anexoId, accessToken)` | API anexos | Preview/descarga activa | 3.4 conserva |
+| `window.apiRegenerarAnexo` | `(anexoId, accessToken)` | API anexos | Compatibilidad | 4 |
+| `window.apiDeleteAnexo` | `(id, accessToken)` | API Biblioteca | Activa y consolidada | 10, si cambia propietario |
+| `window.AnexoPreview` | `open`, `render`, `close` | Feature preview | Activa | Conservar |
+| `window.AnexoDownload` | `download`, `downloadBiblioteca` | Feature download | Activa | Conservar |
+| `window.AnexoDelete` | `deleteFromBiblioteca` | Feature delete | Activa | Conservar |
+| `bibGenerarAnexo`, `bibRegenerarAnexo` | Firmas actuales | Página Biblioteca | Generación/compatibilidad | 4/10 |
+| `bibDescargarAnexo`, `descargarAnexoWord` | Firmas actuales | Página Biblioteca | Wrappers compatibles | 10 |
+| `openBibliotecaAnexoPreview`, `closeBibliotecaAnexoModal`, `renderBibliotecaAnexoModal` | Firmas actuales | Página Biblioteca | Wrappers compatibles | 10 |
+| `open/close/render/submitBibliotecaAnexoCreateModal`, `renderAnexosTab` | Firmas actuales | Página Biblioteca | UI activa global implícita | 4/6 |
+| `bibEliminarAnexo` | `(anexoId, conjuntoId)` | Página Biblioteca | Wrapper compatible | 10 |
+
+### Duplicación y candidatos
+
+| Candidato | Evidencia | Riesgo | Decisión |
+| --- | --- | --- | --- |
+| Helper GET privado para tres lecturas | Opciones GET idénticas; paths/fallbacks parametrizables | Bajo | Sesión 3.4 |
+| Rehacer helpers internos existentes | Parsing, error y request ya están compartidos | Bajo pero sin beneficio | No realizar |
+| Eliminar lecturas sin consumidor | Dos globals sin consumidor confirmado | Medio por contrato clásico | Fase 10; no eliminar ahora |
+| Mover `apiDeleteAnexo` | Activo, consolidado y validado en Biblioteca | Medio | Fase 10 |
+| Unir generación y regeneración | IA, métricas, pending y retornos distintos | Alto | Fase 4 |
+
+No son duplicación: los contenedores distintos de las lecturas, los dos
+consumidores de detalle, los wrappers de compatibilidad ni GET/DELETE sobre el
+mismo path.
+
+### Exclusiones y hallazgos conservados
+
+No se modificaron JavaScript, HTML, CSS, autenticación, generación,
+regeneración, pending, preview, descarga, delete, backend, SQL, Archivados ni
+legacy. No existen pruebas automatizadas específicas para estas seis APIs.
+`README.md` conserva una afirmación desactualizada de que `js/features/` no
+existe; el código y `ARCHITECTURE.md` confirman que sí existe. `README.md` no
+está permitido en 3.3 y esta discrepancia no cambia los contratos auditados.
+
+También permanecen el parsing tolerante que convierte JSON inválido exitoso en
+`null`, dos globals de lectura sin consumidor, helpers internos globales
+implícitos por script clásico, generación síncrona secuencial y dependencia del
+orden de scripts.
+
+### Próxima sesión
+
+**Sesión 3.4 — Consolidación interna de lecturas de anexos.**
+
+Incluirá exclusivamente `apiObtenerAnexosPorBatch`,
+`apiObtenerAnexoPorPlaneacion` y `apiObtenerAnexoDetalle` dentro de
+`js/api/anexos.api.js`. Podrá crear un helper privado GET específico que reciba
+path y fallback y delegue en `requestAnexosJson`. Debe preservar headers sin
+`Content-Type`, Bearer, `cache:"no-store"`, encoding, retorno `null` ante cuerpo
+vacío/JSON inválido exitoso, prioridad `error/message/fallback`, metadata
+`status/payload`, globals y consumidores.
+
+Riesgo bajo. Excluye generación, regeneración, delete, autenticación, features,
+páginas, services, backend, Archivados y legacy. Las validaciones futuras deben
+cubrir las tres URLs, una petición por llamada, contenedores sin transformar,
+errores JSON/texto/vacío/inválido, metadata, globals, helper privado y regresión
+manual de preview/descarga. No está implementada.

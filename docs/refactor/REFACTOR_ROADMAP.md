@@ -311,18 +311,28 @@ previews, descargas y deletes, sin duplicados inesperados ni errores
 relacionados.
 
 La Sesión `3.2 — Consolidación interna de deletes de Biblioteca` quedó
-completada en código. Los cinco wrappers públicos conservan firma, global,
-endpoint codificado, Bearer, ausencia de body, parsing, retorno y errores, y
+completada y validada manualmente. Los cinco wrappers públicos conservan firma,
+global, endpoint codificado, Bearer, ausencia de body, parsing, retorno y errores, y
 delegan solo la mecánica equivalente a `bibliotecaDelete(path, accessToken)`.
 El helper es privado y exclusivo de DELETE; `bibliotecaGet` quedó intacto. Los
-smokes previo y posterior, `node --check` y Jest pasaron. La validación manual
-3.2 permanece pendiente.
+smokes previo y posterior, `node --check` y Jest pasaron. El usuario aprobó las
+cinco cancelaciones, los cinco deletes reales, la persistencia en base de datos
+y los logs de éxito, sin errores relacionados.
+
+La Sesión `3.3 — Auditoría puntual de APIs de anexos` quedó completada como
+auditoría documental. Confirmó cinco globals en `anexos.api.js`, el delete
+activo en `biblioteca.api.js`, cuatro helpers internos ya compartidos y la
+ausencia de `js/services/anexos.service.js`. La lectura de detalle tiene dos
+consumidores activos; las lecturas por batch y por planeación no tienen
+consumidor confirmado. Generación tiene un flujo activo; regeneración conserva
+una rama de compatibilidad sin emisor DOM.
 
 La única siguiente sesión seleccionada es
-`3.3 — Auditoría puntual de APIs de anexos`. No se implementó. Debe separar
-lecturas sin consumidor, detalle activo y regeneración compatible antes de
-cualquier consolidación. Generación, polling, SSE, autenticación global,
-Archivados y legacy siguen excluidos.
+`3.4 — Consolidación interna de lecturas de anexos`. Incluirá exclusivamente
+`apiObtenerAnexosPorBatch`, `apiObtenerAnexoPorPlaneacion` y
+`apiObtenerAnexoDetalle`, preservando contenedores, fallbacks, metadata de error
+y globals. No está implementada. Generación, regeneración, delete,
+autenticación, consumidores, Archivados y legacy siguen excluidos.
 
 ### Dependencias
 

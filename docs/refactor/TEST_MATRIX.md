@@ -334,10 +334,10 @@ no se solicita de nuevo.
 | Helper DELETE | `bibliotecaDelete` ausente de `window` | Aprobado |
 | Helper GET | `bibliotecaGet` sin cambios y ausente de `window` | Aprobado estáticamente |
 | Consumidores/otros API/HTML/backend | Sin diff | Aprobado estáticamente |
-| Cancelaciones manuales | Examen, lista, anexo, planeación y bloque sin DELETE | Pendiente |
-| Deletes reales manuales | Cinco recursos desechables; una petición y recurso correcto | Pendiente |
-| Persistencia manual | Recurso ausente tras recarga; tab/bloque correctos | Pendiente |
-| Regresión manual | Biblioteca, Detalle, previews, descargas y helper GET | Pendiente |
+| Cancelaciones manuales | Examen, lista, anexo, planeación y bloque sin DELETE | Aprobado por el usuario |
+| Deletes reales manuales | Cinco recursos correctos; base de datos revisada | Aprobado por el usuario |
+| Persistencia manual | Registros esperados ausentes en base de datos | Aprobado por el usuario |
+| Regresión manual | Cero errores relacionados con el refactor | Aprobado por el usuario |
 
 ### Evidencia automatizada
 
@@ -350,7 +350,32 @@ no se solicita de nuevo.
   helper DELETE privado y cero consumidores desconocidos.
 - `bibliotecaGet`, features, páginas, services, HTML, otros API files y backend
   permanecen sin cambios.
-- La validación manual 3.2 no se ejecutó y permanece pendiente.
+- Validación manual 3.2 aprobada por el usuario: cinco cancelaciones sin
+  eliminación, cinco deletes reales, verificación de cada registro en base de
+  datos y logs backend de éxito para examen, lista, anexo, planeación directa y
+  bloque con `deletedBatch:true`; cero errores relacionados.
+
+## Sesión 3.3 — Auditoría puntual de APIs de anexos
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Estado inicial | `refactor-front`, HEAD `6a96d79`, árbol limpio | Aprobado |
+| Validación 3.2 | Evidencia manual y logs proporcionados por el usuario | Aprobada |
+| Backend | `refactor-back`, HEAD `e08d6e4`, árbol limpio | Aprobado |
+| Funciones | Cinco APIs en anexos y un delete en Biblioteca | Clasificadas |
+| Service frontend | `js/services/anexos.service.js` | No existe |
+| Consumidores | Generación activa, detalle con dos consumidores, regeneración compatible, delete activo | Confirmados |
+| Sin consumidor | Lecturas por batch y por planeación | Confirmado sin aliases |
+| Helpers | Headers, parsing, error y request | Cuatro identificados |
+| Lecturas | GET, Bearer, `no-store`, parsing y error equivalentes | Viable consolidar |
+| Generación/regeneración | IA, métricas y pending | Fase 4 |
+| Delete | Ya consolidado y validado en 3.2 | Conservar |
+| Desconocidos | Funciones, consumidores y endpoints | Cero |
+| Sesión siguiente | Una sola 3.4: tres lecturas de anexos | Aprobado |
+| Alcance | Solo Markdown; sin cambios funcionales ni backend | Aprobado |
+
+No se ejecutaron pruebas funcionales porque 3.3 solo modifica documentación.
+La validación manual 3.2 permanece aprobada y no debe solicitarse de nuevo.
 
 ## Regresión acumulativa
 

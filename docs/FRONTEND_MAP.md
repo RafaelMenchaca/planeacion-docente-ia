@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.2.
+Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.3.
 Este documento inventaría la arquitectura HTTP real y registra las
 consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
@@ -30,7 +30,7 @@ consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
 | Archivo | Responsabilidad actual | Dominios | Consumidores | Globals expuestas | Estado |
 | --- | --- | --- | --- | --- | --- |
-| `js/api/anexos.api.js` | HTTP y parsing JSON de anexos | Anexos | Biblioteca y features de preview/descarga | 5 API públicas; 4 helpers implícitos | API activa |
+| `js/api/anexos.api.js` | HTTP, parsing tolerante y metadata de error de anexos | Anexos | Biblioteca y features de preview/descarga | 5 API públicas; 4 helpers globales implícitos | API activa |
 | `js/api/biblioteca.api.js` | Lecturas de conjuntos y deletes de Biblioteca consolidados internamente por método | Biblioteca, planeaciones, anexos, listas, exámenes | Biblioteca, Detalle y features de delete | 7 API públicas; `bibliotecaGet` y `bibliotecaDelete` privados | API activa |
 | `js/api/examenes.api.js` | Generación, polling y lecturas de exámenes | Exámenes | Biblioteca directa y `examenes.service.js` | 4 API públicas; 4 helpers implícitos | API activa |
 | `js/api/jerarquia.api.js` | CRUD jerárquico, generación y planeación por tema | Planteles, grados, materias, unidades, temas, planeaciones | `jerarquia.service.js` | 18 asignaciones explícitas; el resto de funciones de nivel superior son globals implícitas | Compatibilidad |
@@ -46,6 +46,8 @@ consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 | `js/core/utils.js` | Escape HTML | UI | Páginas y render | `escapeHtml` | Compartido |
 
 No queda ningún archivo de estas carpetas con estado desconocido.
+`js/services/anexos.service.js` no existe; Biblioteca y los features de anexos
+consumen las globals de `anexos.api.js` directamente.
 
 ## Funciones HTTP directas
 
@@ -54,11 +56,11 @@ La columna Token indica el argumento que el wrapper convierte en
 
 | Función | Archivo | Método | Endpoint | Parámetros | Token | Respuesta | Error | Consumidores | Clasificación |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `apiGenerarAnexo` | anexos | POST | `/api/anexos/generate` | `planeacionId` → `{planeacion_id}` | Sí | `{ok, anexo_id, status, anexo?}` | JSON/texto con `status` y `payload` | Biblioteca | Biblioteca activa |
-| `apiObtenerAnexosPorBatch` | anexos | GET | `/api/anexos/batch/:batchId` | `batchId` | Sí | `{anexos}` | JSON/texto con metadata | Ninguno | Sin consumidor |
-| `apiObtenerAnexoPorPlaneacion` | anexos | GET | `/api/anexos/planeacion/:planeacionId` | `planeacionId` | Sí | `{anexo}` | JSON/texto con metadata | Ninguno | Sin consumidor |
-| `apiObtenerAnexoDetalle` | anexos | GET | `/api/anexos/:anexoId` | `anexoId` | Sí | `{anexo}` | JSON/texto con metadata | Preview y descarga de anexo | Biblioteca activa |
-| `apiRegenerarAnexo` | anexos | POST | `/api/anexos/:anexoId/regenerate` | `anexoId` | Sí | `{ok, anexo}` | JSON/texto con metadata | Rama de Biblioteca sin emisor DOM vigente | Compatibilidad |
+| `apiGenerarAnexo` | anexos | POST | `/api/anexos/generate` | `planeacionId` → `{planeacion_id}` | Sí | `{ok, anexo_id, status, anexo?}` | JSON/texto con `status` y `payload` | Modal activo y wrapper compatible | Generación activa |
+| `apiObtenerAnexosPorBatch` | anexos | GET | `/api/anexos/batch/:batchId` | `batchId` | Sí | `{anexos}` | JSON/texto con metadata | Ninguno | Sin consumidor confirmado |
+| `apiObtenerAnexoPorPlaneacion` | anexos | GET | `/api/anexos/planeacion/:planeacionId` | `planeacionId` | Sí | `{anexo}` | JSON/texto con metadata | Ninguno | Sin consumidor confirmado |
+| `apiObtenerAnexoDetalle` | anexos | GET | `/api/anexos/:anexoId` | `anexoId` | Sí | `{anexo}` | JSON/texto con metadata | Preview y descarga de anexo | Preview/descarga activa |
+| `apiRegenerarAnexo` | anexos | POST | `/api/anexos/:anexoId/regenerate` | `anexoId` | Sí | `{ok, anexo}` | JSON/texto con metadata | Rama de Biblioteca sin emisor DOM vigente | Regeneración de compatibilidad |
 | `apiBibliotecaConjuntos` | biblioteca | GET | `/api/biblioteca/conjuntos` | — | Sí | Array de conjuntos | `error` JSON o estado HTTP | Biblioteca | Biblioteca activa |
 | `apiBibliotecaConjuntoById` | biblioteca | GET | `/api/biblioteca/conjuntos/:batchId` | `batchId` | Sí | Conjunto | `error` JSON o estado HTTP | Detalle | Detalle/edición |
 | `apiBibliotecaDeleteBloque` | biblioteca | DELETE | `/api/biblioteca/bloques/:batchId` | `batchId` | Sí | `{ok, deleted:{batch}}` | `error` JSON o estado HTTP | Delete de bloque | Biblioteca activa |
@@ -449,9 +451,10 @@ pero existen consumidores directos y consumidores mediante service.
 | Candidato | Funciones | Archivos | Consumidores | Riesgo | Sesión sugerida | Decisión |
 | --- | --- | --- | --- | --- | --- | --- |
 | Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 completada y validada manualmente | Sesión de Fase 3 completada |
-| Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2 completada en código; manual pendiente | Sesión de Fase 3 completada |
+| Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2 completada y validada manualmente | Sesión de Fase 3 completada |
 | Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
-| Anexos | lecturas y regeneración | anexos API | Activo/sin consumidor | Medio | 3.3, auditoría puntual antes de consolidar | Sesión posterior de Fase 3 |
+| Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4, helper GET específico | Próxima sesión de Fase 3 |
+| Anexos | generación y regeneración | anexos API/Biblioteca | Generación activa; regeneración compatible | Alto | Separar pending y generación | Fase 4 |
 | Listas | lecturas | API/service | Activo/legacy | Medio | Tras separar legacy | Sesión posterior de Fase 3 |
 | Exámenes | lecturas | API/service | Activo/legacy | Medio | Sin generación/polling | Sesión posterior de Fase 3 |
 | Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
@@ -492,7 +495,7 @@ apertura de planeación, metadata, título/unidad, navegación de vuelta,
 previews, descargas y deletes quedaron correctos, con cero peticiones
 duplicadas inesperadas y cero errores relacionados.
 
-## Sesión 3.2 completada en código
+## Sesión 3.2 completada y validada
 
 **Sesión 3.2 — Consolidación interna de deletes de Biblioteca.**
 
@@ -519,18 +522,38 @@ consumidores desconocidos. El smoke previo y posterior pasó con 32 peticiones
 simuladas en cada ejecución; cubrió éxito, URL codificada, Bearer, ausencia de
 body/cache, una petición por invocación, errores JSON, payload sin `error`,
 cuerpo no JSON, JSON inválido, ambos valores de `deleted.batch`, globals y
-aislamiento. `node --check` y Jest pasaron. La validación manual 3.2 de
-cancelaciones, eliminaciones reales, persistencia y regresión permanece
-pendiente; no se declara aprobada.
+aislamiento. `node --check` y Jest pasaron. La validación manual 3.2 fue
+aprobada por el usuario: cinco cancelaciones sin DELETE, cinco eliminaciones
+reales, persistencia verificada en base de datos, logs backend de éxito y cero
+errores relacionados.
 
 `bibliotecaGet` quedó intacto. También quedaron fuera consumidores,
 autenticación, otros API files, generación, polling, SSE, estado, render,
 backend, Archivados y legacy.
 
+## Sesión 3.3 completada
+
+**Sesión 3.3 — Auditoría puntual de APIs de anexos.**
+
+La auditoría confirmó cinco funciones en `anexos.api.js`, cuatro helpers
+internos ya compartidos y `apiDeleteAnexo` en `biblioteca.api.js`. No existe
+`js/services/anexos.service.js`. Las lecturas por batch y por planeación no
+tienen consumidor; el detalle es compartido por preview y descarga. Las tres
+lecturas conservan GET, Bearer sin `Content-Type`, `cache:"no-store"`, parsing
+tolerante y errores con `status/payload`, aunque retornan contenedores y
+fallbacks distintos.
+
+Generación tiene un consumidor activo desde el modal de Biblioteca y usa
+`anexosGenerating`; regeneración conserva una rama sin emisor DOM. Ambas quedan
+en Fase 4. El delete ya fue consolidado y validado en 3.2, por lo que no se
+mueve. No existen consumidores desconocidos, de Archivados o legacy.
+
 Próxima sesión seleccionada, sin implementar:
-**Sesión 3.3 — Auditoría puntual de APIs de anexos.** La auditoría 3.0 encontró
-lecturas sin consumidor junto a detalle activo y regeneración compatible; por
-ello se deben separar esos contratos antes de consolidar código.
+**Sesión 3.4 — Consolidación interna de lecturas de anexos.** Incluirá
+exclusivamente `apiObtenerAnexosPorBatch`,
+`apiObtenerAnexoPorPlaneacion` y `apiObtenerAnexoDetalle`, mediante un helper
+GET privado y específico que preserve paths, encoding, fallbacks, contenedores,
+parsing, metadata y globals.
 
 ## Riesgos priorizados
 
@@ -542,8 +565,8 @@ ello se deben separar esos contratos antes de consolidar código.
 4. Delete normal, directo, de bloque y permanente tienen alcances distintos.
 5. Archivados comparte services jerárquicos pero no contratos de delete con
    Biblioteca.
-6. Generación JSON, SSE y polling requieren preservar streaming, callbacks y
-   fallbacks; quedan fuera de las consolidaciones 3.1 y 3.2.
+6. Generación JSON, regeneración, SSE y polling requieren preservar estado,
+   métricas, callbacks y fallbacks; quedan fuera de 3.4.
 7. `planeaciones.service.js` mezcla HTTP con estado local de Archivados.
 8. Fetch directos viven en loaders visuales de páginas/UI, no en la API
    backend.
