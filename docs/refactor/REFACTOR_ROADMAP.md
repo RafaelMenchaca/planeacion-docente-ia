@@ -300,19 +300,29 @@ legacy. Los contratos se contrastaron con rutas, controllers y services del
 backend sin modificarlo. El mapa ejecutable está en
 [`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
 
-La Sesión `3.1 — Consolidación de lecturas de Biblioteca` quedó completada en
-código. `apiBibliotecaConjuntos(accessToken)` y
+La Sesión `3.1 — Consolidación de lecturas de Biblioteca` quedó completada y
+validada manualmente. `apiBibliotecaConjuntos(accessToken)` y
 `apiBibliotecaConjuntoById(batchId, accessToken)` delegan la repetición de GET,
 Bearer, `cache: "no-store"` y parsing al helper privado y específico
 `bibliotecaGet(path, accessToken)`. Firmas, globals, URLs, retornos y errores
-permanecen iguales. El smoke técnico, `node --check` y Jest pasaron; la
-validación manual de Biblioteca, Detalle y regresión está pendiente.
+permanecen iguales. El smoke técnico, `node --check` y Jest pasaron. El usuario
+aprobó carga, navegación entre bloques/tabs, recarga, Detalle, metadata,
+previews, descargas y deletes, sin duplicados inesperados ni errores
+relacionados.
+
+La Sesión `3.2 — Consolidación interna de deletes de Biblioteca` quedó
+completada en código. Los cinco wrappers públicos conservan firma, global,
+endpoint codificado, Bearer, ausencia de body, parsing, retorno y errores, y
+delegan solo la mecánica equivalente a `bibliotecaDelete(path, accessToken)`.
+El helper es privado y exclusivo de DELETE; `bibliotecaGet` quedó intacto. Los
+smokes previo y posterior, `node --check` y Jest pasaron. La validación manual
+3.2 permanece pendiente.
 
 La única siguiente sesión seleccionada es
-`3.2 — Consolidación interna de deletes de Biblioteca`. No se implementó en
-3.1 y deberá comenzar con una comparación puntual de los cinco contratos.
-Generación, polling, SSE, autenticación global, Archivados y legacy siguen
-excluidos.
+`3.3 — Auditoría puntual de APIs de anexos`. No se implementó. Debe separar
+lecturas sin consumidor, detalle activo y regeneración compatible antes de
+cualquier consolidación. Generación, polling, SSE, autenticación global,
+Archivados y legacy siguen excluidos.
 
 ### Dependencias
 

@@ -15,8 +15,10 @@
 - **Fase actual:** 3 — Capa API frontend.
 - **Estado:** En progreso.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
-- **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada en código.
-- **Validación manual 3.1:** pendiente.
+- **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
+- **Validación manual 3.1:** aprobada.
+- **Sesión 3.2:** Consolidación interna de deletes de Biblioteca, completada en código.
+- **Validación manual 3.2:** pendiente.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -25,10 +27,10 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.2 — Consolidación interna de deletes de Biblioteca.
+- **Próxima sesión seleccionada:** 3.3 — Auditoría puntual de APIs de anexos.
 
 Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
-Sesión 3.1 conserva validación manual pendiente y no autoriza el cierre de la
+Sesión 3.2 conserva validación manual pendiente y no autoriza el cierre de la
 fase ni el inicio de generación, polling, Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
@@ -1195,10 +1197,11 @@ controllers entregan `{error}` en errores conocidos y genéricos.
 
 ### Validación manual
 
-Pendiente. No se ejecutó navegador en esta sesión automatizada. Deben
-confirmarse Biblioteca, cambio de bloques/tabs, recarga, metadata de Detalle,
-navegación de vuelta y regresión de previews, descargas y deletes. Generación,
-Archivados y legacy no deben ejecutarse para esta validación.
+Aprobada por el usuario antes de abrir 3.2. Evidencia registrada: carga inicial
+de Biblioteca, cambio entre bloques, tabs, recarga, apertura de planeación,
+metadata del bloque, título/unidad, navegación de vuelta, previews, descargas y
+deletes en estado correcto; cero peticiones duplicadas inesperadas y cero
+errores relacionados con el refactor.
 
 ### Exclusiones y hallazgos conservados
 
@@ -1213,6 +1216,115 @@ equivalentes, export Excel sin ruta backend, SSE/polling propios,
 
 **Sesión 3.2 — Consolidación interna de deletes de Biblioteca.**
 
-No está implementada. Debe comparar primero los cinco contratos y conservar
-por separado endpoints, IDs, efectos backend y formas de respuesta. Fase 3
-continúa en progreso.
+Implementada en código después de comparar los cinco contratos. Sus resultados
+se registran a continuación. Fase 3 continúa en progreso.
+
+## Sesión 3.2 — Consolidación interna de deletes de Biblioteca
+
+### Estado de entrada
+
+- Frontend: `refactor-front`, HEAD `a6a2941`, working tree limpio.
+- Commit 3.1: `a6a2941 refactor(frontend): consolidate Biblioteca read requests`.
+- Backend: `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; sesiones 3.0 y 3.1 completadas.
+- Validación manual 3.1 aprobada con la evidencia proporcionada por el usuario.
+
+### Consumidores confirmados
+
+| Función | Consumidor | ID | Retorno usado | Error usado | Clasificación |
+| --- | --- | --- | --- | --- | --- |
+| `apiBibliotecaDeleteBloque(batchId, accessToken)` | `BibliotecaBlockDelete.deleteFromBiblioteca` | UUID de `planeacion_batches.id` | Espera resolución; no inspecciona `{ok, deleted}` | El feature captura, registra y muestra alerta | Biblioteca activa |
+| `apiDeletePlaneacionDirecta(id, accessToken)` | `PlaneacionDelete.deleteFromBiblioteca` | `planeaciones.id` bigint recibido como string DOM | Espera resolución; no inspecciona `{ok:true}` | El feature captura, registra y muestra alerta | Biblioteca activa |
+| `apiDeleteExamen(id, accessToken)` | `ExamDelete.deleteFromBiblioteca` | UUID de `examenes.id` | Espera resolución; no inspecciona `{ok:true}` | El feature captura, registra y muestra alerta | Biblioteca activa |
+| `apiDeleteListaCotejo(id, accessToken)` | `ListaCotejoDelete.deleteFromBiblioteca` | UUID de `listas_cotejo.id` | Espera resolución; no inspecciona `{ok:true}` | El feature captura, registra y muestra alerta | Biblioteca activa |
+| `apiDeleteAnexo(id, accessToken)` | `AnexoDelete.deleteFromBiblioteca` | UUID de `anexos.id` | Espera resolución; no inspecciona `{ok:true}` | El feature captura, registra y muestra alerta | Biblioteca activa |
+
+Cada feature normaliza el ID, obtiene `session.access_token` mediante
+`requireSession` y llama una sola global. No existen consumidores desconocidos.
+Los wrappers `bibEliminar*` de `biblioteca.page.js` delegan en los features y no
+llaman directamente a estas API.
+
+### Contratos previos y preservados
+
+| Función | URL | ID/encode | Método y headers | Body/cache | Éxito backend |
+| --- | --- | --- | --- | --- | --- |
+| `apiBibliotecaDeleteBloque` | `/api/biblioteca/bloques/:batchId` | UUID; `encodeURIComponent(batchId)` | DELETE; solo `Authorization: Bearer <token>` | Ausentes | `{ok:true, deleted:{batch:boolean}}` |
+| `apiDeletePlaneacionDirecta` | `/api/planeaciones/:id/directo` | bigint representado como string; `encodeURIComponent(id)` | Igual | Ausentes | `{ok:true}` |
+| `apiDeleteExamen` | `/api/examenes/:id` | UUID; `encodeURIComponent(id)` | Igual | Ausentes | `{ok:true}` |
+| `apiDeleteListaCotejo` | `/api/listas-cotejo/:id` | UUID; `encodeURIComponent(id)` | Igual | Ausentes | `{ok:true}` |
+| `apiDeleteAnexo` | `/api/anexos/:id` | UUID; `encodeURIComponent(id)` | Igual | Ausentes | `{ok:true}` |
+
+En éxito todos ejecutan `response.json()` y devuelven el payload completo sin
+transformación. Un JSON vacío o inválido en HTTP 2xx conserva el rechazo nativo.
+En error HTTP leen `response.text()` —con fallback a string vacío si esa lectura
+rechaza—, intentan `JSON.parse`, priorizan solo `payload.error` y lanzan
+`Error("HTTP <status>")` cuando no existe o el cuerpo no es JSON. No conservan
+`status`, `payload.message` ni el payload estructurado.
+
+El backend mantiene Bearer obligatorio y filtro por `user_id`. Los servicios
+normalizan los IDs como string; el schema confirma UUID para batch, examen,
+lista y anexo, y bigint para planeación. Los controllers responden JSON. Los
+errores conocidos incluyen 400 por ID ausente, 401 por auth y 404 por recurso
+inexistente/no propio; fallos inesperados producen 500.
+
+El delete directo de planeación elimina anexos y listas antes de la planeación y
+retorna `{ok:true}`. Los deletes de examen, lista y anexo retornan `{ok:true}`.
+El delete de bloque elimina secuencialmente cuatro dominios y después intenta
+el batch; si solo falla ese último paso conserva HTTP 200 y
+`{ok:true, deleted:{batch:false}}`.
+
+### Implementación
+
+- Se creó `bibliotecaDelete(path, accessToken)` como constante léxica privada
+  de `js/api/biblioteca.api.js`; no se publica en `window`.
+- El helper se limita a URL base + path, DELETE, Bearer, parsing, validación
+  HTTP y retorno JSON. No obtiene sesión, no admite GET/POST/PUT/PATCH y no es
+  un cliente universal.
+- Los cinco wrappers públicos conservan la construcción y codificación de su
+  propio path y delegan una única vez al helper.
+- Las cinco asignaciones `window.*`, nombres, firmas y orden de argumentos
+  permanecen.
+- `bibliotecaGet` no cambió y ninguno de los deletes lo usa.
+
+### Validaciones ejecutadas
+
+- Smoke previo: aprobado; 32 peticiones simuladas para las cinco globals.
+- `node --check js/api/biblioteca.api.js`: aprobado.
+- `npm test -- --runInBand`: aprobado; 1 suite y 2 pruebas.
+- Smoke posterior: aprobado; 32 peticiones simuladas, una por invocación.
+- Cobertura del smoke: URLs codificadas, DELETE, Bearer, ausencia de body/cache,
+  identidad de retornos, error JSON con/sin `error`, cuerpo no JSON, JSON
+  inválido HTTP/error y 2xx, globals y helper privado.
+- Casos de bloque `{batch:true}` y `{batch:false}`: devueltos por identidad y
+  sin transformación.
+- Búsqueda global: cinco consumidores conocidos, cinco globals públicas, un
+  helper DELETE privado y cero consumidores desconocidos.
+- Aislamiento: consumidores, otros API files, HTML, backend y orden de scripts
+  sin cambios.
+
+### Validación manual
+
+Pendiente. No se ejecutó navegador durante esta sesión automatizada. Quedan por
+validar cancelaciones sin DELETE, eliminaciones reales con recursos
+desechables, una sola petición por acción, recurso/tab/bloque correctos,
+persistencia tras recarga y regresión de Biblioteca, Detalle, previews,
+descargas y `bibliotecaGet`. No se declara aprobado ningún caso 3.2.
+
+### Exclusiones y hallazgos conservados
+
+No se modificaron helper GET, consumidores, autenticación, otros API files,
+generación, regeneración, polling, SSE, jobs, callbacks, estado, render, HTML,
+backend, SQL, Archivados ni legacy. Permanecen: pérdida de `payload.message` y
+status estructurado, parsing incompatible entre dominios, duplicado de
+planeación por tema, deletes normal/directo/permanente no equivalentes, export
+Excel sin ruta backend, SSE/polling propios, `planeaciones.service.js` mixto,
+dependencia del orden de scripts y posibilidad de `deleted.batch:false`.
+
+### Próxima sesión
+
+**Sesión 3.3 — Auditoría puntual de APIs de anexos.**
+
+Es la única siguiente sesión seleccionada y no está implementada. La auditoría
+3.0 encontró lecturas sin consumidor, detalle activo y regeneración compatible
+en el mismo archivo; 3.3 debe confirmar esos límites antes de consolidar.
+Fase 3 continúa en progreso.

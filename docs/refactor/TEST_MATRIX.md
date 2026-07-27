@@ -295,9 +295,9 @@ no se solicita de nuevo.
 | Peticiones | Una llamada por invocación | Aprobado; 10 de 10 |
 | Deletes | No delegan al helper; bloque literal sin cambios | Aprobado estáticamente |
 | Otros API/consumidores/HTML | Sin diff | Aprobado estáticamente |
-| Biblioteca manual | Carga, bloques, tabs, recarga, una carga esperada | Pendiente |
-| Detalle manual | Metadata, título/unidad/contexto y vuelta | Pendiente |
-| Regresión manual | Previews, descargas y deletes; sin generación/Archivados/legacy | Pendiente |
+| Biblioteca manual | Carga, bloques, tabs, recarga, una carga esperada | Aprobado por el usuario; 0 duplicados inesperados |
+| Detalle manual | Metadata, título/unidad/contexto y vuelta | Aprobado por el usuario |
+| Regresión manual | Previews, descargas y deletes; sin generación/Archivados/legacy | Aprobado por el usuario; 0 errores relacionados |
 
 ### Evidencia automatizada
 
@@ -308,7 +308,49 @@ no se solicita de nuevo.
   aislamiento.
 - Búsqueda global: dos globals públicas, dos consumidores conocidos, un helper
   privado y cero consumidores desconocidos.
-- La validación manual 3.1 no se ejecutó y permanece pendiente.
+- Validación manual 3.1 aprobada por el usuario: carga inicial, cambio entre
+  bloques, tabs, recarga, apertura desde Biblioteca, metadata, título/unidad,
+  regreso, previews, descargas y deletes; cero duplicados inesperados y cero
+  errores relacionados.
+
+## Sesión 3.2 — Consolidación interna de deletes de Biblioteca
+
+| Escenario | Evidencia | Resultado |
+| --- | --- | --- |
+| Bloque exitoso | URL codificada, DELETE, Bearer, sin body/cache, identidad de `{ok,deleted}` | Aprobado en smoke |
+| Planeación directa exitosa | Endpoint `/:id/directo`, DELETE, Bearer, identidad de `{ok:true}` | Aprobado en smoke |
+| Examen exitoso | Endpoint `/:id`, DELETE, Bearer, identidad de `{ok:true}` | Aprobado en smoke |
+| Lista exitosa | Endpoint `/:id`, DELETE, Bearer, identidad de `{ok:true}` | Aprobado en smoke |
+| Anexo exitoso | Endpoint `/:id`, DELETE, Bearer, identidad de `{ok:true}` | Aprobado en smoke |
+| Codificación de ID | IDs con espacio y `/ ? #` | Aprobado; `encodeURIComponent` preservado |
+| Peticiones | Una llamada por invocación | Aprobado en smoke |
+| Error JSON | `{error:"mensaje de prueba"}` para cada global | Aprobado; mismo mensaje |
+| Error JSON sin `error` | Payload con solo `message` | Aprobado; fallback `HTTP 409` |
+| Error HTTP no JSON | HTML y JSON inválido simulados | Aprobado; fallback `HTTP <status>` |
+| JSON inválido en 2xx | `response.json()` rechaza | Aprobado; mismo objeto `SyntaxError` |
+| Respuesta parcial de bloque | `{ok:true,deleted:{batch:false}}` | Aprobado; retorno sin transformación |
+| Respuesta completa de bloque | `{ok:true,deleted:{batch:true}}` | Aprobado; retorno sin transformación |
+| Globals | Cinco funciones públicas con firmas vigentes | Aprobado en script clásico |
+| Helper DELETE | `bibliotecaDelete` ausente de `window` | Aprobado |
+| Helper GET | `bibliotecaGet` sin cambios y ausente de `window` | Aprobado estáticamente |
+| Consumidores/otros API/HTML/backend | Sin diff | Aprobado estáticamente |
+| Cancelaciones manuales | Examen, lista, anexo, planeación y bloque sin DELETE | Pendiente |
+| Deletes reales manuales | Cinco recursos desechables; una petición y recurso correcto | Pendiente |
+| Persistencia manual | Recurso ausente tras recarga; tab/bloque correctos | Pendiente |
+| Regresión manual | Biblioteca, Detalle, previews, descargas y helper GET | Pendiente |
+
+### Evidencia automatizada
+
+- Smoke previo: pasó con 32 peticiones simuladas para cinco globals.
+- Smoke posterior: pasó con 32 peticiones simuladas para cinco globals y helper
+  privado.
+- `node --check js/api/biblioteca.api.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Búsqueda global: cinco globals públicas, cinco consumidores conocidos, un
+  helper DELETE privado y cero consumidores desconocidos.
+- `bibliotecaGet`, features, páginas, services, HTML, otros API files y backend
+  permanecen sin cambios.
+- La validación manual 3.2 no se ejecutó y permanece pendiente.
 
 ## Regresión acumulativa
 

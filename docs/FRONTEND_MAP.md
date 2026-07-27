@@ -1,8 +1,8 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, Sesión 3.0. Este
-documento inventaría la arquitectura HTTP real; no describe una consolidación
-ya implementada.
+Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.2.
+Este documento inventaría la arquitectura HTTP real y registra las
+consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
 ## Configuración y carga
 
@@ -31,7 +31,7 @@ ya implementada.
 | Archivo | Responsabilidad actual | Dominios | Consumidores | Globals expuestas | Estado |
 | --- | --- | --- | --- | --- | --- |
 | `js/api/anexos.api.js` | HTTP y parsing JSON de anexos | Anexos | Biblioteca y features de preview/descarga | 5 API públicas; 4 helpers implícitos | API activa |
-| `js/api/biblioteca.api.js` | Lecturas de conjuntos consolidadas internamente y deletes de Biblioteca | Biblioteca, planeaciones, anexos, listas, exámenes | Biblioteca, Detalle y features de delete | 7 API públicas; `bibliotecaGet` privado | API activa |
+| `js/api/biblioteca.api.js` | Lecturas de conjuntos y deletes de Biblioteca consolidados internamente por método | Biblioteca, planeaciones, anexos, listas, exámenes | Biblioteca, Detalle y features de delete | 7 API públicas; `bibliotecaGet` y `bibliotecaDelete` privados | API activa |
 | `js/api/examenes.api.js` | Generación, polling y lecturas de exámenes | Exámenes | Biblioteca directa y `examenes.service.js` | 4 API públicas; 4 helpers implícitos | API activa |
 | `js/api/jerarquia.api.js` | CRUD jerárquico, generación y planeación por tema | Planteles, grados, materias, unidades, temas, planeaciones | `jerarquia.service.js` | 18 asignaciones explícitas; el resto de funciones de nivel superior son globals implícitas | Compatibilidad |
 | `js/api/listas_cotejo.api.js` | Generación y lecturas de listas | Listas de cotejo | Biblioteca directa y `listas_cotejo.service.js` | 3 API públicas; 4 helpers implícitos | API activa |
@@ -211,6 +211,7 @@ Helpers de API sin HTTP propio:
 | Archivo | Funciones | Uso | Clasificación |
 | --- | --- | --- | --- |
 | biblioteca | `bibliotecaGet` | Solo las dos lecturas GET de conjuntos; no está en `window` | Biblioteca activa |
+| biblioteca | `bibliotecaDelete` | Solo los cinco deletes de Biblioteca; no está en `window` | Biblioteca activa |
 | anexos | `buildAnexosHeaders`, `parseAnexosApiJson`, `createAnexosApiError`, `requestAnexosJson` | Todas las API del dominio | Compartida activa |
 | exámenes | `buildExamJsonHeaders`, `parseExamApiJson`, `createExamApiError`, `requestExamJson` | Todas las API del dominio | Compartida activa |
 | listas | `buildListaCoTejoHeaders`, `parseListaCoTejoApiJson`, `createListaCoTejoApiError`, `requestListaCoTejoJson` | Todas las API del dominio | Compartida activa |
@@ -447,10 +448,10 @@ pero existen consumidores directos y consumidores mediante service.
 
 | Candidato | Funciones | Archivos | Consumidores | Riesgo | Sesión sugerida | Decisión |
 | --- | --- | --- | --- | --- | --- | --- |
-| Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 completada en código; manual pendiente | Sesión de Fase 3 completada |
-| Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2, preservando cada endpoint/retorno | Sesión posterior de Fase 3 |
+| Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 completada y validada manualmente | Sesión de Fase 3 completada |
+| Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2 completada en código; manual pendiente | Sesión de Fase 3 completada |
 | Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
-| Anexos | lecturas y regeneración | anexos API | Activo/sin consumidor | Medio | Después de probar consumidores | Sesión posterior de Fase 3 |
+| Anexos | lecturas y regeneración | anexos API | Activo/sin consumidor | Medio | 3.3, auditoría puntual antes de consolidar | Sesión posterior de Fase 3 |
 | Listas | lecturas | API/service | Activo/legacy | Medio | Tras separar legacy | Sesión posterior de Fase 3 |
 | Exámenes | lecturas | API/service | Activo/legacy | Medio | Sin generación/polling | Sesión posterior de Fase 3 |
 | Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
@@ -485,13 +486,51 @@ deletes, generación, polling, SSE, autenticación general, Archivados, API
 jerárquica, legacy y backend. Riesgo bajo. El smoke previo y posterior pasó
 para éxito array/objeto, URL, GET, Bearer, cache, error JSON, fallback, error no
 JSON, JSON inválido en éxito, una llamada por invocación, globals y aislamiento
-del helper. `node --check` y la suite Jest pasaron. La validación manual de
-Biblioteca, Detalle y regresión permanece pendiente de ejecución por el usuario.
+del helper. `node --check` y la suite Jest pasaron. La validación manual fue
+aprobada por el usuario: carga inicial, cambio entre bloques, tabs, recarga,
+apertura de planeación, metadata, título/unidad, navegación de vuelta,
+previews, descargas y deletes quedaron correctos, con cero peticiones
+duplicadas inesperadas y cero errores relacionados.
+
+## Sesión 3.2 completada en código
+
+**Sesión 3.2 — Consolidación interna de deletes de Biblioteca.**
+
+Alcance ejecutado: `apiBibliotecaDeleteBloque(batchId, accessToken)`,
+`apiDeletePlaneacionDirecta(id, accessToken)`, `apiDeleteExamen(id,
+accessToken)`, `apiDeleteListaCotejo(id, accessToken)` y
+`apiDeleteAnexo(id, accessToken)` delegan exclusivamente la mecánica DELETE
+equivalente en `bibliotecaDelete(path, accessToken)`. El helper es una constante
+léxica privada de `js/api/biblioteca.api.js`, no está en `window`, no obtiene
+sesión y no admite otros métodos.
+
+Cada wrapper sigue construyendo su path y conserva `encodeURIComponent`, firma,
+global, promesa y consumidor. El helper preserva `API_BASE_URL`, método
+`DELETE`, único header `Authorization: Bearer <token>`, ausencia de body y
+cache, `response.json()` en éxito, lectura de texto en error, prioridad
+exclusiva de `payload.error`, fallback `HTTP <status>` y `Error` estándar. Los
+cuatro deletes individuales conservan `{ok:true}` y el delete de bloque devuelve
+sin transformar `{ok:true, deleted:{batch:boolean}}`, incluido
+`deleted.batch:false`.
+
+Consumidores confirmados: `BibliotecaBlockDelete`, `PlaneacionDelete`,
+`ExamDelete`, `ListaCotejoDelete` y `AnexoDelete`, uno por global y sin
+consumidores desconocidos. El smoke previo y posterior pasó con 32 peticiones
+simuladas en cada ejecución; cubrió éxito, URL codificada, Bearer, ausencia de
+body/cache, una petición por invocación, errores JSON, payload sin `error`,
+cuerpo no JSON, JSON inválido, ambos valores de `deleted.batch`, globals y
+aislamiento. `node --check` y Jest pasaron. La validación manual 3.2 de
+cancelaciones, eliminaciones reales, persistencia y regresión permanece
+pendiente; no se declara aprobada.
+
+`bibliotecaGet` quedó intacto. También quedaron fuera consumidores,
+autenticación, otros API files, generación, polling, SSE, estado, render,
+backend, Archivados y legacy.
 
 Próxima sesión seleccionada, sin implementar:
-**Sesión 3.2 — Consolidación interna de deletes de Biblioteca.** Debe preservar
-por separado los cinco endpoints y sus retornos, y solo podrá ejecutarse
-después de una comparación puntual de equivalencia.
+**Sesión 3.3 — Auditoría puntual de APIs de anexos.** La auditoría 3.0 encontró
+lecturas sin consumidor junto a detalle activo y regeneración compatible; por
+ello se deben separar esos contratos antes de consolidar código.
 
 ## Riesgos priorizados
 
@@ -504,7 +543,7 @@ después de una comparación puntual de equivalencia.
 5. Archivados comparte services jerárquicos pero no contratos de delete con
    Biblioteca.
 6. Generación JSON, SSE y polling requieren preservar streaming, callbacks y
-   fallbacks; quedan fuera de 3.1.
+   fallbacks; quedan fuera de las consolidaciones 3.1 y 3.2.
 7. `planeaciones.service.js` mezcla HTTP con estado local de Archivados.
 8. Fetch directos viven en loaders visuales de páginas/UI, no en la API
    backend.
