@@ -11,19 +11,21 @@
 
 ## Estado del roadmap
 
-- **Fase actual:** 2 — Acciones por dominio.
-- **Estado:** En progreso.
-- **Sesión actual:** 2.7 — Eliminación de bloque desde Biblioteca, completada en código.
+- **Fase cerrada:** 2 — Acciones por dominio.
+- **Estado:** Completada.
+- **Sesión actual:** 2.8 — Auditoría de cierre, completada.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
 - **Validación manual 2.4:** aprobada.
 - **Validación manual 2.5:** aprobada.
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
-- **Validación manual 2.7:** pendiente.
-- **Próxima sesión recomendada:** auditoría de cierre de Fase 2, después de la validación manual 2.7.
+- **Validación manual 2.7:** aprobada.
+- **Validación manual acumulativa de Fase 2:** aprobada.
+- **Próxima fase:** 3 — Capa API frontend.
+- **Próxima sesión recomendada:** 3.0 — Auditoría de capa API frontend.
 
-Las Fases 0 y 1 están completadas. Las sesiones 2.0 a 2.5 están completadas y sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.6 quedó completada como auditoría documental y la Sesión 2.7 quedó completada en código. La Fase 2 permanece en progreso hasta la validación manual 2.7 y su auditoría de cierre.
+Las Fases 0, 1 y 2 están completadas. Las sesiones 2.0 a 2.7 tienen commits y todas sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.8 confirmó cero consumidores desconocidos y cero candidatos adicionales propios de Fase 2. La Fase 3 permanece pendiente hasta iniciar su auditoría 3.0.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -310,7 +312,7 @@ El schema documental y el código ejecutable coinciden en los tipos y relaciones
 | Delete de lista | `bibEliminarLista` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.3 | Sesión posterior de Fase 2 |
 | Delete de anexo | `bibEliminarAnexo` | mismos propietarios por dominio | confirmación, array/contador, tab, render y reload | Bajo/medio | 2.4 | Sesión posterior de Fase 2 |
 | Delete de planeación | `bibEliminarPlaneacion` | `biblioteca.page.js`, `biblioteca.api.js` | tres arrays/contadores y cascada manual backend | Medio | 2.5 | Sesión posterior de Fase 2 |
-| Delete de bloque | `bibEliminarBloque` | `biblioteca-block-delete.js`, `biblioteca.page.js`, `biblioteca.api.js` | selección, tab, cuatro pending maps, render general y backend secuencial | Alto | 2.7, después de auditoría 2.6 | Completada en código; validación manual pendiente |
+| Delete de bloque | `bibEliminarBloque` | `biblioteca-block-delete.js`, `biblioteca.page.js`, `biblioteca.api.js` | selección, tab, cuatro pending maps, render general y backend secuencial | Alto | 2.7, después de auditoría 2.6 | Completada y validada |
 | Coordinadores de preview restantes | Ninguno de Biblioteca sin módulo | módulos de Fase 1 y wrappers | compatibilidad existente | Bajo | — | No aplica |
 | Coordinadores de descarga restantes | Solo el de examen; planeación, anexo y lista ya delegan | `biblioteca.page.js` | lectura de estado y módulos existentes | Bajo | 2.1 | Primera sesión de Fase 2 |
 | Regeneración de anexo | rama sin emisor DOM y `bibRegenerarAnexo` | `biblioteca.page.js` | generación IA, estado pending, render y reload | Alto | Fase 4 | Fase posterior |
@@ -766,7 +768,7 @@ Wrapper: bibEliminarBloque(conjuntoId)
 Retiro del wrapper: Fase 10
 Riesgo: Medio/alto
 Estado de código: completado
-Validación manual: pendiente
+Validación manual: aprobada
 ```
 
 La implementación activa se trasladó literalmente desde `js/pages/biblioteca.page.js`. El wrapper conserva el único consumidor activo, `data-bib-action="eliminar-bloque"`, y no quedaron consumidores desconocidos.
@@ -790,11 +792,76 @@ La implementación activa se trasladó literalmente desde `js/pages/biblioteca.p
 - `node --check` del módulo y `biblioteca.page.js`: aprobado.
 - `npm test -- --runInBand`: aprobado (1 suite, 2 pruebas).
 - Smoke JSDOM: aprobado; cubrió namespace, wrapper, UUID, título/fallback, cancelación, sesión, API única, error HTTP, selección, estado vacío, limpieza y conservación de mapas, orden de render/recarga y respuestas `deleted.batch:true/false`.
-- Validación manual de cancelación, eliminación real, Supabase, selección y regresión: pendiente; no se ejecutó navegador real en esta sesión.
+- Validación manual: aprobada por el usuario. Cancelar conservó el bloque y evitó el DELETE; aceptar eliminó batch, planeaciones, anexos, listas y exámenes; la eliminación persistió, la selección/estado vacío funcionó, los demás bloques permanecieron intactos y no hubo errores relacionados ni ejecución legacy.
+- Logs backend confirmados: `[biblioteca] delete:start` y `[biblioteca] delete:success` con `deletedBatch: true`.
 
 ### Exclusiones confirmadas
 
-No se modificaron backend, respuesta parcial, transacciones, rollback, API, store, renderers, event delegation, deletes individuales, Archivados, jobs, métricas, jerarquía ni legacy. La siguiente sesión es la auditoría de cierre de Fase 2, no su cierre automático.
+No se modificaron backend, respuesta parcial, transacciones, rollback, API, store, renderers, event delegation, deletes individuales, Archivados, jobs, métricas, jerarquía ni legacy.
+
+## Sesión 2.8 — Auditoría de cierre de Fase 2
+
+### Decisión
+
+**A. Cerrar Fase 2 y abrir Fase 3.**
+
+Las acciones directas de preview, descarga y eliminación activas tienen propietario modular y wrappers conocidos. Las acciones restantes pertenecen inequívocamente a API, generación/polling, estado, render/eventos, Dashboard o legacy. No quedaron consumidores desconocidos ni candidatos adicionales de Fase 2.
+
+### Sesiones cerradas
+
+| Sesión | Acción | Estado |
+| --- | --- | --- |
+| 2.0 | Auditoría y mapa de acciones | Completada |
+| 2.1 | Coordinador de descarga de examen | Completada y validada |
+| 2.2 | Delete de examen | Completada y validada |
+| 2.3 | Delete de lista de cotejo | Completada y validada |
+| 2.4 | Delete de anexo | Completada y validada |
+| 2.5 | Delete de planeación | Completada y validada |
+| 2.6 | Auditoría específica de delete de bloque | Completada |
+| 2.7 | Delete de bloque | Completada y validada |
+
+### Matriz de acciones restantes
+
+| Dominio | Acción restante | Función o área | Dependencias | Riesgo | Fase correcta | Decisión |
+| --- | --- | --- | --- | --- | --- | --- |
+| Planeaciones | Ver detalle y editar/guardar | enlace `detalle.html`, `detalle.page.js` | navegación, estado de detalle y Dashboard | Medio | 7 | Fase posterior |
+| Planeaciones | Agregar temas, crear bloque y generar | `open/submitBibliotecaAgregarModal`, quick create | APIs, SSE, pending, render y Dashboard | Alto | 4, 6 y 7 | Fase posterior |
+| Anexos | Generar seleccionados | modal y `submitBibliotecaAnexoCreateModal` | API, pending, render y feedback | Alto | 4 y 6 | Fase posterior |
+| Anexos | Generar/regenerar sin emisor DOM | `bibGenerarAnexo`, `bibRegenerarAnexo` | generación, estado pending y recarga | Alto | 4 | Compatibilidad; fase posterior |
+| Listas | Generar | `open/submitBibliotecaListaModal` | API, generación asíncrona, pending y render | Alto | 4 y 6 | Fase posterior |
+| Exámenes | Generar y consultar estado | `open/submitBibliotecaExamModal`, polling | jobs, polling, pending y render | Alto | 4 y 6 | Fase posterior |
+| Bloques | Seleccionar, tabs, buscar y reintentar | `setSelectedConjunto`, handler y loader | `bibliotecaState`, render y event delegation | Medio/alto | 5 y 6 | Fase posterior |
+| Bloques | Crear desde quick create | Dashboard y `window.biblioteca` | jerarquía, generación, estado y Dashboard | Alto | 4, 5 y 7 | Fase posterior |
+| Todos | Requests, sesión, headers y errores HTTP | `js/api`, `js/services`, fetch directos | contratos API y auth | Medio | 3 | Próxima fase |
+| Todos | Wrappers y globals temporales | coordinadores `bib*` y `window.*` | handlers actuales y orden de scripts | Medio | 10 | Conservar |
+| Jerarquía visual | Acciones del explorador antiguo | `dashboard.page.js` | `explorerState`, render/eventos legacy | Alto | 8–9 | Legacy; excluido |
+
+### Matriz de módulos por dominio
+
+| Dominio | Preview | Descarga | Delete | Estado |
+| --- | --- | --- | --- | --- |
+| Exámenes | Completado | Completado | Completado | Fase posterior (5) |
+| Listas | Completado | Completado | Completado | Fase posterior (5) |
+| Anexos | Completado | Completado | Completado | Fase posterior (5) |
+| Planeaciones | No aplica: usa detalle | Completado | Completado | Fase posterior (5) |
+| Biblioteca | No aplica | No aplica | Completado | Fase posterior (5) |
+
+### Wrappers vigentes
+
+| Wrapper | Firma | Consumidor | Propietario | Retiro |
+| --- | --- | --- | --- | --- |
+| `bibDescargarExamen` | `(examenId)` | `data-bib-action="descargar-examen"` | `ExamDownload` | Fase 10 |
+| `bibEliminarExamen` | `(examenId, conjuntoId)` | `data-bib-action="eliminar-examen"` | `ExamDelete` | Fase 10 |
+| `bibEliminarLista` | `(listaId, conjuntoId)` | `data-bib-action="eliminar-lista"` | `ListaCotejoDelete` | Fase 10 |
+| `bibEliminarAnexo` | `(anexoId, conjuntoId)` | `data-bib-action="eliminar-anexo"` | `AnexoDelete` | Fase 10 |
+| `bibEliminarPlaneacion` | `(planeacionId, conjuntoId)` | `data-bib-action="eliminar-planeacion"` | `PlaneacionDelete` | Fase 10 |
+| `bibEliminarBloque` | `(conjuntoId)` | `data-bib-action="eliminar-bloque"` | `BibliotecaBlockDelete` | Fase 10 |
+
+Todos permanecen disponibles globalmente por scripts clásicos.
+
+### Próxima fase
+
+`Fase 3 — Sesión 3.0: Auditoría de capa API frontend`, exclusivamente documental. Debe mapear funciones de `js/api`, funciones de `js/services`, fetch directos, obtención de sesión, headers, parseo de errores, endpoints duplicados, contratos por dominio, consumidores, APIs legacy y APIs de Archivados.
 
 ## Dependencias conocidas
 
@@ -840,4 +907,4 @@ No se modificaron backend, respuesta parcial, transacciones, rollback, API, stor
 
 ## Última sesión
 
-2026-07-26 — Sesión 2.7: se extrajo literalmente la eliminación de bloque a `BibliotecaBlockDelete`; las validaciones automatizadas pasaron y la validación manual quedó pendiente.
+2026-07-26 — Sesión 2.8: se aprobó la validación manual 2.7, se auditó el alcance restante, se cerró la Fase 2 sin candidatos desconocidos y se definió la auditoría API 3.0.

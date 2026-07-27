@@ -25,7 +25,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | --- | --- | --- | --- | --- |
 | 0 | Línea base y protección | Establecer punto seguro | Bajo | Completada |
 | 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
-| 2 | Acciones por dominio | Separar documentos | Bajo/medio | En progreso |
+| 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Pendiente |
 | 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
@@ -193,7 +193,7 @@ Separar gradualmente las acciones específicas de planeaciones, anexos, listas d
 
 ### Estado
 
-**En progreso.**
+**Completada.**
 
 Sesión 2.0 completada en auditoría: se localizaron y clasificaron las acciones activas de Planeaciones, Anexos, Listas de cotejo, Exámenes y bloques de Biblioteca; se confirmaron consumidores, APIs, IDs, estado, renders, confirmaciones y efectos backend. No quedaron acciones desconocidas.
 
@@ -210,9 +210,13 @@ Sesión 2.5 — Completada
 Validación manual 2.5 — Aprobada
 Sesión 2.6 — Completada
 Decisión 2.6 — La eliminación de bloque puede extraerse
-Sesión 2.7 — Completada en código
-Validación manual 2.7 — Pendiente
-Próxima sesión — Auditoría de cierre de Fase 2
+Sesión 2.7 — Completada
+Validación manual 2.7 — Aprobada
+Sesión 2.8 — Auditoría de cierre completada
+Validación manual acumulativa — Aprobada
+Fase cerrada — 2 — Acciones por dominio
+Próxima fase — 3 — Capa API frontend
+Primera sesión sugerida — 3.0 — Auditoría de capa API frontend
 ```
 
 En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite, el smoke técnico y la validación manual acumulativa fueron aprobadas.
@@ -229,7 +233,9 @@ La Sesión 2.6 auditó específicamente `bibEliminarBloque(conjuntoId)`, su úni
 
 La auditoría confirmó que el backend elimina secuencialmente anexos, listas, exámenes y planeaciones antes de intentar eliminar `planeacion_batches`. No existe transacción ni rollback. Un fallo exclusivo del último delete devuelve HTTP 200 con `{ ok: true, deleted: { batch: false } }`; el frontend actual ignora ese campo, trata la operación como éxito y la recarga puede volver a mostrar un bloque vacío. Jobs, métricas y jerarquía no se eliminan.
 
-En la Sesión 2.7 se trasladó literalmente `bibEliminarBloque(conjuntoId)` a `js/features/biblioteca/biblioteca-block-delete.js` como `BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId)`. Se conservaron confirmación, sesión, API, ausencia de inspección de `deleted.batch`, filtrado de conjuntos, selección, tab, cuatro mapas pending, render general, recarga silenciosa, logs, alerta y retorno. La comparación literal, la sintaxis, la suite y el smoke técnico —incluido `deleted.batch:false`— fueron aprobados. La validación manual permanece pendiente y la Fase 2 continúa en progreso hasta su auditoría de cierre.
+En la Sesión 2.7 se trasladó literalmente `bibEliminarBloque(conjuntoId)` a `js/features/biblioteca/biblioteca-block-delete.js` como `BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId)`. Se conservaron confirmación, sesión, API, ausencia de inspección de `deleted.batch`, filtrado de conjuntos, selección, tab, cuatro mapas pending, render general, recarga silenciosa, logs, alerta y retorno. La comparación literal, la sintaxis, la suite y el smoke técnico —incluido `deleted.batch:false`— fueron aprobados. El usuario aprobó después la validación manual de cancelación, eliminación completa del batch y sus cuatro dominios, persistencia, selección, regresión acumulativa y ausencia de ejecución legacy.
+
+La Sesión 2.8 reauditó todas las acciones y wrappers vigentes. No quedaron consumidores desconocidos ni acciones pequeñas inequívocas propias de Fase 2. Generación y polling pasan a Fase 4; estado, tabs y pending maps a Fase 5; render, modales y event delegation a Fase 6; quick create, navegación y dependencias activas de Dashboard a Fase 7; API dispersa a Fase 3; legacy y wrappers permanecen para Fases 8–10. La decisión final es cerrar Fase 2 y abrir Fase 3.
 
 ### Dependencias
 
@@ -286,7 +292,7 @@ Eliminar llamadas HTTP dispersas y hacer que las páginas coordinen flujos mient
 
 ### Estado
 
-**Pendiente.**
+**Pendiente.** La primera sesión sugerida es `3.0 — Auditoría de capa API frontend`, exclusivamente documental. Debe inventariar `js/api`, `js/services`, llamadas `fetch` directas, sesión, headers, parsing de errores, endpoints duplicados, consumidores, APIs legacy y APIs de Archivados antes de implementar cualquier consolidación.
 
 ### Dependencias
 

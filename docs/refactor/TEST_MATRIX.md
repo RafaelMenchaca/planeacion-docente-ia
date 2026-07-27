@@ -226,9 +226,9 @@ No se ejecutaron pruebas funcionales en 2.6 porque la sesión solo modificó doc
 | Render y recarga | render general seguido de recarga `{ silent: true }` | Aprobado en smoke JSDOM |
 | Respuesta parcial | `deleted.batch:false` se trata igual que `true` | Aprobado en smoke JSDOM |
 | Error HTTP | sin mutación local; conserva log y alerta | Aprobado en smoke JSDOM |
-| Cancelación manual | bloque y recursos permanecen; cero DELETE | Pendiente |
-| Eliminación manual | recursos, batch, selección, persistencia y Supabase | Pendiente |
-| Regresión manual | previews, descargas, deletes individuales, tabs y legacy | Pendiente |
+| Cancelación manual | bloque y recursos permanecen; cero DELETE | Aprobada por el usuario |
+| Eliminación manual | recursos, batch, selección, persistencia y Supabase | Aprobada por el usuario |
+| Regresión manual | previews, descargas, deletes individuales, tabs y legacy | Aprobada por el usuario |
 
 ### Evidencia automatizada
 
@@ -237,7 +237,26 @@ No se ejecutaron pruebas funcionales en 2.6 porque la sesión solo modificó doc
 - `node --check js/pages/biblioteca.page.js`: pasó.
 - `npm test -- --runInBand`: pasó (1 suite, 2 pruebas).
 - Smoke JSDOM: pasó con 27 comprobaciones funcionales agrupadas.
-- La validación manual 2.7 no se ejecutó en esta sesión y permanece pendiente.
+- Validación manual 2.7: aprobada por el usuario. Cancelación sin DELETE, eliminación de los cuatro dominios y `planeacion_batches`, persistencia, otros bloques, selección/estado vacío, previews, descargas y deletes individuales quedaron confirmados sin errores relacionados ni ejecución legacy.
+- Logs backend confirmados: `[biblioteca] delete:start` y `[biblioteca] delete:success` con `deletedBatch: true`.
+
+## Sesión 2.8 — Auditoría de cierre de Fase 2
+
+| Criterio | Evidencia | Resultado |
+| --- | --- | --- |
+| Commits | Sesiones 2.0–2.7 presentes en `refactor-front` | Aprobado |
+| Validaciones manuales | Sesiones 2.1–2.7 confirmadas por el usuario | Aprobado |
+| Downloads de Fase 2 | Coordinador de examen en `ExamDownload` | Completado |
+| Deletes individuales | Examen, lista, anexo y planeación modularizados | Completado |
+| Delete de bloque | `BibliotecaBlockDelete` y wrapper vigente | Completado |
+| Wrappers | Firmas y consumidores conocidos; retiro en Fase 10 | Aprobado |
+| Consumidores desconocidos | Búsqueda global de acciones, globals y `data-bib-action` | Cero |
+| Candidatos adicionales de Fase 2 | Acciones restantes clasificadas en Fases 3–10 | Ninguno |
+| Regresión acumulativa | Evidencia manual 2.1–2.7 | Aprobada |
+
+Decisión final: **A. Cerrar Fase 2 y abrir Fase 3.**
+
+Próxima sesión: `Fase 3 — Sesión 3.0: Auditoría de capa API frontend`. No se implementó Fase 3 durante esta auditoría.
 
 ## Regresión acumulativa
 
