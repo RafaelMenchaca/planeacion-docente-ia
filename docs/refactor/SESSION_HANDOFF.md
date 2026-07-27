@@ -907,4 +907,218 @@ Todos permanecen disponibles globalmente por scripts clásicos.
 
 ## Última sesión
 
-2026-07-26 — Sesión 2.8: se aprobó la validación manual 2.7, se auditó el alcance restante, se cerró la Fase 2 sin candidatos desconocidos y se definió la auditoría API 3.0.
+2026-07-26 — Fase 3, Sesión 3.0: auditoría e inventario de contratos
+HTTP. Sesión exclusivamente documental; no se modificó código funcional.
+
+## Estado de entrada de la Sesión 3.0
+
+| Verificación | Resultado |
+| --- | --- |
+| Frontend | Rama `refactor-front`, HEAD `7414292`, working tree limpio |
+| Cierre de Fase 2 | `7414292 docs(refactor): close domain actions phase` presente |
+| Backend | Rama `refactor-back`, HEAD `e08d6e4`, working tree limpio |
+| Roadmap al iniciar | Fases 0, 1 y 2 completadas; Fase 3 pendiente |
+| Trabajo previo | Validación manual acumulativa de Fase 2 aprobada; no se volvió a solicitar |
+
+## Resultado de la auditoría HTTP
+
+El inventario exhaustivo, incluida cada función HTTP, wrapper, helper,
+consumidor, global y contrato, se conserva en
+[`docs/FRONTEND_MAP.md`](../FRONTEND_MAP.md). No quedan archivos, funciones ni
+endpoints desconocidos.
+
+### Inventario de archivos
+
+| Grupo | Archivos | Clasificación |
+| --- | --- | --- |
+| API | `anexos.api.js`, `biblioteca.api.js`, `examenes.api.js`, `listas_cotejo.api.js` | API activa |
+| API mixta | `jerarquia.api.js` | Compatibilidad, Archivados y legacy |
+| API mixta | `planeaciones.api.js` | Detalle/edición, Archivados, compatibilidad y legacy |
+| Services de dominio | `examenes.service.js`, `listas_cotejo.service.js` | Service activo/compatibilidad |
+| Service jerárquico | `jerarquia.service.js` | Compartido, Archivados y legacy |
+| Service de planeaciones | `planeaciones.service.js` | Detalle/edición, Archivados, compatibilidad y legacy |
+| Auth | `auth.service.js` | Compartido |
+| Core | `config.js`, `supabase.client.js`, `utils.js` | Compartido |
+
+Los consumidores exactos, responsabilidades y globals de cada archivo están en
+la tabla de inventario de `FRONTEND_MAP.md`.
+
+### Inventario de funciones
+
+| Familia | Funciones HTTP/wrappers | Estado |
+| --- | ---: | --- |
+| Anexos API | 5 | Activa; 2 lecturas sin consumidor y 1 regeneración de compatibilidad |
+| Biblioteca API | 7 | Activa en Biblioteca/Detalle |
+| Exámenes API + service | 4 + 4 | Activa y legacy |
+| Listas API + service | 3 + 3 | Activa y legacy |
+| Jerarquía API + service | 25 + 25 | Compartida, Archivados y legacy |
+| Planeaciones API + wrappers HTTP | 16 + 16 | Detalle, Archivados, compatibilidad y legacy |
+| Auth | 2 métodos públicos | Compartida |
+| Helpers API/session/normalización | 28 | Clasificados; `debugPlaneacionRequest` sin consumidor |
+| Registro local no HTTP de Archivados | 19 | Archivados/compatibilidad |
+
+Funciones sin consumidor confirmado, por nombre:
+`apiObtenerAnexosPorBatch`, `apiObtenerAnexoPorPlaneacion`,
+`debugPlaneacionRequest`, `crearTemas`, `generarPlaneacionesUnidad`,
+`generarPlaneacionApi` y `restoreArchivedHierarchyScope`. Se conservan y se
+clasifican como `Sin consumidor` o compatibilidad, nunca como desconocidas.
+
+### Fetch directos fuera de API
+
+| Función | Archivo | Uso | Contrato |
+| --- | --- | --- | --- |
+| `injectComponent` | `dashboard.page.js` | Layout/sidebar | GET relativo, sin auth, `text()` |
+| `loadPrivateComponent` | `components.private.js` | Navbar/footer privados | GET relativo, sin auth, `text()` |
+| `loadComponent` | `components.public.js` | Navbar/footer públicos | GET relativo, sin auth, `text()` |
+
+No hay `fetch` directo al backend Express fuera de `js/api`; no se encontró
+`axios` ni `XMLHttpRequest`.
+
+### Sesión y token
+
+| Método | Retorno/efecto | Consumidores | Error |
+| --- | --- | --- | --- |
+| `protegerRuta()` | Publica `currentUser` | `main.js` | Redirige y no lanza |
+| `requireSession()` | Session o `null` | Services, páginas y features | Redirige y no lanza |
+| `supabase.auth.getSession()` | Sesión SDK | Los dos anteriores | No se transforma expresamente |
+| `withSession` y wrappers equivalentes | Resultado callback o `null` | Services | Delegan a `requireSession` |
+| `supabase.auth.getUser()` | Usuario | UI privada/Detalle | Manejo local |
+| `onAuthStateChange()` | Suscripción | Auth global | Toast opcional y redirect al cerrar sesión |
+
+Todos los endpoints Express auditados requieren Bearer. Archivados y legacy
+usan los mismos métodos de sesión.
+
+### Headers
+
+| Patrón | Ámbito | Riesgo |
+| --- | --- | --- |
+| Bearer | GET/PATCH/DELETE sin body | Bajo |
+| Bearer + JSON | POST/PUT/PATCH con body; un GET de batch también lo añade | Bajo/medio |
+| Bearer + JSON + `Accept: text/event-stream, application/json` | Generación por unidad | Alto |
+| Bearer + JSON sin `Accept`, con `?stream=1` | Generación de planeación | Alto |
+| Bearer y respuesta blob | Export opcional | Medio |
+| Sin headers/auth | Fragmentos HTML | Bajo |
+| SDK Supabase | Auth/Storage | Medio |
+
+### Parsing y errores
+
+| Familia | Éxito | Error | Observación |
+| --- | --- | --- | --- |
+| Anexos/exámenes/listas/jerarquía | `text()` → JSON o `null` | Conserva mensaje, `status` y `payload` | Robusto |
+| Planeaciones robustas | Igual | Igual | Solo un subconjunto |
+| Biblioteca | `json()` | Solo `payload.error` o HTTP | Pierde `message` y metadata |
+| Delete normal planeación | `Response` crudo | Solo estado HTTP | Contrato especial |
+| Planeaciones mixtas | JSON/blob/SSE | Frecuentemente genérico | Pierde detalle backend |
+| Services | Normalización selectiva o crudo | Repropaga | Session ausente da `null` |
+| Loaders HTML | `text()` | Estado HTTP | No conserva cuerpo |
+
+Los errores finales se muestran como alerta, toast o estado local según feature;
+algunas descargas solo registran consola. SSE malformado se ignora en los
+parsers actuales. No se cambió ningún comportamiento.
+
+### Duplicados y aliases
+
+| Caso | Clasificación | Decisión |
+| --- | --- | --- |
+| Dos GET de planeación por tema y sus fallbacks | Duplicado real | Conservar hasta aislar legacy |
+| API directa + service en examen/lista | Alias/wrapper de compatibilidad | Conservar |
+| Generación normal frente a SSE | Contrato distinto | Fase 4 |
+| Delete normal/directo/permanente | Contratos distintos | No combinar |
+| Delete de bloque frente a batch permanente | Contratos distintos | No combinar |
+| Lectura y DELETE con mismo path de recurso | Método distinto, no duplicado | Conservar |
+| `/api/examenes/generar` | Alias backend no usado por frontend | Conservar backend |
+| Tres loaders de HTML | Duplicación visual | Fase 7 |
+
+El fallback `/api/planeaciones?tema_id=...` está implementado dos veces, pero el
+controller backend auditado lista planeaciones activas sin filtrar ese query.
+Se documenta como riesgo, no se corrige.
+
+### Globals
+
+Se protegen todos los `api*`, todos los wrappers públicos de services,
+`protegerRuta`, `requireSession`, las globals del registro de Archivados,
+`API_BASE_URL`, `supabase`, `currentUser` y `escapeHtml`. Las funciones
+top-level sin asignación explícita también son globals porque los scripts son
+clásicos. Firmas, orden y consumidores están detallados en
+`FRONTEND_MAP.md`. Retiro posible: Fase 10, o Fases 8–9 para legacy únicamente
+después de comprobar ausencia de consumidores.
+
+### Clasificación por dominio
+
+- Biblioteca: lecturas de conjuntos, generación coordinada, detalles por
+  dominio, refresh por recarga y cinco deletes propios.
+- Planeaciones: activos, detalle/edición, generación, normal/directo,
+  Archivados, batches y export de compatibilidad.
+- Anexos: generación/regeneración, detalle, dos lecturas sin consumidor y
+  delete de Biblioteca.
+- Listas: generación directa vigente, detalle activo, listado/generación
+  legacy y delete de Biblioteca.
+- Exámenes: generación/polling directos vigentes, detalle activo,
+  listado/generación/polling legacy y delete de Biblioteca.
+- Archivados: listado, restore y delete permanente individual/batch, más
+  jerarquía técnica y registro local.
+- Legacy: CRUD jerárquico, navegación por niveles, contratos por unidad,
+  planeación por tema, delete normal y archive.
+- Métricas: no existe consumo frontend.
+
+### Relación API/services
+
+| Dominio | Dirección ejecutable | Problema |
+| --- | --- | --- |
+| Biblioteca/anexos | Página o feature → API | Sin service; propiedad mezclada en deletes |
+| Exámenes/listas | Service → API; Biblioteca también → API | Normalización y flujos legacy/vigentes |
+| Jerarquía | Service → API | Técnica, Archivados y legacy mezclados |
+| Planeaciones | Service → API | Service además mantiene estado local |
+| Auth | SDK → service → consumidores | Redirect y sesión global |
+
+Ningún API delega a service.
+
+### Candidatos
+
+| Candidato | Riesgo | Decisión |
+| --- | --- | --- |
+| Lecturas de Biblioteca | Bajo | Primera sesión de Fase 3 |
+| Deletes de Biblioteca | Bajo/medio | Sesión posterior; preservar contratos distintos |
+| Planeaciones/anexos/listas/exámenes | Medio/alto | Sesiones posteriores por dominio |
+| Auth/headers y parsing común | Alto | Posterior; no helper universal inicial |
+| Fetch de páginas | Medio | Fase 7 |
+| Archivados | Alto | Fase 8 |
+| Legacy | Alto | Legacy/Fases 8–9 |
+| SSE y polling | Alto | Fase 4 |
+
+## Sesión 3.1 seleccionada
+
+**Sesión 3.1 — Consolidación de lecturas de Biblioteca.**
+
+- Funciones: `apiBibliotecaConjuntos(accessToken)` y
+  `apiBibliotecaConjuntoById(batchId, accessToken)`.
+- Archivo propietario: `js/api/biblioteca.api.js`.
+- Consumidores: carga de Biblioteca y metadata de Detalle.
+- Wrappers/globals: ambas firmas quedan intactas.
+- Contratos protegidos: GET, Bearer, array frente a objeto, `json()` en éxito,
+  `payload.error` y fallback `HTTP <status>`.
+- Exclusiones: deletes, generación, polling, SSE, autenticación general,
+  backend, Archivados y legacy.
+- Riesgo: bajo.
+- Pruebas futuras: array/objeto de éxito, 401 JSON, error no JSON, JSON inválido
+  de éxito, disponibilidad de globals, carga de Biblioteca y apertura de
+  Detalle.
+
+No existe otra Sesión 3.1 seleccionada.
+
+## Exclusiones y riesgos
+
+- No se centralizó ni movió ninguna llamada.
+- No se modificaron sesión, headers, parsing, errores ni globals.
+- Generación, polling y SSE quedan para Fase 4.
+- Archivados y legacy permanecen separados.
+- Riesgos prioritarios: orden de globals, parsing divergente, fallbacks por
+  tema, deletes de distinto alcance, service de planeaciones mixto, export sin
+  ruta backend y consumidores legacy indirectos.
+
+## Estado documental
+
+Fase 0: Completada. Fase 1: Completada. Fase 2: Completada. Fase 3: En
+progreso. No se añadió decisión arquitectónica transversal: la selección de
+3.1 aplica los criterios ya vigentes, por lo que `REFACTOR_DECISIONS.md` no
+requiere una entrada nueva.

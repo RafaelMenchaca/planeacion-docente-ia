@@ -26,10 +26,35 @@ La jerarquía técnica puede seguir existiendo como modelo de datos, API, select
 | `js/api/` | Wrappers HTTP por recurso. |
 | `js/services/` | Autenticación y orquestación. |
 | `js/pages/` | Estado, eventos e inicialización de páginas. |
+| `js/features/` | Acciones modulares por dominio extraídas en Fases 1 y 2. |
 | `js/ui/` | Componentes, modales, helpers y descargas. |
 | `tests/` | Suite automatizada existente. |
 
-`js/features/` no existe en el estado auditado.
+La auditoría de la capa HTTP y sus contratos se mantiene en
+[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+
+## Capa HTTP actual
+
+La arquitectura ejecutable es mixta:
+
+- `js/api/` contiene todo el HTTP contra Express.
+- Los services de exámenes, listas, jerarquía y planeaciones delegan a sus
+  respectivos API files, obtienen sesión y, en algunos casos, normalizan la
+  respuesta.
+- Biblioteca consume directamente `biblioteca.api.js`, partes de las API de
+  generación y `anexos.api.js`.
+- `planeaciones.service.js` combina wrappers HTTP con un registro local usado
+  por Archivados.
+- Los únicos `fetch` fuera de `js/api/` cargan fragmentos HTML desde páginas o
+  UI; no llaman al backend Express.
+- La autenticación y Storage puntuales adicionales se realizan mediante el SDK
+  de Supabase.
+
+`API_BASE_URL` y `window.API_BASE_URL` nacen del mismo archivo, pero los
+wrappers actuales leen la forma léxica. El orden de carga es contractual porque
+se usan scripts clásicos y globals `window.*`, además de funciones globales
+implícitas. Los contratos de Biblioteca, Detalle, Archivados y explorador
+legacy se mantienen separados.
 
 ## Flujo principal: Biblioteca
 

@@ -258,6 +258,39 @@ Decisión final: **A. Cerrar Fase 2 y abrir Fase 3.**
 
 Próxima sesión: `Fase 3 — Sesión 3.0: Auditoría de capa API frontend`. No se implementó Fase 3 durante esta auditoría.
 
+## Sesión 3.0 — Auditoría de capa API frontend
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Estado inicial frontend | `refactor-front`, HEAD `7414292`, árbol limpio | Aprobado |
+| Cierre de Fase 2 | Commit `7414292` y documentación de Fases 0–2 | Aprobado |
+| Estado backend | `refactor-back`, HEAD `e08d6e4`, árbol limpio | Aprobado |
+| Archivos API/services/core | Lectura completa y tabla en `FRONTEND_MAP.md` | Aprobado |
+| Funciones HTTP y wrappers | Método, endpoint, token, respuesta, error y consumidores | Aprobado |
+| Búsqueda HTTP global | `fetch`, `/api/`, auth, headers, parsing y errores | Aprobado |
+| Fetch fuera de API | Tres loaders HTML; cero llamadas Express fuera de `js/api` | Aprobado |
+| Contratos backend | Rutas, middleware, controllers y services contrastados | Aprobado |
+| Duplicados y aliases | Duplicados reales separados de wrappers y contratos distintos | Aprobado |
+| Flujos separados | Biblioteca, Detalle, Archivados y legacy clasificados | Aprobado |
+| Desconocidos | Cero archivos, funciones o endpoints desconocidos | Aprobado |
+| Sesión siguiente | Una sola 3.1: lecturas de Biblioteca | Aprobado |
+| Alcance | Solo Markdown; sin cambios funcionales ni backend | Aprobado |
+
+No se ejecutaron pruebas funcionales: la Sesión 3.0 solo modifica
+documentación. La validación manual acumulativa de Fase 2 permanece aprobada y
+no se solicita de nuevo.
+
+Pruebas previstas para la Sesión 3.1:
+
+- éxito array de `apiBibliotecaConjuntos`;
+- éxito objeto de `apiBibliotecaConjuntoById`;
+- 401 con JSON `{error}`;
+- error HTTP con cuerpo no JSON;
+- JSON inválido en una respuesta exitosa;
+- firmas/globales sin cambios;
+- carga de Biblioteca y apertura de Detalle;
+- regresión acumulativa aplicable una vez exista cambio funcional.
+
 ## Regresión acumulativa
 
 - Cada fase ejecuta sus pruebas propias y las pruebas críticas de todas las fases anteriores.

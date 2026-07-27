@@ -26,7 +26,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 0 | Línea base y protección | Establecer punto seguro | Bajo | Completada |
 | 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
-| 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Pendiente |
+| 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | En progreso |
 | 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
@@ -292,7 +292,20 @@ Eliminar llamadas HTTP dispersas y hacer que las páginas coordinen flujos mient
 
 ### Estado
 
-**Pendiente.** La primera sesión sugerida es `3.0 — Auditoría de capa API frontend`, exclusivamente documental. Debe inventariar `js/api`, `js/services`, llamadas `fetch` directas, sesión, headers, parsing de errores, endpoints duplicados, consumidores, APIs legacy y APIs de Archivados antes de implementar cualquier consolidación.
+**En progreso.** La Sesión `3.0 — Auditoría de capa API frontend` quedó
+completada en documentación. Se inventariaron todas las funciones de
+`js/api`, `js/services` y `js/core`, los tres `fetch` directos fuera de API,
+sesión, headers, parsing, errores, aliases, globals, consumidores, Archivados y
+legacy. Los contratos se contrastaron con rutas, controllers y services del
+backend sin modificarlo. El mapa ejecutable está en
+[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+
+La única siguiente sesión seleccionada es
+`3.1 — Consolidación de lecturas de Biblioteca`: únicamente
+`apiBibliotecaConjuntos(accessToken)` y
+`apiBibliotecaConjuntoById(batchId, accessToken)`, preservando firmas, globals,
+retornos y errores. Deletes, generación, polling, SSE, autenticación global,
+Archivados y legacy quedan excluidos.
 
 ### Dependencias
 
