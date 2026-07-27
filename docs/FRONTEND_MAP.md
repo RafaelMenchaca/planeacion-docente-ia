@@ -31,7 +31,7 @@ ya implementada.
 | Archivo | Responsabilidad actual | Dominios | Consumidores | Globals expuestas | Estado |
 | --- | --- | --- | --- | --- | --- |
 | `js/api/anexos.api.js` | HTTP y parsing JSON de anexos | Anexos | Biblioteca y features de preview/descarga | 5 API públicas; 4 helpers implícitos | API activa |
-| `js/api/biblioteca.api.js` | Lecturas de conjuntos y deletes de Biblioteca | Biblioteca, planeaciones, anexos, listas, exámenes | Biblioteca, Detalle y features de delete | 7 API públicas | API activa |
+| `js/api/biblioteca.api.js` | Lecturas de conjuntos consolidadas internamente y deletes de Biblioteca | Biblioteca, planeaciones, anexos, listas, exámenes | Biblioteca, Detalle y features de delete | 7 API públicas; `bibliotecaGet` privado | API activa |
 | `js/api/examenes.api.js` | Generación, polling y lecturas de exámenes | Exámenes | Biblioteca directa y `examenes.service.js` | 4 API públicas; 4 helpers implícitos | API activa |
 | `js/api/jerarquia.api.js` | CRUD jerárquico, generación y planeación por tema | Planteles, grados, materias, unidades, temas, planeaciones | `jerarquia.service.js` | 18 asignaciones explícitas; el resto de funciones de nivel superior son globals implícitas | Compatibilidad |
 | `js/api/listas_cotejo.api.js` | Generación y lecturas de listas | Listas de cotejo | Biblioteca directa y `listas_cotejo.service.js` | 3 API públicas; 4 helpers implícitos | API activa |
@@ -210,6 +210,7 @@ Helpers de API sin HTTP propio:
 
 | Archivo | Funciones | Uso | Clasificación |
 | --- | --- | --- | --- |
+| biblioteca | `bibliotecaGet` | Solo las dos lecturas GET de conjuntos; no está en `window` | Biblioteca activa |
 | anexos | `buildAnexosHeaders`, `parseAnexosApiJson`, `createAnexosApiError`, `requestAnexosJson` | Todas las API del dominio | Compartida activa |
 | exámenes | `buildExamJsonHeaders`, `parseExamApiJson`, `createExamApiError`, `requestExamJson` | Todas las API del dominio | Compartida activa |
 | listas | `buildListaCoTejoHeaders`, `parseListaCoTejoApiJson`, `createListaCoTejoApiError`, `requestListaCoTejoJson` | Todas las API del dominio | Compartida activa |
@@ -267,7 +268,7 @@ JSON.
 | --- | --- | --- | --- | --- |
 | Helpers de anexos/exámenes/listas/jerarquía | Objeto, array o `null` | `payload.error`, luego `payload.message`, fallback; conserva `status`/`payload` | `text()` y JSON condicional | Forma exacta y metadata del Error |
 | Helper robusto de planeaciones | Objeto, array o `null` | Igual al anterior | `text()` y JSON condicional | Solo en las funciones que ya lo usan |
-| API de Biblioteca | `response.json()` | Intenta JSON y usa solo `error`; si falla usa HTTP | JSON directo | Excepción nativa de JSON y mensaje actual |
+| Lecturas de Biblioteca mediante `bibliotecaGet` | `response.json()` | En HTTP no exitoso usa `text()`, intenta JSON y prioriza solo `error`; si falla usa HTTP | JSON directo solo en éxito | Excepción nativa de JSON en 2xx y mensaje HTTP actual |
 | Delete normal de planeación | `Response` sin consumir | `Error("HTTP <status>")` | No parsea éxito | Retorno `Response` |
 | Generate/Get/ByTema/Update de planeación | JSON directo | Mensaje genérico; Get registra cuerpo | Mixto | Errores genéricos actuales |
 | Export de planeación | Blob | Mensaje genérico | `blob()` | Blob, aunque la ruta backend no exista |
@@ -446,8 +447,8 @@ pero existen consumidores directos y consumidores mediante service.
 
 | Candidato | Funciones | Archivos | Consumidores | Riesgo | Sesión sugerida | Decisión |
 | --- | --- | --- | --- | --- | --- | --- |
-| Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 | Primera sesión de Fase 3 |
-| Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | Posterior, separados por contrato | Sesión posterior de Fase 3 |
+| Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 completada en código; manual pendiente | Sesión de Fase 3 completada |
+| Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2, preservando cada endpoint/retorno | Sesión posterior de Fase 3 |
 | Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
 | Anexos | lecturas y regeneración | anexos API | Activo/sin consumidor | Medio | Después de probar consumidores | Sesión posterior de Fase 3 |
 | Listas | lecturas | API/service | Activo/legacy | Medio | Tras separar legacy | Sesión posterior de Fase 3 |
@@ -459,29 +460,38 @@ pero existen consumidores directos y consumidores mediante service.
 | Legacy | CRUD y lecturas por unidad | jerarquía y services | Explorador | Alto | Aislamiento legacy | Legacy |
 | SSE y polling | generación de unidad, planeación y examen | API/pages/services | Activo/legacy | Alto | Separación de procesos largos | Fase 4 |
 
-## Sesión 3.1 seleccionada
+## Sesión 3.1 completada en código
 
 **Sesión 3.1 — Consolidación de lecturas de Biblioteca.**
 
-Alcance exacto: `apiBibliotecaConjuntos(accessToken)` y
-`apiBibliotecaConjuntoById(batchId, accessToken)` dentro de
-`js/api/biblioteca.api.js`. La migración podrá extraer únicamente la repetición
-local de GET, Bearer y parsing, preservando:
+Alcance ejecutado: `apiBibliotecaConjuntos(accessToken)` y
+`apiBibliotecaConjuntoById(batchId, accessToken)` delegan exclusivamente en
+`bibliotecaGet(path, accessToken)` dentro de `js/api/biblioteca.api.js`. El
+helper es una constante léxica del script clásico y no se publica en `window`.
+Se extrajo únicamente la repetición local de URL base, GET implícito, Bearer,
+`cache: "no-store"` y parsing, preservando:
 
 - ambas firmas y globals;
 - array frente a objeto;
 - `response.json()` en éxito;
-- prioridad de `payload.error` y fallback `HTTP <status>` en error;
+- `response.text()` y `JSON.parse` tolerante solo en HTTP de error;
+- prioridad de `payload.error` y fallback `HTTP <status>`;
+- rechazo por JSON inválido en una respuesta HTTP 2xx;
 - sesión obtenida por los consumidores;
 - `API_BASE_URL` y orden de scripts.
 
 Consumidores: carga de Biblioteca y metadata de Detalle. Exclusiones:
 deletes, generación, polling, SSE, autenticación general, Archivados, API
-jerárquica, legacy y backend. Riesgo bajo. Pruebas futuras: casos de éxito
-array/objeto, 401 con `error`, error no JSON, JSON inválido en éxito, firmas
-globales, carga de Biblioteca y apertura de Detalle.
+jerárquica, legacy y backend. Riesgo bajo. El smoke previo y posterior pasó
+para éxito array/objeto, URL, GET, Bearer, cache, error JSON, fallback, error no
+JSON, JSON inválido en éxito, una llamada por invocación, globals y aislamiento
+del helper. `node --check` y la suite Jest pasaron. La validación manual de
+Biblioteca, Detalle y regresión permanece pendiente de ejecución por el usuario.
 
-Es la única sesión 3.1 seleccionada.
+Próxima sesión seleccionada, sin implementar:
+**Sesión 3.2 — Consolidación interna de deletes de Biblioteca.** Debe preservar
+por separado los cinco endpoints y sus retornos, y solo podrá ejecutarse
+después de una comparación puntual de equivalencia.
 
 ## Riesgos priorizados
 

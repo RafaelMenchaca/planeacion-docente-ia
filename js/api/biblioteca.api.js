@@ -1,5 +1,5 @@
-async function apiBibliotecaConjuntos(accessToken) {
-  const res = await fetch(`${API_BASE_URL}/api/biblioteca/conjuntos`, {
+const bibliotecaGet = async function (path, accessToken) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store"
   });
@@ -10,20 +10,14 @@ async function apiBibliotecaConjuntos(accessToken) {
     throw new Error(msg);
   }
   return res.json();
+};
+
+async function apiBibliotecaConjuntos(accessToken) {
+  return bibliotecaGet("/api/biblioteca/conjuntos", accessToken);
 }
 
 async function apiBibliotecaConjuntoById(batchId, accessToken) {
-  const res = await fetch(`${API_BASE_URL}/api/biblioteca/conjuntos/${encodeURIComponent(batchId)}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: "no-store"
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    let msg = `HTTP ${res.status}`;
-    try { msg = JSON.parse(body)?.error || msg; } catch {}
-    throw new Error(msg);
-  }
-  return res.json();
+  return bibliotecaGet(`/api/biblioteca/conjuntos/${encodeURIComponent(batchId)}`, accessToken);
 }
 
 async function apiBibliotecaDeleteBloque(batchId, accessToken) {

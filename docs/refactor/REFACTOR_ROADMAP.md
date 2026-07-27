@@ -300,12 +300,19 @@ legacy. Los contratos se contrastaron con rutas, controllers y services del
 backend sin modificarlo. El mapa ejecutable está en
 [`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
 
+La Sesión `3.1 — Consolidación de lecturas de Biblioteca` quedó completada en
+código. `apiBibliotecaConjuntos(accessToken)` y
+`apiBibliotecaConjuntoById(batchId, accessToken)` delegan la repetición de GET,
+Bearer, `cache: "no-store"` y parsing al helper privado y específico
+`bibliotecaGet(path, accessToken)`. Firmas, globals, URLs, retornos y errores
+permanecen iguales. El smoke técnico, `node --check` y Jest pasaron; la
+validación manual de Biblioteca, Detalle y regresión está pendiente.
+
 La única siguiente sesión seleccionada es
-`3.1 — Consolidación de lecturas de Biblioteca`: únicamente
-`apiBibliotecaConjuntos(accessToken)` y
-`apiBibliotecaConjuntoById(batchId, accessToken)`, preservando firmas, globals,
-retornos y errores. Deletes, generación, polling, SSE, autenticación global,
-Archivados y legacy quedan excluidos.
+`3.2 — Consolidación interna de deletes de Biblioteca`. No se implementó en
+3.1 y deberá comenzar con una comparación puntual de los cinco contratos.
+Generación, polling, SSE, autenticación global, Archivados y legacy siguen
+excluidos.
 
 ### Dependencias
 

@@ -280,16 +280,35 @@ No se ejecutaron pruebas funcionales: la Sesión 3.0 solo modifica
 documentación. La validación manual acumulativa de Fase 2 permanece aprobada y
 no se solicita de nuevo.
 
-Pruebas previstas para la Sesión 3.1:
+## Sesión 3.1 — Consolidación de lecturas de Biblioteca
 
-- éxito array de `apiBibliotecaConjuntos`;
-- éxito objeto de `apiBibliotecaConjuntoById`;
-- 401 con JSON `{error}`;
-- error HTTP con cuerpo no JSON;
-- JSON inválido en una respuesta exitosa;
-- firmas/globales sin cambios;
-- carga de Biblioteca y apertura de Detalle;
-- regresión acumulativa aplicable una vez exista cambio funcional.
+| Escenario | Evidencia | Resultado |
+| --- | --- | --- |
+| Listado exitoso | URL, GET implícito, Bearer, `no-store`, identidad del array | Aprobado en smoke |
+| Detalle exitoso | URL con UUID, GET implícito, Bearer, `no-store`, identidad del objeto | Aprobado en smoke |
+| Error JSON | `{error:"mensaje de prueba"}` en ambas funciones | Aprobado; mismo mensaje |
+| Error JSON sin `error` | Payload con solo `message` | Aprobado; `HTTP 404` |
+| Error HTTP no JSON | HTML simulado | Aprobado; `HTTP 500` |
+| JSON inválido en 2xx | `response.json()` rechaza | Aprobado; mismo objeto `SyntaxError` |
+| Globals | Dos funciones públicas con firmas vigentes | Aprobado en script clásico |
+| Helper | `bibliotecaGet` ausente de `window` | Aprobado |
+| Peticiones | Una llamada por invocación | Aprobado; 10 de 10 |
+| Deletes | No delegan al helper; bloque literal sin cambios | Aprobado estáticamente |
+| Otros API/consumidores/HTML | Sin diff | Aprobado estáticamente |
+| Biblioteca manual | Carga, bloques, tabs, recarga, una carga esperada | Pendiente |
+| Detalle manual | Metadata, título/unidad/contexto y vuelta | Pendiente |
+| Regresión manual | Previews, descargas y deletes; sin generación/Archivados/legacy | Pendiente |
+
+### Evidencia automatizada
+
+- Smoke previo: pasó con 10 requests y 18 aserciones contractuales.
+- `node --check js/api/biblioteca.api.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Smoke posterior: pasó con 10 requests y 20 aserciones contractuales/de
+  aislamiento.
+- Búsqueda global: dos globals públicas, dos consumidores conocidos, un helper
+  privado y cero consumidores desconocidos.
+- La validación manual 3.1 no se ejecutó y permanece pendiente.
 
 ## Regresión acumulativa
 

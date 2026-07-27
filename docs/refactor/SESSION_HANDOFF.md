@@ -11,9 +11,12 @@
 
 ## Estado del roadmap
 
-- **Fase cerrada:** 2 — Acciones por dominio.
-- **Estado:** Completada.
-- **Sesión actual:** 2.8 — Auditoría de cierre, completada.
+- **Última fase cerrada:** 2 — Acciones por dominio.
+- **Fase actual:** 3 — Capa API frontend.
+- **Estado:** En progreso.
+- **Sesión 3.0:** Auditoría de capa API frontend, completada.
+- **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada en código.
+- **Validación manual 3.1:** pendiente.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -22,10 +25,11 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima fase:** 3 — Capa API frontend.
-- **Próxima sesión recomendada:** 3.0 — Auditoría de capa API frontend.
+- **Próxima sesión seleccionada:** 3.2 — Consolidación interna de deletes de Biblioteca.
 
-Las Fases 0, 1 y 2 están completadas. Las sesiones 2.0 a 2.7 tienen commits y todas sus validaciones manuales aplicables fueron aprobadas. La Sesión 2.8 confirmó cero consumidores desconocidos y cero candidatos adicionales propios de Fase 2. La Fase 3 permanece pendiente hasta iniciar su auditoría 3.0.
+Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
+Sesión 3.1 conserva validación manual pendiente y no autoriza el cierre de la
+fase ni el inicio de generación, polling, Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -1122,3 +1126,93 @@ Fase 0: Completada. Fase 1: Completada. Fase 2: Completada. Fase 3: En
 progreso. No se añadió decisión arquitectónica transversal: la selección de
 3.1 aplica los criterios ya vigentes, por lo que `REFACTOR_DECISIONS.md` no
 requiere una entrada nueva.
+
+## Sesión 3.1 — Consolidación de lecturas de Biblioteca
+
+### Estado de entrada
+
+- Frontend: `refactor-front`, HEAD `ac23955`, working tree limpio.
+- Commit 3.0: `ac23955 docs(refactor): audit frontend API contracts`.
+- Backend: `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; Sesión 3.0 completada.
+
+### Consumidores confirmados
+
+| Función | Consumidor | Argumentos | Retorno esperado | Error del consumidor | Clasificación |
+| --- | --- | --- | --- | --- | --- |
+| `apiBibliotecaConjuntos(accessToken)` | `loadAndRenderBiblioteca` en `biblioteca.page.js` | `session.access_token` string | Array directo; el consumidor usa `Array.isArray` | Captura, registra y muestra estado de error | Biblioteca activa |
+| `apiBibliotecaConjuntoById(batchId, accessToken)` | `obtenerBloqueDetalle` en `detalle.page.js` | UUID normalizado y token string | Objeto de conjunto directo | Captura, hace warning y devuelve `null` | Detalle/edición |
+
+No existen consumidores desconocidos, de Archivados ni del explorador visual
+legacy.
+
+### Contrato previo y preservado
+
+| Aspecto | Listado | Detalle |
+| --- | --- | --- |
+| Firma | `(accessToken)` | `(batchId, accessToken)` |
+| URL | `${API_BASE_URL}/api/biblioteca/conjuntos` | `${API_BASE_URL}/api/biblioteca/conjuntos/${encodeURIComponent(batchId)}` |
+| Método | GET implícito | GET implícito |
+| Headers | Solo `Authorization: Bearer <token>` | Igual |
+| Cache | `"no-store"` | `"no-store"` |
+| Éxito | `response.json()`; array directo | `response.json()`; objeto directo |
+| Error HTTP | `text()`; JSON tolerante; `payload.error` o `HTTP <status>` | Igual |
+| JSON inválido 2xx | Rechazo nativo de `response.json()` | Igual |
+| JSON inválido/error no JSON HTTP | Se ignora el fallo de `JSON.parse` y se lanza `Error("HTTP <status>")` | Igual |
+| Metadata de Error | No adjunta `status` ni payload | Igual |
+
+El backend confirma Bearer obligatorio, `planeacion_batches.id` UUID, filtros
+por `user_id`, array directo para listado y objeto directo para detalle. El
+detalle puede responder 400 por `batchId` vacío, 404 por conjunto
+inexistente/no propio y 500 por error inesperado; auth responde 401. Los
+controllers entregan `{error}` en errores conocidos y genéricos.
+
+### Implementación
+
+- Se creó `bibliotecaGet(path, accessToken)` como constante léxica privada de
+  `js/api/biblioteca.api.js`; no se publica en `window`.
+- El helper solo construye la URL con `API_BASE_URL`, ejecuta el GET implícito,
+  añade Bearer y `cache: "no-store"`, preserva el parsing y devuelve el JSON.
+- `apiBibliotecaConjuntos` delega el path fijo del listado.
+- `apiBibliotecaConjuntoById` conserva `encodeURIComponent(batchId)` y delega
+  el path del detalle.
+- `window.apiBibliotecaConjuntos` y
+  `window.apiBibliotecaConjuntoById` permanecen sin cambios.
+- Los cinco deletes empiezan en el mismo punto lógico de `HEAD`, conservan su
+  implementación literal y no llaman a `bibliotecaGet`.
+
+### Validaciones ejecutadas
+
+- Smoke previo: aprobado, 10 requests simulados y 18 aserciones.
+- `node --check js/api/biblioteca.api.js`: aprobado.
+- `npm test -- --runInBand`: aprobado, 1 suite y 2 pruebas.
+- Smoke posterior: aprobado, 10 requests simulados y 20 aserciones de contrato
+  y aislamiento.
+- Búsqueda global: dos consumidores conocidos, dos globals públicas, un helper
+  privado y cero duplicados del GET.
+- Aislamiento: helper ausente de `window`; una sola llamada por invocación;
+  orden de scripts sin cambios.
+
+### Validación manual
+
+Pendiente. No se ejecutó navegador en esta sesión automatizada. Deben
+confirmarse Biblioteca, cambio de bloques/tabs, recarga, metadata de Detalle,
+navegación de vuelta y regresión de previews, descargas y deletes. Generación,
+Archivados y legacy no deben ejecutarse para esta validación.
+
+### Exclusiones y hallazgos conservados
+
+No se modificaron consumidores, deletes, autenticación, otros API files,
+generación, polling, SSE, estado, render, HTML, backend, SQL, Archivados ni
+legacy. Permanecen: pérdida de `payload.message` y status estructurado,
+parsing incompatible entre dominios, duplicado por tema, deletes no
+equivalentes, export Excel sin ruta backend, SSE/polling propios,
+`planeaciones.service.js` mixto y dependencia del orden de scripts.
+
+### Próxima sesión
+
+**Sesión 3.2 — Consolidación interna de deletes de Biblioteca.**
+
+No está implementada. Debe comparar primero los cinco contratos y conservar
+por separado endpoints, IDs, efectos backend y formas de respuesta. Fase 3
+continúa en progreso.
