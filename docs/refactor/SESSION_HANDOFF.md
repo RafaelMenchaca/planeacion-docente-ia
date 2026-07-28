@@ -31,7 +31,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.6 — Consolidación interna de lecturas de listas de cotejo.
+- **Próxima sesión seleccionada:** 3.6 — Consolidación interna de lecturas de listas de cotejo..
 
 Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
 Sesión 3.4 está completada y validada manualmente; la Sesión 3.5 es documental
