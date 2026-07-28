@@ -20,8 +20,9 @@
 - **Sesión 3.2:** Consolidación interna de deletes de Biblioteca, completada.
 - **Validación manual 3.2:** aprobada.
 - **Sesión 3.3:** Auditoría puntual de APIs de anexos, completada.
-- **Sesión 3.4:** Consolidación interna de lecturas de anexos, completada en código.
-- **Validación manual 3.4:** pendiente.
+- **Sesión 3.4:** Consolidación interna de lecturas de anexos, completada.
+- **Validación manual 3.4:** aprobada.
+- **Sesión 3.5:** Auditoría puntual de APIs de listas de cotejo, completada.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -30,12 +31,12 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.5 — Auditoría puntual de APIs de listas de cotejo.
+- **Próxima sesión seleccionada:** 3.6 — Consolidación interna de lecturas de listas de cotejo.
 
 Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
-Sesión 3.4 está completada en código y pendiente de validación manual; no
-autoriza el cierre de la fase ni el inicio de generación, regeneración,
-polling, Archivados o legacy.
+Sesión 3.4 está completada y validada manualmente; la Sesión 3.5 es documental
+y no autoriza el cierre de la fase ni el inicio de generación, polling,
+Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -1612,9 +1613,11 @@ no JSON usa el fallback, conserva el status y adjunta `payload:null`.
 
 ### Validación manual
 
-Pendiente. No se ejecutaron ni se declaran aprobados preview, descarga desde
-card, descarga desde preview ni la regresión en navegador. Las lecturas sin
-consumidor por batch y por planeación quedaron cubiertas por smoke.
+Aprobada por el usuario. Se confirmaron preview, metadata y contenido, cierre y
+reapertura, descarga desde card, modal de nombre, apertura correcta del archivo,
+descarga desde preview, reutilización del objeto y cero GET duplicados o errores
+relacionados con `anexosGet`. Las lecturas sin consumidor por batch y por
+planeación permanecen cubiertas por smoke.
 
 ### Exclusiones y hallazgos conservados
 
@@ -1630,6 +1633,213 @@ contractual.
 
 **Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo.**
 
-Será exclusivamente documental. Debe clasificar lecturas, generación,
-compatibilidad, globals, consumidores y contratos antes de seleccionar una
-consolidación. No está implementada y Fase 3 continúa en progreso.
+Fue completada como auditoría documental. Sus resultados se registran a
+continuación.
+
+## Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo
+
+### Estado de entrada y evidencia previa
+
+- Frontend: `refactor-front`, HEAD `18e96ba`, working tree limpio.
+- Commit 3.4: `18e96ba refactor(frontend): consolidate annex read requests`.
+- Backend: `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; sesiones 3.0–3.4 completadas.
+- Validaciones manuales 3.1, 3.2 y 3.4 aprobadas.
+- La evidencia 3.4 confirmó preview, metadata, reapertura, ambas descargas,
+  reutilización del objeto y cero GET duplicados o errores de `anexosGet`.
+
+### Inventario de funciones
+
+| Función | Archivo | Método/endpoint | Argumentos | Retorno | Error | Consumidores | Clasificación |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `apiListasCoTejoGenerate` | `js/api/listas_cotejo.api.js` | POST `/api/listas-cotejo/generate` | payload, token | Payload backend | Error con `status/payload` | Biblioteca directa y service | Generación activa de Biblioteca |
+| `apiListasCoTejoByUnidad` | Mismo | GET `/api/listas-cotejo/unidad/:unidadId` | UUID, token | `{listas}` | Error con `status/payload` | Service legacy | Listado legacy |
+| `apiListaCoTejoById` | Mismo | GET `/api/listas-cotejo/:id` | UUID, token | `{lista}` | Error con `status/payload` | Service de detalle | Preview/descarga activa |
+| `apiDeleteListaCotejo` | `js/api/biblioteca.api.js` | DELETE `/api/listas-cotejo/:id` | UUID, token | `{ok:true}` | `payload.error` o `HTTP <status>` | `ListaCotejoDelete` | Biblioteca activa |
+| `generarListasCotejoUnidad` | `js/services/listas_cotejo.service.js` | Delega POST generate | payload | Payload API o `null` | Propaga API | Dashboard legacy | Generación legacy |
+| `obtenerListasCotejoPorUnidad` | Mismo | Delega GET por unidad | UUID | Array, `[]` o `null` | Propaga API | `ensureListasCotejo` | Listado legacy |
+| `obtenerListaCoTejoDetalle` | Mismo | Delega GET por ID | UUID | Entidad, payload compatible o `null` | Propaga API | Preview y descarga | Service de compatibilidad |
+
+No existen funciones desconocidas. El backend expone además
+`GET /api/listas-cotejo/planeacion/:planeacionId`, con bigint, Bearer,
+`user_id` y `{lista}`; no existe wrapper o consumidor frontend confirmado.
+
+### Consumidores confirmados
+
+| Función | Consumidor | Argumentos | Uso del retorno | Error | Flujo |
+| --- | --- | --- | --- | --- | --- |
+| `apiListasCoTejoGenerate` | `submitBibliotecaListaModal` | `{planeacion_ids}`, token | `created` y `skipped`; luego recarga | Pending inline y log | Biblioteca activa |
+| `generarListasCotejoUnidad` | `submitListaCotejoGenerate` | `{planeacion_ids, unidad_id}` | `created/created_or_updated`, `skipped` | Estado y mensaje del explorador | Legacy |
+| `apiListasCoTejoByUnidad` | `obtenerListasCotejoPorUnidad` | UUID, token | Payload para normalización | Propaga | Service |
+| `obtenerListasCotejoPorUnidad` | `ensureListasCotejo` | UUID | Array en `listasCotejoByUnidad` | Array vacío y error visual | Legacy |
+| `apiListaCoTejoById` | `obtenerListaCoTejoDetalle` | UUID, token | Payload para extraer `lista` | Propaga | Service |
+| `obtenerListaCoTejoDetalle` | `ListaCotejoPreview.openBiblioteca` | UUID | Entidad para modal | Log y error visual | Biblioteca activa |
+| `obtenerListaCoTejoDetalle` | `ListaCotejoDownload.downloadBiblioteca` | UUID | Entidad para Word | Solo log | Biblioteca activa |
+| `apiDeleteListaCotejo` | `ListaCotejoDelete.deleteFromBiblioteca` | UUID, token | Resolución; ignora `{ok:true}` | Log y alerta | Biblioteca activa |
+
+`bibGenerarLista` no existe. La generación vigente se coordina mediante
+`submitBibliotecaListaModal`. No hay consumidores de Archivados ni consumidores
+desconocidos.
+
+### Contratos HTTP
+
+| Función | Headers/body/cache | Parsing éxito | Error y fallback | Status backend | Vacío/JSON inválido |
+| --- | --- | --- | --- | --- | --- |
+| `apiListasCoTejoGenerate` | JSON + Bearer; body serializado; sin cache | `response.text()` → JSON | `error` → `message` → fallback; `status/payload` | 201; 400/401/404/500 | Éxito retorna `null` |
+| `apiListasCoTejoByUnidad` | Solo Bearer; sin body; `no-store` | Igual | Fallback “obtener las listas”; metadata | 200; 400/401/500; vacío válido es `{listas:[]}` | Éxito retorna `null` |
+| `apiListaCoTejoById` | Solo Bearer; sin body; `no-store` | Igual | Fallback “obtener la lista”; metadata | 200; 400/401/404/500 | Éxito retorna `null` |
+| `apiDeleteListaCotejo` | Solo Bearer; DELETE; sin body/cache | `response.json()` | Solo `payload.error`, luego `HTTP <status>`; sin metadata | 200; 400/401/404/500 | Rechaza al parsear éxito inválido/vacío |
+
+Los IDs de lista y unidad son UUID; `planeacion_ids` contiene bigint recibido
+como strings/números; `batch_id`, `tema_id` y `unidad_id` persistidos son UUID.
+Todas las rutas usan `requireAuth`. Los services filtran por `user_id`.
+`listas_cotejo.planeacion_id` es único y FK con cascade; `batch_id` y
+`unidad_id` son FK con `set null`.
+
+Los fallos 502/504 de generación IA se producen dentro del procesamiento por
+planeación y normalmente se convierten en entradas `skipped`; no deben
+reinterpretarse desde el frontend.
+
+### Helpers internos
+
+| Helper | Responsabilidad | Consumidores | Global implícito | Duplicación |
+| --- | --- | --- | --- | --- |
+| `buildListaCoTejoHeaders` | JSON, Bearer | Generación | Sí | No; POST únicamente |
+| `parseListaCoTejoApiJson` | Texto a JSON; vacío/inválido a `null` | Request común | Sí | No |
+| `createListaCoTejoApiError` | `Error` con `status/payload` | Request común | Sí | No |
+| `requestListaCoTejoJson` | Fetch, parsing y validación HTTP | Tres APIs | Sí | Ya es ejecutor canónico |
+
+El service añade `withListaCoTejoSession(callback)`: obtiene sesión mediante
+`window.requireSession`, devuelve `null` sin sesión y pasa el token al callback.
+No transforma errores.
+
+### Relación API/service
+
+| Función API | Wrapper service | API directa | Service | Diferencia contractual |
+| --- | --- | --- | --- | --- |
+| `apiListasCoTejoGenerate` | `generarListasCotejoUnidad` | Biblioteca | Dashboard legacy | Service obtiene sesión; retorno intacto; payload depende del caller |
+| `apiListasCoTejoByUnidad` | `obtenerListasCotejoPorUnidad` | Ninguno | Explorador legacy | Service normaliza array o `{listas}` a array/`[]` |
+| `apiListaCoTejoById` | `obtenerListaCoTejoDetalle` | Ninguno | Preview/descarga activos | Service extrae `response.lista` o conserva payload |
+| `apiDeleteListaCotejo` | Ninguno | Feature delete | Ninguno | Propiedad de Biblioteca desde 3.2 |
+
+Ambos niveles deben conservarse: Biblioteca genera mediante API directa,
+features consumen el service de detalle y el explorador legacy conserva los
+wrappers por unidad.
+
+### Comparación de lecturas
+
+| Aspecto | Por unidad | Detalle |
+| --- | --- | --- |
+| Consumidor | Explorador legacy | Preview/descarga de Biblioteca |
+| Endpoint | `/unidad/:unidadId` | `/:id` |
+| Retorno API | `{listas}` | `{lista}` |
+| Retorno service | Array/`[]`/`null` | Entidad/payload/`null` |
+| Error | Misma familia, fallback propio | Misma familia, fallback propio |
+| Encoding | `encodeURIComponent(unidadId)` | `encodeURIComponent(id)` |
+| HTTP | GET, Bearer, `no-store`, sin body/Content-Type | Igual |
+| Fase | 8 para consumidor legacy; API conservada | 3 para mecánica HTTP; 10 para wrapper |
+| Viable consolidar | Sí, conservando wrapper | Sí, conservando wrapper |
+
+### Generación
+
+Biblioteca llama directamente `apiListasCoTejoGenerate` con
+`{planeacion_ids}` y mantiene `pendingListaByBatchId`, feedback, espera local de
+1.5 segundos y recarga. El Dashboard legacy llama el service con
+`{planeacion_ids, unidad_id}` y mantiene `listaCotejoGeneration`.
+
+Al existir `planeacion_ids`, ambos callers ejecutan la rama backend
+`generarListasCotejoPorIds`; la rama solo por `unidad_id` no tiene emisor
+frontend confirmado. El backend procesa secuencialmente cada planeación,
+previene duplicados por `planeacion_id`, crea un job de métricas por request y
+una call por lista. Prompt version:
+`v2_lista_cotejo_actividades_momentos`. Todo el flujo pertenece a Fase 4.
+
+### Preview, descarga y delete
+
+Flujo activo:
+
+```text
+card → wrapper bib → feature → obtenerListaCoTejoDetalle
+     → apiListaCoTejoById → {lista} → entidad → modal o Word
+```
+
+Preview y descarga desde card hacen una lectura independiente por acción; no
+hay caché compartida. Descargar desde el preview reutiliza
+`explorerState.listaCotejoPreview.listaData`, por lo que no hace otra lectura.
+Preview consume `titulo`, `tema`, `criterios` y `total_puntos`; Word consume
+además `materia` y `nivel`. Los errores de preview se muestran en el modal; la
+descarga solo registra error.
+
+El preview legacy usa la entidad ya almacenada en
+`listasCotejoByUnidad`, sin GET de detalle.
+
+`apiDeleteListaCotejo` permanece en `biblioteca.api.js`, consolidado y validado
+en 3.2. Su consumidor es `ListaCotejoDelete`; moverlo duplicaría o cambiaría una
+frontera ya validada. Su reorganización solo puede reevaluarse en Fase 10.
+
+### Globals protegidas
+
+| Global | Firma/superficie | Propietario | Consumidores | Estado | Fase |
+| --- | --- | --- | --- | --- | --- |
+| `apiListasCoTejoGenerate` | `(payload, token)` | API listas | Biblioteca/service | Activa | 4/10 |
+| `apiListasCoTejoByUnidad` | `(unidadId, token)` | API listas | Service legacy | Legacy conservada | 8/10 |
+| `apiListaCoTejoById` | `(id, token)` | API listas | Service detalle | Activa | 3/10 |
+| Helpers API de listas | Firmas actuales de headers/parse/error/request | API listas | APIs del dominio | Globals implícitas | 10 |
+| `apiDeleteListaCotejo` | `(id, token)` | API Biblioteca | Feature delete | Activa | 10 |
+| `withListaCoTejoSession` | `(callback)` | Service listas | Tres wrappers service | Global implícita interna | 10 |
+| `generarListasCotejoUnidad` | `(payload)` | Service listas | Dashboard legacy | Compatibilidad | 4/8/10 |
+| `obtenerListasCotejoPorUnidad` | `(unidadId)` | Service listas | Dashboard legacy | Legacy | 8/10 |
+| `obtenerListaCoTejoDetalle` | `(id)` | Service listas | Features | Activa | 10 |
+| `ListaCotejoPreview` | `render/open/openBiblioteca/close` | Feature preview | Biblioteca/Dashboard | Activa/legacy | 8/10 |
+| `ListaCotejoDownload` | `download/downloadBiblioteca` | Feature download | Biblioteca/Dashboard | Activa | 10 |
+| `ListaCotejoDelete` | `deleteFromBiblioteca` | Feature delete | Biblioteca | Activa | 10 |
+| `bibDescargarLista` | `(listaId)` | Página Biblioteca | Handler card | Wrapper activo | 10 |
+| `openBibliotecaListaPreview` | `(listaId)` | Página Biblioteca | Handler card | Wrapper activo | 10 |
+| `bibEliminarLista` | `(listaId, conjuntoId)` | Página Biblioteca | Handler card | Wrapper activo | 10 |
+| Coordinadores de modal de lista | Firmas actuales de open/close/render/submit | Página Biblioteca | Handler y modal activos | Globals implícitas activas | 4/6/10 |
+| `renderListaCotejoPreviewModal` / `closeListaCotejoPreview` | `()` | Dashboard | Render/listeners | Compatibilidad | 8/10 |
+| `openListaCotejoPreview` | `(listaId)` | Dashboard | Explorador | Global implícita legacy | 8 |
+| `ensureListasCotejo` / `submitListaCotejoGenerate` | Firmas actuales | Dashboard | Explorador | Globals implícitas legacy | 4/8 |
+| `descargarListaCotejoWord` | `(lista, filename)` | `wordExport.js` | Feature download | Compartida activa | Conservar |
+
+### Duplicaciones y candidatos
+
+| Duplicación/candidato | Funciones | Tipo | Riesgo | Decisión |
+| --- | --- | --- | --- | --- |
+| Opciones GET repetidas | Dos lecturas API | Duplicación HTTP real | Bajo | Sesión 3.6 |
+| Helpers de request | Cuatro helpers API | No duplicado | Bajo sin beneficio | No realizar |
+| API + service detalle | API por ID y wrapper | Alias de compatibilidad con normalización | Medio | Conservar |
+| API + service unidad | API por unidad y wrapper | Listado legacy con normalización | Medio | Fase 8 |
+| Generación directa/service | API generate y wrapper | Generación con callers distintos | Alto | Fase 4 |
+| Eliminar wrappers | Tres services y wrappers `bib*` | Compatibilidad activa | Medio/alto | Fase 10 |
+| Mover delete | `apiDeleteListaCotejo` | Frontera validada | Medio | Fase 10 |
+
+### Sesión 3.6 seleccionada
+
+**Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo.**
+
+Incluirá únicamente `apiListasCoTejoByUnidad(unidadId, accessToken)` y
+`apiListaCoTejoById(id, accessToken)` dentro de
+`js/api/listas_cotejo.api.js`. Podrá crear un helper GET léxico privado que
+reciba path, token y fallback, y delegue en `requestListaCoTejoJson`.
+
+Debe preservar GET implícito, paths, encoding, Bearer sin `Content-Type`,
+`no-store`, ausencia de body, contenedores, fallbacks, parsing tolerante,
+metadata, globals, services y consumidores. Riesgo bajo. Excluye generación,
+pending, delete, services, features, páginas, autenticación, backend,
+Archivados y legacy.
+
+Validaciones futuras: sintaxis, Jest, smoke previo/posterior para URLs,
+encoding, opciones, contenedores, `error/message/fallback`, `status/payload`,
+vacío/JSON inválido a `null`, una petición, globals y helper fuera de `window`;
+preview/descarga activa en manual. El listado legacy se valida por smoke. No
+está implementada.
+
+### Exclusiones y riesgos
+
+No se modificaron JavaScript, HTML, CSS, generación, pending, preview,
+descarga, delete, autenticación, backend, SQL, Archivados ni legacy. Permanecen
+el orden de scripts contractual, helpers top-level como globals implícitas,
+parsing tolerante a `null`, service que puede devolver `null` sin sesión,
+Dashboard legacy con payload híbrido, generación secuencial, wrappers activos
+y endpoint backend por planeación sin wrapper frontend.

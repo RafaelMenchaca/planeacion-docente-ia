@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.4.
+Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.5.
 Este documento inventaría la arquitectura HTTP real y registra las
 consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
@@ -454,9 +454,9 @@ pero existen consumidores directos y consumidores mediante service.
 | Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 completada y validada manualmente | Sesión de Fase 3 completada |
 | Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2 completada y validada manualmente | Sesión de Fase 3 completada |
 | Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
-| Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4 completada en código; validación manual pendiente | Sesión de Fase 3 completada en código |
+| Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4 completada y validada manualmente | Sesión de Fase 3 completada |
 | Anexos | generación y regeneración | anexos API/Biblioteca | Generación activa; regeneración compatible | Alto | Separar pending y generación | Fase 4 |
-| Listas | lecturas | API/service | Activo/legacy | Medio | 3.5, auditoría puntual | Próxima sesión de Fase 3 |
+| Listas | dos lecturas GET | API/service | Detalle activo; listado legacy | Bajo | 3.6, helper GET específico | Próxima sesión de Fase 3 |
 | Exámenes | lecturas | API/service | Activo/legacy | Medio | Sin generación/polling | Sesión posterior de Fase 3 |
 | Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
 | Parsing común de errores | seis familias | Todos los API | Global | Alto | No universalizar prematuramente | Conservar |
@@ -556,7 +556,7 @@ exclusivamente `apiObtenerAnexosPorBatch`,
 GET privado y específico que preserve paths, encoding, fallbacks, contenedores,
 parsing, metadata y globals. Su implementación se registra a continuación.
 
-## Sesión 3.4 completada en código
+## Sesión 3.4 completada y validada
 
 **Sesión 3.4 — Consolidación interna de lecturas de anexos.**
 
@@ -584,12 +584,57 @@ respectivamente. Cubrieron URLs y encoding, opciones HTTP, una petición por
 llamada, contenedores, prioridad `error` → `message` → fallback, metadata
 `status/payload`, cuerpo vacío y JSON inválido exitoso convertido en `null`,
 HTTP no JSON, globals y aislamiento del helper. `node --check` y Jest también
-pasaron. La validación manual de preview, descarga desde card, descarga desde
-preview y regresión permanece pendiente; no se declara aprobada.
+pasaron. La validación manual fue aprobada por el usuario: preview, metadata,
+contenido, cierre y reapertura, descarga desde card, modal de nombre, archivo
+descargado, descarga desde preview y reutilización del objeto quedaron
+correctos, sin GET duplicados inesperados ni errores de `anexosGet`.
+
+## Sesión 3.5 completada
+
+**Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo.**
+
+La auditoría confirmó tres APIs en `listas_cotejo.api.js`, tres wrappers en
+`listas_cotejo.service.js` y `apiDeleteListaCotejo` en
+`biblioteca.api.js`. Los cuatro helpers del API ya concentran headers JSON,
+parsing tolerante, errores con metadata y ejecución HTTP. El service agrega
+sesión y normaliza retornos; devuelve `null` si no existe sesión.
+
+| Función | Flujo | Consumidor | Retorno público |
+| --- | --- | --- | --- |
+| `apiListasCoTejoGenerate` | Generación activa y compatibilidad legacy | Biblioteca directa; service desde Dashboard legacy | Payload backend sin transformar |
+| `apiListasCoTejoByUnidad` | Listado legacy | `obtenerListasCotejoPorUnidad` → explorador | `{listas}` |
+| `apiListaCoTejoById` | Detalle activo | `obtenerListaCoTejoDetalle` → preview/descarga | `{lista}` |
+| `apiDeleteListaCotejo` | Delete activo de Biblioteca | `ListaCotejoDelete` | `{ok:true}` |
+| `generarListasCotejoUnidad` | Compatibilidad de generación | Dashboard legacy | Payload API o `null` sin sesión |
+| `obtenerListasCotejoPorUnidad` | Normalización legacy | `ensureListasCotejo` | Array, `[]` o `null` sin sesión |
+| `obtenerListaCoTejoDetalle` | Normalización compartida activa | Features de preview/descarga | Entidad, payload compatible o `null` |
+
+Las dos lecturas API comparten GET implícito, Bearer sin `Content-Type`,
+ausencia de body, `cache:"no-store"`, parsing, prioridad de errores y metadata.
+Solo difieren en path, fallback y contenedor. El service conserva diferencias
+necesarias: el listado normaliza a array y el detalle extrae `lista`.
+
+Generación queda fuera de Fase 3. Biblioteca envía `planeacion_ids`; el
+Dashboard legacy envía `planeacion_ids` y `unidad_id`, por lo que también activa
+la rama backend por IDs. La rama backend exclusivamente por `unidad_id`
+permanece disponible, pero no tiene emisor frontend confirmado. La generación
+es secuencial por planeación, crea métricas y usa
+`v2_lista_cotejo_actividades_momentos`.
+
+El preview de Biblioteca solicita un detalle por apertura y la descarga desde
+card solicita otro detalle por acción. La descarga desde el preview reutiliza
+`explorerState.listaCotejoPreview.listaData` y no hace otro GET. El explorador
+legacy abre el preview desde el array ya cargado por unidad.
+
+`apiDeleteListaCotejo` sigue consolidado en Biblioteca desde 3.2; no se mueve ni
+duplica. No hay funciones o consumidores desconocidos.
 
 Próxima sesión única, sin implementar:
-**Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo.** Deberá separar
-lecturas de generación y compatibilidad antes de proponer otra consolidación.
+**Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo.** Incluirá
+exclusivamente `apiListasCoTejoByUnidad(unidadId, accessToken)` y
+`apiListaCoTejoById(id, accessToken)` en `listas_cotejo.api.js`, mediante un
+helper GET léxico privado que delegue en `requestListaCoTejoJson` y preserve
+paths, encoding, fallbacks, contenedores, parsing, metadata, globals y services.
 
 ## Riesgos priorizados
 

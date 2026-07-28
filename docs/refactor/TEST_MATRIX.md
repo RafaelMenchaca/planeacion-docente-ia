@@ -396,10 +396,10 @@ La validación manual 3.2 permanece aprobada y no debe solicitarse de nuevo.
 | Helpers protegidos | Headers, parsing, error y request sin cambios | Aprobado por comparación con `HEAD` |
 | Generación/regeneración | Cuerpos literales sin cambios | Aprobado por comparación con `HEAD` |
 | Delete/consumidores/HTML/backend | Sin diff | Aprobado estáticamente |
-| Preview manual | Contenido, título, metadata, reapertura y una lectura | Pendiente |
-| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Pendiente |
-| Descarga desde preview | Reutiliza objeto y no repite lectura | Pendiente |
-| Regresión manual | Biblioteca, tabs, otros previews/descargas, deletes y Detalle | Pendiente |
+| Preview manual | Contenido, título, metadata, cierre/reapertura y una lectura | Aprobado por el usuario |
+| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Aprobado por el usuario |
+| Descarga desde preview | Reutiliza objeto y no repite lectura | Aprobado por el usuario |
+| Regresión manual | Sin GET duplicados ni errores relacionados con `anexosGet` | Aprobado por el usuario |
 
 ### Evidencia automatizada
 
@@ -409,7 +409,32 @@ La validación manual 3.2 permanece aprobada y no debe solicitarse de nuevo.
 - `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
 - Las lecturas por batch y planeación, sin consumidor confirmado, se validaron
   únicamente mediante smoke.
-- La validación manual 3.4 permanece pendiente y no se declara aprobada.
+- Validación manual 3.4 aprobada por el usuario: preview, metadata/contenido,
+  reapertura, ambas descargas, modal/nombre/archivo, reutilización del objeto,
+  cero GET duplicados y cero errores relacionados.
+
+## Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Estado inicial | `refactor-front`, HEAD `18e96ba`, árbol limpio | Aprobado |
+| Validación 3.4 | Evidencia manual proporcionada por el usuario | Aprobada |
+| Backend | `refactor-back`, HEAD `e08d6e4`, árbol limpio | Aprobado |
+| Funciones | Tres APIs, tres wrappers service y delete en Biblioteca | Clasificadas |
+| Consumidores | Biblioteca, features y explorador legacy | Confirmados |
+| Desconocidos | Funciones y consumidores | Cero |
+| Helpers | Headers, parsing, error y request | Cuatro identificados |
+| API/service | Sesión y normalizaciones distintas | Ambos niveles conservados |
+| Lecturas | GET equivalente; retornos service distintos | Viable consolidar API |
+| Generación | Selección por IDs, unidad legacy, pending y métricas | Fase 4 |
+| Preview/descarga | Detalle activo; preview reutiliza objeto al descargar | Confirmado |
+| Delete | Consolidado en Biblioteca desde 3.2 | Conservar |
+| Sesión siguiente | Una sola 3.6: dos lecturas de listas | Aprobado |
+| Alcance | Solo Markdown; sin cambios funcionales ni backend | Aprobado |
+
+No se ejecutaron pruebas funcionales en 3.5 porque la sesión solo modifica
+documentación. La validación manual 3.4 permanece aprobada y no debe solicitarse
+de nuevo.
 
 ## Regresión acumulativa
 

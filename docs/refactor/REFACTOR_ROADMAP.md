@@ -334,14 +334,25 @@ contenedores y fallbacks, y delegan solo GET implícito, Bearer sin
 `Content-Type`, `cache:"no-store"` y URL base al helper léxico privado
 `anexosGet`. `requestAnexosJson`, parsing, errores, metadata, generación,
 regeneración, delete y consumidores quedaron intactos. Los smokes previo y
-posterior, `node --check` y Jest pasaron; la validación manual 3.4 permanece
-pendiente.
+posterior, `node --check` y Jest pasaron; la validación manual 3.4 quedó
+aprobada. El usuario confirmó preview, metadata, reapertura, descargas desde
+card y preview, reutilización del objeto y ausencia de GET duplicados o errores
+relacionados con `anexosGet`.
+
+La Sesión `3.5 — Auditoría puntual de APIs de listas de cotejo` quedó completada
+como auditoría documental. Confirmó tres APIs, tres wrappers service, cuatro
+helpers API y el delete ya consolidado en Biblioteca. El detalle es activo para
+preview/descarga; el listado por unidad pertenece al explorador legacy. Las dos
+lecturas comparten mecánica GET, pero los wrappers conservan normalizaciones
+distintas. Generación por `planeacion_ids`, pending, métricas y la rama backend
+por unidad quedan en Fase 4.
 
 La única siguiente sesión seleccionada, aún sin implementar, es
-`Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo`. Será documental y
-deberá separar lecturas activas, compatibilidad y generación antes de decidir
-una consolidación. Fase 3 continúa en progreso; autenticación, Archivados,
-legacy, generación, polling y SSE siguen excluidos.
+`Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo`. Incluirá
+solo `apiListasCoTejoByUnidad` y `apiListaCoTejoById`, con un helper GET privado
+que preserve sus contratos y delegue en `requestListaCoTejoJson`. Fase 3
+continúa en progreso; services, consumidores, autenticación, generación,
+delete, Archivados y legacy no se modificarán.
 
 ### Dependencias
 
