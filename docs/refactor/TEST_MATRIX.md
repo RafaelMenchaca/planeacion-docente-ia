@@ -377,6 +377,40 @@ no se solicita de nuevo.
 No se ejecutaron pruebas funcionales porque 3.3 solo modifica documentación.
 La validación manual 3.2 permanece aprobada y no debe solicitarse de nuevo.
 
+## Sesión 3.4 — Consolidación interna de lecturas de anexos
+
+| Escenario | Evidencia | Resultado |
+| --- | --- | --- |
+| Lectura por batch | URL y UUID codificados, GET implícito, Bearer, sin `Content-Type`/body, `no-store`, `{anexos}` | Aprobado en smoke |
+| Lectura por planeación | URL con bigint, GET implícito, Bearer, sin `Content-Type`/body, `no-store`, `{anexo}` | Aprobado en smoke |
+| Lectura de detalle | URL y UUID codificados, GET implícito, Bearer, `{anexo}` | Aprobado en smoke |
+| Peticiones | Una llamada por invocación | Aprobado en smoke |
+| Error con `payload.error` | Mensaje prioritario, status y payload | Aprobado en smoke |
+| Error con `payload.message` | Mensaje secundario, status y payload | Aprobado en smoke |
+| Error sin mensaje | Fallback específico, status y payload | Aprobado en smoke |
+| HTTP no JSON | Fallback específico, status y `payload:null` | Aprobado en smoke |
+| Cuerpo vacío exitoso | Retorno `null` | Aprobado en smoke |
+| JSON inválido exitoso | Retorno `null` | Aprobado en smoke |
+| Globals | Tres funciones públicas con firmas vigentes | Aprobado en script clásico |
+| Helper | `anexosGet` ausente de `window` | Aprobado |
+| Helpers protegidos | Headers, parsing, error y request sin cambios | Aprobado por comparación con `HEAD` |
+| Generación/regeneración | Cuerpos literales sin cambios | Aprobado por comparación con `HEAD` |
+| Delete/consumidores/HTML/backend | Sin diff | Aprobado estáticamente |
+| Preview manual | Contenido, título, metadata, reapertura y una lectura | Pendiente |
+| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Pendiente |
+| Descarga desde preview | Reutiliza objeto y no repite lectura | Pendiente |
+| Regresión manual | Biblioteca, tabs, otros previews/descargas, deletes y Detalle | Pendiente |
+
+### Evidencia automatizada
+
+- Smoke previo: pasó con 21 peticiones simuladas y 113 aserciones.
+- Smoke posterior: pasó con 21 peticiones simuladas y 114 aserciones.
+- `node --check js/api/anexos.api.js`: pasó.
+- `npm test -- --runInBand`: pasó, 1 suite y 2 pruebas.
+- Las lecturas por batch y planeación, sin consumidor confirmado, se validaron
+  únicamente mediante smoke.
+- La validación manual 3.4 permanece pendiente y no se declara aprobada.
+
 ## Regresión acumulativa
 
 - Cada fase ejecuta sus pruebas propias y las pruebas críticas de todas las fases anteriores.

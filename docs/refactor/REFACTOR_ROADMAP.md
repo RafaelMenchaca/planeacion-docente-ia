@@ -327,12 +327,21 @@ consumidores activos; las lecturas por batch y por planeación no tienen
 consumidor confirmado. Generación tiene un flujo activo; regeneración conserva
 una rama de compatibilidad sin emisor DOM.
 
-La única siguiente sesión seleccionada es
-`3.4 — Consolidación interna de lecturas de anexos`. Incluirá exclusivamente
-`apiObtenerAnexosPorBatch`, `apiObtenerAnexoPorPlaneacion` y
-`apiObtenerAnexoDetalle`, preservando contenedores, fallbacks, metadata de error
-y globals. No está implementada. Generación, regeneración, delete,
-autenticación, consumidores, Archivados y legacy siguen excluidos.
+La Sesión `3.4 — Consolidación interna de lecturas de anexos` quedó completada
+en código. `apiObtenerAnexosPorBatch`, `apiObtenerAnexoPorPlaneacion` y
+`apiObtenerAnexoDetalle` conservan firmas, globals, paths, encoding,
+contenedores y fallbacks, y delegan solo GET implícito, Bearer sin
+`Content-Type`, `cache:"no-store"` y URL base al helper léxico privado
+`anexosGet`. `requestAnexosJson`, parsing, errores, metadata, generación,
+regeneración, delete y consumidores quedaron intactos. Los smokes previo y
+posterior, `node --check` y Jest pasaron; la validación manual 3.4 permanece
+pendiente.
+
+La única siguiente sesión seleccionada, aún sin implementar, es
+`Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo`. Será documental y
+deberá separar lecturas activas, compatibilidad y generación antes de decidir
+una consolidación. Fase 3 continúa en progreso; autenticación, Archivados,
+legacy, generación, polling y SSE siguen excluidos.
 
 ### Dependencias
 

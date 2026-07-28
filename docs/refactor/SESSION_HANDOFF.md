@@ -20,6 +20,8 @@
 - **Sesión 3.2:** Consolidación interna de deletes de Biblioteca, completada.
 - **Validación manual 3.2:** aprobada.
 - **Sesión 3.3:** Auditoría puntual de APIs de anexos, completada.
+- **Sesión 3.4:** Consolidación interna de lecturas de anexos, completada en código.
+- **Validación manual 3.4:** pendiente.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -28,11 +30,12 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.4 — Consolidación interna de lecturas de anexos.
+- **Próxima sesión seleccionada:** 3.5 — Auditoría puntual de APIs de listas de cotejo.
 
 Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
-Sesión 3.3 es documental y no autoriza el cierre de la fase ni el inicio de
-generación, regeneración, polling, Archivados o legacy.
+Sesión 3.4 está completada en código y pendiente de validación manual; no
+autoriza el cierre de la fase ni el inicio de generación, regeneración,
+polling, Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -1533,4 +1536,100 @@ Riesgo bajo. Excluye generación, regeneración, delete, autenticación, feature
 páginas, services, backend, Archivados y legacy. Las validaciones futuras deben
 cubrir las tres URLs, una petición por llamada, contenedores sin transformar,
 errores JSON/texto/vacío/inválido, metadata, globals, helper privado y regresión
-manual de preview/descarga. No está implementada.
+manual de preview/descarga. La implementación se completó en 3.4 y se registra
+a continuación.
+
+## Sesión 3.4 — Consolidación interna de lecturas de anexos
+
+### Estado de entrada
+
+- Frontend: `refactor-front`, HEAD `3cbf8b1`, working tree limpio.
+- Commit 3.3: `3cbf8b1 docs(refactor): audit annex API contracts`.
+- Backend: `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; sesiones 3.0–3.3 completadas.
+- Validaciones manuales 3.1 y 3.2 aprobadas.
+
+### Consumidores y contratos preservados
+
+| Función | Consumidor | Argumentos | Retorno esperado | Clasificación |
+| --- | --- | --- | --- | --- |
+| `apiObtenerAnexosPorBatch(batchId, accessToken)` | Sin consumidor confirmado | UUID y token | Contenedor `{anexos}` | Compatibilidad sin consumidor |
+| `apiObtenerAnexoPorPlaneacion(planeacionId, accessToken)` | Sin consumidor confirmado | bigint y token | Contenedor `{anexo}` | Compatibilidad sin consumidor |
+| `apiObtenerAnexoDetalle(anexoId, accessToken)` | `AnexoPreview.open` | UUID y token | `res?.anexo` | Preview activa |
+| `apiObtenerAnexoDetalle(anexoId, accessToken)` | `AnexoDownload.downloadBiblioteca` | UUID y token | `res?.anexo` | Descarga activa |
+
+| Aspecto | Por batch | Por planeación | Detalle |
+| --- | --- | --- | --- |
+| Path | `/api/anexos/batch/:batchId` | `/api/anexos/planeacion/:planeacionId` | `/api/anexos/:anexoId` |
+| Encoding | `encodeURIComponent(batchId)` | `encodeURIComponent(planeacionId)` | `encodeURIComponent(anexoId)` |
+| Método | GET implícito | GET implícito | GET implícito |
+| Headers | Solo Bearer | Solo Bearer | Solo Bearer |
+| Cache/body | `no-store` / sin body | `no-store` / sin body | `no-store` / sin body |
+| Retorno | `{anexos}` sin transformar | `{anexo}` sin transformar | `{anexo}` sin transformar |
+| Fallback | Anexos del bloque | Anexo de la planeación | Anexo |
+
+### Implementación
+
+Se creó `const anexosGet = function (path, accessToken, fallbackMessage)` dentro
+de `js/api/anexos.api.js`. Es un binding léxico privado del script clásico: no
+aparece en `window`, solo maneja las opciones compartidas de las tres lecturas
+y retorna directamente la promesa de `requestAnexosJson`.
+
+Las funciones públicas siguen siendo `async`, construyen su path y encoding, y
+aportan su fallback específico. El helper comparte únicamente:
+
+- prefijo `API_BASE_URL`;
+- GET implícito, sin propiedad `method` nueva;
+- `Authorization: Bearer <token>`;
+- ausencia de `Content-Type` y body;
+- `cache: "no-store"`;
+- delegación al ejecutor canónico `requestAnexosJson`.
+
+Los cuatro helpers anteriores, `apiGenerarAnexo` y `apiRegenerarAnexo` fueron
+comparados contra `HEAD` y quedaron literalmente intactos. `apiDeleteAnexo`
+permanece en `biblioteca.api.js` y tampoco cambió.
+
+### Parsing y errores
+
+`requestAnexosJson` sigue leyendo `response.text()`. JSON válido retorna el
+payload; cuerpo vacío o JSON inválido retorna `null` incluso en éxito. Ante
+HTTP de error conserva la prioridad `payload.error` → `payload.message` →
+fallback específico y crea un `Error` con `status` y `payload`. Un cuerpo HTTP
+no JSON usa el fallback, conserva el status y adjunta `payload:null`.
+
+### Validaciones
+
+- Smoke previo: aprobado, 21 peticiones simuladas y 113 aserciones.
+- Smoke posterior: aprobado, 21 peticiones simuladas y 114 aserciones.
+- Se validaron tres URLs, encoding, GET implícito, Bearer, ausencia de
+  `Content-Type`/body, `no-store`, una petición por llamada, contenedores,
+  fallbacks, errores JSON/no JSON, metadata, vacío, JSON inválido, globals y
+  helper ausente de `window`.
+- Comparación de funciones protegidas contra `HEAD`: seis sin cambios.
+- `node --check js/api/anexos.api.js`: aprobado.
+- `npm test -- --runInBand`: aprobado, 1 suite y 2 pruebas.
+- `git diff --check`: se ejecuta en el cierre de sesión.
+
+### Validación manual
+
+Pendiente. No se ejecutaron ni se declaran aprobados preview, descarga desde
+card, descarga desde preview ni la regresión en navegador. Las lecturas sin
+consumidor por batch y por planeación quedaron cubiertas por smoke.
+
+### Exclusiones y hallazgos conservados
+
+No se modificaron generación, regeneración, pending, delete, preview, descarga,
+consumidores, autenticación, otros API files, HTML, estado, render, backend,
+SQL, Archivados ni legacy. Permanecen dos lecturas sin consumidor, JSON
+inválido exitoso convertido en `null`, helpers top-level anteriores como
+globals implícitas, generación secuencial, regeneración sin emisor DOM vigente,
+`batch_id` sin FK documentada, README desactualizado y orden de scripts
+contractual.
+
+### Próxima sesión
+
+**Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo.**
+
+Será exclusivamente documental. Debe clasificar lecturas, generación,
+compatibilidad, globals, consumidores y contratos antes de seleccionar una
+consolidación. No está implementada y Fase 3 continúa en progreso.

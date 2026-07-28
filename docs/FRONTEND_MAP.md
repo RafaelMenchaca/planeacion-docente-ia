@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.3.
+Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.4.
 Este documento inventaría la arquitectura HTTP real y registra las
 consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
@@ -215,6 +215,7 @@ Helpers de API sin HTTP propio:
 | biblioteca | `bibliotecaGet` | Solo las dos lecturas GET de conjuntos; no está en `window` | Biblioteca activa |
 | biblioteca | `bibliotecaDelete` | Solo los cinco deletes de Biblioteca; no está en `window` | Biblioteca activa |
 | anexos | `buildAnexosHeaders`, `parseAnexosApiJson`, `createAnexosApiError`, `requestAnexosJson` | Todas las API del dominio | Compartida activa |
+| anexos | `anexosGet` | Solo las tres lecturas GET; delega en `requestAnexosJson` y no está en `window` | Compartida activa |
 | exámenes | `buildExamJsonHeaders`, `parseExamApiJson`, `createExamApiError`, `requestExamJson` | Todas las API del dominio | Compartida activa |
 | listas | `buildListaCoTejoHeaders`, `parseListaCoTejoApiJson`, `createListaCoTejoApiError`, `requestListaCoTejoJson` | Todas las API del dominio | Compartida activa |
 | jerarquía | `buildJsonHeaders`, `parseApiJson`, `createApiError`, `requestJson` | Todas las API del dominio | Compatibilidad |
@@ -453,9 +454,9 @@ pero existen consumidores directos y consumidores mediante service.
 | Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 completada y validada manualmente | Sesión de Fase 3 completada |
 | Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2 completada y validada manualmente | Sesión de Fase 3 completada |
 | Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
-| Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4, helper GET específico | Próxima sesión de Fase 3 |
+| Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4 completada en código; validación manual pendiente | Sesión de Fase 3 completada en código |
 | Anexos | generación y regeneración | anexos API/Biblioteca | Generación activa; regeneración compatible | Alto | Separar pending y generación | Fase 4 |
-| Listas | lecturas | API/service | Activo/legacy | Medio | Tras separar legacy | Sesión posterior de Fase 3 |
+| Listas | lecturas | API/service | Activo/legacy | Medio | 3.5, auditoría puntual | Próxima sesión de Fase 3 |
 | Exámenes | lecturas | API/service | Activo/legacy | Medio | Sin generación/polling | Sesión posterior de Fase 3 |
 | Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
 | Parsing común de errores | seis familias | Todos los API | Global | Alto | No universalizar prematuramente | Conservar |
@@ -548,12 +549,47 @@ Generación tiene un consumidor activo desde el modal de Biblioteca y usa
 en Fase 4. El delete ya fue consolidado y validado en 3.2, por lo que no se
 mueve. No existen consumidores desconocidos, de Archivados o legacy.
 
-Próxima sesión seleccionada, sin implementar:
-**Sesión 3.4 — Consolidación interna de lecturas de anexos.** Incluirá
+La sesión seleccionada fue
+**Sesión 3.4 — Consolidación interna de lecturas de anexos.** Incluyó
 exclusivamente `apiObtenerAnexosPorBatch`,
 `apiObtenerAnexoPorPlaneacion` y `apiObtenerAnexoDetalle`, mediante un helper
 GET privado y específico que preserve paths, encoding, fallbacks, contenedores,
-parsing, metadata y globals.
+parsing, metadata y globals. Su implementación se registra a continuación.
+
+## Sesión 3.4 completada en código
+
+**Sesión 3.4 — Consolidación interna de lecturas de anexos.**
+
+Las tres funciones públicas conservan firmas, globals, `encodeURIComponent`,
+paths y fallbacks propios. Ahora delegan únicamente la construcción de la URL
+base y las opciones repetidas de GET implícito, Bearer sin `Content-Type`,
+ausencia de body y `cache:"no-store"` al helper léxico privado
+`anexosGet(path, accessToken, fallbackMessage)`.
+
+`anexosGet` no se publica en `window`, no obtiene sesión, no acepta opciones
+universales y delega sin transformar el resultado en `requestAnexosJson`. Este
+último, junto con `buildAnexosHeaders`, `parseAnexosApiJson` y
+`createAnexosApiError`, quedó literalmente intacto. También permanecieron sin
+cambios generación, regeneración, el delete alojado en Biblioteca, preview,
+descarga, consumidores, autenticación, HTML, backend, Archivados y legacy.
+
+| Función | Consumidores | Retorno preservado | Fallback preservado |
+| --- | --- | --- | --- |
+| `apiObtenerAnexosPorBatch(batchId, accessToken)` | Sin consumidor confirmado | `{anexos}` o `null` según parsing | `No se pudieron obtener los anexos del bloque` |
+| `apiObtenerAnexoPorPlaneacion(planeacionId, accessToken)` | Sin consumidor confirmado | `{anexo}` o `null` según parsing | `No se pudo obtener el anexo de la planeacion` |
+| `apiObtenerAnexoDetalle(anexoId, accessToken)` | `AnexoPreview` y `AnexoDownload` | `{anexo}` o `null` según parsing | `No se pudo obtener el anexo` |
+
+Los smokes previo y posterior aprobaron 21 peticiones y 113/114 aserciones,
+respectivamente. Cubrieron URLs y encoding, opciones HTTP, una petición por
+llamada, contenedores, prioridad `error` → `message` → fallback, metadata
+`status/payload`, cuerpo vacío y JSON inválido exitoso convertido en `null`,
+HTTP no JSON, globals y aislamiento del helper. `node --check` y Jest también
+pasaron. La validación manual de preview, descarga desde card, descarga desde
+preview y regresión permanece pendiente; no se declara aprobada.
+
+Próxima sesión única, sin implementar:
+**Sesión 3.5 — Auditoría puntual de APIs de listas de cotejo.** Deberá separar
+lecturas de generación y compatibilidad antes de proponer otra consolidación.
 
 ## Riesgos priorizados
 

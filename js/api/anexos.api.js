@@ -34,6 +34,17 @@ async function requestAnexosJson(url, options, fallbackMessage) {
   return payload;
 }
 
+const anexosGet = function (path, accessToken, fallbackMessage) {
+  return requestAnexosJson(
+    `${API_BASE_URL}${path}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store"
+    },
+    fallbackMessage
+  );
+};
+
 async function apiGenerarAnexo(planeacionId, accessToken) {
   return requestAnexosJson(
     `${API_BASE_URL}/api/anexos/generate`,
@@ -47,34 +58,25 @@ async function apiGenerarAnexo(planeacionId, accessToken) {
 }
 
 async function apiObtenerAnexosPorBatch(batchId, accessToken) {
-  return requestAnexosJson(
-    `${API_BASE_URL}/api/anexos/batch/${encodeURIComponent(batchId)}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store"
-    },
+  return anexosGet(
+    `/api/anexos/batch/${encodeURIComponent(batchId)}`,
+    accessToken,
     "No se pudieron obtener los anexos del bloque"
   );
 }
 
 async function apiObtenerAnexoPorPlaneacion(planeacionId, accessToken) {
-  return requestAnexosJson(
-    `${API_BASE_URL}/api/anexos/planeacion/${encodeURIComponent(planeacionId)}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store"
-    },
+  return anexosGet(
+    `/api/anexos/planeacion/${encodeURIComponent(planeacionId)}`,
+    accessToken,
     "No se pudo obtener el anexo de la planeacion"
   );
 }
 
 async function apiObtenerAnexoDetalle(anexoId, accessToken) {
-  return requestAnexosJson(
-    `${API_BASE_URL}/api/anexos/${encodeURIComponent(anexoId)}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store"
-    },
+  return anexosGet(
+    `/api/anexos/${encodeURIComponent(anexoId)}`,
+    accessToken,
     "No se pudo obtener el anexo"
   );
 }
