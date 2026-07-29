@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.5.
+Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.6.
 Este documento inventaría la arquitectura HTTP real y registra las
 consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
@@ -456,8 +456,8 @@ pero existen consumidores directos y consumidores mediante service.
 | Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
 | Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4 completada y validada manualmente | Sesión de Fase 3 completada |
 | Anexos | generación y regeneración | anexos API/Biblioteca | Generación activa; regeneración compatible | Alto | Separar pending y generación | Fase 4 |
-| Listas | dos lecturas GET | API/service | Detalle activo; listado legacy | Bajo | 3.6, helper GET específico | Próxima sesión de Fase 3 |
-| Exámenes | lecturas | API/service | Activo/legacy | Medio | Sin generación/polling | Sesión posterior de Fase 3 |
+| Listas | dos lecturas GET | API/service | Detalle activo; listado legacy | Bajo | 3.6 completada en código; validación manual pendiente | Sesión de Fase 3 implementada |
+| Exámenes | lecturas | API/service | Activo/legacy | Bajo por auditar | 3.7, auditoría puntual sin generación/polling | Próxima sesión de Fase 3 |
 | Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
 | Parsing común de errores | seis familias | Todos los API | Global | Alto | No universalizar prematuramente | Conservar |
 | Fetch directos de páginas | tres loaders HTML | páginas/UI | Shell | Medio | Desacople de dashboard | Fase 7 |
@@ -629,12 +629,39 @@ legacy abre el preview desde el array ya cargado por unidad.
 `apiDeleteListaCotejo` sigue consolidado en Biblioteca desde 3.2; no se mueve ni
 duplica. No hay funciones o consumidores desconocidos.
 
+## Sesión 3.6 completada en código
+
+**Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo.**
+
+`apiListasCoTejoByUnidad(unidadId, accessToken)` y
+`apiListaCoTejoById(id, accessToken)` conservan firmas, globals, paths,
+`encodeURIComponent`, contenedores y fallbacks. Ambas delegan únicamente la URL
+base y las opciones repetidas —GET implícito, Bearer sin `Content-Type`,
+ausencia de body y `cache:"no-store"`— al helper léxico privado
+`listasCotejoGet(path, accessToken, fallbackMessage)`.
+
+El helper no se publica en `window`, no obtiene sesión, no acepta opciones
+universales y delega sin transformar el payload en `requestListaCoTejoJson`.
+Este ejecutor, los otros tres helpers existentes, `apiListasCoTejoGenerate`, los
+services, el delete alojado en Biblioteca, consumidores, preview, descarga,
+autenticación, backend, Archivados y legacy quedaron intactos.
+
+| Función | Consumidores | Retorno API preservado | Fallback preservado |
+| --- | --- | --- | --- |
+| `apiListasCoTejoByUnidad(unidadId, accessToken)` | `obtenerListasCotejoPorUnidad` → `ensureListasCotejo` → explorador legacy | `{listas}` o `null` según parsing | `No se pudieron obtener las listas de cotejo` |
+| `apiListaCoTejoById(id, accessToken)` | `obtenerListaCoTejoDetalle` → preview/descarga | `{lista}` o `null` según parsing | `No se pudo obtener la lista de cotejo` |
+
+Los smokes previo y posterior aprobaron 14 peticiones simuladas y 48/50
+aserciones, respectivamente. Cubrieron URLs y encoding, opciones HTTP, una
+petición por llamada, contenedores, prioridad `error` → `message` → fallback,
+metadata `status/payload`, cuerpo vacío y JSON inválido exitoso convertido en
+`null`, HTTP no JSON, globals y aislamiento del helper. `node --check` y Jest
+también pasaron. La validación manual 3.6 permanece pendiente.
+
 Próxima sesión única, sin implementar:
-**Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo.** Incluirá
-exclusivamente `apiListasCoTejoByUnidad(unidadId, accessToken)` y
-`apiListaCoTejoById(id, accessToken)` en `listas_cotejo.api.js`, mediante un
-helper GET léxico privado que delegue en `requestListaCoTejoJson` y preserve
-paths, encoding, fallbacks, contenedores, parsing, metadata, globals y services.
+**Sesión 3.7 — Auditoría puntual de APIs de exámenes.** Será documental y
+separará lecturas, generación y polling antes de proponer cualquier
+consolidación.
 
 ## Riesgos priorizados
 

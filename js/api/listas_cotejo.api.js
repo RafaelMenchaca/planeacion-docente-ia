@@ -46,24 +46,29 @@ async function apiListasCoTejoGenerate(payload, accessToken) {
   );
 }
 
-async function apiListasCoTejoByUnidad(unidadId, accessToken) {
+const listasCotejoGet = function (path, accessToken, fallbackMessage) {
   return requestListaCoTejoJson(
-    `${API_BASE_URL}/api/listas-cotejo/unidad/${encodeURIComponent(unidadId)}`,
+    `${API_BASE_URL}${path}`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store"
     },
+    fallbackMessage
+  );
+};
+
+async function apiListasCoTejoByUnidad(unidadId, accessToken) {
+  return listasCotejoGet(
+    `/api/listas-cotejo/unidad/${encodeURIComponent(unidadId)}`,
+    accessToken,
     "No se pudieron obtener las listas de cotejo"
   );
 }
 
 async function apiListaCoTejoById(id, accessToken) {
-  return requestListaCoTejoJson(
-    `${API_BASE_URL}/api/listas-cotejo/${encodeURIComponent(id)}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store"
-    },
+  return listasCotejoGet(
+    `/api/listas-cotejo/${encodeURIComponent(id)}`,
+    accessToken,
     "No se pudo obtener la lista de cotejo"
   );
 }

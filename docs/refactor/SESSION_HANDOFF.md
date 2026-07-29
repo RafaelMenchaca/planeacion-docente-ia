@@ -23,6 +23,8 @@
 - **Sesión 3.4:** Consolidación interna de lecturas de anexos, completada.
 - **Validación manual 3.4:** aprobada.
 - **Sesión 3.5:** Auditoría puntual de APIs de listas de cotejo, completada.
+- **Sesión 3.6:** Consolidación interna de lecturas de listas de cotejo, completada en código.
+- **Validación manual 3.6:** pendiente.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -31,11 +33,12 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.6 — Consolidación interna de lecturas de listas de cotejo..
+- **Próxima sesión seleccionada:** 3.7 — Auditoría puntual de APIs de exámenes.
 
 Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
 Sesión 3.4 está completada y validada manualmente; la Sesión 3.5 es documental
-y no autoriza el cierre de la fase ni el inicio de generación, polling,
+y la Sesión 3.6 está completada en código con validación manual pendiente.
+Ninguna autoriza el cierre de la fase ni el inicio de generación, polling,
 Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
@@ -1829,11 +1832,11 @@ metadata, globals, services y consumidores. Riesgo bajo. Excluye generación,
 pending, delete, services, features, páginas, autenticación, backend,
 Archivados y legacy.
 
-Validaciones futuras: sintaxis, Jest, smoke previo/posterior para URLs,
+Validaciones planificadas: sintaxis, Jest, smoke previo/posterior para URLs,
 encoding, opciones, contenedores, `error/message/fallback`, `status/payload`,
 vacío/JSON inválido a `null`, una petición, globals y helper fuera de `window`;
 preview/descarga activa en manual. El listado legacy se valida por smoke. No
-está implementada.
+estaba implementada al cierre de 3.5; su resultado se registra a continuación.
 
 ### Exclusiones y riesgos
 
@@ -1843,3 +1846,91 @@ el orden de scripts contractual, helpers top-level como globals implícitas,
 parsing tolerante a `null`, service que puede devolver `null` sin sesión,
 Dashboard legacy con payload híbrido, generación secuencial, wrappers activos
 y endpoint backend por planeación sin wrapper frontend.
+
+## Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo
+
+### Estado de entrada
+
+- Frontend: rama `refactor-front`, HEAD `1006abb`, working tree limpio.
+- Commit documental 3.5 presente: `0c3c1e3 docs(refactor): audit checklist API contracts`.
+- Backend: rama `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; sesiones 3.0–3.5 completadas.
+- Validaciones manuales 3.1, 3.2 y 3.4 aprobadas.
+
+### Consumidores y contratos preservados
+
+| Función | Consumidor | Argumentos | Retorno esperado | Clasificación |
+| --- | --- | --- | --- | --- |
+| `apiListasCoTejoByUnidad` | `obtenerListasCotejoPorUnidad` → `ensureListasCotejo` | UUID de unidad, token | API `{listas}`; service array/`[]` | Listado legacy |
+| `apiListaCoTejoById` | `obtenerListaCoTejoDetalle` → `ListaCotejoPreview.openBiblioteca` | UUID de lista, token | API `{lista}`; service entidad | Preview activa |
+| `apiListaCoTejoById` | `obtenerListaCoTejoDetalle` → `ListaCotejoDownload.downloadBiblioteca` | UUID de lista, token | API `{lista}`; service entidad | Descarga activa |
+
+No aparecieron consumidores adicionales ni desconocidos. Los wrappers service
+y el flujo legacy se conservan.
+
+| Aspecto | Por unidad | Detalle |
+| --- | --- | --- |
+| Firma | `(unidadId, accessToken)` | `(id, accessToken)` |
+| Endpoint | `/api/listas-cotejo/unidad/:unidadId` | `/api/listas-cotejo/:id` |
+| Encoding | `encodeURIComponent(unidadId)` | `encodeURIComponent(id)` |
+| HTTP | GET implícito; Bearer; sin `Content-Type`, body ni method explícito; `no-store` | Igual |
+| Retorno API | `{listas}` o `null` según parsing | `{lista}` o `null` según parsing |
+| Fallback | `No se pudieron obtener las listas de cotejo` | `No se pudo obtener la lista de cotejo` |
+| Service | Normaliza array/`{listas}` a array o `[]`; `null` sin sesión | Extrae `response.lista` o conserva payload; `null` sin sesión |
+
+### Implementación
+
+Se añadió el helper léxico privado
+`listasCotejoGet(path, accessToken, fallbackMessage)` dentro de
+`js/api/listas_cotejo.api.js`. Construye `${API_BASE_URL}${path}` y delega a
+`requestListaCoTejoJson` con solo el header Bearer y `cache:"no-store"`. No
+transforma el payload, no obtiene sesión, no acepta opciones generales y no se
+publica en `window`.
+
+Las funciones públicas conservan asincronía, firmas, globals, encoding, paths,
+fallbacks, promesas y retornos. `requestListaCoTejoJson`,
+`buildListaCoTejoHeaders`, `parseListaCoTejoApiJson`,
+`createListaCoTejoApiError` y `apiListasCoTejoGenerate` quedaron intactos.
+
+### Parsing y errores preservados
+
+El ejecutor continúa usando `response.text()`: JSON válido retorna el payload;
+cuerpo vacío o JSON inválido exitoso retorna `null`. En error mantiene prioridad
+`payload.error` → `payload.message` → fallback específico → `HTTP <status>`, y
+conserva `status` y `payload`; HTTP no JSON usa el fallback y `payload:null`.
+
+### Validaciones
+
+- Smoke previo: aprobado, 48 aserciones y 14 peticiones simuladas.
+- Smoke posterior: aprobado, 50 aserciones y 14 peticiones simuladas.
+- URLs codificadas, GET implícito, Bearer único, ausencia de `Content-Type`,
+  body y llamadas dobles, `no-store`, contenedores y fallbacks: aprobados.
+- Globals públicas y helper ausente de `window`: aprobados.
+- `node --check js/api/listas_cotejo.api.js`: aprobado.
+- `npm test -- --runInBand`: 1 suite y 2 pruebas aprobadas.
+- Services, generación, delete, features, páginas, HTML y backend: sin cambios.
+
+### Validación manual
+
+Permanece pendiente. Debe cubrir preview, descarga desde card, descarga desde
+preview con reutilización del objeto y la regresión mínima indicada para 3.6.
+El listado legacy fue cubierto por smoke y no debe activarse como flujo manual
+de esta sesión.
+
+### Exclusiones y hallazgos
+
+No se modificaron generación, pending, delete, services, preview, descarga,
+consumidores, autenticación, otros dominios, backend, SQL, Archivados o legacy.
+Permanecen fuera de alcance: rama backend exclusivamente por unidad sin emisor
+frontend confirmado, payload híbrido del Dashboard legacy, generación
+secuencial, services que pueden devolver `null` sin sesión, JSON inválido
+exitoso convertido en `null`, helpers top-level como globals implícitas,
+endpoint backend por planeación sin wrapper frontend y orden contractual de
+scripts.
+
+### Próxima sesión
+
+**Sesión 3.7 — Auditoría puntual de APIs de exámenes.**
+
+Será exclusivamente documental y distinguirá lecturas, generación y polling.
+No está implementada. Fase 3 continúa en progreso.

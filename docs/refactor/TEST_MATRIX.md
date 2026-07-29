@@ -436,6 +436,39 @@ No se ejecutaron pruebas funcionales en 3.5 porque la sesión solo modifica
 documentación. La validación manual 3.4 permanece aprobada y no debe solicitarse
 de nuevo.
 
+## Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Estado inicial | `refactor-front`, HEAD `1006abb`; commit 3.5 `0c3c1e3`; árbol limpio | Aprobado |
+| Backend | `refactor-back`, HEAD `e08d6e4`, árbol limpio | Aprobado |
+| Consumidores | Service legacy por unidad; service activo hacia preview/descarga | Confirmados; cero desconocidos |
+| Por unidad | URL codificada, GET implícito, Bearer, sin `Content-Type`/body, `no-store`, `{listas}` | Aprobado en smoke |
+| Detalle | URL codificada, GET implícito, Bearer, sin `Content-Type`/body, `no-store`, `{lista}` | Aprobado en smoke |
+| Error con `error` | Mensaje prioritario, status y payload | Aprobado en smoke |
+| Error con `message` | Mensaje secundario, status y payload | Aprobado en smoke |
+| Error sin mensaje | Fallback específico, status y payload | Aprobado en smoke |
+| HTTP no JSON | Fallback específico, status y `payload:null` | Aprobado en smoke |
+| Cuerpo vacío/JSON inválido exitoso | Retorno `null` | Aprobado en smoke |
+| Globals | Dos APIs públicas; `listasCotejoGet` ausente de `window` | Aprobado |
+| Ejecutores protegidos | `requestListaCoTejoJson` y tres helpers auxiliares sin cambios | Aprobado por diff |
+| Aislamiento | Generación, services, delete, features, páginas, HTML y backend sin cambios | Aprobado estáticamente |
+| Sintaxis | `node --check js/api/listas_cotejo.api.js` | Aprobado |
+| Suite | `npm test -- --runInBand` | 1 suite y 2 pruebas aprobadas |
+| Preview manual | Título, tema, criterios, total, reapertura y una lectura | Pendiente |
+| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Pendiente |
+| Descarga desde preview | Reutilización del objeto sin segunda lectura | Pendiente |
+| Regresión manual | Biblioteca, tabs, otros previews/descargas/deletes y Detalle | Pendiente |
+
+### Evidencia automatizada
+
+- Smoke previo: 48 aserciones y 14 peticiones simuladas.
+- Smoke posterior: 50 aserciones y 14 peticiones simuladas.
+- Cada función realizó una petición por invocación.
+- El listado legacy se validó solo mediante smoke, sin ejecutar su UI.
+- Validación manual 3.6 pendiente; no se declara aprobada.
+- Siguiente sesión única: `3.7 — Auditoría puntual de APIs de exámenes`.
+
 ## Regresión acumulativa
 
 - Cada fase ejecuta sus pruebas propias y las pruebas críticas de todas las fases anteriores.

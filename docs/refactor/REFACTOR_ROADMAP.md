@@ -347,12 +347,19 @@ lecturas comparten mecánica GET, pero los wrappers conservan normalizaciones
 distintas. Generación por `planeacion_ids`, pending, métricas y la rama backend
 por unidad quedan en Fase 4.
 
+La Sesión `3.6 — Consolidación interna de lecturas de listas de cotejo` quedó
+completada en código, con validación manual pendiente.
+`apiListasCoTejoByUnidad` y `apiListaCoTejoById` conservan firmas, globals,
+paths, encoding, contenedores y fallbacks, y delegan solo URL base, GET
+implícito, Bearer sin `Content-Type`, ausencia de body y `cache:"no-store"` al
+helper léxico privado `listasCotejoGet`. `requestListaCoTejoJson`, sus helpers
+de parsing/error, generación, services, delete y consumidores quedaron
+intactos. Los smokes previo/posterior, sintaxis y Jest pasaron.
+
 La única siguiente sesión seleccionada, aún sin implementar, es
-`Sesión 3.6 — Consolidación interna de lecturas de listas de cotejo`. Incluirá
-solo `apiListasCoTejoByUnidad` y `apiListaCoTejoById`, con un helper GET privado
-que preserve sus contratos y delegue en `requestListaCoTejoJson`. Fase 3
-continúa en progreso; services, consumidores, autenticación, generación,
-delete, Archivados y legacy no se modificarán.
+`Sesión 3.7 — Auditoría puntual de APIs de exámenes`. Será exclusivamente
+documental y separará lecturas, generación y polling antes de decidir una
+consolidación. Fase 3 continúa en progreso.
 
 ### Dependencias
 
