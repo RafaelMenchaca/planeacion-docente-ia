@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.7.
+Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.8.
 Este documento inventaría la arquitectura HTTP real y registra las
 consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
@@ -457,7 +457,7 @@ pero existen consumidores directos y consumidores mediante service.
 | Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4 completada y validada manualmente | Sesión de Fase 3 completada |
 | Anexos | generación y regeneración | anexos API/Biblioteca | Generación activa; regeneración compatible | Alto | Separar pending y generación | Fase 4 |
 | Listas | dos lecturas GET | API/service | Detalle activo; listado legacy | Bajo | 3.6 completada y validada manualmente | Sesión de Fase 3 completada |
-| Exámenes | listado por unidad y detalle | API/service | Detalle activo; listado legacy | Bajo | 3.8, helper GET específico sin status del job | Próxima sesión de Fase 3 |
+| Exámenes | listado por unidad y detalle | API/service | Detalle activo; listado legacy | Bajo | 3.8 completada en código; validación manual pendiente | Sesión de Fase 3 implementada |
 | Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
 | Parsing común de errores | seis familias | Todos los API | Global | Alto | No universalizar prematuramente | Conservar |
 | Fetch directos de páginas | tres loaders HTML | páginas/UI | Shell | Medio | Desacople de dashboard | Fase 7 |
@@ -705,6 +705,45 @@ exclusivamente `apiExamenesListByUnidad(unidadId, accessToken)` y
 `apiExamenById(id, accessToken)` en `examenes.api.js`. Excluirá generación,
 `apiExamenGenerationStatus`, polling, services, consumidores, preview,
 descarga, delete, autenticación, backend, Archivados y legacy.
+
+## Sesión 3.8 completada en código
+
+**Sesión 3.8 — Consolidación interna de lecturas de exámenes.**
+
+`apiExamenesListByUnidad(unidadId, accessToken)` y
+`apiExamenById(id, accessToken)` conservan firmas, globals, paths,
+`encodeURIComponent`, contenedores y fallbacks. Ambas delegan únicamente la URL
+base y las opciones repetidas —GET implícito, Bearer sin `Content-Type` ni
+`Accept`, ausencia de body y `cache:"no-store"`— al helper léxico privado
+`examResourceGet(path, accessToken, fallbackMessage)`.
+
+El helper no se publica en `window`, no obtiene sesión, no acepta opciones
+universales y delega sin transformar el payload en `requestExamJson`.
+`requestExamJson`, `buildExamJsonHeaders`, `parseExamApiJson`,
+`createExamApiError`, `apiExamenesGenerate` y `apiExamenGenerationStatus`
+quedaron literalmente intactos.
+
+| Función | Consumidores | Retorno API preservado | Fallback preservado |
+| --- | --- | --- | --- |
+| `apiExamenesListByUnidad(unidadId, accessToken)` | `obtenerExamenesPorUnidad` → `ensureExamenes` → explorador legacy | `{examenes}` o `null` según parsing | `No se pudieron obtener los examenes de la unidad` |
+| `apiExamenById(id, accessToken)` | `obtenerExamenDetalle` → preview, descarga y post-generación legacy | `{examen}` o `null` según parsing | `No se pudo obtener el examen` |
+
+El smoke previo aprobó 55 aserciones y 14 peticiones simuladas; el posterior
+aprobó 57 aserciones y las mismas 14 peticiones. Se cubrieron URLs y encoding,
+GET implícito, Bearer único, ausencia de `Content-Type`, `Accept` y body,
+`no-store`, una petición por llamada, contenedores, prioridad
+`error` → `message` → fallback, metadata `status/payload`, cuerpo vacío y JSON
+inválido exitoso convertido en `null`, HTTP no JSON, globals y aislamiento del
+helper. `node --check` y Jest pasaron.
+
+Services, generación, polling, delete, features, páginas, autenticación, HTML,
+backend, Archivados y legacy permanecen sin cambios. La validación manual 3.8
+está pendiente: preview, descarga desde card, descarga desde preview y regresión
+mínima no se declaran aprobadas.
+
+Próxima sesión única, sin implementar:
+**Sesión 3.9 — Auditoría de cierre de capa API frontend.** Fase 3 permanece en
+progreso.
 
 ## Riesgos priorizados
 

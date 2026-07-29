@@ -47,15 +47,23 @@ async function apiExamenesGenerate(payload, accessToken) {
   );
 }
 
-async function apiExamenesListByUnidad(unidadId, accessToken) {
+const examResourceGet = function (path, accessToken, fallbackMessage) {
   return requestExamJson(
-    `${API_BASE_URL}/api/examenes/unidad/${encodeURIComponent(unidadId)}`,
+    `${API_BASE_URL}${path}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`
       },
       cache: "no-store"
     },
+    fallbackMessage
+  );
+};
+
+async function apiExamenesListByUnidad(unidadId, accessToken) {
+  return examResourceGet(
+    `/api/examenes/unidad/${encodeURIComponent(unidadId)}`,
+    accessToken,
     "No se pudieron obtener los examenes de la unidad"
   );
 }
@@ -74,14 +82,9 @@ async function apiExamenGenerationStatus(jobId, accessToken) {
 }
 
 async function apiExamenById(id, accessToken) {
-  return requestExamJson(
-    `${API_BASE_URL}/api/examenes/${encodeURIComponent(id)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      },
-      cache: "no-store"
-    },
+  return examResourceGet(
+    `/api/examenes/${encodeURIComponent(id)}`,
+    accessToken,
     "No se pudo obtener el examen"
   );
 }

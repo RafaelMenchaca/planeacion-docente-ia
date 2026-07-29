@@ -26,6 +26,8 @@
 - **Sesión 3.6:** Consolidación interna de lecturas de listas de cotejo, completada.
 - **Validación manual 3.6:** aprobada.
 - **Sesión 3.7:** Auditoría puntual de APIs de exámenes, completada.
+- **Sesión 3.8:** Consolidación interna de lecturas de exámenes, completada en código.
+- **Validación manual 3.8:** pendiente.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -34,12 +36,13 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.8 — Consolidación interna de lecturas de exámenes.
+- **Próxima sesión seleccionada:** 3.9 — Auditoría de cierre de capa API frontend.
 
-Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
+Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. Las
 Sesiones 3.4 y 3.6 están completadas y validadas manualmente; las sesiones 3.5
-y 3.7 son auditorías documentales. Ninguna autoriza el cierre de la fase ni el
-inicio de generación, polling, Archivados o legacy.
+y 3.7 son auditorías documentales. La Sesión 3.8 está completada en código y
+su validación manual permanece pendiente. Ninguna autoriza el cierre de la fase
+ni el inicio de generación, polling, Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -2222,4 +2225,84 @@ orden contractual de scripts.
 **Sesión 3.8 — Consolidación interna de lecturas de exámenes.**
 
 Es la única siguiente sesión seleccionada. No está implementada. Fase 3
+continúa en progreso.
+
+## Sesión 3.8 — Consolidación interna de lecturas de exámenes
+
+### Estado de entrada
+
+- Frontend: rama `refactor-front`, HEAD `00665b6`, working tree limpio.
+- Commit 3.7: `00665b6 docs(refactor): audit exam API contracts`.
+- Backend: rama `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; sesiones 3.0–3.7 completadas.
+- Validaciones manuales 3.1, 3.2, 3.4 y 3.6 aprobadas.
+
+### Consumidores y contratos preservados
+
+| Función API | Consumidor | Clasificación | Retorno API |
+| --- | --- | --- | --- |
+| `apiExamenesListByUnidad(unidadId, accessToken)` | `obtenerExamenesPorUnidad` → `ensureExamenes` | Listado legacy conservado | `{examenes}` o `null` |
+| `apiExamenById(id, accessToken)` | `obtenerExamenDetalle` → `ExamPreview`, `ExamDownload` y `submitUnitExamModal` | Detalle activo/compartido | `{examen}` o `null` |
+
+Ambas funciones conservan `encodeURIComponent`, paths, GET implícito, único
+header Bearer, ausencia de `Content-Type`, `Accept` y body,
+`cache:"no-store"`, una petición por llamada, fallbacks, promesa, payload y
+globals explícitas.
+
+### Helper privado
+
+Se creó `examResourceGet(path, accessToken, fallbackMessage)` como constante
+léxica exclusiva de lecturas GET de recursos de examen. Comparte solamente URL
+base, Bearer y `no-store`, y delega sin transformar en `requestExamJson`. No se
+publica en `window`, no obtiene sesión, no acepta opciones generales y no se usa
+para generación, polling, status del job o delete.
+
+`requestExamJson`, `buildExamJsonHeaders`, `parseExamApiJson`,
+`createExamApiError`, `apiExamenesGenerate` y
+`apiExamenGenerationStatus` quedaron literalmente idénticos a `HEAD`.
+
+### Parsing y errores preservados
+
+`response.text()` continúa produciendo payload para JSON válido y `null` para
+cuerpo vacío o JSON inválido, incluso con HTTP exitoso. En error se conserva la
+prioridad `payload.error` → `payload.message` → fallback específico →
+`HTTP <status>`, además de `error.status` y `error.payload`. HTTP no JSON usa el
+fallback específico, conserva status y deja `payload:null`.
+
+### Validaciones técnicas
+
+- Smoke previo: 55 aserciones y 14 peticiones simuladas, aprobado.
+- Smoke posterior: 57 aserciones y 14 peticiones simuladas, aprobado.
+- URLs, encoding, GET implícito, Bearer, headers ausentes, body ausente,
+  `no-store`, contenedores, errores, metadata, vacío/JSON inválido, una petición
+  y cuatro globals: aprobados.
+- `examResourceGet` existe léxicamente y está ausente de `window`.
+- `node --check js/api/examenes.api.js`: aprobado.
+- `npm test -- --runInBand`: 1 suite y 2 pruebas aprobadas.
+- Services, generación, polling, delete, features, páginas, autenticación, HTML
+  y backend: sin cambios.
+
+### Validación manual
+
+Pendiente. No se declaran aprobados el preview de examen, la descarga desde
+card, la descarga desde preview con reutilización del objeto ni la regresión
+mínima. El listado legacy se cubrió únicamente mediante smoke, conforme al
+alcance.
+
+### Exclusiones y hallazgos
+
+No se modificaron generación, polling, jobs, pending, payloads protegidos,
+services, delete, preview, descarga, consumidores, autenticación, otros API
+files, backend, SQL, Archivados o legacy. Permanecen fuera de alcance: polling
+de Biblioteca limitado a 60 iteraciones, polling legacy sin timeout, cierre de
+modal sin cancelación, JSON inválido exitoso convertido en `null`, services que
+pueden devolver `null` sin sesión, helpers top-level globales implícitas,
+duplicación de `ensureExamenDetalle`, alias backend `/generar` sin consumidor y
+orden contractual de scripts.
+
+### Próxima sesión
+
+**Sesión 3.9 — Auditoría de cierre de capa API frontend.**
+
+Es la única siguiente sesión seleccionada y no está implementada. Fase 3
 continúa en progreso.

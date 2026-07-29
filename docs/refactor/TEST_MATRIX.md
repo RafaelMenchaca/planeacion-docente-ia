@@ -496,6 +496,43 @@ No se ejecutaron pruebas funcionales en 3.7 porque la sesión solo modifica
 documentación. La validación manual 3.6 permanece aprobada y no debe solicitarse
 de nuevo.
 
+## Sesión 3.8 — Consolidación interna de lecturas de exámenes
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Estado inicial | `refactor-front`, HEAD `00665b6`, árbol limpio | Aprobado |
+| Backend | `refactor-back`, HEAD `e08d6e4`, árbol limpio | Aprobado |
+| Consumidores | Service legacy por unidad; service compartido hacia preview, descarga y post-generación | Confirmados; cero desconocidos |
+| Por unidad | URL codificada, GET implícito, Bearer, sin `Content-Type`/`Accept`/body, `no-store`, `{examenes}` | Aprobado en smoke |
+| Detalle | URL codificada, GET implícito, Bearer, sin `Content-Type`/`Accept`/body, `no-store`, `{examen}` | Aprobado en smoke |
+| Error con `error` | Mensaje prioritario, status y payload | Aprobado en smoke |
+| Error con `message` | Mensaje secundario, status y payload | Aprobado en smoke |
+| Error sin mensaje | Fallback específico, status y payload | Aprobado en smoke |
+| HTTP no JSON | Fallback específico, status y `payload:null` | Aprobado en smoke |
+| Cuerpo vacío/JSON inválido exitoso | Retorno `null` | Aprobado en smoke |
+| Globals | Cuatro APIs públicas; `examResourceGet` ausente de `window` | Aprobado |
+| Ejecutor protegido | `requestExamJson` y tres helpers auxiliares sin cambios | Aprobado contra `HEAD` |
+| Generación | `apiExamenesGenerate` idéntica a `HEAD` | Aprobado |
+| Polling | `apiExamenGenerationStatus` idéntica a `HEAD` y fuera del helper | Aprobado |
+| Aislamiento | Services, delete, features, páginas, HTML y backend sin cambios | Aprobado estáticamente |
+| Sintaxis | `node --check js/api/examenes.api.js` | Aprobado |
+| Suite | `npm test -- --runInBand` | 1 suite y 2 pruebas aprobadas |
+| Preview manual | Título, instrucciones, total, preguntas, opciones, respuestas, tipos y reapertura | Pendiente |
+| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Pendiente |
+| Descarga desde preview | Reutilización del objeto sin segunda lectura | Pendiente |
+| Regresión manual | Biblioteca/tabs, previews, descargas, deletes y Detalle | Pendiente |
+
+### Evidencia automatizada
+
+- Smoke previo: 55 aserciones y 14 peticiones simuladas.
+- Smoke posterior: 57 aserciones y 14 peticiones simuladas.
+- Cada función realizó una petición por invocación.
+- El listado legacy se validó solo mediante smoke, sin ejecutar su UI.
+- Generación y polling se compararon contra `HEAD` y quedaron idénticos.
+- Validación manual 3.8: pendiente; no se declara aprobada.
+- Siguiente sesión única:
+  `3.9 — Auditoría de cierre de capa API frontend`.
+
 ## Regresión acumulativa
 
 - Cada fase ejecuta sus pruebas propias y las pruebas críticas de todas las fases anteriores.

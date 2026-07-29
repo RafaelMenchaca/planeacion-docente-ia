@@ -367,11 +367,20 @@ explorador legacy. Biblioteca usa generación/polling directos y el Dashboard
 legacy usa services, con payloads y bucles distintos. Generación, jobs, worker,
 retries, deduplicación, prompts, métricas y polling quedan en Fase 4.
 
+La Sesión `3.8 — Consolidación interna de lecturas de exámenes` quedó
+completada en código. `apiExamenesListByUnidad` y `apiExamenById` conservan
+firmas, globals, paths, encoding, contenedores y fallbacks, y delegan solo URL
+base, GET implícito, Bearer sin `Content-Type`/`Accept`, ausencia de body y
+`cache:"no-store"` al helper léxico privado `examResourceGet`.
+`requestExamJson`, sus helpers de parsing/error, generación, polling, services,
+delete y consumidores quedaron intactos. Los smokes previo/posterior, sintaxis
+y Jest pasaron. La validación manual 3.8 permanece pendiente y no se declara
+aprobada.
+
 La única siguiente sesión seleccionada, aún sin implementar, es
-`Sesión 3.8 — Consolidación interna de lecturas de exámenes`. Incluirá solo
-`apiExamenesListByUnidad` y `apiExamenById`, mediante un helper GET privado que
-delegue en `requestExamJson` sin modificar el status del job, generación,
-polling, services ni consumidores. Fase 3 continúa en progreso.
+`Sesión 3.9 — Auditoría de cierre de capa API frontend`. Revisará la evidencia
+acumulada y los criterios de salida sin implementar generación, polling,
+Archivados o legacy. Fase 3 continúa en progreso.
 
 ### Dependencias
 
