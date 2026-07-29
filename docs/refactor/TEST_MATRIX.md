@@ -517,10 +517,11 @@ de nuevo.
 | Aislamiento | Services, delete, features, páginas, HTML y backend sin cambios | Aprobado estáticamente |
 | Sintaxis | `node --check js/api/examenes.api.js` | Aprobado |
 | Suite | `npm test -- --runInBand` | 1 suite y 2 pruebas aprobadas |
-| Preview manual | Título, instrucciones, total, preguntas, opciones, respuestas, tipos y reapertura | Pendiente |
-| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Pendiente |
-| Descarga desde preview | Reutilización del objeto sin segunda lectura | Pendiente |
-| Regresión manual | Biblioteca/tabs, previews, descargas, deletes y Detalle | Pendiente |
+| Preview manual | Título, instrucciones, total, preguntas, opciones, respuestas, tipos y reapertura | Aprobado por el usuario |
+| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Aprobado por el usuario |
+| Descarga desde preview | Reutilización del objeto sin segunda lectura | Aprobado por el usuario |
+| Regresión manual | Biblioteca/tabs, previews, descargas de otros dominios y cero errores del helper | Aprobado por el usuario |
+| Regresión de generación | Anexo, lista y examen; payload, selección, polling, deduplicación, retries, fallback, guardado y métricas | Aprobado por el usuario |
 
 ### Evidencia automatizada
 
@@ -529,9 +530,42 @@ de nuevo.
 - Cada función realizó una petición por invocación.
 - El listado legacy se validó solo mediante smoke, sin ejecutar su UI.
 - Generación y polling se compararon contra `HEAD` y quedaron idénticos.
-- Validación manual 3.8: pendiente; no se declara aprobada.
-- Siguiente sesión única:
-  `3.9 — Auditoría de cierre de capa API frontend`.
+- Validación manual 3.8: aprobada por el usuario.
+- La regresión adicional de generación se registra como evidencia de no
+  regresión de 3.8; no constituye trabajo de Fase 4.
+
+## Sesión 3.9 — Auditoría de cierre de capa API frontend
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Commits 3.0–3.8 | Historial `refactor-front`, de `ac23955` a `b59366c` | Aprobado |
+| Repositorios | Frontend y backend limpios al iniciar | Aprobado |
+| Inventario global | API, services, funciones HTTP, consumidores, globals, auth, headers, parsing, errores y aliases | Completo |
+| Helpers de Fase 3 | Cinco bindings léxicos privados y específicos | Aprobado |
+| Globals/wrappers | API, services, features, `bib*`, polling, legacy y Archivados | Conservados |
+| Consumidores desconocidos | Búsqueda global e inventario acumulado | Cero |
+| Biblioteca | GET y DELETE consolidados internamente | Aprobado |
+| Anexos | GET consolidado; generación/regeneración/delete intactos | Aprobado |
+| Listas | GET consolidado; services/generación/delete/legacy intactos | Aprobado |
+| Exámenes | GET de recursos consolidado; generación/status/polling intactos | Aprobado |
+| Planeaciones y jerarquía | Contratos mixtos con fases futuras explícitas | No bloquean |
+| Cliente/helper universal | No creado por incompatibilidad contractual | Aprobado |
+| Validaciones manuales | 3.1, 3.2, 3.4, 3.6 y 3.8 | Aprobadas |
+| Código funcional en 3.9 | Sin modificaciones | Aprobado |
+| Decisión | Criterios de salida completos | A. Cerrar Fase 3 |
+
+### Validación manual acumulativa de Fase 3
+
+| Sesión | Dominio | Validación |
+| --- | --- | --- |
+| 3.1 | Lecturas de Biblioteca | Aprobada |
+| 3.2 | Deletes de Biblioteca | Aprobada |
+| 3.4 | Lecturas de anexos | Aprobada |
+| 3.6 | Lecturas de listas de cotejo | Aprobada |
+| 3.8 | Lecturas de exámenes | Aprobada |
+
+Fase 3 cerrada. La Fase 4 permanece pendiente, no fue iniciada y debe comenzar
+en una nueva conversación.
 
 ## Regresión acumulativa
 

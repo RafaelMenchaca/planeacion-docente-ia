@@ -1,6 +1,7 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.8.
+Estado observado en `refactor-front` durante la Fase 3, hasta su cierre en la
+Sesión 3.9.
 Este documento inventaría la arquitectura HTTP real y registra las
 consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
@@ -453,12 +454,12 @@ pero existen consumidores directos y consumidores mediante service.
 | --- | --- | --- | --- | --- | --- | --- |
 | Lecturas de Biblioteca | conjuntos y conjunto por ID | biblioteca API, Biblioteca, Detalle | Conocidos | Bajo | 3.1 completada y validada manualmente | Sesión de Fase 3 completada |
 | Deletes de Biblioteca | bloque, planeación directa, examen, lista, anexo | biblioteca API y features | Conocidos | Bajo/medio | 3.2 completada y validada manualmente | Sesión de Fase 3 completada |
-| Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
+| Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Separar por flujo en Fases 4, 7, 8 y 10 | Fase posterior |
 | Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4 completada y validada manualmente | Sesión de Fase 3 completada |
 | Anexos | generación y regeneración | anexos API/Biblioteca | Generación activa; regeneración compatible | Alto | Separar pending y generación | Fase 4 |
 | Listas | dos lecturas GET | API/service | Detalle activo; listado legacy | Bajo | 3.6 completada y validada manualmente | Sesión de Fase 3 completada |
-| Exámenes | listado por unidad y detalle | API/service | Detalle activo; listado legacy | Bajo | 3.8 completada en código; validación manual pendiente | Sesión de Fase 3 implementada |
-| Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
+| Exámenes | listado por unidad y detalle | API/service | Detalle activo; listado legacy | Bajo | 3.8 completada y validada manualmente | Sesión de Fase 3 completada |
+| Autenticación y headers | sesión y builders | core/services/API | Global | Alto | No universalizar contratos incompatibles | Conservar; reevaluar en Fase 10 |
 | Parsing común de errores | seis familias | Todos los API | Global | Alto | No universalizar prematuramente | Conservar |
 | Fetch directos de páginas | tres loaders HTML | páginas/UI | Shell | Medio | Desacople de dashboard | Fase 7 |
 | Archivados | listar/restaurar/permanente | planeaciones/jerarquía services | Archivados | Alto | Aislamiento propio | Fase 8 |
@@ -706,7 +707,7 @@ exclusivamente `apiExamenesListByUnidad(unidadId, accessToken)` y
 `apiExamenGenerationStatus`, polling, services, consumidores, preview,
 descarga, delete, autenticación, backend, Archivados y legacy.
 
-## Sesión 3.8 completada en código
+## Sesión 3.8 completada y validada
 
 **Sesión 3.8 — Consolidación interna de lecturas de exámenes.**
 
@@ -738,12 +739,82 @@ helper. `node --check` y Jest pasaron.
 
 Services, generación, polling, delete, features, páginas, autenticación, HTML,
 backend, Archivados y legacy permanecen sin cambios. La validación manual 3.8
-está pendiente: preview, descarga desde card, descarga desde preview y regresión
-mínima no se declaran aprobadas.
+fue aprobada: preview, reapertura, contenido y tipos de reactivo, descarga desde
+card, descarga desde preview con reutilización, Biblioteca/tabs y ausencia de
+GET duplicados o errores de `examResourceGet`.
 
-Próxima sesión única, sin implementar:
-**Sesión 3.9 — Auditoría de cierre de capa API frontend.** Fase 3 permanece en
-progreso.
+La regresión adicional de generación confirmó que la consolidación de lecturas
+no alteró generación de anexos/listas/exámenes, payload protegido, selección de
+planeaciones y temas, polling, deduplicación, reintentos, fallbacks, guardado o
+métricas. Esta evidencia es regresión de 3.8, no inicio de Fase 4.
+
+## Sesión 3.9 — Auditoría de cierre
+
+### Helpers finales de Fase 3
+
+| Helper | Archivo | Alcance | Global | Estado |
+| --- | --- | --- | --- | --- |
+| `bibliotecaGet` | `js/api/biblioteca.api.js` | GET de conjuntos | No | Activo |
+| `bibliotecaDelete` | `js/api/biblioteca.api.js` | Cinco deletes vigentes | No | Activo |
+| `anexosGet` | `js/api/anexos.api.js` | Tres lecturas de anexos | No | Activo |
+| `listasCotejoGet` | `js/api/listas_cotejo.api.js` | Dos lecturas de listas | No | Activo |
+| `examResourceGet` | `js/api/examenes.api.js` | Dos lecturas de recursos de examen | No | Activo |
+
+Todos son bindings léxicos, específicos de archivo y dominio. Ninguno obtiene
+sesión, transforma el payload público, cruza dominios o constituye un cliente
+HTTP universal.
+
+### Globals y wrappers conservados
+
+| Grupo | Propietario | Consumidores | Estado | Fase futura |
+| --- | --- | --- | --- | --- |
+| APIs de Biblioteca, anexos, listas y exámenes | `js/api/*` | Páginas, features y services | Firmas/globals conservadas | 10 |
+| APIs de planeaciones y jerarquía | `js/api/*` | Detalle, generación, Archivados y legacy | Conservadas | 4/7/8/10 |
+| Wrappers service | `js/services/*` | Biblioteca compartida, Dashboard y Archivados | Conservados | 7/8/10 |
+| Wrappers `bib*` y namespaces feature | Biblioteca/features | Handlers de cards y modales | Conservados | 6/7/10 |
+| Generación, polling y SSE | API/services/páginas | Flujos vigentes y legacy | Intactos | 4 |
+| Globals de Archivados | Planeaciones service/Archivados | Flujo separado | Intactas | 8/10 |
+
+El orden de scripts continúa cargando configuración antes de API, API antes de
+sus services/features y páginas antes de `main.js`.
+
+### Duplicación restante y fase futura
+
+| Duplicación restante | Motivo de conservar | Fase futura |
+| --- | --- | --- |
+| Generación, polling y SSE por dominio | Procesos, estados y errores no equivalentes | 4 |
+| Sesión y pending dispersos | Estado y redirects observables | 5 |
+| Render, eventos y wrappers `bib*` | Contratos DOM y listeners | 6 |
+| Dependencias activas de Dashboard y loaders HTML | Shell y compatibilidad | 7 |
+| Jerarquía técnica y Archivados | Consumidores indirectos y flujo separado | 8 |
+| Código legacy visual | Requiere aislamiento previo | 8–9 |
+| Globals, aliases y service wrappers | Compatibilidad activa | 10 |
+| Headers/parsers entre dominios | JSON inválido, errores, SSE, blobs y crudos incompatibles | Conservar; reevaluar en 10 |
+
+### Candidatos restantes
+
+| Candidato | Estado | Motivo | Decisión |
+| --- | --- | --- | --- |
+| APIs de planeaciones | Mezcla detalle, edición, generación, SSE y Archivados | No es una extracción pequeña equivalente | Fases 4/7/8/10 |
+| APIs de jerarquía | Mezcla CRUD técnico, generación, legacy y Archivados | Consumidores indirectos activos | Fases 4/8/10 |
+| Autenticación común | Redirects y `null` observables | Contrato transversal de mayor riesgo | Conservar |
+| Headers comunes | Diferencias por JSON, GET, SSE, blob y crudos | Universalizar cambiaría contratos | No realizar |
+| Parsing común de errores | Familias incompatibles | Preservar comportamiento por dominio | No realizar |
+| Helper HTTP universal | Sin equivalencia global | Generalización prematura | No realizar |
+| Mover deletes a sus dominios | Propiedad validada en Biblioteca API | Movimiento sin beneficio funcional | Fase 10 |
+| Eliminar APIs sin consumidor | Globals protegidas y compatibilidad | Requiere retiro separado | Fase 10 |
+| Retirar service wrappers | Consumidores vigentes/legacy | Requiere migración previa | Fase 10 |
+
+No quedan funciones ni consumidores desconocidos y no existe una extracción
+pequeña imprescindible pendiente dentro de Fase 3.
+
+### Cierre
+
+**Decisión: A. Cerrar Fase 3.**
+
+Fase cerrada: `3 — Capa API frontend`. Sesiones 3.0–3.9 completadas y
+validación manual acumulativa aprobada. La Fase 4 permanece pendiente y no fue
+iniciada; debe comenzar en una nueva conversación.
 
 ## Riesgos priorizados
 

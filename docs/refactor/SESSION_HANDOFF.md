@@ -11,9 +11,10 @@
 
 ## Estado del roadmap
 
-- **Última fase cerrada:** 2 — Acciones por dominio.
-- **Fase actual:** 3 — Capa API frontend.
-- **Estado:** En progreso.
+- **Última fase cerrada:** 3 — Capa API frontend.
+- **Fase actual:** ninguna en ejecución.
+- **Siguiente fase:** 4 — Generación y polling.
+- **Estado de Fase 4:** Pendiente; no iniciada.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -26,8 +27,9 @@
 - **Sesión 3.6:** Consolidación interna de lecturas de listas de cotejo, completada.
 - **Validación manual 3.6:** aprobada.
 - **Sesión 3.7:** Auditoría puntual de APIs de exámenes, completada.
-- **Sesión 3.8:** Consolidación interna de lecturas de exámenes, completada en código.
-- **Validación manual 3.8:** pendiente.
+- **Sesión 3.8:** Consolidación interna de lecturas de exámenes, completada.
+- **Validación manual 3.8:** aprobada.
+- **Sesión 3.9:** Auditoría de cierre de capa API frontend, completada.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -36,13 +38,11 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.9 — Auditoría de cierre de capa API frontend.
+- **Continuación:** Fase 4 en una nueva conversación obligatoria.
 
-Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. Las
-Sesiones 3.4 y 3.6 están completadas y validadas manualmente; las sesiones 3.5
-y 3.7 son auditorías documentales. La Sesión 3.8 está completada en código y
-su validación manual permanece pendiente. Ninguna autoriza el cierre de la fase
-ni el inicio de generación, polling, Archivados o legacy.
+Las Fases 0, 1, 2 y 3 están completadas. Las validaciones manuales 3.1, 3.2,
+3.4, 3.6 y 3.8 están aprobadas. La Fase 4 permanece pendiente y no se inició
+en esta conversación.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -2284,10 +2284,26 @@ fallback específico, conserva status y deja `payload:null`.
 
 ### Validación manual
 
-Pendiente. No se declaran aprobados el preview de examen, la descarga desde
-card, la descarga desde preview con reutilización del objeto ni la regresión
-mínima. El listado legacy se cubrió únicamente mediante smoke, conforme al
-alcance.
+Aprobada por el usuario. Se confirmaron preview, cierre/reapertura, contenido,
+preguntas, opciones, respuestas, tipos de reactivo, descarga desde card, modal
+de nombre, archivo descargado, descarga desde preview con reutilización del
+objeto, Biblioteca/tabs, previews y descargas de otros dominios, cero GET
+duplicados inesperados y cero errores de `examResourceGet`. El listado legacy
+se cubrió únicamente mediante smoke, conforme al alcance.
+
+La regresión adicional confirmó generación exitosa de anexo, lista y examen,
+incluidos prompt versions vigentes, selección de una planeación y su tema, diez
+preguntas finales con distribución 5/5, deduplicación, reintentos, fallbacks,
+guardado y métricas `success`. Esta evidencia demuestra no regresión de 3.8; no
+constituye trabajo ni inicio de Fase 4.
+
+- Anexo: `v1_anexos_desde_planeacion`, generación exitosa y métricas
+  `success`.
+- Lista: `v2_lista_cotejo_actividades_momentos`, `created:1`, `skipped:0` y
+  métricas `success`.
+- Examen: una planeación y un tema, diez preguntas finales —cinco de opción
+  múltiple y cinco de verdadero/falso—, cero fallidas, doce reintentos,
+  guardado exitoso y métricas `success`.
 
 ### Exclusiones y hallazgos
 
@@ -2300,9 +2316,111 @@ pueden devolver `null` sin sesión, helpers top-level globales implícitas,
 duplicación de `ensureExamenDetalle`, alias backend `/generar` sin consumidor y
 orden contractual de scripts.
 
-### Próxima sesión
+## Sesión 3.9 — Auditoría de cierre de capa API frontend
 
-**Sesión 3.9 — Auditoría de cierre de capa API frontend.**
+### Estado de entrada
 
-Es la única siguiente sesión seleccionada y no está implementada. Fase 3
-continúa en progreso.
+- Frontend: rama `refactor-front`, HEAD `b59366c`, working tree limpio.
+- Commit 3.8: `b59366c refactor(frontend): consolidate exam read requests`.
+- Backend: rama `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso al iniciar.
+- Sesiones 3.0–3.8 presentes en el historial.
+- Validaciones manuales 3.1, 3.2, 3.4, 3.6 y 3.8 aprobadas.
+
+### Sesiones y commits
+
+| Sesión | Commit | Estado |
+| --- | --- | --- |
+| 3.0 | `ac23955` | Auditoría global completada |
+| 3.1 | `a6a2941` | Lecturas de Biblioteca completadas y validadas |
+| 3.2 | `6a96d79` | Deletes de Biblioteca completados y validados |
+| 3.3 | `3cbf8b1` | Auditoría de anexos completada |
+| 3.4 | `18e96ba` | Lecturas de anexos completadas y validadas |
+| 3.5 | `0c3c1e3` | Auditoría de listas completada |
+| 3.6 | `6ce5a95` | Lecturas de listas completadas y validadas |
+| 3.7 | `00665b6` | Auditoría de exámenes completada |
+| 3.8 | `b59366c` | Lecturas de exámenes completadas y validadas |
+
+### Resultado acumulado
+
+- La auditoría 3.0 documentó todos los API files, services, funciones HTTP,
+  consumidores, globals, sesión, headers, parsing, errores, duplicados,
+  aliases, Archivados, legacy, generación y polling.
+- Biblioteca consolidó dos lecturas GET en `bibliotecaGet` y cinco deletes en
+  `bibliotecaDelete`.
+- Anexos consolidó tres lecturas GET en `anexosGet`.
+- Listas consolidó dos lecturas GET en `listasCotejoGet`.
+- Exámenes consolidó dos lecturas GET de recursos en `examResourceGet`; el
+  status del job quedó excluido.
+- Generación, regeneración, polling, SSE, pending, payloads, retries,
+  deduplicación, prompts, worker, métricas y feedback permanecieron intactos.
+
+### Helpers, globals y wrappers
+
+| Helper | Archivo | Alcance | Global |
+| --- | --- | --- | --- |
+| `bibliotecaGet` | `js/api/biblioteca.api.js` | GET de conjuntos | No |
+| `bibliotecaDelete` | `js/api/biblioteca.api.js` | Deletes vigentes | No |
+| `anexosGet` | `js/api/anexos.api.js` | Lecturas de anexos | No |
+| `listasCotejoGet` | `js/api/listas_cotejo.api.js` | Lecturas de listas | No |
+| `examResourceGet` | `js/api/examenes.api.js` | Lecturas de recursos de examen | No |
+
+Los cinco son bindings léxicos privados, no obtienen sesión, no transforman el
+payload y no cruzan dominios. No existe cliente HTTP universal, helper Bearer
+global, helper universal de sesión, parser común ni clase de error transversal.
+
+Las globals API, wrappers service, namespaces feature, wrappers `bib*`, globals
+de generación/polling, compatibilidad legacy y Archivados continúan disponibles
+con sus firmas. El orden de scripts permanece compatible.
+
+### Duplicación y candidatos restantes
+
+| Candidato | Motivo de conservar | Decisión |
+| --- | --- | --- |
+| APIs de planeaciones | Detalle/edición, JSON, SSE, Archivados, export y estado local | Fases 4/7/8/10 |
+| APIs de jerarquía | CRUD técnico, generación, legacy, Archivados y wrappers indirectos | Fases 4/8/10 |
+| Autenticación común | Redirects y `null` observables | Conservar |
+| Headers/parsing comunes | JSON inválido, errores, SSE, blobs y crudos incompatibles | No realizar |
+| Helper HTTP universal | No existe equivalencia contractual global | No realizar |
+| Movimiento de deletes | Frontera validada en Biblioteca API | Fase 10 |
+| APIs sin consumidor | Globals protegidas/compatibilidad | Fase 10 |
+| Service wrappers | Consumidores activos y legacy | Fase 10 |
+
+Generación y polling corresponden a Fase 4; estado a Fase 5; render/eventos a
+Fase 6; Dashboard/shell a Fase 7; Archivados y aislamiento legacy a Fase 8;
+eliminación de legacy a Fase 9; wrappers/globals a Fase 10. Ninguna deuda
+restante bloquea Fase 3.
+
+### Criterios de cierre
+
+- Sesiones 3.0–3.8 con commit: cumplido.
+- Validaciones manuales requeridas: aprobadas.
+- Inventario y consumidores: completos, cero desconocidos.
+- Globals, firmas y wrappers: preservados.
+- Biblioteca GET/DELETE, anexos GET, listas GET y exámenes GET: consolidados.
+- Generación, polling y payloads protegidos: intactos y excluidos.
+- APIs restantes: asignadas a fases futuras.
+- Acción pequeña imprescindible pendiente de Fase 3: ninguna.
+- Código necesario para cerrar: ninguno.
+
+### Decisión
+
+**A. Cerrar Fase 3.**
+
+Fase cerrada: `3 — Capa API frontend`. Sesiones completadas: 3.0–3.9.
+Validación manual acumulativa: aprobada. Siguiente fase: `4 — Generación y
+polling`, pendiente y no iniciada.
+
+## Límite de la conversación actual
+
+La Fase 3 quedó cerrada.
+
+No se inició la Fase 4.
+
+La Fase 4 debe comenzar en una nueva conversación y debe partir de:
+
+- `REFACTOR_ROADMAP.md`
+- `SESSION_HANDOFF.md`
+- `FRONTEND_MAP.md`
+- `TEST_MATRIX.md`
+- `REFACTOR_DECISIONS.md`

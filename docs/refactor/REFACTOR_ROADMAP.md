@@ -26,7 +26,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 0 | Línea base y protección | Establecer punto seguro | Bajo | Completada |
 | 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
-| 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | En progreso |
+| 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
 | 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
@@ -292,7 +292,7 @@ Eliminar llamadas HTTP dispersas y hacer que las páginas coordinen flujos mient
 
 ### Estado
 
-**En progreso.** La Sesión `3.0 — Auditoría de capa API frontend` quedó
+**Completada.** La Sesión `3.0 — Auditoría de capa API frontend` quedó
 completada en documentación. Se inventariaron todas las funciones de
 `js/api`, `js/services` y `js/core`, los tres `fetch` directos fuera de API,
 sesión, headers, parsing, errores, aliases, globals, consumidores, Archivados y
@@ -368,19 +368,29 @@ legacy usa services, con payloads y bucles distintos. Generación, jobs, worker,
 retries, deduplicación, prompts, métricas y polling quedan en Fase 4.
 
 La Sesión `3.8 — Consolidación interna de lecturas de exámenes` quedó
-completada en código. `apiExamenesListByUnidad` y `apiExamenById` conservan
+completada y validada manualmente. `apiExamenesListByUnidad` y `apiExamenById` conservan
 firmas, globals, paths, encoding, contenedores y fallbacks, y delegan solo URL
 base, GET implícito, Bearer sin `Content-Type`/`Accept`, ausencia de body y
 `cache:"no-store"` al helper léxico privado `examResourceGet`.
 `requestExamJson`, sus helpers de parsing/error, generación, polling, services,
 delete y consumidores quedaron intactos. Los smokes previo/posterior, sintaxis
-y Jest pasaron. La validación manual 3.8 permanece pendiente y no se declara
-aprobada.
+y Jest pasaron. El usuario aprobó preview, reapertura, contenido, ambas
+descargas, reutilización del objeto, Biblioteca/tabs y ausencia de GET
+duplicados o errores relacionados. La regresión adicional de generación
+confirmó sin cambios los payloads protegidos, selección, polling,
+deduplicación, reintentos, fallbacks, guardado y métricas.
 
-La única siguiente sesión seleccionada, aún sin implementar, es
-`Sesión 3.9 — Auditoría de cierre de capa API frontend`. Revisará la evidencia
-acumulada y los criterios de salida sin implementar generación, polling,
-Archivados o legacy. Fase 3 continúa en progreso.
+La Sesión `3.9 — Auditoría de cierre de capa API frontend` verificó el
+inventario global, los commits 3.0–3.8, consumidores, helpers, globals,
+wrappers, orden de scripts, contratos backend y validaciones manuales. No
+quedan consumidores desconocidos ni una extracción pequeña imprescindible
+propia de Fase 3. Planeaciones, jerarquía, autenticación común, parsing
+transversal, generación, polling, Archivados, legacy y retiro de wrappers
+tienen fase futura explícita.
+
+**Fase cerrada: 3 — Capa API frontend.** Sesiones 3.0–3.9 completadas y
+validación manual acumulativa aprobada. La Fase 4 permanece pendiente, no fue
+iniciada y debe comenzar en una nueva conversación.
 
 ### Dependencias
 

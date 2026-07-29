@@ -56,6 +56,15 @@ se usan scripts clásicos y globals `window.*`, además de funciones globales
 implícitas. Los contratos de Biblioteca, Detalle, Archivados y explorador
 legacy se mantienen separados.
 
+La Fase 3 cerró la consolidación interna de las fronteras HTTP pequeñas y
+equivalentes sin crear un cliente universal. `bibliotecaGet`,
+`bibliotecaDelete`, `anexosGet`, `listasCotejoGet` y `examResourceGet` son
+bindings léxicos privados, específicos de dominio y método; las APIs públicas,
+services y wrappers `window.*` conservan sus firmas. Las diferencias de sesión,
+parsing, errores, SSE, blobs, generación y polling permanecen deliberadamente
+separadas. Generación y polling corresponden a la Fase 4, que está pendiente y
+no iniciada.
+
 ## Flujo principal: Biblioteca
 
 `pages/dashboard.html` carga, entre otros, `dashboard.page.js`, `biblioteca.page.js` y `main.js`, en ese orden. `main.js` invoca `window.initDashboardPage()`.
