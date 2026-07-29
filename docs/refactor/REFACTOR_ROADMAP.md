@@ -348,18 +348,30 @@ distintas. Generación por `planeacion_ids`, pending, métricas y la rama backen
 por unidad quedan en Fase 4.
 
 La Sesión `3.6 — Consolidación interna de lecturas de listas de cotejo` quedó
-completada en código, con validación manual pendiente.
+completada y validada manualmente.
 `apiListasCoTejoByUnidad` y `apiListaCoTejoById` conservan firmas, globals,
 paths, encoding, contenedores y fallbacks, y delegan solo URL base, GET
 implícito, Bearer sin `Content-Type`, ausencia de body y `cache:"no-store"` al
 helper léxico privado `listasCotejoGet`. `requestListaCoTejoJson`, sus helpers
 de parsing/error, generación, services, delete y consumidores quedaron
-intactos. Los smokes previo/posterior, sintaxis y Jest pasaron.
+intactos. Los smokes previo/posterior, sintaxis y Jest pasaron. El usuario
+aprobó preview, reapertura, descargas desde card/preview, reutilización del
+objeto, Biblioteca/tabs y regresión de deletes con persistencia verificada,
+`deletedBatch:true` y cero errores relacionados.
+
+La Sesión `3.7 — Auditoría puntual de APIs de exámenes` quedó completada como
+auditoría documental. Confirmó cuatro APIs, cuatro wrappers service, cuatro
+helpers HTTP y el delete ya consolidado en Biblioteca. El detalle es activo
+para preview/descarga y post-generación; el listado por unidad pertenece al
+explorador legacy. Biblioteca usa generación/polling directos y el Dashboard
+legacy usa services, con payloads y bucles distintos. Generación, jobs, worker,
+retries, deduplicación, prompts, métricas y polling quedan en Fase 4.
 
 La única siguiente sesión seleccionada, aún sin implementar, es
-`Sesión 3.7 — Auditoría puntual de APIs de exámenes`. Será exclusivamente
-documental y separará lecturas, generación y polling antes de decidir una
-consolidación. Fase 3 continúa en progreso.
+`Sesión 3.8 — Consolidación interna de lecturas de exámenes`. Incluirá solo
+`apiExamenesListByUnidad` y `apiExamenById`, mediante un helper GET privado que
+delegue en `requestExamJson` sin modificar el status del job, generación,
+polling, services ni consumidores. Fase 3 continúa en progreso.
 
 ### Dependencias
 

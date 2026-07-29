@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.6.
+Estado observado en `refactor-front` durante la Fase 3, hasta la Sesión 3.7.
 Este documento inventaría la arquitectura HTTP real y registra las
 consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
 
@@ -456,8 +456,8 @@ pero existen consumidores directos y consumidores mediante service.
 | Planeaciones | listado, detalle, tema, update, archivo | API/service | Activo/legacy/Archivados | Medio/alto | Después de separar flujos | Sesión posterior de Fase 3 |
 | Anexos | tres lecturas GET | anexos API | Detalle activo; dos sin consumidor | Bajo | 3.4 completada y validada manualmente | Sesión de Fase 3 completada |
 | Anexos | generación y regeneración | anexos API/Biblioteca | Generación activa; regeneración compatible | Alto | Separar pending y generación | Fase 4 |
-| Listas | dos lecturas GET | API/service | Detalle activo; listado legacy | Bajo | 3.6 completada en código; validación manual pendiente | Sesión de Fase 3 implementada |
-| Exámenes | lecturas | API/service | Activo/legacy | Bajo por auditar | 3.7, auditoría puntual sin generación/polling | Próxima sesión de Fase 3 |
+| Listas | dos lecturas GET | API/service | Detalle activo; listado legacy | Bajo | 3.6 completada y validada manualmente | Sesión de Fase 3 completada |
+| Exámenes | listado por unidad y detalle | API/service | Detalle activo; listado legacy | Bajo | 3.8, helper GET específico sin status del job | Próxima sesión de Fase 3 |
 | Autenticación y headers | sesión y builders | core/services/API | Global | Alto | Después de dominios pequeños | Sesión posterior de Fase 3 |
 | Parsing común de errores | seis familias | Todos los API | Global | Alto | No universalizar prematuramente | Conservar |
 | Fetch directos de páginas | tres loaders HTML | páginas/UI | Shell | Medio | Desacople de dashboard | Fase 7 |
@@ -656,12 +656,55 @@ aserciones, respectivamente. Cubrieron URLs y encoding, opciones HTTP, una
 petición por llamada, contenedores, prioridad `error` → `message` → fallback,
 metadata `status/payload`, cuerpo vacío y JSON inválido exitoso convertido en
 `null`, HTTP no JSON, globals y aislamiento del helper. `node --check` y Jest
-también pasaron. La validación manual 3.6 permanece pendiente.
+también pasaron. La validación manual 3.6 fue aprobada por el usuario: preview,
+cierre/reapertura, ambas descargas, reutilización del objeto, Biblioteca, tabs,
+cinco deletes, persistencia/base de datos y `deletedBatch:true` quedaron
+confirmados sin errores relacionados con `listasCotejoGet`.
+
+## Sesión 3.7 completada
+
+**Sesión 3.7 — Auditoría puntual de APIs de exámenes.**
+
+La auditoría confirmó cuatro APIs explícitas en `examenes.api.js`, cuatro
+wrappers en `examenes.service.js`, cuatro helpers HTTP top-level y
+`apiDeleteExamen` en `biblioteca.api.js`. No hay funciones ni consumidores
+desconocidos.
+
+| Función | Flujo | Consumidor | Retorno público |
+| --- | --- | --- | --- |
+| `apiExamenesGenerate` | Generación vigente/legacy | Biblioteca directa; service desde Dashboard | `{ok, job_id, status}` |
+| `apiExamenGenerationStatus` | Polling vigente/legacy | Biblioteca directa; service desde Dashboard | Estado completo del job |
+| `apiExamenesListByUnidad` | Listado legacy | `obtenerExamenesPorUnidad` → `ensureExamenes` | `{examenes}` |
+| `apiExamenById` | Detalle activo/compartido | `obtenerExamenDetalle` → preview, descarga y post-generación | `{examen}` |
+| `apiDeleteExamen` | Delete activo | `ExamDelete.deleteFromBiblioteca` | `{ok:true}` |
+
+Las tres operaciones GET de `examenes.api.js` comparten Bearer,
+`cache:"no-store"`, ausencia de `Content-Type`/body/`Accept`, parsing tolerante
+y errores con `status/payload`. El status del job no es una lectura de recurso
+intercambiable: forma parte del polling y queda en Fase 4. Solo listado por
+unidad y detalle pueden compartir un helper GET privado en Fase 3, conservando
+paths, fallbacks, contenedores y normalizaciones service.
+
+Biblioteca genera directamente con `unidad_id`, `batch_id`,
+`tipos_pregunta`, `cantidades_pregunta` y `planeacion_ids`, y consulta el job
+cada 3 segundos con máximo de 60 polls. El Dashboard legacy genera mediante el
+service con `unidad_id`, tipos/cantidades y `tema_ids`, y consulta primero a
+1.5 segundos y después cada 4 segundos, sin timeout frontend. Cerrar los
+modales no cancela el job ni el polling. Generación, worker, estados, retries,
+deduplicación, prompts, métricas y polling pertenecen a Fase 4.
+
+Preview y descarga comparten `explorerState.examenDetalleById`. Biblioteca hace
+una lectura por apertura de preview; descarga desde preview reutiliza el objeto.
+La descarga directa hace una lectura solo si el detalle no está ya en caché.
+El explorador legacy conserva listado por unidad y preview/descarga mediante
+wrappers. El delete permanece consolidado en Biblioteca desde 3.2.
 
 Próxima sesión única, sin implementar:
-**Sesión 3.7 — Auditoría puntual de APIs de exámenes.** Será documental y
-separará lecturas, generación y polling antes de proponer cualquier
-consolidación.
+**Sesión 3.8 — Consolidación interna de lecturas de exámenes.** Incluirá
+exclusivamente `apiExamenesListByUnidad(unidadId, accessToken)` y
+`apiExamenById(id, accessToken)` en `examenes.api.js`. Excluirá generación,
+`apiExamenGenerationStatus`, polling, services, consumidores, preview,
+descarga, delete, autenticación, backend, Archivados y legacy.
 
 ## Riesgos priorizados
 

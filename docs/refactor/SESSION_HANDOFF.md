@@ -23,8 +23,9 @@
 - **Sesión 3.4:** Consolidación interna de lecturas de anexos, completada.
 - **Validación manual 3.4:** aprobada.
 - **Sesión 3.5:** Auditoría puntual de APIs de listas de cotejo, completada.
-- **Sesión 3.6:** Consolidación interna de lecturas de listas de cotejo, completada en código.
-- **Validación manual 3.6:** pendiente.
+- **Sesión 3.6:** Consolidación interna de lecturas de listas de cotejo, completada.
+- **Validación manual 3.6:** aprobada.
+- **Sesión 3.7:** Auditoría puntual de APIs de exámenes, completada.
 - **Validación manual 2.1:** aprobada.
 - **Validación manual 2.2:** aprobada.
 - **Validación manual 2.3:** aprobada.
@@ -33,13 +34,12 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Próxima sesión seleccionada:** 3.7 — Auditoría puntual de APIs de exámenes.
+- **Próxima sesión seleccionada:** 3.8 — Consolidación interna de lecturas de exámenes.
 
 Las Fases 0, 1 y 2 están completadas. La Fase 3 permanece en progreso. La
-Sesión 3.4 está completada y validada manualmente; la Sesión 3.5 es documental
-y la Sesión 3.6 está completada en código con validación manual pendiente.
-Ninguna autoriza el cierre de la fase ni el inicio de generación, polling,
-Archivados o legacy.
+Sesiones 3.4 y 3.6 están completadas y validadas manualmente; las sesiones 3.5
+y 3.7 son auditorías documentales. Ninguna autoriza el cierre de la fase ni el
+inicio de generación, polling, Archivados o legacy.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -1912,10 +1912,12 @@ conserva `status` y `payload`; HTTP no JSON usa el fallback y `payload:null`.
 
 ### Validación manual
 
-Permanece pendiente. Debe cubrir preview, descarga desde card, descarga desde
-preview con reutilización del objeto y la regresión mínima indicada para 3.6.
-El listado legacy fue cubierto por smoke y no debe activarse como flujo manual
-de esta sesión.
+Aprobada por el usuario. Se confirmaron preview, cierre/reapertura, descarga
+desde card, descarga desde preview con reutilización del objeto, Biblioteca,
+tabs y ausencia de errores relacionados con `listasCotejoGet`. La regresión
+confirmó deletes de examen, lista, anexo, planeación directa y bloque completo,
+persistencia/base de datos y `deletedBatch:true`. El listado legacy permaneció
+fuera del recorrido manual.
 
 ### Exclusiones y hallazgos
 
@@ -1932,5 +1934,292 @@ scripts.
 
 **Sesión 3.7 — Auditoría puntual de APIs de exámenes.**
 
-Será exclusivamente documental y distinguirá lecturas, generación y polling.
-No está implementada. Fase 3 continúa en progreso.
+Fue completada como auditoría documental. Sus resultados se registran a
+continuación. Fase 3 continúa en progreso.
+
+## Sesión 3.7 — Auditoría puntual de APIs de exámenes
+
+### Estado de entrada y evidencia previa
+
+- Frontend: rama `refactor-front`, HEAD `6ce5a95`, working tree limpio.
+- Commit 3.6: `6ce5a95 refactor(frontend): consolidate checklist read requests`.
+- Backend: rama `refactor-back`, HEAD `e08d6e4`, working tree limpio.
+- Fases 0–2 completadas; Fase 3 en progreso; sesiones 3.0–3.6 completadas.
+- Validaciones manuales 3.1, 3.2, 3.4 y 3.6 aprobadas.
+- La evidencia 3.6 confirmó preview/reapertura de lista, descargas desde card y
+  preview, reutilización del objeto, Biblioteca/tabs, cinco deletes,
+  persistencia/base de datos, `deletedBatch:true` y cero errores relacionados
+  con `listasCotejoGet`.
+
+### Inventario de funciones
+
+| Función | Archivo | Método/endpoint | Argumentos | Retorno | Error | Consumidores | Clasificación |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `apiExamenesGenerate` | `js/api/examenes.api.js` | POST `/api/examenes/generate` | payload, token | `{ok, job_id, status}` o `null` según parsing | Error con `status/payload` | Biblioteca directa y service | Generación activa de Biblioteca |
+| `apiExamenGenerationStatus` | Mismo | GET `/api/examenes/generacion/:jobId` | UUID job, token | Estado del job o `null` | Error con `status/payload` | Biblioteca directa y service | Polling activo de Biblioteca |
+| `apiExamenesListByUnidad` | Mismo | GET `/api/examenes/unidad/:unidadId` | UUID unidad, token | `{examenes}` o `null` | Error con `status/payload` | Service → explorador | Listado legacy |
+| `apiExamenById` | Mismo | GET `/api/examenes/:id` | UUID examen, token | `{examen}` o `null` | Error con `status/payload` | Service → preview/descarga/post-generación | Preview/descarga activa |
+| `apiDeleteExamen` | `js/api/biblioteca.api.js` | DELETE `/api/examenes/:id` | UUID examen, token | `{ok:true}` | `payload.error` o `HTTP <status>` | `ExamDelete` | Biblioteca activa |
+| `generarExamenUnidad` | `js/services/examenes.service.js` | Delega POST generate | payload | Entidad compatible; actualmente job; `null` sin sesión | Propaga API | Dashboard | Generación legacy |
+| `obtenerEstadoGeneracionExamen` | Mismo | Delega GET status | UUID job | Payload intacto; `null` sin sesión | Propaga API | Polling Dashboard | Polling legacy |
+| `obtenerExamenesPorUnidad` | Mismo | Delega GET unidad | UUID unidad | Array/`[]`; `null` sin sesión | Propaga API | `ensureExamenes` | Listado legacy |
+| `obtenerExamenDetalle` | Mismo | Delega GET detalle | UUID examen | Entidad/payload; `null` sin sesión | Propaga API | Features y Dashboard | Service de compatibilidad |
+
+No existen funciones o consumidores desconocidos. `POST /api/examenes/generar`
+es alias backend de compatibilidad sin wrapper o consumidor frontend; el
+frontend usa exclusivamente `/generate`.
+
+### Consumidores confirmados
+
+| Función | Consumidor | Argumentos | Uso del retorno/error | Flujo |
+| --- | --- | --- | --- | --- |
+| `apiExamenesGenerate` | `submitBibliotecaExamModal` | Payload Biblioteca, token | Exige `job_id`; error queda en modal | Biblioteca vigente |
+| `generarExamenUnidad` | `submitUnitExamModal` | Payload por temas | Exige `job_id`; error genérico en sección | Legacy |
+| `apiExamenGenerationStatus` | IIFE de `submitBibliotecaExamModal` | Job UUID, token capturado | Actualiza pending; termina/falla/timeout | Polling Biblioteca |
+| `obtenerEstadoGeneracionExamen` | `waitForExamGenerationCompletion` | Job UUID | Actualiza `examGeneration`; termina/falla | Polling legacy |
+| `apiExamenesListByUnidad` | `obtenerExamenesPorUnidad` | UUID, token | Payload para normalizar | Service |
+| `obtenerExamenesPorUnidad` | `ensureExamenes` | UUID | Array en `examenesByUnidad`; error visual | Legacy |
+| `apiExamenById` | `obtenerExamenDetalle` | UUID, token | Payload para extraer examen | Service |
+| `obtenerExamenDetalle` | `ExamPreview.openBiblioteca/open` | UUID | Entidad en caché/modal | Vigente/legacy |
+| `obtenerExamenDetalle` | `ExamDownload.download` | UUID | Entidad para Word | Compartido |
+| `obtenerExamenDetalle` | `submitUnitExamModal` | UUID de examen completado | Inserta entidad en estado y recarga | Legacy |
+| `apiDeleteExamen` | `ExamDelete.deleteFromBiblioteca` | UUID, token | Ignora `{ok:true}`; log/alerta | Biblioteca vigente |
+
+`bibGenerarExamen` no existe. Biblioteca coordina generación con
+`openBibliotecaExamModal` y `submitBibliotecaExamModal`. No existen consumidores
+en Detalle o Archivados.
+
+### Contratos HTTP
+
+| Función | Request | Respuesta exitosa | Error/fallback | Vacío o JSON inválido |
+| --- | --- | --- | --- | --- |
+| `apiExamenesGenerate` | POST JSON; Bearer; body serializado; sin `Accept`/cache | Payload backend | `error` → `message` → `No se pudo generar el examen`; metadata | `null` |
+| `apiExamenGenerationStatus` | GET implícito; Bearer; `no-store`; sin body/`Content-Type`/`Accept` | Estado del job | Mismo orden; `No se pudo obtener el progreso del examen`; metadata | `null` |
+| `apiExamenesListByUnidad` | GET implícito; Bearer; `no-store`; sin body/`Content-Type`/`Accept` | `{examenes}` | Mismo orden; `No se pudieron obtener los examenes de la unidad`; metadata | `null` |
+| `apiExamenById` | GET implícito; Bearer; `no-store`; sin body/`Content-Type`/`Accept` | `{examen}` | Mismo orden; `No se pudo obtener el examen`; metadata | `null` |
+| `apiDeleteExamen` | DELETE; Bearer; sin body/cache/`Accept` | `{ok:true}` mediante `response.json()` | Solo `payload.error`, luego `HTTP <status>`; sin metadata | Rechaza al parsear éxito inválido/vacío |
+
+`parseExamApiJson` usa `response.text()`: JSON válido produce payload; cuerpo
+vacío o JSON inválido produce `null`, incluso en 2xx. `requestExamJson` conserva
+prioridad `payload.error` → `payload.message` → fallback específico →
+`HTTP <status>` y crea `Error` con `status` y `payload`.
+
+`unidadId`, `jobId`, `id` de detalle e `id` de delete pasan por
+`encodeURIComponent`; generación no interpola IDs en el path.
+
+Todas las rutas usan `requireAuth`: Bearer ausente o inválido devuelve 401. Los
+services filtran por `user_id`; recursos y jobs ajenos resultan no encontrados.
+Los IDs `unidadId`, `tema_ids`, `batch_id`, job y examen son UUID;
+`planeacion_ids` contiene bigint. Listado vacío responde `{examenes:[]}`.
+Detalle o job inexistente responde 404; validaciones pueden responder 400 y
+fallos inesperados 500.
+
+### Helpers internos
+
+| Helper | Responsabilidad | Funciones consumidoras | Global implícito | Duplicación |
+| --- | --- | --- | --- | --- |
+| `buildExamJsonHeaders` | `Content-Type` JSON y Bearer | Generación | Sí | No; POST |
+| `parseExamApiJson` | Texto a JSON; vacío/inválido a `null` | Request común | Sí | No |
+| `createExamApiError` | `Error` con `status/payload` | Request común | Sí | No |
+| `requestExamJson` | Fetch, parsing y validación HTTP | Cuatro APIs | Sí | Ejecutor canónico |
+
+El service agrega `normalizeExamEntityPayload`,
+`normalizeExamListPayload` y `withExamSession`; son funciones top-level
+globales implícitas. `withExamSession` usa `window.requireSession`, devuelve
+`null` sin sesión y no transforma errores.
+
+### Relación API/service
+
+| Función API | Wrapper service | API directa | Service | Diferencia contractual |
+| --- | --- | --- | --- | --- |
+| `apiExamenesGenerate` | `generarExamenUnidad` | Biblioteca | Dashboard legacy | Service obtiene sesión y permite normalización `examen/item`; payloads caller distintos |
+| `apiExamenGenerationStatus` | `obtenerEstadoGeneracionExamen` | Polling Biblioteca | Polling legacy | Service renueva sesión por poll; retorno intacto |
+| `apiExamenesListByUnidad` | `obtenerExamenesPorUnidad` | Ninguno | Explorador legacy | Service normaliza array, `items`, `data` o `{examenes}` a array/`[]` |
+| `apiExamenById` | `obtenerExamenDetalle` | Ninguno | Preview/descarga/Dashboard | Service extrae `examen`/`item` o conserva payload |
+| `apiDeleteExamen` | Ninguno | Feature delete | Ninguno | Propiedad de Biblioteca desde 3.2 |
+
+Ambos niveles deben conservarse: Biblioteca usa directamente generación y
+polling, mientras features y explorador usan services para sesión y
+normalización.
+
+### Comparación de lecturas
+
+| Aspecto | Por unidad | Detalle |
+| --- | --- | --- |
+| Consumidor | Explorador legacy | Preview/descarga activa y post-generación legacy |
+| Endpoint | `/api/examenes/unidad/:unidadId` | `/api/examenes/:id` |
+| Retorno API | `{examenes}` | `{examen}` |
+| Retorno service | Array/`[]`/`null` | Entidad/payload/`null` |
+| Error | Misma familia, fallback propio | Misma familia, fallback propio |
+| Encoding | `encodeURIComponent(unidadId)` | `encodeURIComponent(id)` |
+| HTTP | GET, Bearer, `no-store`, sin body/Content-Type/Accept | Igual |
+| Fase correcta | 8 para consumidor legacy; API conservada | 3 para mecánica; 10 para wrapper |
+| Viable consolidar | Sí, conservando wrapper | Sí, conservando wrapper |
+
+`apiExamenGenerationStatus` comparte opciones GET, pero su retorno y consumidor
+son de polling; no se incluye en la consolidación de lecturas.
+
+### Generación y payload protegido
+
+Biblioteca llama `apiExamenesGenerate` directamente con:
+
+```text
+unidad_id
+batch_id
+tipos_pregunta
+cantidades_pregunta
+planeacion_ids
+```
+
+El Dashboard legacy llama `generarExamenUnidad` con:
+
+```text
+unidad_id
+tipos_pregunta
+cantidades_pregunta
+tema_ids
+```
+
+El total no se envía como campo independiente: se deriva de
+`cantidades_pregunta`. El backend resuelve `planeacion_ids` bigint a
+`tema_ids` UUID, valida unidad, puede corregir el `unidad_id` hacia la unidad
+real, rechaza mezcla de unidades, resuelve/detecta `batch_id`, crea job/items y
+responde 202 `{ok:true, job_id, status}`. El worker se agenda con
+`setTimeout(..., 0)`.
+
+La versión vigente es `v8_unit_exam_counts_by_type_completion`. Items:
+`pending`, `processing`, `retrying`, `completed`, `failed`; jobs ejecutables:
+`processing`, `completed`, `failed` —el schema conserva default `pending`.
+Tipos, cantidades, total, selección, deduplicación, retries, sustitución,
+prompts, worker, persistencia y métricas quedan protegidos y pertenecen a
+Fase 4.
+
+### Polling
+
+| Flujo | API | Frecuencia/límite | Salida | Estado/feedback |
+| --- | --- | --- | --- | --- |
+| Biblioteca | `apiExamenGenerationStatus(jobId, token)` directa | Cada 3 s; máximo 60 polls, ~180 s | `completed`, `failed` o timeout | Muta `pendingExamenByBatchId`, renderiza y recarga Biblioteca |
+| Dashboard legacy | `obtenerEstadoGeneracionExamen(jobId)` | 1.5 s inicial; luego cada 4 s; sin timeout | `completed`; también trata `failed/partial/cancelled` como fallo | Muta `examGeneration`, renderiza y desplaza sección |
+
+Job inexistente: 404 convertido en `Error` con `status/payload`. Job fallido:
+status HTTP 200 con `status:"failed"` y mensaje genérico; ambos coordinadores lo
+transforman en fallo visible genérico. El backend actual no emite `partial` o
+`cancelled`, aunque el Dashboard legacy los contempla.
+
+Biblioteca cierra el modal apenas recibe `job_id` y mantiene una IIFE de polling
+en background. Dashboard fuerza el cierre antes de iniciar la espera. Ningún
+cierre cancela el job, aborta la petición o detiene el polling. El polling y su
+estado pertenecen íntegramente a Fase 4.
+
+### Preview, descarga y delete
+
+Flujo:
+
+```text
+card → wrapper Biblioteca/Dashboard → feature
+     → obtenerExamenDetalle → apiExamenById → {examen}
+     → examenDetalleById → modal o Word
+```
+
+Biblioteca hace una lectura por apertura de preview y guarda el objeto en
+`explorerState.examenDetalleById`; reabrir vuelve a leer. El explorador legacy
+usa `ensureExamenDetalle` y reutiliza caché. Descargar desde card solicita
+detalle solo si no está ya almacenado; descargar desde preview reutiliza el
+objeto y no hace otra lectura.
+
+Preview consume título, fecha, `total_preguntas`,
+`examen_ia.instrucciones_generales` y preguntas con tipo, texto, opciones,
+pares, elementos y respuesta correcta. Word usa el mismo contenido. Preview de
+Biblioteca muestra un mensaje genérico; preview legacy conserva `error.message`.
+Las descargas registran error y el handler legacy puede mostrar notificación.
+
+`apiDeleteExamen` permanece en `biblioteca.api.js`, consolidado y validado en
+3.2. `ExamDelete.deleteFromBiblioteca` es su consumidor; moverlo duplicaría una
+frontera validada. Solo puede reevaluarse en Fase 10.
+
+### Globals protegidas
+
+| Global/grupo | Firma o superficie | Propietario | Consumidores | Estado | Fase |
+| --- | --- | --- | --- | --- | --- |
+| `apiExamenesGenerate` | `(payload, accessToken)` | API exámenes | Biblioteca/service | Generación activa | 4/10 |
+| `apiExamenGenerationStatus` | `(jobId, accessToken)` | API exámenes | Biblioteca/service | Polling activo | 4/10 |
+| `apiExamenesListByUnidad` | `(unidadId, accessToken)` | API exámenes | Service legacy | Legacy conservada | 3/8/10 |
+| `apiExamenById` | `(id, accessToken)` | API exámenes | Service detalle | Compartida activa | 3/10 |
+| Helpers API | `buildExamJsonHeaders`, `parseExamApiJson`, `createExamApiError`, `requestExamJson` | API exámenes | Cuatro APIs | Globals implícitas | 10 |
+| `generarExamenUnidad` | `(payload)` | Service exámenes | Dashboard legacy | Generación legacy | 4/8/10 |
+| `obtenerEstadoGeneracionExamen` | `(jobId)` | Service exámenes | Polling legacy | Polling legacy | 4/8/10 |
+| `obtenerExamenesPorUnidad` | `(unidadId)` | Service exámenes | `ensureExamenes` | Listado legacy | 8/10 |
+| `obtenerExamenDetalle` | `(id)` | Service exámenes | Features/Dashboard | Compartida activa | 10 |
+| Helpers service | `normalizeExamEntityPayload`, `normalizeExamListPayload`, `withExamSession` | Service exámenes | Cuatro wrappers | Globals implícitas | 10 |
+| `apiDeleteExamen` | `(id, token)` | API Biblioteca | Feature delete | Activa | 10 |
+| `ExamPreview` | `render/open/openBiblioteca/close` | Feature preview | Biblioteca/Dashboard | Activa/legacy | 8/10 |
+| `ExamDownload` | `download/downloadFromBiblioteca` | Feature descarga | Biblioteca/Dashboard | Activa/legacy | 10 |
+| `ExamDelete` | `deleteFromBiblioteca` | Feature delete | Biblioteca | Activa | 10 |
+| `bibDescargarExamen` | `(examenId)` | Página Biblioteca | Handler card | Wrapper activo | 10 |
+| `openBibliotecaExamenPreview` | `(examenId)` | Página Biblioteca | Handler card | Wrapper activo | 10 |
+| `bibEliminarExamen` | `(examenId, conjuntoId)` | Página Biblioteca | Handler card | Wrapper activo | 10 |
+| Modal/generación Biblioteca | `open/close/renderBibliotecaExamModal`, `submitBibliotecaExamModal` | Página Biblioteca | Handler/modal | Globals implícitas activas | 4/10 |
+| `renderExamPreviewModal` / `closeExamPreviewModal` | `()` | Dashboard | Render/listeners | Compatibilidad explícita | 8/10 |
+| `downloadExamWord` | `(examenId, filenameOverride)` | Dashboard | Biblioteca/preview/legacy | Compatibilidad explícita | 10 |
+| `openExamPreview` | `(examenId)` | Dashboard | Explorador | Global implícita legacy | 8 |
+| `ensureExamenes` | `(unidadId, options)` | Dashboard | Explorador | Listado legacy | 8 |
+| Polling legacy | `waitForExamPolling(ms)`, `waitForExamGenerationCompletion(jobId, unidadId)` | Dashboard | Submit legacy | Globals implícitas | 4/8 |
+| Modal/generación legacy | `open/close/renderUnitExamModal`, `submitUnitExamModal(event)` | Dashboard | Explorador/listeners | Globals implícitas | 4/8 |
+
+No se elimina ni renombra ninguna global.
+
+### Duplicaciones y candidatos
+
+| Duplicación/candidato | Funciones | Tipo | Riesgo | Decisión |
+| --- | --- | --- | --- | --- |
+| Opciones GET de recursos | Listado por unidad y detalle | Duplicación HTTP real | Bajo | Sesión 3.8 |
+| GET de estado | Status frente a lecturas | Polling, contrato distinto | Alto | Fase 4 |
+| Helpers HTTP existentes | Cuatro helpers API | No duplicado | Bajo sin beneficio | No realizar |
+| API + services | Cuatro pares | Alias de compatibilidad con sesión/normalización | Medio | Conservar |
+| Generación directa/service | API generate y wrapper | Generación con payloads distintos | Alto | Fase 4 |
+| Polling directo/service | API status y wrapper | Polling con bucles distintos | Alto | Fase 4 |
+| Eliminar wrappers | Services, Biblioteca y Dashboard | Compatibilidad activa | Medio/alto | Fase 10 |
+| Mover delete | `apiDeleteExamen` | Frontera validada | Medio | Fase 10 |
+
+### Sesión 3.8 seleccionada
+
+**Sesión 3.8 — Consolidación interna de lecturas de exámenes.**
+
+Incluirá únicamente:
+
+```text
+apiExamenesListByUnidad(unidadId, accessToken)
+apiExamenById(id, accessToken)
+```
+
+El único archivo funcional candidato es `js/api/examenes.api.js`. Podrá añadir
+un helper GET léxico privado que reciba path, token y fallback y delegue en
+`requestExamJson`, preservando GET implícito, encoding, Bearer,
+`cache:"no-store"`, ausencia de `Content-Type`/`Accept`/body, contenedores,
+parsing, metadata, globals, services y consumidores.
+
+Riesgo bajo. Excluirá explícitamente `apiExamenesGenerate`,
+`apiExamenGenerationStatus`, generación, polling, jobs, pending, services,
+features, páginas, autenticación, delete, backend, Archivados y legacy.
+Validaciones futuras: sintaxis, Jest y smoke previo/posterior de URL, encoding,
+opciones, retornos, `error/message/fallback`, `status/payload`, vacío/JSON
+inválido a `null`, una petición, globals y helper fuera de `window`; preview y
+descarga en validación manual, listado legacy solo por smoke.
+
+### Exclusiones y riesgos
+
+No se modificaron JavaScript, HTML, CSS, generación, polling, pending, preview,
+descarga, delete, services, autenticación, payloads, backend, SQL, prompts,
+retries, deduplicación, Archivados ni legacy. Permanecen: polling Biblioteca
+con máximo de 60 iteraciones, polling legacy sin timeout, cierre de modal sin
+cancelación, JSON inválido exitoso convertido en `null`, services que pueden
+devolver `null` sin sesión, helpers top-level globales implícitos, duplicación
+de `ensureExamenDetalle`, alias backend `/generar` sin consumidor frontend y
+orden contractual de scripts.
+
+### Próxima sesión
+
+**Sesión 3.8 — Consolidación interna de lecturas de exámenes.**
+
+Es la única siguiente sesión seleccionada. No está implementada. Fase 3
+continúa en progreso.

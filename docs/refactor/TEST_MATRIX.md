@@ -455,10 +455,10 @@ de nuevo.
 | Aislamiento | Generación, services, delete, features, páginas, HTML y backend sin cambios | Aprobado estáticamente |
 | Sintaxis | `node --check js/api/listas_cotejo.api.js` | Aprobado |
 | Suite | `npm test -- --runInBand` | 1 suite y 2 pruebas aprobadas |
-| Preview manual | Título, tema, criterios, total, reapertura y una lectura | Pendiente |
-| Descarga desde card | Modal, nombre, archivo, formato y una lectura | Pendiente |
-| Descarga desde preview | Reutilización del objeto sin segunda lectura | Pendiente |
-| Regresión manual | Biblioteca, tabs, otros previews/descargas/deletes y Detalle | Pendiente |
+| Preview manual | Apertura, cierre y reapertura | Aprobado por el usuario |
+| Descarga desde card | Flujo completo de descarga | Aprobado por el usuario |
+| Descarga desde preview | Reutilización del objeto sin segunda lectura | Aprobado por el usuario |
+| Regresión manual | Biblioteca/tabs, cinco deletes, persistencia/base de datos y `deletedBatch:true` | Aprobado por el usuario |
 
 ### Evidencia automatizada
 
@@ -466,8 +466,35 @@ de nuevo.
 - Smoke posterior: 50 aserciones y 14 peticiones simuladas.
 - Cada función realizó una petición por invocación.
 - El listado legacy se validó solo mediante smoke, sin ejecutar su UI.
-- Validación manual 3.6 pendiente; no se declara aprobada.
+- Validación manual 3.6 aprobada por el usuario: preview/reapertura, ambas
+  descargas, reutilización del objeto, Biblioteca/tabs, cinco deletes,
+  persistencia/base de datos, `deletedBatch:true` y cero errores relacionados.
 - Siguiente sesión única: `3.7 — Auditoría puntual de APIs de exámenes`.
+
+## Sesión 3.7 — Auditoría puntual de APIs de exámenes
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Estado inicial | `refactor-front`, HEAD `6ce5a95`, árbol limpio | Aprobado |
+| Commit 3.6 | `6ce5a95 refactor(frontend): consolidate checklist read requests` | Presente |
+| Validación 3.6 | Evidencia manual y logs aportados por el usuario | Aprobada |
+| Backend | `refactor-back`, HEAD `e08d6e4`, árbol limpio | Aprobado |
+| Funciones | Cuatro APIs, cuatro wrappers service y delete en Biblioteca | Clasificadas |
+| Consumidores | Biblioteca, features, Dashboard y explorador legacy | Confirmados |
+| Desconocidos | Funciones y consumidores | Cero |
+| Helpers API | Headers, parsing, error y request | Cuatro identificados |
+| API/service | Sesión y normalizaciones conservadas | Ambos niveles necesarios |
+| Lecturas | Listado legacy y detalle activo comparten GET | Viable consolidar API |
+| Generación | Payloads Biblioteca/legacy, jobs, worker, retries y métricas | Fase 4 |
+| Polling | Directo en Biblioteca y mediante service en legacy | Fase 4 |
+| Preview/descarga | Detalle activo con caché compartida | Confirmado |
+| Delete | Consolidado en Biblioteca desde 3.2 | Conservar |
+| Sesión siguiente | Una sola 3.8: listado por unidad y detalle | Aprobado |
+| Alcance | Solo Markdown; sin cambios funcionales ni backend | Aprobado |
+
+No se ejecutaron pruebas funcionales en 3.7 porque la sesión solo modifica
+documentación. La validación manual 3.6 permanece aprobada y no debe solicitarse
+de nuevo.
 
 ## Regresión acumulativa
 
