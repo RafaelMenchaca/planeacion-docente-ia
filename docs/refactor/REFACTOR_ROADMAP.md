@@ -27,7 +27,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
-| 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
+| 4 | Generación y polling | Separar procesos largos | Alto | En progreso |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
@@ -447,7 +447,14 @@ Separar por dominio el inicio, feedback, progreso, polling, finalización, error
 
 ### Estado
 
-**Pendiente.**
+**En progreso.**
+
+La auditoría documental de apertura quedó aprobada por el usuario. El primer
+corte funcional, sin número de sesión definido por el roadmap, extrae
+literalmente la generación seleccionada de anexos desde Biblioteca. Mantiene
+`submitBibliotecaAnexoCreateModal()` como validador y wrapper de UI, y delega la
+operación en `AnexoGeneration.generateFromBiblioteca()`. La validación manual de
+este corte permanece pendiente; la fase no está cerrada.
 
 ### Dependencias
 

@@ -828,8 +828,9 @@ de Fase 4, sin número de sesión aprobado**. El nombre es descriptivo y no
 constituye una decisión de numeración.
 
 Riesgo de esta auditoría: **medio documental**. Riesgo funcional si se excede
-el alcance: **alto**. No se modificó código funcional y el estado canónico de la
-Fase 4 continúa pendiente hasta la confirmación explícita de esta apertura.
+el alcance: **alto**. La confirmación explícita del usuario quedó recibida al
+abrir el primer corte funcional; la Fase 4 está **En progreso**. La auditoría no
+modificó código funcional.
 
 El roadmap sí respalda el orden conservador
 `anexos → listas de cotejo → planeaciones → exámenes`, un recurso por sesión.
@@ -920,7 +921,7 @@ UI histórica no inician ninguno de los flujos vigentes de esta auditoría.
 | Campo | Evidencia actual |
 | --- | --- |
 | Acción, página y DOM | Tab Anexos, `data-bib-action="abrir-modal-anexos"`; selección `data-bib-anexo-planid`; submit `#bib-anexo-create-submit` |
-| Handler y coordinador | `onBibliotecaClick()` → `openBibliotecaAnexoCreateModal()` → `submitBibliotecaAnexoCreateModal()` |
+| Handler y coordinador | `onBibliotecaClick()` → `openBibliotecaAnexoCreateModal()` → `submitBibliotecaAnexoCreateModal()` → `AnexoGeneration.generateFromBiblioteca()` |
 | Service y helper API | **No aplica service frontend**; llamada directa a `apiGenerarAnexo()` por cada planeación |
 | Endpoint y método | `POST /api/anexos/generate` |
 | Headers/auth/payload | JSON + Bearer; body `{planeacion_id}`; una sesión capturada antes del bucle |
@@ -931,10 +932,23 @@ UI histórica no inician ninguno de los flujos vigentes de esta auditoría.
 | Duración backend | El intento IA usa timeout de 90 s por anexo; la duración total frontend depende del número seleccionado |
 | Éxito/persistencia | Backend persiste un anexo único por planeación y puede devolver `already_exists`; se borra cada pending exitoso y se hace refetch si hubo algún éxito |
 | Error/cleanup | Un item fallido permanece como card error. Si hubo al menos un éxito, el refetch posterior elimina todo el mapa, incluidos errores; si ninguno tuvo éxito, los errores permanecen hasta otra acción/reload |
-| Globals/wrappers | `window.apiGenerarAnexo`; sin wrapper service |
+| Globals/wrappers | `window.AnexoGeneration.generateFromBiblioteca`, consumidor único `submitBibliotecaAnexoCreateModal()`; `window.apiGenerarAnexo`; sin wrapper service |
 | Logs confirmados | Frontend `[anexos] generate:start/success`; backend `[anexos] generate:start/success`; métricas `aiMetrics` |
 | Pruebas | Sin automatización específica; evidencia manual previa protege generación exitosa y versión `v1_anexos_desde_planeacion` |
 | Regresiones | Orden secuencial, unicidad/already_exists, race 23505, cards por item, refetch, timeout backend, payload y logs |
+
+La primera sesión funcional de Fase 4 no tiene número aprobado. Extrajo
+literalmente la operación que comienza después de validar selección y sesión:
+construcción de cards pending, cierre del modal, selección del tab, requests
+secuenciales, actualización optimista, error por card, render por item, log y
+refetch. `submitBibliotecaAnexoCreateModal()` conserva la lectura del modal, el
+bloqueo/deduplicación de IDs, los mensajes y `requireSession()`, y funciona como
+wrapper estable. La carga clásica quedó
+`anexos.api.js → anexo-generation.js → features de preview/download/delete →
+dashboard.page.js → biblioteca.page.js`. Regeneración y wrappers individuales
+no se movieron. La superficie `window.AnexoGeneration` solo podrá retirarse
+cuando una fase autorizada migre el orden de carga y confirme que el consumidor
+ya no depende de `window`.
 
 #### Generación/regeneración compatibles sin emisor vigente
 
@@ -1060,7 +1074,7 @@ unificarse con el polling de Biblioteca sin cambiar contratos observables.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Planeaciones por unidad | SSE manual sobre fetch | `apiUnidadGenerarConProgreso()` | POST `/api/unidades/:unidadId/generar?stream=1` | Sin intervalo/timeout frontend | `done` o `error`; items started/completed/error/skipped | Fin del reader; sin abort/reconexión | Request continúa al navegar; fragmentos inválidos se ignoran |
 | Planeación individual no confirmada | SSE manual sobre fetch | `apiPlaneacionesGenerateWithProgress()` | POST `/api/planeaciones/generate?stream=1` | Sin intervalo/timeout | `done` o fin sin payload | Fin del reader | Entry point no confirmado y fallback distinto |
-| Anexos | Request largo secuencial | `submitBibliotecaAnexoCreateModal()` | POST `/api/anexos/generate` | 90 s backend por intento IA; total variable | HTTP éxito/error por item | Borrado por item/refetch | Navegación no cancela; error puede limpiarse tras éxito parcial |
+| Anexos | Request largo secuencial | `AnexoGeneration.generateFromBiblioteca()` | POST `/api/anexos/generate` | 90 s backend por intento IA; total variable | HTTP éxito/error por item | Borrado por item/refetch | Navegación no cancela; error puede limpiarse tras éxito parcial |
 | Listas | Request largo | `submitBibliotecaListaModal()` | POST `/api/listas-cotejo/generate` | 60 s backend por intento IA; luego gracia local 1.5 s | HTTP éxito/error | Borra pending y refetch | Skipped no se reflejan por card |
 | Examen Biblioteca | Polling con `setTimeout` awaited | IIFE de `submitBibliotecaExamModal()` | GET `/api/examenes/generacion/:jobId` | 3 s, 60 polls, ~180 s nominal | completed/failed/timeout | Salida del while; sin handle | Poll 60 completado se clasifica timeout; reload no reanuda |
 | Examen Dashboard legacy | Polling con `setTimeout` awaited | `waitForExamGenerationCompletion()` | Mismo GET | 1.5 s inicial, 4 s siguientes, sin límite | completed o failed/partial/cancelled | Retorno/throw | Polling indefinido y contrato terminal distinto |
@@ -1076,7 +1090,7 @@ previa al submit; no cancela una generación ya iniciada.
 | --- | --- | --- | --- | --- | --- | --- |
 | `pendingConjunto` | `bibliotecaState` léxico | quick create mediante `window.biblioteca.setPendingConjunto()`; loader | sidebar/detail y reconciliación | Antes de generar bloque nuevo; se limpia al cargar/reconciliar | Reload lo recrea vacío | Card temporal sin job persistido |
 | `pendingPlaneacionesByBatchId` | `bibliotecaState` | Biblioteca, quick create/`finishPlaneacionesGeneration`, delete de bloque | tab Planeaciones y callbacks SSE | Inicio; limpia solo sin errores o delete | Error/partial permanece; reload lo pierde | Dos coordinadores escriben el mismo mapa |
-| `anexosGenerating` | `bibliotecaState` | submit masivo, wrappers individuales/regeneración, delete bloque | tab/modales Anexos | Por item; éxito/refetch/delete | Error queda salvo refetch con algún éxito; reload lo pierde | Limpieza asimétrica y posible clave vacía en regeneración |
+| `anexosGenerating` | `bibliotecaState` | `AnexoGeneration.generateFromBiblioteca()`, wrappers individuales/regeneración, delete bloque | tab/modales Anexos | Por item; éxito/refetch/delete | Error queda salvo refetch con algún éxito; reload lo pierde | Limpieza asimétrica y posible clave vacía en regeneración |
 | `pendingListaByBatchId` | `bibliotecaState` | submit lista, delete bloque | tab Listas | Inicio; éxito + 1.5 s/refetch; delete | Error queda; reload lo pierde | Skipped y progreso por item no representados |
 | `pendingExamenByBatchId` | `bibliotecaState` | submit/polling, delete bloque | tab Exámenes | Tras job; limpia en completed/refetch o delete | Failed/timeout queda; reload pierde jobId | Sin reanudación; doble submit posible tras reload |
 | Modal flags `submitting/error` | `bibliotecaState` | renders/submits de cada modal | botones y mensajes de modal | Antes del request; modal suele cerrarse al iniciar | Error de inicio vuelve al modal; reload limpia | No son cancelación del proceso |

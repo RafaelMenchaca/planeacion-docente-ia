@@ -12,9 +12,10 @@
 ## Estado del roadmap
 
 - **Última fase cerrada:** 3 — Capa API frontend.
-- **Fase actual:** ninguna en ejecución.
-- **Siguiente fase:** 4 — Generación y polling.
-- **Estado de Fase 4:** Pendiente; no iniciada.
+- **Fase actual:** 4 — Generación y polling.
+- **Estado de Fase 4:** En progreso.
+- **Sesión funcional actual:** extracción literal de generación seleccionada de anexos desde Biblioteca, sin número aprobado.
+- **Validación manual de la sesión funcional actual:** pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -38,11 +39,11 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** Fase 4 en una nueva conversación obligatoria.
+- **Continuación:** validar manualmente el primer corte funcional de Fase 4 antes de avanzar al siguiente recurso.
 
 Las Fases 0, 1, 2 y 3 están completadas. Las validaciones manuales 3.1, 3.2,
-3.4, 3.6 y 3.8 están aprobadas. La Fase 4 permanece pendiente y no se inició
-en esta conversación.
+3.4, 3.6 y 3.8 están aprobadas. La Fase 4 está en progreso y su primer corte
+funcional queda pendiente de validación manual.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -2455,9 +2456,9 @@ Por tanto:
   documental de apertura de Fase 4**, sin número de sesión aprobado.
 - **No aprobado:** denominarla `4.0` o asignar números a los siguientes cortes.
 
-La apertura formal y cualquier numeración quedan pendientes de confirmación
-explícita del usuario. Por ello el estado `Pendiente` de Fase 4 no se cambia en
-el roadmap durante esta sesión.
+La auditoría fue aprobada explícitamente por el usuario al solicitar el primer
+corte funcional. Esta aprobación abre la Fase 4, pero no autoriza ni define una
+numeración de sesiones.
 
 ### Resultado de la auditoría
 
@@ -2576,6 +2577,64 @@ La revisión de esta sesión es exclusivamente documental. Debe confirmar:
 - propuesta del siguiente corte;
 - archivos documentales modificados.
 
-Estado: **Pendiente de confirmación explícita del usuario**. No se solicita
-generación real, delete ni prueba destructiva, y no se marca ninguna prueba
-manual de Fase 4 como aprobada.
+Estado: **Aprobada explícitamente por el usuario**. La aprobación corresponde
+al contenido documental de apertura y no aprueba pruebas manuales funcionales
+de Fase 4.
+
+## Primera sesión funcional de Fase 4 — Generación seleccionada de anexos
+
+### Identidad y estado
+
+- Fase: `4 — Generación y polling`.
+- Número: no definido por el roadmap ni aprobado por otra decisión.
+- Nombre descriptivo: **Extracción literal de generación seleccionada de anexos desde Biblioteca**.
+- Riesgo: alto.
+- Estado de implementación: completada, pendiente de validación manual.
+
+### Corte implementado
+
+`submitBibliotecaAnexoCreateModal()` conserva el contrato de modal: estado,
+conjunto, anexos existentes, selección disponible, normalización,
+deduplicación, mensaje vacío, flag `submitting`, render y `requireSession()`.
+Después delega una sola vez en
+`window.AnexoGeneration.generateFromBiblioteca({ conjuntoId, selectedIds,
+planeaciones, accessToken })`.
+
+`js/features/anexos/anexo-generation.js` contiene, de forma literal, la
+operación antes embebida en la página:
+
+1. crea `bibliotecaState.anexosGenerating[conjuntoId]` y sus cards;
+2. cierra el modal, selecciona el tab Anexos y renderiza;
+3. ejecuta `apiGenerarAnexo()` secuencialmente por `selectedIds`;
+4. actualiza optimistamente `conjunto.anexos` y `total_anexos`;
+5. elimina el pending exitoso o conserva error y mensaje por item;
+6. renderiza después de cada intento;
+7. conserva logs, limpieza asimétrica y refetch silencioso si hubo éxito.
+
+La dependencia se expone como `window.AnexoGeneration` porque la aplicación usa
+scripts clásicos. `pages/dashboard.html` la carga después de `anexos.api.js` y
+antes de los consumidores de página. Su retiro solo puede evaluarse al migrar
+la carga clásica en una fase autorizada y confirmar cero consumidores globales.
+
+### Contratos preservados y fuera de alcance
+
+Permanecen iguales `POST /api/anexos/generate`, JSON + Bearer,
+`{planeacion_id}`, parser/error de `apiGenerarAnexo`, orden secuencial,
+pending, mensajes, actualización optimista, refetch, persistencia y logs. No se
+tocaron regeneración, wrappers individuales, listas, planeaciones, exámenes,
+polling, SSE, estado general, render general, backend, CSS, `wordExport.js`,
+prompts, payloads ni contratos HTTP.
+
+### Validación
+
+Pasaron la comprobación sintáctica, la comparación literal contra `HEAD` y un
+smoke aislado de 19 aserciones para éxito, secuencia, éxito parcial, fallo total,
+pending, actualización optimista y refetch. La prueba manual queda **Pendiente
+de confirmación explícita del usuario**.
+
+### Siguiente corte sugerido
+
+Sin número aprobado: **extracción literal de generación seleccionada de listas
+de cotejo desde Biblioteca**. Es el segundo dominio del orden respaldado por el
+roadmap y evita mezclar polling, SSE, estado general o exámenes. Solo debe
+iniciarse tras la validación manual del corte de anexos.

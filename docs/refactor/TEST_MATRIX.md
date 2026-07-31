@@ -564,8 +564,8 @@ de nuevo.
 | 3.6 | Lecturas de listas de cotejo | Aprobada |
 | 3.8 | Lecturas de exámenes | Aprobada |
 
-Fase 3 cerrada. La Fase 4 permanece pendiente, no fue iniciada y debe comenzar
-en una nueva conversación.
+Fase 3 cerrada. Al terminar su auditoría de cierre, la Fase 4 permanecía
+pendiente y debía comenzar en una nueva conversación.
 
 ## Regresión acumulativa
 
@@ -592,10 +592,10 @@ Si se conserva una prueba del explorador antiguo por una dependencia todavía no
 
 ## Auditoría documental de apertura de Fase 4
 
-Esta auditoría no modifica comportamiento y no aprueba pruebas manuales de
-Fase 4. Define la regresión que deberá ejecutar cada extracción funcional
-posterior. La validación de este bloque queda **Pendiente de confirmación
-explícita del usuario**.
+Esta auditoría no modificó comportamiento ni aprobó pruebas manuales de Fase 4.
+Define la regresión que debe ejecutar cada extracción funcional posterior. Su
+contenido fue **aprobado explícitamente por el usuario** al abrir la primera
+sesión funcional.
 
 ### Regresión común obligatoria
 
@@ -668,8 +668,42 @@ explícita del usuario**.
 
 | Verificación | Estado |
 | --- | --- |
-| Identidad de Fase 4 y ausencia de número de sesión aprobado | Pendiente de confirmación del usuario |
-| Inventario de flujos, consumidores y contratos | Pendiente de confirmación del usuario |
-| Polling, SSE, pending, feedback y riesgos | Pendiente de confirmación del usuario |
-| Secuencia sugerida por roadmap y primer corte propuesto | Pendiente de confirmación del usuario |
+| Identidad de Fase 4 y ausencia de número de sesión aprobado | Aprobado por el usuario |
+| Inventario de flujos, consumidores y contratos | Aprobado por el usuario |
+| Polling, SSE, pending, feedback y riesgos | Aprobado por el usuario |
+| Secuencia sugerida por roadmap y primer corte propuesto | Aprobado por el usuario |
 | Prueba funcional de Fase 4 | No ejecutada; no aplica a esta sesión documental |
+
+## Primera sesión funcional de Fase 4 — generación seleccionada de anexos
+
+El roadmap no define un número de sesión. La extracción mueve literalmente la
+operación a `AnexoGeneration.generateFromBiblioteca()` y conserva
+`submitBibliotecaAnexoCreateModal()` como validador y wrapper de UI.
+
+### Evidencia estática y smoke
+
+| Verificación | Estado |
+| --- | --- |
+| Sintaxis de módulo y página | Aprobada |
+| Comparación del bloque con `HEAD`, salvo parámetros explícitos | Idéntica |
+| Namespace y consumidor global | Aprobado |
+| Un request por seleccionado y máximo uno simultáneo | Aprobado |
+| Éxito y actualización optimista | Aprobado |
+| Éxito parcial y limpieza asimétrica vigente | Aprobado |
+| Fallo total y error pending por card | Aprobado |
+| Refetch solo cuando existe al menos un éxito | Aprobado |
+| Total del smoke aislado | 19 aserciones aprobadas |
+
+### Validación manual pendiente
+
+| Escenario | Estado |
+| --- | --- |
+| Cancelar antes de generar no crea pending ni request | Pendiente |
+| Generar un anexo: card pending, preview, persistencia, base de datos y logs | Pendiente |
+| Generar varios anexos conserva el orden secuencial | Pendiente |
+| Error controlado/éxito parcial conserva feedback y limpieza vigentes, solo si puede probarse con seguridad | Pendiente; no ejecutar de forma destructiva |
+| Eliminar bloque después de generar conserva el cleanup; no probar durante una generación activa | Pendiente |
+| Regresión mínima de otros tabs, sin generación adicional ni errores relacionados | Pendiente |
+
+Ninguna prueba manual de esta sesión está aprobada todavía. La Fase 4 permanece
+en progreso.

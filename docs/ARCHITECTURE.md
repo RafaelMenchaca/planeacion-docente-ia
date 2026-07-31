@@ -26,7 +26,7 @@ La jerarquía técnica puede seguir existiendo como modelo de datos, API, select
 | `js/api/` | Wrappers HTTP por recurso. |
 | `js/services/` | Autenticación y orquestación. |
 | `js/pages/` | Estado, eventos e inicialización de páginas. |
-| `js/features/` | Acciones modulares por dominio extraídas en Fases 1 y 2. |
+| `js/features/` | Acciones modulares por dominio extraídas en Fases 1, 2 y 4. |
 | `js/ui/` | Componentes, modales, helpers y descargas. |
 | `tests/` | Suite automatizada existente. |
 
@@ -62,8 +62,11 @@ equivalentes sin crear un cliente universal. `bibliotecaGet`,
 bindings léxicos privados, específicos de dominio y método; las APIs públicas,
 services y wrappers `window.*` conservan sus firmas. Las diferencias de sesión,
 parsing, errores, SSE, blobs, generación y polling permanecen deliberadamente
-separadas. Generación y polling corresponden a la Fase 4, que está pendiente y
-no iniciada.
+separadas. La Fase 4 está en progreso: su primer corte funcional movió
+literalmente la operación de generación seleccionada de anexos a
+`js/features/anexos/anexo-generation.js`, sin cambiar su API, secuencia,
+pending, feedback, persistencia ni refetch. Los demás flujos de generación y
+polling permanecen en sus propietarios anteriores.
 
 ## Flujo principal: Biblioteca
 
