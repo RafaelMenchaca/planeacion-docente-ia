@@ -816,6 +816,333 @@ Fase cerrada: `3 — Capa API frontend`. Sesiones 3.0–3.9 completadas y
 validación manual acumulativa aprobada. La Fase 4 permanece pendiente y no fue
 iniciada; debe comenzar en una nueva conversación.
 
+## Auditoría documental de apertura de Fase 4
+
+### Identidad y alcance documental
+
+El roadmap define la fase `4 — Generación y polling`, con el objetivo de separar
+por dominio el inicio, feedback, progreso, polling, finalización, error y
+limpieza de procesos largos. No define número ni nombre para su primera sesión.
+Por tanto, esta auditoría se identifica como **auditoría documental de apertura
+de Fase 4, sin número de sesión aprobado**. El nombre es descriptivo y no
+constituye una decisión de numeración.
+
+Riesgo de esta auditoría: **medio documental**. Riesgo funcional si se excede
+el alcance: **alto**. No se modificó código funcional y el estado canónico de la
+Fase 4 continúa pendiente hasta la confirmación explícita de esta apertura.
+
+El roadmap sí respalda el orden conservador
+`anexos → listas de cotejo → planeaciones → exámenes`, un recurso por sesión.
+No respalda números ni nombres de esas sesiones. La primera extracción
+funcional se propone, sin numeración aprobada, para la generación de anexos.
+
+Convención del inventario: **No aplica** significa que el mecanismo no forma
+parte del flujo; **No confirmado** significa que la búsqueda global no aportó
+evidencia suficiente. Ningún `No confirmado` se interpreta como código legacy
+o eliminable.
+
+### Clasificación de superficies y consumidores
+
+| Clasificación | Componentes | Evidencia de ejecución o consumo |
+| --- | --- | --- |
+| Biblioteca vigente | `pages/dashboard.html`, `biblioteca.page.js`, sus modales, tabs, pending maps y delegación `data-bib-action` | `initDashboardPage()` detecta `window.initBiblioteca`, activa `BIBLIOTECA_MODE`, llama `initBiblioteca()` y retorna antes de hidratar el explorador |
+| Dashboard vigente | Shell inyectado, `bindDashboardEvents()`, creación rápida y helpers compartidos en `dashboard.page.js` | Los eventos se enlazan antes del retorno a Biblioteca; `#btn-hero-quick-create` y `data-bib-action="crear-planeaciones"` abren el panel |
+| Detalle vigente | `pages/detalle.html`, `detalle.page.js` y edición/descarga | No inicia generación; consume planeaciones ya persistidas |
+| Archivados | `pages/archivados.html`, `archivados.page.js` y registro local de jerarquía archivada | Flujo separado; no inicia los cuatro procesos de generación auditados |
+| Jerarquía técnica activa | API/service de plantel, grado, materia, unidad y tema | Creación rápida crea o reutiliza IDs técnicos antes de generar planeaciones |
+| Compatibilidad | `window.biblioteca`, `window.explorerState`, globals API/service, wrappers `bibGenerarAnexo`/`bibRegenerarAnexo`, aliases de `AppUI` | Tienen consumidores activos o ramas de handler conservadas; no se declaran eliminables |
+| Legacy visual confirmado | Render jerárquico y coordinadores por unidad de listas/exámenes en `dashboard.page.js` | El código y sus listeners se cargan, pero el render visual no se alcanza porque la inicialización vigente retorna tras `initBiblioteca()` |
+| No clasificado | Generación individual en `planeacion.page.js` | Tiene definición y mapeo en `main.js`, pero `pages/planeacion.html` redirige inmediatamente a Dashboard y no carga ese script; no hay entry point ejecutable confirmado |
+
+`pages/batch.html` también redirige a Dashboard. Los handlers inline hallados en
+UI histórica no inician ninguno de los flujos vigentes de esta auditoría.
+
+### Inventario de planeaciones
+
+#### Agregar temas a un bloque vigente
+
+| Campo | Evidencia actual |
+| --- | --- |
+| Acción, página y DOM | En Biblioteca, botón dinámico `data-bib-action="agregar-planeacion"`; modal con `#bib-agr-submit` |
+| Handler y coordinador | Delegación `onBibliotecaClick()` → `openBibliotecaAgregarModal()`; listener directo → `submitBibliotecaAgregarModal()` |
+| Service y helper API | `generarPlaneacionesUnidadConProgreso()` → `apiUnidadGenerarConProgreso()`; fallback 5xx → `apiUnidadGenerar()` |
+| Endpoint y método | `POST /api/unidades/:unidadId/generar?stream=1`; fallback `POST /api/unidades/:unidadId/generar` |
+| Headers y autenticación | `Content-Type: application/json`, `Authorization: Bearer <token>` y `Accept: text/event-stream, application/json` en stream; sesión obtenida con `requireSession()` |
+| Payload | `temas[{titulo,duracion,actividades_momentos,orden,generar_imagenes_en:[]}]`, `materia`, `nivel`, `batch_id`; `unidadId` viaja en ruta |
+| Parsing | JSON tolerante si el servidor responde JSON; para SSE usa `ReadableStream`, `TextDecoder`, líneas `data:` y JSON por evento; fragmentos inválidos se ignoran |
+| Estado y pending | Escribe `bibliotecaState.pendingPlaneacionesByBatchId[batchId]`; items `pending/generating/ready/error/skipped` y error agregado |
+| Lectores y render | `renderPlaneacionesTab()`, `renderProgressItemHtml()` y `renderBibliotecaProgressCard()`; clases `bib-item-generating`/`bib-item-error`, pill de progreso y mensaje inline |
+| Feedback | Modal se cierra al iniciar; cards por tema; errores de item y error agregado; consola en API y catch de Biblioteca |
+| Espera | SSE sobre el mismo request. No `EventSource`, polling, intervalo, timeout frontend, reconexión, `AbortController` ni cancelación |
+| Éxito y persistencia | Evento terminal `done` devuelve el resumen; aplica resultado y planeaciones optimistas, limpia pending si `error_count === 0` y hace refetch silencioso de Biblioteca |
+| Error y cleanup | Error SSE o HTTP deja `pending.error`; resultados parciales conservan pending. Navegar/reload elimina el estado léxico local, pero no cancela el trabajo backend |
+| Globals/wrappers | `window.generarPlaneacionesUnidadConProgreso`, `window.apiUnidadGenerarConProgreso`; `renderProgressPill`/`statusLabelFromTone` delegan a `window.AppUI` |
+| Logs | Frontend `[planeaciones] generate:start/success`; backend eventos de generación y métricas |
+| Pruebas | No hay prueba automatizada de este flujo; la matriz manual base cubre generación/SSE |
+| Regresiones protegidas | Eventos, orden de items, `batch_id`, IDs técnicos, fallback solo 5xx, mensajes, métricas, persistencia y refetch |
+
+#### Creación rápida compartida
+
+| Campo | Evidencia actual |
+| --- | --- |
+| Acción, página y DOM | Biblioteca vacía emite `data-bib-action="crear-planeaciones"`; shell emite `#btn-hero-quick-create`; submit de `#quick-create-form` |
+| Handler y coordinador | `openQuickCreatePanel()` → `submitQuickCreateForm()` → `generatePlaneacionesFromStaging()` |
+| Preparación técnica | Crea/reutiliza plantel, grado, materia y unidad mediante `jerarquia.service.js`; fija `explorerState.current`, staging y contexto |
+| Service/API | Mismo service y endpoints por unidad del flujo anterior |
+| Payload adicional | Puede añadir `batch_id`, `titulo_conjunto` o `force_new_batch:true, mode:"create"`; conserva actividades y contexto legacy |
+| Estado | `explorerState.quickCreate`, `stagingTemas`, `stagingContext`, `generating`, `progress`; coordina `window.biblioteca.pendingBatchId`, `pendingConjunto` y `pendingPlaneacionesByBatchId` |
+| Render y feedback | Panel de creación rápida, progreso de `explorerState` y cards de Biblioteca; alertas de precondición, mensaje final y consola |
+| Espera/cleanup | Mismo SSE sin timeout/cancelación. `finally` limpia `explorerState.generating` y `pendingBatchId`; staging se limpia tras resultado |
+| Persistencia/reload | `finishPlaneacionesGeneration()` reconcilia batch temporal/real y refetch. Reload pierde staging y pending local; backend puede continuar |
+| Clasificación | Dashboard vigente compartido + Biblioteca vigente + jerarquía técnica activa + compatibilidad por globals |
+| Riesgo principal | Extraer solo el submit de Biblioteca rompería la creación rápida, su jerarquía técnica o la reconciliación `pendingConjunto`/batch |
+
+#### Generación individual histórica
+
+| Campo | Evidencia actual |
+| --- | --- |
+| Definición | `planeacion.page.js`: `#btn-generar`/`#btn-generar-mobile` → `generarPlaneacion()` |
+| Coordinación | `generarPlaneacionApiConProgreso()` → `apiPlaneacionesGenerateWithProgress()`; fallback según mensaje → `apiPlaneacionesGenerate()` |
+| HTTP | `POST /api/planeaciones/generate?stream=1`, JSON + Bearer; no header `Accept`; fallback sin `stream` |
+| Payload/feedback | `materia`, `nivel`, `unidad` numérica y `temas`; progreso mediante helpers UI opcionales, resultado batch, alertas |
+| Espera/cleanup | Fetch SSE manual; sin polling, timeout, cancelación o reconexión |
+| Estado/pending/render | `estadoPlaneacion` léxico y helpers UI opcionales; pending map: **No aplica**; render de resultado histórico |
+| Persistencia/reload | Backend persiste batch/planeaciones; no hay refetch posterior; `resetearFormulario()` recarga la página |
+| Globals/wrappers | `window.planeacionPage`, `window.generarPlaneacionApiConProgreso`, API global y helpers UI implícitos |
+| Logs/pruebas | Logs frontend `[planeaciones] generate:start/success`; prueba de generación: **No confirmado**; Jest solo cubre `validateForm` histórico |
+| Consumidor | `main.js` contiene el mapeo, pero `pages/planeacion.html` redirige y no carga el script. Consumidor ejecutable: **No confirmado** |
+| Clasificación | No clasificado; no se declara legacy ni eliminable |
+
+### Inventario de anexos
+
+#### Generación seleccionada vigente
+
+| Campo | Evidencia actual |
+| --- | --- |
+| Acción, página y DOM | Tab Anexos, `data-bib-action="abrir-modal-anexos"`; selección `data-bib-anexo-planid`; submit `#bib-anexo-create-submit` |
+| Handler y coordinador | `onBibliotecaClick()` → `openBibliotecaAnexoCreateModal()` → `submitBibliotecaAnexoCreateModal()` |
+| Service y helper API | **No aplica service frontend**; llamada directa a `apiGenerarAnexo()` por cada planeación |
+| Endpoint y método | `POST /api/anexos/generate` |
+| Headers/auth/payload | JSON + Bearer; body `{planeacion_id}`; una sesión capturada antes del bucle |
+| Parsing | `response.text()` → JSON tolerante; error prioriza `error`, luego `message`, conserva `status/payload` |
+| Estado/pending | `bibliotecaState.anexosGenerating[batchId][planeacionId]` con título, materia, nivel, `generating/error` y mensaje |
+| Render/feedback | Card temporal por planeación; modal se cierra; actualización optimista por éxito; error inline por card; logs start/success |
+| Espera | Requests largos **secuenciales**; sin polling/SSE, timeout frontend, cancelación ni abort |
+| Duración backend | El intento IA usa timeout de 90 s por anexo; la duración total frontend depende del número seleccionado |
+| Éxito/persistencia | Backend persiste un anexo único por planeación y puede devolver `already_exists`; se borra cada pending exitoso y se hace refetch si hubo algún éxito |
+| Error/cleanup | Un item fallido permanece como card error. Si hubo al menos un éxito, el refetch posterior elimina todo el mapa, incluidos errores; si ninguno tuvo éxito, los errores permanecen hasta otra acción/reload |
+| Globals/wrappers | `window.apiGenerarAnexo`; sin wrapper service |
+| Logs confirmados | Frontend `[anexos] generate:start/success`; backend `[anexos] generate:start/success`; métricas `aiMetrics` |
+| Pruebas | Sin automatización específica; evidencia manual previa protege generación exitosa y versión `v1_anexos_desde_planeacion` |
+| Regresiones | Orden secuencial, unicidad/already_exists, race 23505, cards por item, refetch, timeout backend, payload y logs |
+
+#### Generación/regeneración compatibles sin emisor vigente
+
+`bibGenerarAnexo()` y `bibRegenerarAnexo()` son consumidores directos de
+`apiGenerarAnexo()` y `apiRegenerarAnexo()`. Sus ramas
+`data-bib-action="generar-anexo"` y `"regenerar-anexo"` existen en la delegación,
+pero ningún render HTML actual emite esos atributos. La regeneración usa
+`POST /api/anexos/:anexoId/regenerate`, JSON + Bearer, sin body, y comparte
+`anexosGenerating`, cards, refetch y ausencia de polling/cancelación. Se
+clasifican como **Compatibilidad**, no como código eliminable. El
+`planeacionId` vacío no se valida en `bibRegenerarAnexo()` antes de usarlo como
+clave pending; es un riesgo registrado, no un bug corregido.
+
+| Campo | Generar uno compatible | Regenerar compatible |
+| --- | --- | --- |
+| Emisor DOM | **No confirmado**; solo rama de delegación | **No confirmado**; solo rama de delegación |
+| Handler/coordinador | `onBibliotecaClick()` → `bibGenerarAnexo()` | `onBibliotecaClick()` → `bibRegenerarAnexo()` |
+| Service | **No aplica** | **No aplica** |
+| API/payload | `apiGenerarAnexo()`, `{planeacion_id}` | `apiRegenerarAnexo()`, anexo ID en ruta; body: **No aplica** |
+| Parsing/auth | Parser tolerante común de anexos; JSON + Bearer | Mismo parser; JSON + Bearer |
+| Espera/timeout | Request largo; timeout frontend: **No aplica**; backend 90 s IA | Request largo; timeout frontend: **No aplica**; backend 90 s IA |
+| Estado/render/feedback | `anexosGenerating`, card y error inline | Mismo mapa; card “Regenerando...” y error inline |
+| Éxito/cleanup | Optimista, limpia item y refetch | Limpia item y refetch |
+| Error/reload/cancelación | Error permanece; reload pierde pending; cancelación: **No aplica** | Igual; posible clave pending vacía |
+| Logs | Frontend solo errores; backend generate start/success | Frontend solo errores; backend regenerate start/error/success |
+| Pruebas | Automatizada: **No confirmado** | Automatizada: **No confirmado** |
+| Regresión | Firma, unicidad, retorno, mapa, render y refetch | Firma, endpoint, contenido reemplazado, mapa y refetch |
+
+### Inventario de listas de cotejo
+
+#### Generación vigente de Biblioteca
+
+| Campo | Evidencia actual |
+| --- | --- |
+| Acción, página y DOM | Tab Listas, `data-bib-action="generar-lista"`; selección `data-bib-lista-planid`; submit `#bib-lista-submit` |
+| Handler y coordinador | `onBibliotecaClick()` → `openBibliotecaListaModal()` → `submitBibliotecaListaModal()` |
+| Service y helper API | Biblioteca llama directo a `apiListasCoTejoGenerate()`; el service no participa en este flujo |
+| Endpoint/método | `POST /api/listas-cotejo/generate` |
+| Headers/auth/payload | JSON + Bearer; `{planeacion_ids:[...]}`; sesión capturada antes de la IIFE |
+| Parsing | Texto → JSON tolerante; errores con prioridad `error`/`message` y metadata |
+| Estado/pending | `pendingListaByBatchId[batchId] = {items,result:null,error}`; un item por planeación |
+| Render/feedback | Cards por item; mismo estado global para todos; log success con conteos; error inline repetido por card |
+| Espera | Request largo único; backend procesa planeaciones secuencialmente y limita cada intento IA a 60 s. Sin polling/SSE/timeout frontend/cancelación |
+| Éxito/persistencia | Backend devuelve `created`, `skipped` y listas; frontend espera 1.5 s, borra pending y refetch |
+| Estados omitidos | `already_exists`, `missing_closing_activity`, `invalid_ai_response`; frontend solo registra el conteo y no asigna la razón a cada card |
+| Error/cleanup | Error conserva todas las cards con el mismo mensaje. Reload pierde pending; la persistencia backend ya confirmada aparece en un refetch posterior |
+| Globals/wrappers | `window.apiListasCoTejoGenerate`; `window.generarListasCotejoUnidad` queda para el camino legacy |
+| Logs confirmados | Frontend `[listas-cotejo] generate:success`; backend `[listas-cotejo] generate:start/success`; no se confirmó log frontend start |
+| Pruebas | Sin automatización específica; evidencia manual previa protege selección, `created:1`, `skipped:0`, diez puntos y versión `v2_lista_cotejo_actividades_momentos` |
+| Regresiones | Selección explícita, actividades evaluables, fallback `actividad_cierre`, exactamente cinco criterios de 2/0, total 10, skipped, refetch y métricas |
+
+El coordinador `submitListaCotejoGenerate()` del Dashboard llama
+`generarListasCotejoUnidad({planeacion_ids, unidad_id})`, escribe
+`explorerState.listaCotejoGeneration`, refetch por unidad y muestra toast con
+detalle de skipped. Su emisor `data-content-action="open-lista-cotejo-modal"`
+solo aparece en el render del explorador que no se ejecuta en Biblioteca. Se
+clasifica como **Legacy visual confirmado**; el service y la ruta siguen siendo
+compatibilidad protegida.
+
+| Campo legacy | Evidencia |
+| --- | --- |
+| Acción/DOM/handler | `data-content-action="open-lista-cotejo-modal"` → `openListaCotejoModal()`; submit `#lista-cotejo-confirm-submit` → `submitListaCotejoGenerate()` |
+| Service/API/HTTP | `generarListasCotejoUnidad()` → `apiListasCoTejoGenerate()`; POST JSON + Bearer al mismo endpoint |
+| Payload/parsing | `{planeacion_ids,unidad_id}`; parser y retorno crudo del service |
+| Estado/render/feedback | `listaCotejoModal`, `listaCotejoGeneration`, `errors.listaCotejo`; render legacy y toast con skipped |
+| Espera/timeout/cancelación | Request largo; polling/SSE: **No aplica**; timeout y cancelación frontend: **No aplica** |
+| Terminal/cleanup/refetch | HTTP éxito → estado ready, `ensureListasCotejo(force)` y render; error → estado error y mensaje por unidad |
+| Reload/persistencia | Estado local se pierde; listas backend persisten |
+| Globals/wrappers/logs/pruebas | Service/API globals; logs backend start/success; prueba UI ejecutada: **No confirmado** |
+| Regresión | Payload legacy, toast, skipped, estado por unidad y ausencia de timeout |
+
+### Inventario de exámenes
+
+#### Generación y polling vigentes de Biblioteca
+
+| Campo | Evidencia actual |
+| --- | --- |
+| Acción, página y DOM | Tab Exámenes, `data-bib-action="generar-examen"`; checkboxes `data-bib-exam-type`, counts y `data-bib-exam-planid`; submit `#bib-exam-submit` |
+| Handler/coordinador | `onBibliotecaClick()` → `openBibliotecaExamModal()` → `submitBibliotecaExamModal()` → IIFE de polling |
+| Service/API | Biblioteca llama directo `apiExamenesGenerate()` y `apiExamenGenerationStatus()`; no usa service |
+| Inicio HTTP | `POST /api/examenes/generate`, JSON + Bearer |
+| Payload protegido | `{unidad_id,batch_id,tipos_pregunta,cantidades_pregunta,planeacion_ids}`; total derivado de cantidades, no enviado como campo independiente |
+| Respuesta inicial | Texto → JSON tolerante; HTTP 202 exige `job_id`; backend crea job/items y agenda worker con `setTimeout(...,0)` |
+| Estado/pending | `examModal` antes del submit; luego `pendingExamenByBatchId[batchId] = {message,error}` |
+| Render/feedback | Modal se cierra tras crear job; una card de examen muestra `current_step`; error visible siempre usa mensaje genérico protegido |
+| Polling | `GET /api/examenes/generacion/:jobId`, Bearer y `no-store`; espera 3 s antes de cada poll, máximo 60 |
+| Terminales | Biblioteca reconoce `completed` y `failed`; el backend vigente expone `processing/completed/failed` |
+| Timeout real | Nominal aproximado de 180 s más duración HTTP. Si `completed` llega en el poll 60, el chequeo posterior `polls >= MAX_POLLS` lo trata como timeout; riesgo registrado |
+| Cleanup | No usa interval handle; el `while` termina en éxito/fallo/timeout. En éxito borra pending y refetch; en fallo/timeout conserva card error |
+| Navegación/cancelación | No `AbortController`, cancel endpoint, cleanup al cerrar modal o listener de navegación. Cerrar modal solo aplica antes del job; reload detiene el polling local, no el worker |
+| Reload/persistencia | Job, items y examen persisten en backend. Pending/jobId no persisten en frontend y el polling no se reanuda; un reload posterior puede mostrar el examen terminado |
+| Reintentos | No hay botón de retry dedicado ni retry frontend. Worker reintenta, sustituye duplicados y usa fallbacks según contrato backend |
+| Globals/wrappers | `window.apiExamenesGenerate`, `window.apiExamenGenerationStatus`; service `generarExamenUnidad`/`obtenerEstadoGeneracionExamen` queda para legacy |
+| Logs frontend | Payload Biblioteca, `[examenes] job:created`, `[polling] examen:start/finished` y errores |
+| Logs backend confirmados | `[examenes] generar examen recibido`, `worker:start`, `pregunta aceptada`, `pregunta rechazada, reintentando`, `exam:saved`, `generate:success`, `[aiMetrics] job:finished` |
+| Pruebas | Sin automatización específica; evidencia manual previa protege diez preguntas, distribución, deduplicación, reintentos, fallback, guardado y métricas |
+
+El Dashboard legacy usa `submitUnitExamModal()` y envía
+`{unidad_id,tipos_pregunta,cantidades_pregunta,tema_ids}` mediante
+`generarExamenUnidad()`. `waitForExamGenerationCompletion()` espera 1.5 s antes
+del primer poll y 4 s después, renueva sesión por service en cada consulta, no
+tiene límite y considera `failed`, `partial` o `cancelled` como fallo. Actualiza
+`explorerState.examGeneration`, progreso numérico y detalle final. Su emisor
+solo existe en el render visual legacy; no es el flujo vigente y no puede
+unificarse con el polling de Biblioteca sin cambiar contratos observables.
+
+| Campo legacy | Evidencia |
+| --- | --- |
+| Acción/DOM/handler | `data-content-action="open-unit-exam-modal"` → `openUnitExamModal()`; submit `#unit-exam-form` → `submitUnitExamModal()` |
+| Service/API | `generarExamenUnidad()`/`obtenerEstadoGeneracionExamen()` → APIs de generación/status |
+| HTTP/auth/parsing | Mismos POST/GET JSON y parser; el service llama `requireSession()` en inicio y en cada poll |
+| Payload | `{unidad_id,tipos_pregunta,cantidades_pregunta,tema_ids}`; `batch_id` y `planeacion_ids`: **No aplica** en este caller |
+| Estado/render/feedback | `examModal`, `examGeneration`, `errors.examenes`; render legacy, progreso numérico, scroll y detalle final |
+| Polling/timeout | 1.5 s inicial y 4 s posteriores; límite/timeout: **No aplica** |
+| Terminal/cleanup | completed retorna; failed/partial/cancelled lanzan; no interval handle |
+| Reload/cancelación | Estado se pierde; worker persiste; reanudación y cancelación: **No aplica** |
+| Globals/wrappers/logs/pruebas | Service/API globals; logs payload Dashboard y backend; prueba UI ejecutada: **No confirmado** |
+| Regresión | Selección de temas de la unidad, cantidades, progreso, detalle, terminales y sesión renovada por poll |
+
+### Mecanismos de espera
+
+| Flujo | Mecanismo | Función | Endpoint | Intervalo/duración | Terminal | Cleanup actual | Riesgo |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Planeaciones por unidad | SSE manual sobre fetch | `apiUnidadGenerarConProgreso()` | POST `/api/unidades/:unidadId/generar?stream=1` | Sin intervalo/timeout frontend | `done` o `error`; items started/completed/error/skipped | Fin del reader; sin abort/reconexión | Request continúa al navegar; fragmentos inválidos se ignoran |
+| Planeación individual no confirmada | SSE manual sobre fetch | `apiPlaneacionesGenerateWithProgress()` | POST `/api/planeaciones/generate?stream=1` | Sin intervalo/timeout | `done` o fin sin payload | Fin del reader | Entry point no confirmado y fallback distinto |
+| Anexos | Request largo secuencial | `submitBibliotecaAnexoCreateModal()` | POST `/api/anexos/generate` | 90 s backend por intento IA; total variable | HTTP éxito/error por item | Borrado por item/refetch | Navegación no cancela; error puede limpiarse tras éxito parcial |
+| Listas | Request largo | `submitBibliotecaListaModal()` | POST `/api/listas-cotejo/generate` | 60 s backend por intento IA; luego gracia local 1.5 s | HTTP éxito/error | Borra pending y refetch | Skipped no se reflejan por card |
+| Examen Biblioteca | Polling con `setTimeout` awaited | IIFE de `submitBibliotecaExamModal()` | GET `/api/examenes/generacion/:jobId` | 3 s, 60 polls, ~180 s nominal | completed/failed/timeout | Salida del while; sin handle | Poll 60 completado se clasifica timeout; reload no reanuda |
+| Examen Dashboard legacy | Polling con `setTimeout` awaited | `waitForExamGenerationCompletion()` | Mismo GET | 1.5 s inicial, 4 s siguientes, sin límite | completed o failed/partial/cancelled | Retorno/throw | Polling indefinido y contrato terminal distinto |
+
+No existe `EventSource`, `setInterval`, `AbortController` ni mecanismo de
+cancelación para estos procesos. El SSE se implementa mediante lectura manual
+del body del fetch. El botón “Cancelar” de cada modal solo cierra la captura
+previa al submit; no cancela una generación ya iniciada.
+
+### Propiedad del estado pending y feedback
+
+| Estado | Propietario | Escritores | Lectores | Creación/limpieza | Error y reload | Riesgo |
+| --- | --- | --- | --- | --- | --- | --- |
+| `pendingConjunto` | `bibliotecaState` léxico | quick create mediante `window.biblioteca.setPendingConjunto()`; loader | sidebar/detail y reconciliación | Antes de generar bloque nuevo; se limpia al cargar/reconciliar | Reload lo recrea vacío | Card temporal sin job persistido |
+| `pendingPlaneacionesByBatchId` | `bibliotecaState` | Biblioteca, quick create/`finishPlaneacionesGeneration`, delete de bloque | tab Planeaciones y callbacks SSE | Inicio; limpia solo sin errores o delete | Error/partial permanece; reload lo pierde | Dos coordinadores escriben el mismo mapa |
+| `anexosGenerating` | `bibliotecaState` | submit masivo, wrappers individuales/regeneración, delete bloque | tab/modales Anexos | Por item; éxito/refetch/delete | Error queda salvo refetch con algún éxito; reload lo pierde | Limpieza asimétrica y posible clave vacía en regeneración |
+| `pendingListaByBatchId` | `bibliotecaState` | submit lista, delete bloque | tab Listas | Inicio; éxito + 1.5 s/refetch; delete | Error queda; reload lo pierde | Skipped y progreso por item no representados |
+| `pendingExamenByBatchId` | `bibliotecaState` | submit/polling, delete bloque | tab Exámenes | Tras job; limpia en completed/refetch o delete | Failed/timeout queda; reload pierde jobId | Sin reanudación; doble submit posible tras reload |
+| Modal flags `submitting/error` | `bibliotecaState` | renders/submits de cada modal | botones y mensajes de modal | Antes del request; modal suele cerrarse al iniciar | Error de inicio vuelve al modal; reload limpia | No son cancelación del proceso |
+| `explorerState.generating/progress` | Dashboard compartido | creación rápida y SSE | panel rápido y Biblioteca para conjunto temporal | Inicio/finally; items quedan para resultado visual | Reload limpia | Global mixta; no mover en Fase 4 |
+| `examGeneration`/`listaCotejoGeneration` | `explorerState` | coordinadores legacy | render legacy | Inicio/terminal | Reload limpia | No mezclar con pending vigente |
+
+`biblioteca-block-delete.js` es consumidor indirecto de los cuatro mapas:
+los elimina al borrar un bloque. `renderBibliotecaProgressCard()` controla el
+feedback común de cards y depende de `renderProgressPill()` y
+`statusLabelFromTone()`, wrappers locales de Dashboard sobre `window.AppUI`.
+Estos son contratos de render de Fase 6 y no deben moverse durante la extracción
+de procesos.
+
+### Contratos protegidos y regresiones futuras
+
+- Preservar autenticación Supabase, Bearer, headers, parsing, metadata de error,
+  mensajes, orden clásico de scripts y globals actuales.
+- Planeaciones: payload por unidad/individual, `batch_id`, unidad técnica,
+  estados y orden de eventos SSE, fallback JSON y creación de temas/planeación
+  pending.
+- Anexos: `planeacion_id`, unicidad por planeación, `already_exists`, resolución
+  de race, request secuencial, timeout backend, prompt/version y métricas.
+- Listas: `planeacion_ids`, `unidad_id` legacy, selección de actividades en
+  `actividades_momentos`, fallback `actividad_cierre`, skipped, cinco criterios
+  de dos puntos, total 10, prompt/version y métricas.
+- Exámenes: `unidad_id`, `planeacion_ids`, `tema_ids`, `tipos_pregunta`,
+  `cantidades_pregunta`, total derivado, selección/deduplicación, jobs/items,
+  estados, polling, retries, reemplazo de duplicados, cantidad final, prompts,
+  worker, mensaje genérico y métricas.
+- Preservar reload/refetch, feedback, errores, timeouts y ausencia de
+  cancelación exactamente como comportamiento vigente hasta una tarea
+  funcional explícita.
+- Mantener `window.explorerState`, Archivados, jerarquía técnica,
+  `js/ui/wordExport.js`, preview/descargas y evidencia manual cerrada de Fase 3.
+
+Las sesiones funcionales de Fase 4 deberán probar, por recurso, éxito y fallo
+permitido, reload/navegación según el comportamiento actual, una sola petición
+o polling esperado, ausencia de duplicados, consola limpia y regresión
+acumulativa. Además: skipped de listas, SSE y parciales de planeaciones,
+already_exists/error por item de anexos, y creación/job/progreso/terminal/
+persistencia de exámenes.
+
+### Riesgos y hallazgos de apertura
+
+- El polling de examen vigente tiene un borde confirmado en el poll 60 y no
+  persiste `jobId` para reanudación.
+- El polling legacy no tiene timeout y sus terminales difieren del vigente.
+- Requests y SSE no se cancelan al cerrar, navegar o recargar; el backend puede
+  continuar.
+- Los cuatro pending viven en memoria, se pierden al reload y tienen reglas de
+  limpieza distintas.
+- Quick create cruza Dashboard, Biblioteca y jerarquía técnica; no es una
+  función exclusiva de uno de esos archivos.
+- Anexos no tiene service frontend; crear uno sería implementación nueva, no
+  extracción literal.
+- Listas oculta el detalle de skipped en las cards vigentes.
+- Generación/regeneración individual de anexos conserva handlers sin emisor DOM
+  actual; no se debe retirar ni elevar a flujo vigente sin sesión separada.
+- La generación individual de `planeacion.page.js` no tiene entry point
+  ejecutable confirmado; no se clasifica como eliminable.
+- `README.md` afirma que `js/features/` no existe, mientras el árbol y
+  `ARCHITECTURE.md` confirman módulos en esa carpeta. Es contradicción
+  documental previa, fuera de los documentos autorizados para este cambio.
+- No se confirmaron pruebas automatizadas de generación/polling; el único test
+  actual cubre `validateForm` histórico.
+
 ## Riesgos priorizados
 
 1. Globals implícitas y explícitas dependientes del orden de scripts.

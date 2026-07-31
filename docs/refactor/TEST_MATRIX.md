@@ -589,3 +589,87 @@ Comprobar en todos los recorridos:
 - activación accidental del árbol o breadcrumbs legacy.
 
 Si se conserva una prueba del explorador antiguo por una dependencia todavía no migrada, marcarla explícitamente como **compatibilidad / no regresión temporal**; nunca como experiencia principal soportada.
+
+## Auditoría documental de apertura de Fase 4
+
+Esta auditoría no modifica comportamiento y no aprueba pruebas manuales de
+Fase 4. Define la regresión que deberá ejecutar cada extracción funcional
+posterior. La validación de este bloque queda **Pendiente de confirmación
+explícita del usuario**.
+
+### Regresión común obligatoria
+
+| Área | Verificación futura | Contrato protegido |
+| --- | --- | --- |
+| Entrada | Una acción del usuario inicia una sola coordinación | Sin listeners, requests o jobs duplicados |
+| Auth/HTTP | Sesión, Bearer, headers, método, URL, body y parsing idénticos | Incluye metadata y prioridad de mensajes de error |
+| Pending | Se crea, actualiza y limpia en los mismos momentos | Error, parcial y reload conservan comportamiento |
+| Feedback | Modal, card, pill, mensaje y consola siguen equivalentes | No exponer error interno ni payload sensible |
+| Persistencia | Éxito persiste y aparece tras refetch/reload | IDs y relaciones se conservan |
+| Navegación | Mantener la ausencia actual de cancelación/reanudación salvo tarea explícita | No introducir cleanup funcional accidental |
+| Consumidores | Biblioteca, quick create, wrappers, globals, delete de bloque y compatibilidad siguen accesibles | Orden clásico de scripts sin cambios |
+| Regresión Fase 3 | Previews, reapertura, contenido, tipos, descargas y lecturas/deletes consolidados | Fase 3 permanece cerrada |
+| Aislamiento | JavaScript ajeno al recurso, HTML, CSS, `wordExport.js`, backend y package files sin cambios salvo autorización expresa futura | Un recurso por sesión |
+
+### Planeaciones
+
+| Escenario | Evidencia esperada |
+| --- | --- |
+| Agregar tema a bloque | Payload por unidad y `batch_id` idénticos; un request stream |
+| Creación rápida: bloque existente | Jerarquía técnica, `pendingBatchId`, progreso y reconciliación conservados |
+| Creación rápida: bloque nuevo | `titulo_conjunto`, `force_new_batch/mode`, card temporal y batch real conservados |
+| SSE exitoso | `item_started`, `item_completed`, `done`, cards y refetch |
+| SSE parcial | `item_error`/`item_skipped`, mensajes, contadores y pending equivalente |
+| Fallback | Solo se activa bajo la condición vigente de cada service; mismo endpoint JSON |
+| Error/reload | Sin timeout/cancelación nuevos; estado local y persistencia se comportan como antes |
+| Consumidor no confirmado | No activar ni retirar `planeacion.page.js` sin auditoría separada |
+
+### Anexos
+
+| Escenario | Evidencia esperada |
+| --- | --- |
+| Uno seleccionado | POST `{planeacion_id}`, card temporal, persistencia y refetch |
+| Varios seleccionados | Requests secuenciales y feedback por item, sin paralelización accidental |
+| `already_exists` | Unicidad y retorno backend preservados |
+| Éxito parcial | Misma actualización optimista, limpieza y tratamiento de cards error |
+| Fallo total/timeout backend | Errores por card permanecen; mismo mensaje/metadata |
+| Compatibilidad | `bibGenerarAnexo` y `bibRegenerarAnexo` conservan firmas y ramas sin emisor |
+| Logs/métricas | Eventos start/success/error y versión `v1_anexos_desde_planeacion` sin cambios |
+
+### Listas de cotejo
+
+| Escenario | Evidencia esperada |
+| --- | --- |
+| Selección explícita | Payload `{planeacion_ids}` y bloqueo de listas ya existentes |
+| Éxito | `created`, espera local de 1.5 s, limpieza y refetch |
+| Skipped | `already_exists`, `missing_closing_activity` e `invalid_ai_response` preservados |
+| Actividades | `actividades_momentos` y fallback `actividad_cierre` equivalentes |
+| Salida | Cinco criterios, valores 2/0 y total 10 |
+| Error/reload | Mismas cards/mensaje; sin polling, SSE, cancelación ni timeout frontend nuevos |
+| Compatibilidad legacy | Payload con `unidad_id`, toast y service permanecen aislados |
+| Logs/métricas | Start/success backend, success frontend y versión `v2_lista_cotejo_actividades_momentos` |
+
+### Exámenes
+
+| Escenario | Evidencia esperada |
+| --- | --- |
+| Payload | `unidad_id`, `batch_id`, `planeacion_ids`, `tipos_pregunta`, `cantidades_pregunta`; total derivado |
+| Creación | HTTP 202, un `job_id`, items por reactivo y worker agendado |
+| Polling vigente | GET cada 3 s, máximo 60, token capturado, `current_step` y una card |
+| Terminal exitoso | `completed`, cleanup pending, refetch y examen persistido |
+| Terminal fallido | `failed` y mensaje genérico protegido |
+| Timeout | Borde actual del poll 60 documentado; no corregir dentro de extracción literal |
+| Reload/navegación | Polling local no se reanuda/cancela; job backend continúa |
+| Worker | Selección unidad/temas, deduplicación, retries, sustitución, fallback y cantidad final |
+| Compatibilidad legacy | Polling 1.5 s/4 s sin límite y terminales adicionales permanecen separados |
+| Logs/métricas | Todos los eventos backend confirmados y `v8_unit_exam_counts_by_type_completion` |
+
+### Revisión documental de apertura
+
+| Verificación | Estado |
+| --- | --- |
+| Identidad de Fase 4 y ausencia de número de sesión aprobado | Pendiente de confirmación del usuario |
+| Inventario de flujos, consumidores y contratos | Pendiente de confirmación del usuario |
+| Polling, SSE, pending, feedback y riesgos | Pendiente de confirmación del usuario |
+| Secuencia sugerida por roadmap y primer corte propuesto | Pendiente de confirmación del usuario |
+| Prueba funcional de Fase 4 | No ejecutada; no aplica a esta sesión documental |

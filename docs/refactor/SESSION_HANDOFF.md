@@ -2424,3 +2424,158 @@ La Fase 4 debe comenzar en una nueva conversación y debe partir de:
 - `FRONTEND_MAP.md`
 - `TEST_MATRIX.md`
 - `REFACTOR_DECISIONS.md`
+
+## Auditoría documental de apertura de Fase 4
+
+### Estado de entrada
+
+- Frontend: rama `refactor-front`, HEAD `ecb1785`, working tree limpio.
+- Backend revisado en solo lectura: rama `refactor-back`, HEAD `e08d6e4`,
+  working tree limpio.
+- Fase 3 cerrada mediante decisión **A. Cerrar Fase 3**; no se reabre su
+  validación manual.
+- Fase 4: `Generación y polling`, pendiente y no iniciada al entrar.
+- Riesgo de la sesión: medio documental; riesgo funcional alto si se excede el
+  alcance.
+
+### Identidad de la sesión
+
+`REFACTOR_ROADMAP.md` define nombre, objetivo, riesgo, alcance y orden sugerido
+de la Fase 4, pero no define número ni nombre de su primera sesión.
+`SESSION_HANDOFF.md` tampoco dejó un identificador aprobado: solo ordenó iniciar
+la fase en una conversación nueva.
+
+Por tanto:
+
+- **Definido por documentación:** Fase `4 — Generación y polling`; objetivo de
+  separar por dominio inicio, feedback, progreso, polling, finalización, error y
+  limpieza; un recurso por sesión; orden sugerido anexos, listas, planeaciones,
+  exámenes.
+- **Propuesto durante esta auditoría:** nombre descriptivo **Auditoría
+  documental de apertura de Fase 4**, sin número de sesión aprobado.
+- **No aprobado:** denominarla `4.0` o asignar números a los siguientes cortes.
+
+La apertura formal y cualquier numeración quedan pendientes de confirmación
+explícita del usuario. Por ello el estado `Pendiente` de Fase 4 no se cambia en
+el roadmap durante esta sesión.
+
+### Resultado de la auditoría
+
+El inventario verificable quedó registrado en `docs/FRONTEND_MAP.md`. Incluye:
+
+- generación de planeaciones al agregar temas y mediante creación rápida;
+- generación individual histórica sin entry point ejecutable confirmado;
+- generación secuencial vigente y regeneración compatible de anexos;
+- generación vigente y coordinador legacy de listas de cotejo;
+- creación de job, polling vigente y polling legacy de exámenes;
+- endpoints, método, auth, headers, payload, parsing, terminales, intervalos,
+  timeouts, refetch, persistencia, feedback, cleanup y ausencia de cancelación;
+- propietarios, lectores y escritores de pending;
+- consumidores directos, indirectos, globals, wrappers, handlers y delegación;
+- clasificación entre Biblioteca, Dashboard, Detalle, Archivados, jerarquía
+  técnica, compatibilidad, legacy visual y no clasificado;
+- contratos backend y logs que deben conservarse;
+- riesgos confirmados y elementos no confirmados.
+
+No se implementó, extrajo, movió, renombró, consolidó ni reescribió lógica de
+generación, polling, SSE, pending, feedback, render, error, timeout, retry o
+cancelación.
+
+### Hallazgos que condicionan Fase 4
+
+1. Biblioteca vigente coordina los cuatro dominios en
+   `biblioteca.page.js`, pero creación rápida de planeaciones sigue compartida
+   con `dashboard.page.js` y jerarquía técnica.
+2. Anexos no tiene service frontend. Biblioteca llama API directa y procesa
+   selecciones secuencialmente.
+3. Listas usa API directa en Biblioteca y service en legacy; sus skipped no se
+   proyectan por card.
+4. Exámenes tiene dos pollings no equivalentes: Biblioteca usa 3 s/60 intentos;
+   Dashboard legacy usa 1.5 s/4 s sin límite.
+5. El polling vigente clasifica como timeout una finalización recibida en el
+   poll 60 por el chequeo posterior `polls >= MAX_POLLS`.
+6. No existe `EventSource`, `AbortController`, `setInterval` ni cancelación de
+   procesos; el SSE es lectura manual de fetch.
+7. Los pending son léxicos, viven en memoria y se pierden con reload; los jobs
+   de examen y artefactos backend sí persisten.
+8. `biblioteca-block-delete.js` es consumidor indirecto de los cuatro mapas
+   pending.
+9. Las ramas individuales de generar/regenerar anexo no tienen emisor DOM
+   vigente confirmado; permanecen como compatibilidad.
+10. `planeacion.page.js` conserva generación individual, pero su página
+    redirige a Dashboard; no se declara legacy ni eliminable.
+11. `README.md` contradice el árbol y `ARCHITECTURE.md` al afirmar que
+    `js/features/` no existe. Es deuda documental previa, no corregida aquí.
+12. Los documentos complementarios `CURRENT_BEHAVIOR.md`,
+    `FRONTEND_AUDIT.md`, `LEGACY_HIERARCHY.md` y `REFACTOR_BACKLOG.md` no
+    existen en el frontend. Se localizaron homónimos en
+    `educativo_backend/Educativo-Backend/docs/refactor/`, pero todos se
+    autodeclaran históricos, remiten la vigencia al frontend y contienen
+    líneas/clasificaciones anteriores. No son reemplazos movidos ni roadmap
+    operativo. En particular,
+    la propuesta histórica de añadir cancelación al polling no prevalece sobre
+    R-004, el roadmap actual ni el alcance explícito de esta sesión.
+
+### Contratos protegidos
+
+Permanecen protegidos autenticación, Bearer, headers, parsing, mensajes,
+payloads, IDs, orden de scripts, globals, refetch y ausencia de cancelación.
+Para exámenes se preservan expresamente `unidad_id`, `planeacion_ids`,
+`tema_ids`, `tipos_pregunta`, `cantidades_pregunta`, total derivado, selección,
+deduplicación, jobs/items, estados, reintentos, reemplazo de duplicados,
+cantidad final, prompts, worker y métricas. También quedan fuera de alcance
+backend, esquema, SQL, RLS, migraciones y `js/ui/wordExport.js`.
+
+Los logs conocidos fueron confirmados en el código actual:
+
+- frontend: `[planeaciones] generate:start/success`,
+  `[anexos] generate:start/success`,
+  `[listas-cotejo] generate:success`, payload/job de exámenes y
+  `[polling] examen:start/finished`;
+- backend: `[anexos] generate:start/success`,
+  `[listas-cotejo] generate:start/success`,
+  `[examenes] generar examen recibido`, `worker:start`,
+  `pregunta aceptada`, `pregunta rechazada, reintentando`, `exam:saved`,
+  `generate:success` y `[aiMetrics] job:finished`.
+
+No se confirmó `[listas-cotejo] generate:start` en frontend; sí existe en
+backend. No se modificó ningún log.
+
+### Secuencia conservadora respaldada y propuesta
+
+El único orden aprobado es el sugerido por el roadmap:
+
+1. anexos;
+2. listas de cotejo;
+3. planeaciones;
+4. exámenes.
+
+Los números y nombres de sesión siguientes **no están definidos**. Como primer
+corte funcional se propone, pendiente de aprobación y sin número, **Extracción
+literal de la generación de anexos desde Biblioteca**. Debe limitarse al
+coordinador vigente, preservar API directa, secuencia por item, pending,
+feedback, refetch, errores, timeout backend y compatibilidad, y no incorporar
+regeneración ni crear un service nuevo.
+
+Es el corte más conservador porque abre con el primer dominio del orden
+documentado, no contiene polling ni SSE y permite verificar un proceso largo
+por recurso sin mezclar listas, planeaciones, exámenes, estado general o render
+general.
+
+### Revisión manual pendiente
+
+La revisión de esta sesión es exclusivamente documental. Debe confirmar:
+
+- nombre descriptivo y ausencia de número aprobado;
+- alcance real de Fase 4;
+- inventario por dominio y consumidores;
+- polling, SSE y requests largos;
+- pending, feedback, wrappers y globals;
+- clasificación de vigencia;
+- contratos protegidos, riesgos y regresiones;
+- propuesta del siguiente corte;
+- archivos documentales modificados.
+
+Estado: **Pendiente de confirmación explícita del usuario**. No se solicita
+generación real, delete ni prueba destructiva, y no se marca ninguna prueba
+manual de Fase 4 como aprobada.
