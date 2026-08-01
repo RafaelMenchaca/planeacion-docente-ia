@@ -1264,7 +1264,10 @@ La puerta de entrada pasó en `refactor-front` desde `e1991de`, con working tree
 limpio. Fase 4, la Sesión 4.5 y su validación documental constan completadas;
 el backend estaba limpio en `refactor-back` y permaneció en solo lectura. La
 decisión es **A. Abrir Fase 5**. Esta sesión solo clasifica el estado actual:
-no mueve propiedades, no cambia shapes y no inicia un corte funcional.
+no mueve propiedades ni cambia shapes. La auditoría, sus validaciones estáticas
+y su validación documental quedaron aprobadas y commiteadas en `525a21a`;
+Fase 5 está formalmente abierta y En progreso. La Sesión 5.1 permanece
+pendiente y no iniciada.
 
 ### Propietarios confirmados
 
@@ -1388,13 +1391,14 @@ estado separado del flujo jerárquico legacy.
 
 ### Siguiente corte propuesto
 
-El roadmap no asigna número ni nombre a sesiones funcionales de Fase 5. Se
-propone, sin presentarlo como decisión aprobada, **Extracción literal del estado
-de selección de bloque de Biblioteca**: dar ownership explícito únicamente a
+El primer corte fue formalizado como **Sesión 5.1 — Extracción literal del
+estado de selección de bloque de Biblioteca**: dar ownership explícito únicamente a
 `selectedConjuntoId` y sus transiciones normalizadas, manteniendo `activeTab`,
 pending, modales, render, Quick Create, `window.biblioteca` y
-`window.explorerState` intactos. Es el corte conservador porque tiene un objeto
-de estado pequeño, consumidores enumerados y una regresión manual delimitable.
+`window.explorerState` intactos. La Sesión 5.1 permanece pendiente y no iniciada; debe
+reintentarse desde su puerta inicial. Es el corte conservador porque tiene un
+objeto de estado pequeño, consumidores enumerados y una regresión manual
+delimitable.
 
 ## Riesgos priorizados
 

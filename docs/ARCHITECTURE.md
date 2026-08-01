@@ -81,8 +81,10 @@ globals y consumidores únicos, el orden clásico de scripts y la integridad de
 quick create, generación individual, legacy, APIs/services y backend. La
 decisión formal **A. Cerrar Fase 4** y su validación documental quedaron
 aprobadas en el commit de cierre `8dcba86`. No se detectaron regresiones
-introducidas; los riesgos conocidos permanecen preservados. Fase 5 continúa
-en apertura documental mediante la Sesión 5.0, sin cambios funcionales.
+introducidas; los riesgos conocidos permanecen preservados. Fase 5 quedó
+abierta formalmente y En progreso mediante la Sesión 5.0, aprobada y commiteada
+en `525a21a`, sin cambios funcionales. La Sesión 5.1, primer corte de
+`selectedConjuntoId`, permanece pendiente y no iniciada.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

@@ -939,9 +939,14 @@ funcionales de Fase 5; ninguna se ejecutó ni se aprobó en 5.0.
 
 ### Revisión documental de 5.0
 
-**Validación manual documental: Pendiente de confirmación explícita del
-usuario.** La revisión debe cubrir nombre canónico y objetivo de Fase 5,
-inventario y matriz de propiedades, pending, selección/tabs, modales, Quick
-Create, compatibilidad/legacy/Archivados, riesgos, límites con Fases 6–10,
-siguiente corte propuesto, pruebas futuras, Fase 4 completada y Fase 5 abierta
-pero no completada.
+**Validación manual documental: Aprobada explícitamente por el usuario.**
+
+Evidencia aprobada: objetivo canónico revisado; inventario de estado y matriz
+de propiedades revisados; pending maps, selección, tabs y modales revisados;
+Quick Create, compatibilidad, Archivados y legacy revisados; riesgos y límites
+entre Fases 5–10 revisados; pruebas futuras revisadas; decisión **A. Abrir Fase
+5** aprobada; y Fase 5 abierta y En progreso. La auditoría y sus validaciones
+estáticas quedaron completadas en `525a21a`.
+
+Las pruebas funcionales futuras de Fase 5 permanecen pendientes. La Sesión 5.1
+permanece pendiente y no iniciada.

@@ -545,11 +545,13 @@ pero el progreso, selección, tab, búsqueda, modal y observación de jobs no se
 rehidratan. Archivados conserva un `archivedState` separado y un registro
 jerárquico propio en `localStorage`; no se incorpora al estado de Biblioteca.
 
-**Decisión de apertura: A. Abrir Fase 5.** La revisión documental de la Sesión
-5.0 queda pendiente de confirmación explícita del usuario. No se ha iniciado
-ninguna sesión funcional. El siguiente corte se propone, sin numeración
-aprobada, como una extracción literal del ownership de selección de bloque; no
-incluye tabs, pending, modales, render, Quick Create ni `explorerState`.
+**Decisión de apertura: A. Abrir Fase 5.** La Sesión 5.0, sus validaciones
+estáticas y su validación documental quedaron aprobadas explícitamente por el
+usuario y commiteadas en `525a21a`. El primer corte funcional fue formalizado
+como **Sesión 5.1 — Extracción literal del estado de selección de bloque de
+Biblioteca**. La Sesión 5.1 permanece pendiente y no iniciada; debe reintentarse desde
+su puerta inicial. No incluye tabs, pending, modales, render, Quick Create ni
+`explorerState`.
 
 ### Dependencias
 

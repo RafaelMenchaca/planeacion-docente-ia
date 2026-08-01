@@ -23,9 +23,11 @@
 - **Validaciones estáticas de 4.5:** aprobadas.
 - **Validación manual documental de 4.5:** aprobada explícitamente por el usuario.
 - **Decisión formal:** A. Cerrar Fase 4.
-- **Sesión 5.0:** Auditoría documental de apertura; ejecutada sin código funcional.
+- **Sesión 5.0:** Auditoría documental de apertura; aprobada y commiteada en `525a21a`.
 - **Decisión de apertura:** A. Abrir Fase 5.
-- **Validación documental de 5.0:** pendiente de confirmación explícita del usuario.
+- **Validaciones estáticas de 5.0:** aprobadas.
+- **Validación documental de 5.0:** aprobada explícitamente por el usuario.
+- **Sesión 5.1:** pendiente y no iniciada; sin implementación, validaciones ni commit.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -49,7 +51,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** revisar documentalmente la Sesión 5.0. No hay sesión funcional iniciada ni numeración aprobada para el siguiente corte.
+- **Continuación:** reintentar Fase 5 — Sesión 5.1 desde su puerta inicial.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -3050,11 +3052,11 @@ no legacy de Biblioteca.
   quedan en 6, Quick Create/Dashboard en 7, Archivados y aislamiento legacy en
   8, eliminación confirmada en 9 y wrappers/globals en 10.
 
-**Validación manual documental: Pendiente de confirmación explícita del
-usuario.** Debe revisar nombre/objetivo, inventario y matriz, pending, selección,
-tabs, modales, Quick Create, compatibilidad/legacy, riesgos, límites, siguiente
-corte y pruebas futuras; además, que Fase 4 siga completada y Fase 5 esté abierta
-pero no completada.
+**Validación manual documental: Aprobada explícitamente por el usuario.** La
+aprobación cubrió nombre/objetivo, inventario y matriz, pending, selección,
+tabs, modales, Quick Create, compatibilidad/Archivados/legacy, riesgos, límites
+entre Fases 5–10, siguiente corte propuesto, pruebas futuras, Fase 4 completada y
+la decisión **A. Abrir Fase 5**. La sesión quedó commiteada en `525a21a`.
 
 ### Siguiente corte propuesto
 
@@ -3066,4 +3068,6 @@ autoriza la convención, `pages/dashboard.html` por carga clásica y documentaci
 Deja fuera `activeTab`, pending, modales, render, Quick Create,
 `window.biblioteca` y `window.explorerState`. Las pruebas futuras son selección,
 fallback tras delete, reload, cambio de tabs sin regresión y Quick Create sin
-estado cruzado. No está aprobada, numerada ni iniciada.
+estado cruzado. La propuesta fue formalizada como **Sesión 5.1 — Extracción
+literal del estado de selección de bloque de Biblioteca**, pero permanece
+pendiente y no iniciada; debe reintentarse desde su puerta inicial.
