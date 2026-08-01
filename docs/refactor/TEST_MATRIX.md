@@ -880,3 +880,68 @@ contratos preservados revisados; riesgos preservados revisados; ausencia de
 regresiones confirmada; decisión **A. Cerrar Fase 4** aprobada; y Fase 5
 mantenida como pendiente y no iniciada. No quedaron pruebas funcionales nuevas
 pendientes para 4.5.
+
+## Fase 5 — Sesión 5.0: auditoría documental de apertura
+
+Esta sesión no modifica comportamiento y no requiere generar ni eliminar
+recursos. Las pruebas siguientes son regresiones **futuras** para cortes
+funcionales de Fase 5; ninguna se ejecutó ni se aprobó en 5.0.
+
+### Selección y tabs
+
+| Prueba futura | Resultado a proteger | Estado |
+| --- | --- | --- |
+| Seleccionar un bloque y cambiar entre todos sus tabs | `selectedConjuntoId` y `activeTab` no se cruzan con otro bloque | Pendiente |
+| Abrir un recurso, navegar y volver | selección/tab conservan el comportamiento vigente | Pendiente |
+| Recargar con un bloque/tab seleccionado | se reconstruyen datos y se aplica el fallback vigente, sin prometer persistencia inexistente | Pendiente |
+
+### Pending y procesos largos
+
+| Prueba futura | Resultado a proteger | Estado |
+| --- | --- | --- |
+| Generación individual y múltiple por cada dominio | pending aparece solo en batch/card correspondiente | Pendiente |
+| Éxito, error y resultado parcial permitido | cleanup y feedback conservan las reglas actuales | Pendiente |
+| Delete posterior a la terminal | mapas del bloque se limpian y otros bloques quedan intactos | Pendiente |
+| Reload y navegación durante/después del proceso | no hay pending cruzado; se documenta que no existe reanudación | Pendiente |
+
+### Modales
+
+| Prueba futura | Resultado a proteger | Estado |
+| --- | --- | --- |
+| Abrir, cambiar selección, cancelar y reabrir cada modal | no hereda datos de otro bloque; open reemplaza el estado | Pendiente |
+| Generar y volver a abrir | submit/error/selección quedan reutilizables según el contrato vigente | Pendiente |
+| Sesión ausente de forma segura, si existe mecanismo controlado | verificar riesgo de `submitting` atascado sin provocar cambios destructivos | Pendiente |
+
+### Quick Create
+
+| Prueba futura | Resultado a proteger | Estado |
+| --- | --- | --- |
+| Generar con Quick Create y observar progreso | parser SSE, `explorerState.progress` y fachada `window.biblioteca` permanecen equivalentes | Pendiente |
+| Navegar y recargar tras terminar | persistencia backend visible y Biblioteca sin estado cruzado | Pendiente |
+| Reutilizar bloque existente y crear bloque nuevo | `pendingBatchId`, selección y conjunto temporal no se mezclan | Pendiente |
+
+### Delete de bloque
+
+| Prueba futura | Resultado a proteger | Estado |
+| --- | --- | --- |
+| Eliminar un bloque sin proceso activo | selección fallback, tab y cuatro mapas se limpian | Pendiente |
+| Navegar entre bloques y recargar después | otros bloques, tabs y recursos permanecen intactos | Pendiente |
+| Delete durante proceso | Fuera del primer corte; no ejecutar hasta tener un mecanismo seguro, pues no cancela backend | Pendiente / diferida |
+
+### Compatibilidad, Archivados y legacy
+
+| Prueba futura | Resultado a proteger | Estado |
+| --- | --- | --- |
+| Cargar Dashboard/Biblioteca | scripts clásicos y globals existentes cargan sin errores | Pendiente |
+| Previews de examen/lista y descarga | consumidores vigentes de `window.explorerState` permanecen | Pendiente |
+| Abrir Archivados separado | `archivedState` y registro local funcionan sin compartir estado de Biblioteca | Pendiente |
+| Comprobar ruta vigente | no se reactiva el explorador visual ni se retiran wrappers | Pendiente |
+
+### Revisión documental de 5.0
+
+**Validación manual documental: Pendiente de confirmación explícita del
+usuario.** La revisión debe cubrir nombre canónico y objetivo de Fase 5,
+inventario y matriz de propiedades, pending, selección/tabs, modales, Quick
+Create, compatibilidad/legacy/Archivados, riesgos, límites con Fases 6–10,
+siguiente corte propuesto, pruebas futuras, Fase 4 completada y Fase 5 abierta
+pero no completada.

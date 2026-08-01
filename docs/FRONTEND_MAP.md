@@ -1258,6 +1258,144 @@ son comportamiento preservado y deuda de fases futuras, no regresiones de Fase
 quedaron aprobadas; el cierre consta en `8dcba86`. Fase 5 permanece pendiente y
 no iniciada.
 
+## Fase 5 — Sesión 5.0: auditoría documental de apertura
+
+La puerta de entrada pasó en `refactor-front` desde `e1991de`, con working tree
+limpio. Fase 4, la Sesión 4.5 y su validación documental constan completadas;
+el backend estaba limpio en `refactor-back` y permaneció en solo lectura. La
+decisión es **A. Abrir Fase 5**. Esta sesión solo clasifica el estado actual:
+no mueve propiedades, no cambia shapes y no inicia un corte funcional.
+
+### Propietarios confirmados
+
+| Objeto | Definición y valor inicial | Consumidores | Persistencia / reconstrucción | Clasificación | Fase propietaria |
+| --- | --- | --- | --- | --- | --- |
+| `bibliotecaState` | `js/pages/biblioteca.page.js`; objeto léxico creado al cargar el script | Biblioteca, features de generación/delete y fachada `window.biblioteca` | Ninguna persistencia local; `conjuntos` se reconstruye por GET, no su estado efímero | Biblioteca vigente | 5; render/eventos quedan en 6 |
+| `window.biblioteca` | Fachada global sobre el mismo binding léxico | Solo Quick Create de `dashboard.page.js` | No persiste; delega selección, pending y refetch | Compatibilidad activa / estado mixto | 5 y desacoplamiento en 7; retiro en 10 |
+| `window.explorerState` | `js/pages/dashboard.page.js`; objeto publicado al final del script | Quick Create, previews activos, listeners compartidos y explorador visual legacy | Solo `current` tiene helper de `sessionStorage`; la ruta Biblioteca retorna antes de la restauración legacy | Estado mixto | Clasificar en 5; Quick Create en 7; legacy en 8–9; globals en 10 |
+| `archivedState` | `js/pages/archivados.page.js`; estado léxico independiente | Página Archivados y su event delegation | Estado visual efímero; datos se recargan del backend | Archivados | 8; fuera de una extracción de Biblioteca |
+| Registro `educativo.archivedHierarchy.registry` | `js/services/planeaciones.service.js`; `{hidden,scopes,planeaciones,batches}` | planeaciones service y Archivados mediante wrappers `window.*` | `localStorage`; complementa datos archivados del backend | Archivados / jerarquía técnica activa | 8; no mover en 5 |
+| `PLANEACION_ORIGINAL`, tablas y flags de edición | `js/pages/detalle.page.js`; bindings léxicos separados | Página Detalle, edición, uploads y descargas | Planeación refetchable por URL/API; edición local se pierde y el guardado sí persiste | Detalle vigente | Fuera del store de Biblioteca; proteger como regresión, no mover en F5 |
+
+No existe `window.bibliotecaState`. Los features clásicos de Fase 4 acceden al
+binding léxico `bibliotecaState` por orden de scripts. No se confirmó consumo
+de estos objetos desde tests; la suite existente no cubre estado de Biblioteca.
+
+### Matriz de propiedades de `bibliotecaState`
+
+| Propiedad | Inicial / shape observado | Escritores | Lectores y consumidores indirectos | Creación, limpieza y persistencia | Relaciones | Clasificación, riesgo y fase futura |
+| --- | --- | --- | --- | --- | --- | --- |
+| `conjuntos` | `[]`; luego array de objetos de `/api/biblioteca/conjuntos` | loader, reconciliación optimista y features delete | sidebar, detalle, selección, modales, descargas, Quick Create vía fachada | Se reemplaza en load/refetch; delete muta; backend reconstruye recursos terminados tras reload | API, render, delete y generación | Biblioteca vigente; shape del conjunto temporal no es idéntico al persistido; F5 |
+| `loading` | `false`, boolean | `loadAndRenderBiblioteca()` | render general | `true` solo en carga no silenciosa; `false` en éxito/error; reload reinicia | API y render | Biblioteca vigente; carga silenciosa no la activa; F5/F6 |
+| `error` | `""`, string | loader | render general/retry | Vacía al cargar; mensaje en excepción; reload reinicia | API, DOM y render | Biblioteca vigente; F5/F6 |
+| `searchQuery` | `""`, string | input de búsqueda | filtro, estados vacíos y valor DOM | Vive durante la página; sin storage; reload limpia | DOM y render | Biblioteca vigente; F5; binding/render en F6 |
+| `selectedConjuntoId` | `null`; ID normalizado normalmente a string | selección, loader/reconciliación, Quick Create y delete de bloque | sidebar, detalle y fachada | Fallback al primer bloque; se pierde en reload; delete puede asignar el ID crudo del primer elemento | DOM, render, delete, Quick Create | Biblioteca vigente; riesgo confirmado String/Number y múltiples escritores; primer corte F5 propuesto |
+| `expandedIds` | `new Set()` | solo se confirmó `delete(tempId)` en reconciliación | Sin lector ni alta confirmados | Se crea al cargar y se pierde en reload | Sin relación DOM confirmada | No clasificado; no mover hasta confirmar consumidor; F5 |
+| `activeTab` | `{}`; mapa `batchId -> planeaciones|anexos|listas|examenes` | selección/tab, loader/reconciliación, generación y deletes | render de tabs/cards | Default `planeaciones`; delete de bloque limpia su clave; sin storage; reload reinicia | DOM, render, delete y generación | Biblioteca vigente; múltiples escritores y claves coercionadas; F5, render F6 |
+| `pendingBatchId` | `null`; ID de batch reutilizado por Quick Create | fachada `window.biblioteca` y Quick Create | payload de generación de Quick Create | Se fija antes de generar y se limpia en éxito/error/finally; reload reinicia | API/generación compartida | Estado mixto Biblioteca–Quick Create; riesgo de cruce; F5/7 |
+| `pendingConjunto` | `null` o objeto temporal con `id/tempId/isPending/status_ui`, metadatos, contadores, `planeaciones`, `examenes` y `listas_cotejo` | fachada Quick Create, loader y reconciliación | sidebar, detalle y tab Planeaciones; progreso indirecto desde `explorerState.progress` | Nace antes de generar bloque nuevo; carga normal/reconciliación lo limpia; reload lo pierde | Render, generación y refetch | Estado mixto; shape parcial y sin job persistido; F5/7 |
+| `pendingPlaneacionesByBatchId` | `{}`; mapa a `{items,error}`; items de Biblioteca y Quick Create no tienen exactamente el mismo shape | `PlaneacionGeneration`, fachada/finish de Quick Create y delete de bloque | tab Planeaciones y callbacks de progreso | Éxito sin errores/delete limpia; parcial/error permanece; reload/navegación pierde | SSE, render, delete y generación | Generación activa / estado mixto; múltiples escritores y shapes variables confirmados; F5, Quick Create F7 |
+| `pendingExamenByBatchId` | `{}`; mapa a `{message,error}` | `ExamGeneration` y delete de bloque | tab Exámenes | Nace después del job; completed/delete limpia; failed/timeout permanece; reload pierde `jobId` y polling | Polling, render, delete y API | Generación activa; no reanuda job persistido; F5 |
+| `pendingListaByBatchId` | `{}`; mapa a `{items,result,error}` | `ListaCotejoGeneration` y delete de bloque | tab Listas | Éxito espera 1500 ms y limpia/refetch; error queda; delete/reload limpia | Request largo, render y delete | Generación activa; no representa detalle de skipped por item; F5 |
+| `anexosGenerating` | `{}`; mapa anidado `batchId -> planeacionId -> {titulo,materia,nivel,status,errorMessage}` | `AnexoGeneration`, wrappers de generación/regeneración y delete de bloque | tab y modal de Anexos | Éxito por item limpia; refetch con algún éxito elimina el mapa completo; fallo total queda; reload limpia | Requests secuenciales, render, delete y generación | Generación activa; múltiples escritores y cleanup asimétrico; F5 |
+| `anexoModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}` | open/close, render, checkboxes y submit | modal DOM y `AnexoGeneration` | Open reemplaza el objeto; close solo cambia `open`; reload limpia | DOM, pending, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; estado F5, render F6 |
+| `listaModal` | Mismo patrón, sin tipos/cantidades | open/close, render, checkboxes y submit | modal DOM y `ListaCotejoGeneration` | Open reemplaza; close solo `open`; reload limpia | DOM, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; F5/F6 |
+| `examModal` | Modal más `{unidadId,selectedTypes,questionCounts}` | open/close, listeners y submit | modal DOM y `ExamGeneration` | Open reemplaza; close solo `open`; reload limpia | DOM, payload y polling | Biblioteca vigente; sesión nula puede dejar `submitting`; contratos de payload protegidos; F5/F6 |
+| `agregarModal` | `{open,conjuntoId,unidadId,materia,nivel,unidad,temas,error}` | open/close, inputs/selects y submit | modal DOM y `PlaneacionGeneration` | Open reemplaza; close solo `open`; snapshot previo a generar; reload limpia | DOM, SSE y generación | Biblioteca vigente; render/DOM capturan parte del estado; F5/F6 |
+
+Los cuatro pending y `pendingConjunto` son memoria frontend, no datos
+persistidos. Un refetch puede reconstruir bloques y recursos ya guardados, pero
+no la intención de selección, progreso intermedio, mensaje, timer, `jobId`,
+modal o tab. Delete de bloque limpia los cuatro mapas por ID, pero no cancela
+request, SSE, worker o polling y no tiene limpieza explícita de
+`pendingBatchId`/`pendingConjunto`.
+
+### Matriz de propiedades relevantes de `explorerState`
+
+| Propiedad o grupo | Shape / escritores | Lectores actuales | Persistencia y reload | Clasificación | Riesgo y fase |
+| --- | --- | --- | --- | --- | --- |
+| `planteles`, `gradosByPlantel`, `materiasByGrado`, `unidadesByMateria` | arrays/mapas cargados por services de jerarquía | selectores de Quick Create y render legacy | Backend reconstruible; memoria local se pierde | Jerarquía técnica activa / estado mixto | Compartidos por Quick Create y legacy; F7/8 |
+| `temasByUnidad`, `examenesByUnidad`, `planeacionByTema`, `listasCotejoByUnidad` | caches por unidad/tema | coordinadores y render del explorador; lista preview legacy | Backend reconstruible; reload limpia | Explorador visual legacy con compatibilidad de preview | No mover por nombre; F8–9 |
+| `loading`, `errors` | objetos por nivel y recurso | loaders Quick Create y render legacy | Efímeros | Estado mixto | Shapes por dominio y consumidores cruzados; F5 clasifica, F7/8 separan |
+| `expandedPlanteles`, `expandedGrados`, `expandedMaterias` | `Set` mutados por navegación legacy | render visual jerárquico | Efímeros | Legacy visual confirmado | F8–9 |
+| `current` | `{level,plantelId,gradoId,materiaId,unidadId}`; navegación y Quick Create escriben | jerarquía, generación legacy, previews y Quick Create | Existe helper `sessionStorage`, pero Biblioteca retorna antes de hidratación; Quick Create asigna sin persistir en ese punto | Estado mixto | Contexto activo y legacy coinciden; F7/8 |
+| `stagingTemas`, `stagingTituloConjunto`, `stagingContext`, `stagingPanelOpen` | staging mutable de generación | Quick Create/generación y panel legacy | Efímero | Quick Create vigente / compartida activa | No mezclar con modal `agregarModal`; F7 |
+| `progress` | `{total,completed,items,finalMessage,finalTone}`; SSE/Quick Create escribe | panel Quick Create y `pendingConjunto` de Biblioteca | Efímero | Estado mixto, generación activa | Shape rico copiado parcialmente a pending; F5 clasifica, F7 desacopla |
+| `generating` | boolean | submit/render Quick Create y progreso | `finally` lo limpia; reload limpia | Quick Create vigente | Puede continuar request al navegar; F7 |
+| `quickCreate` | `{open,temas,requestVersion,selectedConjunto}` | shell, listeners, selects y submit | Open reinicializa partes; reload limpia | Quick Create vigente | Comparte fachada/API/parser/reconciliación con Biblioteca; F7 |
+| `examPreview`, `examenDetalleById` | estado de modal y cache por ID | `ExamPreview`, `ExamDownload`, Biblioteca y legacy | Efímero; detalle refetchable | Preview activa / compartida activa | Dependencia vigente de `window.explorerState`; F5, render F6 |
+| `listaCotejoPreview` | `{open,listaId,listaData,loading,error}` | `ListaCotejoPreview`, descargas, Biblioteca y legacy | Efímero; detalle refetchable | Preview activa / compartida activa | Usa `current.unidadId` en camino legacy y fetch directo en Biblioteca; F5/F6 |
+| `examGeneration`, `examModal`, `listaCotejoGeneration`, `listaCotejoModal` | estados de coordinadores/modales anteriores | polling, generación y render legacy | Efímeros | Compatibilidad / explorador visual legacy | No confundir con pending/modales vigentes; F8–9 |
+| `modal`, `confirmDelete`, `searchQuery` | estado de modal jerárquico, confirmación y filtro | listeners/render del explorador visual | Efímero | Legacy visual confirmado | El chequeo global de modales sigue siendo compatibilidad; F8–9 |
+
+El preview de Anexos no mantiene un objeto de estado: `AnexoPreview` conserva el
+recurso en closures/listeners del modal dinámico y el DOM refleja loading,
+contenido o error. El modal de nombre de archivo pertenece a `window.AppUI` y
+no a `bibliotecaState`. La confirmación de delete de Biblioteca usa estado
+léxico dentro del helper/promesa de UI; `explorerState.confirmDelete` es el
+estado separado del flujo jerárquico legacy.
+
+### Consumidores, eventos y vigencia
+
+- `pages/dashboard.html` confirma scripts clásicos en orden API/service →
+  features → `dashboard.page.js` → `biblioteca.page.js` → `main.js`; no hay
+  `type="module"`, `defer` ni `async`.
+- `onBibliotecaClick()` es la delegación vigente de `data-bib-action`; inputs
+  de búsqueda, checkboxes y botones de modal añaden listeners directos después
+  del render.
+- Los cuatro features de Fase 4 tienen un consumidor esperado desde Biblioteca
+  y escriben pending del binding léxico. Quick Create no consume
+  `PlaneacionGeneration`; usa parser/service SSE compartido y la fachada
+  `window.biblioteca`.
+- `window.explorerState` es un global real con consumidores indirectos en
+  previews, descargas, Escape y comprobación de modales; no es eliminable como
+  bloque. El explorador visual no se inicializa en la ruta vigente porque
+  `initDashboardPage()` retorna después de `initBiblioteca()`.
+- El shell y los listeners compartidos de `dashboard.page.js` son **Dashboard
+  vigente**; su `quickCreate` es **Quick Create vigente**. El resto de
+  `explorerState` se clasifica propiedad por propiedad, no por el archivo.
+- `archivedState` solo pertenece al entry point `pages/archivados.html`; el registro local
+  de jerarquía se comparte mediante wrappers del service. Archivados no es
+  legacy visual ni estado de Biblioteca.
+- Los bindings léxicos de `detalle.page.js` son **Detalle vigente** e
+  independientes de ambos stores; la navegación desde una card pasa IDs por
+  URL y Detalle reconstruye desde API.
+- `expandedIds` quedó sin consumidor confirmado más allá de una limpieza; se
+  conserva como **No clasificado**. No se declararon propiedades eliminables.
+
+### Riesgos y límites confirmados
+
+- **Riesgo confirmado:** múltiples escritores en selección, tab,
+  `pendingPlaneacionesByBatchId` y `anexosGenerating`; shapes variables entre
+  progreso de Quick Create, pending temporal y conjuntos persistidos.
+- **Riesgo confirmado:** estado derivado y mutable dentro de render; los
+  renders de Anexos/Listas depuran `selectedPlaneacionIds`.
+- **Bug confirmado por control de flujo, no corregido:** Anexos, Listas y
+  Exámenes fijan `submitting=true` antes de `requireSession()`; si devuelve
+  `null`, el retorno no lo restablece hasta una reapertura/reload.
+- **Comportamiento deliberado:** pending, tabs, búsqueda, selección y modales
+  viven en memoria; reload no reanuda procesos. Delete limpia feedback local
+  sin cancelar procesos backend.
+- **Riesgo posible:** IDs crudos y normalizados pueden alternar String/Number;
+  `batchId`, `conjuntoId` y `unidadId` tienen roles distintos pero coinciden en
+  varios handlers. No se confirmó una colisión funcional actual.
+- **No confirmado:** consumidor de `expandedIds` o reanudación segura de los
+  pending a partir del backend. No se moverán por inferencia.
+- Fase 5 posee ownership, shapes, selección, pending y modal state. Fase 6
+  conserva render/DOM/event delegation; Fase 7, Dashboard y Quick Create;
+  Fase 8, Archivados/compatibilidad/aislamiento legacy; Fase 9, solo eliminación
+  con cero consumidores; Fase 10, wrappers/globals y consolidación.
+
+### Siguiente corte propuesto
+
+El roadmap no asigna número ni nombre a sesiones funcionales de Fase 5. Se
+propone, sin presentarlo como decisión aprobada, **Extracción literal del estado
+de selección de bloque de Biblioteca**: dar ownership explícito únicamente a
+`selectedConjuntoId` y sus transiciones normalizadas, manteniendo `activeTab`,
+pending, modales, render, Quick Create, `window.biblioteca` y
+`window.explorerState` intactos. Es el corte conservador porque tiene un objeto
+de estado pequeño, consumidores enumerados y una regresión manual delimitable.
+
 ## Riesgos priorizados
 
 1. Globals implícitas y explícitas dependientes del orden de scripts.

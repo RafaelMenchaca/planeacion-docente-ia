@@ -28,7 +28,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
 | 4 | Generación y polling | Separar procesos largos | Alto | Completada |
-| 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
+| 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | En progreso |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Pendiente |
@@ -529,7 +529,27 @@ Crear un estado identificable de Biblioteca y reducir su dependencia de `window.
 
 ### Estado
 
-**Pendiente.**
+**En progreso.**
+
+La Sesión 5.0 — Auditoría documental de apertura superó la puerta de entrada
+desde `e1991de`: Fase 4 y su Sesión 4.5 constan completadas, la validación
+documental está aprobada y ambos repositorios estaban limpios en sus ramas
+esperadas. La auditoría abrió documentalmente la fase sin modificar código.
+
+El inventario confirmó un `bibliotecaState` léxico y vigente, una fachada
+`window.biblioteca` consumida por quick create y un `window.explorerState`
+mixto: mantiene Quick Create y previews activos además de estado de
+compatibilidad y del explorador visual legacy. Los pending, selección, tabs y
+modales son efímeros; los recursos terminados se reconstruyen mediante refetch,
+pero el progreso, selección, tab, búsqueda, modal y observación de jobs no se
+rehidratan. Archivados conserva un `archivedState` separado y un registro
+jerárquico propio en `localStorage`; no se incorpora al estado de Biblioteca.
+
+**Decisión de apertura: A. Abrir Fase 5.** La revisión documental de la Sesión
+5.0 queda pendiente de confirmación explícita del usuario. No se ha iniciado
+ninguna sesión funcional. El siguiente corte se propone, sin numeración
+aprobada, como una extracción literal del ownership de selección de bloque; no
+incluye tabs, pending, modales, render, Quick Create ni `explorerState`.
 
 ### Dependencias
 

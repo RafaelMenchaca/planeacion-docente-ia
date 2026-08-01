@@ -12,7 +12,7 @@
 ## Estado del roadmap
 
 - **Última fase cerrada:** 4 — Generación y polling.
-- **Fase actual:** ninguna; Fase 5 permanece pendiente y no iniciada.
+- **Fase actual:** 5 — Estado de Biblioteca, En progreso por apertura documental.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -23,6 +23,9 @@
 - **Validaciones estáticas de 4.5:** aprobadas.
 - **Validación manual documental de 4.5:** aprobada explícitamente por el usuario.
 - **Decisión formal:** A. Cerrar Fase 4.
+- **Sesión 5.0:** Auditoría documental de apertura; ejecutada sin código funcional.
+- **Decisión de apertura:** A. Abrir Fase 5.
+- **Validación documental de 5.0:** pendiente de confirmación explícita del usuario.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -46,13 +49,13 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** reintentar Fase 5 — Sesión 5.0 desde su puerta inicial. Fase 5 permanece pendiente y no iniciada.
+- **Continuación:** revisar documentalmente la Sesión 5.0. No hay sesión funcional iniciada ni numeración aprobada para el siguiente corte.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
 exámenes quedaron validados; la auditoría 4.5, su validación documental y la
-decisión formal de cierre también fueron aprobadas. Fase 5 permanece pendiente
-y no iniciada.
+decisión formal de cierre también fueron aprobadas. La puerta de la Sesión 5.0
+pasó y Fase 5 quedó En progreso por apertura documental, sin implementación.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -2964,3 +2967,103 @@ La aprobación confirmó el inventario y estado de 4.0–4.5, la evidencia manua
 acumulada, los contratos y riesgos preservados, los archivos funcionales de Fase
 4, la ausencia de regresiones introducidas, la decisión A y que Fase 5 continúa
 pendiente y no iniciada.
+
+## Fase 5 — Sesión 5.0: Auditoría documental de apertura
+
+### Puerta e identidad
+
+- Frontend: `refactor-front`, inicio en `e1991de`, working tree limpio.
+- Commit correctivo posterior al cierre: `e1991de docs(refactor): finalize generation phase closure`.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, working tree limpio.
+- La puerta confirmó Fase 4 y 4.5 completadas, validación documental aprobada,
+  decisión **A. Cerrar Fase 4** y Fase 5 pendiente antes de esta auditoría.
+- Nombre canónico: **Fase 5 — Estado de Biblioteca**.
+- Objetivo canónico: crear un estado identificable de Biblioteca y reducir la
+  dependencia de `window.explorerState`.
+- Tipo: auditoría documental de apertura.
+- Riesgo: alto documental; crítico si se modifica comportamiento.
+- Decisión: **A. Abrir Fase 5.** La fase queda En progreso; esta sesión no la
+  completa ni inicia una sesión funcional.
+
+### Inventario resumido
+
+| Propietario | Estado confirmado | Clasificación | Persistencia / reload |
+| --- | --- | --- | --- |
+| `bibliotecaState` | `conjuntos`, carga/error/búsqueda, selección/tab, cinco estados pending/progreso y cuatro modales | Biblioteca vigente, con pending de generación y cruces de Quick Create | Solo recursos terminados se reconstruyen por refetch; el estado efímero se pierde |
+| `window.biblioteca` | fachada de conjuntos, selección, `pendingBatchId`, conjunto temporal, inicio/fin/refetch | Compatibilidad activa y estado mixto | No persiste |
+| `window.explorerState` | jerarquía/cache, `current`, staging/Quick Create/progreso, previews, modales/generación legacy | Estado mixto: Quick Create y previews vigentes, jerarquía técnica, compatibilidad y legacy visual | Memoria; `current` tiene helper de `sessionStorage`, no hidratado en la ruta Biblioteca |
+| `archivedState` | carga, filtro, búsqueda, orden, ramas y confirmación | Archivados | Efímero; datos backend refetchables |
+| Registro jerárquico de Archivados | `hidden`, `scopes`, `planeaciones`, `batches` | Archivados / jerarquía técnica activa | `localStorage` |
+
+La matriz propiedad-consumidor completa, incluyendo valores iniciales, shapes,
+escritores, lectores, limpieza, DOM/API/render/delete/generación, clasificación
+y fase propietaria, está en `docs/FRONTEND_MAP.md`. No existe
+`window.bibliotecaState`; los features clásicos acceden al binding léxico por
+orden de scripts.
+
+### Pending, selección, tabs y modales
+
+- `pendingPlaneacionesByBatchId` tiene múltiples escritores y shapes de item
+  distintos entre Biblioteca y Quick Create; éxito completo limpia y parciales/
+  errores pueden permanecer.
+- `anexosGenerating` es anidado por batch/planeación; generación por lote,
+  wrappers individuales/regeneración y delete escriben o limpian el mismo mapa.
+- `pendingListaByBatchId` conserva items/error, espera 1500 ms en éxito y se
+  pierde al reload.
+- `pendingExamenByBatchId` conserva mensaje/error, no `jobId`; reload pierde
+  observación y polling aunque el job backend persista.
+- `pendingConjunto` y `pendingBatchId` enlazan Quick Create con Biblioteca y
+  consumen indirectamente `explorerState.progress`.
+- `selectedConjuntoId` y `activeTab` tienen múltiples escritores; la selección
+  suele normalizarse a string, pero el fallback de delete puede conservar el ID
+  crudo. Ninguno se persiste.
+- Los modales de Anexos/Listas/Exámenes guardan selección, `submitting` y error;
+  el de Planeaciones guarda temas/actividades. Open reemplaza el objeto, close
+  solo cambia `open`, y reload limpia todo. Los renders de Anexos/Listas pueden
+  depurar selección, por lo que render y estado siguen acoplados.
+- Preview de examen/lista permanece en `explorerState`; preview de Anexo usa
+  DOM/closures. Confirmación de delete de Biblioteca es léxica; la de
+  `explorerState` pertenece al flujo jerárquico.
+
+### Quick Create, compatibilidad y legacy
+
+Quick Create escribe `explorerState.quickCreate`, `current`, staging,
+`generating` y `progress`; usa jerarquía técnica, el service/parser SSE
+compartido y `window.biblioteca` para conjuntos, selección, pending temporal y
+refetch. No consume `PlaneacionGeneration`. Debe permanecer separado hasta Fase
+7. El explorador visual antiguo no se inicializa en la ruta vigente, pero su
+estado y listeners siguen cargados. Previews activos impiden clasificar
+`window.explorerState` completo como legacy. Archivados es un flujo separado,
+no legacy de Biblioteca.
+
+### Riesgos, límites y revisión
+
+- Riesgos confirmados: múltiples escritores, shapes variables, estado mutado
+  desde render, pending perdido al reload y delete sin cancelación.
+- Bug confirmado por código, no corregido: Anexos, Listas y Exámenes pueden
+  conservar `submitting=true` si `requireSession()` retorna `null`.
+- Riesgos posibles: mezcla String/Number de IDs y confusión futura entre
+  `batchId`, `conjuntoId` y `unidadId`; no se confirmó regresión actual.
+- No confirmado: consumidor de `expandedIds` aparte de su limpieza y una forma
+  segura de reconstruir pending desde backend.
+- Fase 5 se limita a ownership/shapes/selección/pending/modales; render/eventos
+  quedan en 6, Quick Create/Dashboard en 7, Archivados y aislamiento legacy en
+  8, eliminación confirmada en 9 y wrappers/globals en 10.
+
+**Validación manual documental: Pendiente de confirmación explícita del
+usuario.** Debe revisar nombre/objetivo, inventario y matriz, pending, selección,
+tabs, modales, Quick Create, compatibilidad/legacy, riesgos, límites, siguiente
+corte y pruebas futuras; además, que Fase 4 siga completada y Fase 5 esté abierta
+pero no completada.
+
+### Siguiente corte propuesto
+
+El roadmap no define numeración para sesiones funcionales de Fase 5. Se propone
+**Extracción literal del estado de selección de bloque de Biblioteca**, limitada
+a `selectedConjuntoId` y sus transiciones. Riesgo alto. Archivos probables:
+`js/pages/biblioteca.page.js`, un módulo de estado solo si la siguiente sesión
+autoriza la convención, `pages/dashboard.html` por carga clásica y documentación.
+Deja fuera `activeTab`, pending, modales, render, Quick Create,
+`window.biblioteca` y `window.explorerState`. Las pruebas futuras son selección,
+fallback tras delete, reload, cambio de tabs sin regresión y Quick Create sin
+estado cruzado. No está aprobada, numerada ni iniciada.

@@ -82,7 +82,22 @@ quick create, generación individual, legacy, APIs/services y backend. La
 decisión formal **A. Cerrar Fase 4** y su validación documental quedaron
 aprobadas en el commit de cierre `8dcba86`. No se detectaron regresiones
 introducidas; los riesgos conocidos permanecen preservados. Fase 5 continúa
-pendiente y no iniciada.
+en apertura documental mediante la Sesión 5.0, sin cambios funcionales.
+
+La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
+`bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,
+pending y modales de la Biblioteca vigente. `window.explorerState` sigue siendo
+mixto: Quick Create y los previews de examen/lista son consumidores activos,
+mientras otros grupos pertenecen a compatibilidad o al explorador visual
+legacy. `archivedState` y el registro jerárquico persistido de Archivados son
+propietarios separados. Ninguno de estos objetos fue movido, renombrado o
+expuesto de una forma nueva.
+
+La frontera de fases permanece contractual: Fase 5 trata ownership y shapes de
+estado; Fase 6, render y eventos; Fase 7, Dashboard y Quick Create; Fases 8–9,
+aislamiento y posible eliminación del legacy; y Fase 10, retiro de wrappers y
+globals. El detalle propiedad-consumidor está en
+[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Flujo principal: Biblioteca
 
