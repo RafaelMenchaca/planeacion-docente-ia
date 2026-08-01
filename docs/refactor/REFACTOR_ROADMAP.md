@@ -449,12 +449,12 @@ Separar por dominio el inicio, feedback, progreso, polling, finalización, error
 
 **En progreso.**
 
-La auditoría documental de apertura quedó aprobada por el usuario. El primer
-corte funcional, sin número de sesión definido por el roadmap, extrae
-literalmente la generación seleccionada de anexos desde Biblioteca. Mantiene
-`submitBibliotecaAnexoCreateModal()` como validador y wrapper de UI, y delega la
-operación en `AnexoGeneration.generateFromBiblioteca()`. La validación manual de
-este corte permanece pendiente; la fase no está cerrada.
+La auditoría documental de apertura y la validación manual del primer corte
+funcional quedaron aprobadas por el usuario. Sin números de sesión definidos
+por el roadmap, el primer corte extrajo generación seleccionada de anexos y el
+segundo extrae generación seleccionada de listas desde Biblioteca mediante
+`ListaCotejoGeneration.generateFromBiblioteca()`. La validación manual del
+segundo corte permanece pendiente; la fase no está cerrada.
 
 ### Dependencias
 

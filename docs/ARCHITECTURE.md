@@ -62,11 +62,12 @@ equivalentes sin crear un cliente universal. `bibliotecaGet`,
 bindings léxicos privados, específicos de dominio y método; las APIs públicas,
 services y wrappers `window.*` conservan sus firmas. Las diferencias de sesión,
 parsing, errores, SSE, blobs, generación y polling permanecen deliberadamente
-separadas. La Fase 4 está en progreso: su primer corte funcional movió
-literalmente la operación de generación seleccionada de anexos a
-`js/features/anexos/anexo-generation.js`, sin cambiar su API, secuencia,
-pending, feedback, persistencia ni refetch. Los demás flujos de generación y
-polling permanecen en sus propietarios anteriores.
+separadas. La Fase 4 está en progreso: sus dos primeros cortes funcionales
+movieron literalmente las operaciones vigentes de generación seleccionada de
+anexos y listas a `js/features/anexos/anexo-generation.js` y
+`js/features/listas-cotejo/lista-cotejo-generation.js`. Conservan APIs,
+selección, pending, feedback, espera, persistencia y refetch. Los demás flujos
+de generación y polling permanecen en sus propietarios anteriores.
 
 ## Flujo principal: Biblioteca
 

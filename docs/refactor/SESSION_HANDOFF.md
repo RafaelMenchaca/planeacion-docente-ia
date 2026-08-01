@@ -14,7 +14,8 @@
 - **Última fase cerrada:** 3 — Capa API frontend.
 - **Fase actual:** 4 — Generación y polling.
 - **Estado de Fase 4:** En progreso.
-- **Sesión funcional actual:** extracción literal de generación seleccionada de anexos desde Biblioteca, sin número aprobado.
+- **Primera sesión funcional:** generación seleccionada de anexos desde Biblioteca, sin número aprobado; validación manual aprobada.
+- **Sesión funcional actual:** generación seleccionada de listas de cotejo desde Biblioteca, sin número aprobado.
 - **Validación manual de la sesión funcional actual:** pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
@@ -39,11 +40,11 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** validar manualmente el primer corte funcional de Fase 4 antes de avanzar al siguiente recurso.
+- **Continuación:** validar manualmente el corte de listas antes de avanzar a planeaciones.
 
 Las Fases 0, 1, 2 y 3 están completadas. Las validaciones manuales 3.1, 3.2,
-3.4, 3.6 y 3.8 están aprobadas. La Fase 4 está en progreso y su primer corte
-funcional queda pendiente de validación manual.
+3.4, 3.6 y 3.8 están aprobadas. La Fase 4 está en progreso: anexos quedó
+validado y listas queda pendiente de validación manual.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -2589,7 +2590,7 @@ de Fase 4.
 - Número: no definido por el roadmap ni aprobado por otra decisión.
 - Nombre descriptivo: **Extracción literal de generación seleccionada de anexos desde Biblioteca**.
 - Riesgo: alto.
-- Estado de implementación: completada, pendiente de validación manual.
+- Estado de implementación: completada y validada manualmente.
 
 ### Corte implementado
 
@@ -2629,12 +2630,70 @@ prompts, payloads ni contratos HTTP.
 
 Pasaron la comprobación sintáctica, la comparación literal contra `HEAD` y un
 smoke aislado de 19 aserciones para éxito, secuencia, éxito parcial, fallo total,
-pending, actualización optimista y refetch. La prueba manual queda **Pendiente
-de confirmación explícita del usuario**.
+pending, actualización optimista y refetch. El usuario aprobó cancelación,
+generación individual y múltiple, pending, preview/reapertura, persistencia,
+reutilización del modal, delete de bloque y tabs. El error parcial no se ejecutó
+por ausencia de un mecanismo controlado seguro y no bloqueó la aprobación.
 
 ### Siguiente corte sugerido
 
 Sin número aprobado: **extracción literal de generación seleccionada de listas
-de cotejo desde Biblioteca**. Es el segundo dominio del orden respaldado por el
-roadmap y evita mezclar polling, SSE, estado general o exámenes. Solo debe
-iniciarse tras la validación manual del corte de anexos.
+de cotejo desde Biblioteca**. Este corte quedó implementado a continuación.
+
+## Segunda sesión funcional de Fase 4 — Generación seleccionada de listas de cotejo
+
+### Identidad y estado
+
+- Fase: `4 — Generación y polling`.
+- Número: no definido por el roadmap ni aprobado por otra decisión.
+- Nombre descriptivo: **Extracción literal de generación seleccionada de listas de cotejo desde Biblioteca**.
+- Riesgo: alto.
+- Estado de implementación: completada, pendiente de validación manual.
+
+### Corte implementado
+
+`submitBibliotecaListaModal()` conserva estado del modal, conjunto, listas
+existentes, selección disponible, normalización, deduplicación, mensaje vacío,
+flag `submitting`, render y `requireSession()`. Después delega una vez en
+`window.ListaCotejoGeneration.generateFromBiblioteca({ conjuntoId, selectedIds,
+planeaciones, accessToken })`.
+
+`js/features/listas-cotejo/lista-cotejo-generation.js` contiene literalmente la
+operación antes embebida en la página:
+
+1. cierra el modal y selecciona el tab Listas;
+2. crea `pendingListaByBatchId[conjuntoId]` con un item por planeación;
+3. ejecuta un único `apiListasCoTejoGenerate({planeacion_ids}, accessToken)`;
+4. conserva los conteos `created` y `skipped` del log frontend;
+5. espera exactamente 1500 ms, limpia pending y hace refetch silencioso;
+6. ante error conserva todos los items, replica el mensaje y renderiza.
+
+La global temporal incluye fecha, motivo, consumidor y condición de retiro.
+`pages/dashboard.html` la carga después de la API y el service de listas, antes
+de los consumidores de página. `submitListaCotejoGenerate()`,
+`generarListasCotejoUnidad()` y `explorerState.listaCotejoGeneration` quedaron
+intactos como flujo legacy protegido.
+
+### Contratos y riesgos preservados
+
+Permanecen iguales `POST /api/listas-cotejo/generate`, JSON + Bearer,
+`{planeacion_ids}`, parser/error, request único, forma de pending,
+`created`/`skipped`, espera, refetch, render, persistencia y logs. Biblioteca
+continúa sin proyectar razones individuales de skipped; un error se muestra en
+todas las cards; pending se pierde con reload y no bloquea por sí mismo una
+reapertura del modal. No se añadieron timeout, cancelación ni bugfixes.
+
+### Validación
+
+Pasaron sintaxis, comparación literal contra `HEAD`, suite Jest y smoke aislado
+de 33 comprobaciones para global, delegación única, payload/orden, request
+único, pending, created/skipped, espera de 1500 ms, cleanup/refetch, error y
+cleanup indirecto de bloque. Las pruebas manuales permanecen **Pendientes de
+confirmación explícita del usuario**.
+
+### Siguiente corte sugerido
+
+Sin número aprobado: **extracción literal del inicio y progreso de generación
+de planeaciones desde Biblioteca**. Debe comenzar solo después de validar este
+corte y requiere preservar SSE manual, eventos, fallback, pending y quick
+create sin mezclarlos con exámenes o estado general.

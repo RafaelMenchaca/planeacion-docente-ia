@@ -984,7 +984,7 @@ clave pending; es un riesgo registrado, no un bug corregido.
 | Campo | Evidencia actual |
 | --- | --- |
 | Acción, página y DOM | Tab Listas, `data-bib-action="generar-lista"`; selección `data-bib-lista-planid`; submit `#bib-lista-submit` |
-| Handler y coordinador | `onBibliotecaClick()` → `openBibliotecaListaModal()` → `submitBibliotecaListaModal()` |
+| Handler y coordinador | `onBibliotecaClick()` → `openBibliotecaListaModal()` → `submitBibliotecaListaModal()` → `ListaCotejoGeneration.generateFromBiblioteca()` |
 | Service y helper API | Biblioteca llama directo a `apiListasCoTejoGenerate()`; el service no participa en este flujo |
 | Endpoint/método | `POST /api/listas-cotejo/generate` |
 | Headers/auth/payload | JSON + Bearer; `{planeacion_ids:[...]}`; sesión capturada antes de la IIFE |
@@ -995,10 +995,21 @@ clave pending; es un riesgo registrado, no un bug corregido.
 | Éxito/persistencia | Backend devuelve `created`, `skipped` y listas; frontend espera 1.5 s, borra pending y refetch |
 | Estados omitidos | `already_exists`, `missing_closing_activity`, `invalid_ai_response`; frontend solo registra el conteo y no asigna la razón a cada card |
 | Error/cleanup | Error conserva todas las cards con el mismo mensaje. Reload pierde pending; la persistencia backend ya confirmada aparece en un refetch posterior |
-| Globals/wrappers | `window.apiListasCoTejoGenerate`; `window.generarListasCotejoUnidad` queda para el camino legacy |
+| Globals/wrappers | `window.ListaCotejoGeneration.generateFromBiblioteca`, consumidor único `submitBibliotecaListaModal()`; `window.apiListasCoTejoGenerate`; `window.generarListasCotejoUnidad` queda para el camino legacy |
 | Logs confirmados | Frontend `[listas-cotejo] generate:success`; backend `[listas-cotejo] generate:start/success`; no se confirmó log frontend start |
 | Pruebas | Sin automatización específica; evidencia manual previa protege selección, `created:1`, `skipped:0`, diez puntos y versión `v2_lista_cotejo_actividades_momentos` |
 | Regresiones | Selección explícita, actividades evaluables, fallback `actividad_cierre`, exactamente cinco criterios de 2/0, total 10, skipped, refetch y métricas |
+
+La segunda sesión funcional de Fase 4 tampoco tiene número aprobado. Extrajo
+literalmente la operación posterior a selección y sesión: cierre del modal,
+selección del tab, construcción de pending, request único, conteo de
+`created`/`skipped`, espera de 1500 ms, cleanup, refetch y feedback de error.
+`submitBibliotecaListaModal()` conserva el modal, exclusión de listas existentes,
+normalización, deduplicación, mensajes y `requireSession()`. El pending vigente
+no se usa para bloquear selecciones al reabrir el modal; ese riesgo se conserva
+sin corrección. `lista-cotejo-generation.js` se carga después de la API/service
+de listas y antes de `biblioteca.page.js`. El coordinador legacy por unidad no
+se movió ni comparte la nueva global.
 
 El coordinador `submitListaCotejoGenerate()` del Dashboard llama
 `generarListasCotejoUnidad({planeacion_ids, unidad_id})`, escribe
@@ -1075,7 +1086,7 @@ unificarse con el polling de Biblioteca sin cambiar contratos observables.
 | Planeaciones por unidad | SSE manual sobre fetch | `apiUnidadGenerarConProgreso()` | POST `/api/unidades/:unidadId/generar?stream=1` | Sin intervalo/timeout frontend | `done` o `error`; items started/completed/error/skipped | Fin del reader; sin abort/reconexión | Request continúa al navegar; fragmentos inválidos se ignoran |
 | Planeación individual no confirmada | SSE manual sobre fetch | `apiPlaneacionesGenerateWithProgress()` | POST `/api/planeaciones/generate?stream=1` | Sin intervalo/timeout | `done` o fin sin payload | Fin del reader | Entry point no confirmado y fallback distinto |
 | Anexos | Request largo secuencial | `AnexoGeneration.generateFromBiblioteca()` | POST `/api/anexos/generate` | 90 s backend por intento IA; total variable | HTTP éxito/error por item | Borrado por item/refetch | Navegación no cancela; error puede limpiarse tras éxito parcial |
-| Listas | Request largo | `submitBibliotecaListaModal()` | POST `/api/listas-cotejo/generate` | 60 s backend por intento IA; luego gracia local 1.5 s | HTTP éxito/error | Borra pending y refetch | Skipped no se reflejan por card |
+| Listas | Request largo | `ListaCotejoGeneration.generateFromBiblioteca()` | POST `/api/listas-cotejo/generate` | 60 s backend por intento IA; luego gracia local 1.5 s | HTTP éxito/error | Borra pending y refetch | Skipped no se reflejan por card |
 | Examen Biblioteca | Polling con `setTimeout` awaited | IIFE de `submitBibliotecaExamModal()` | GET `/api/examenes/generacion/:jobId` | 3 s, 60 polls, ~180 s nominal | completed/failed/timeout | Salida del while; sin handle | Poll 60 completado se clasifica timeout; reload no reanuda |
 | Examen Dashboard legacy | Polling con `setTimeout` awaited | `waitForExamGenerationCompletion()` | Mismo GET | 1.5 s inicial, 4 s siguientes, sin límite | completed o failed/partial/cancelled | Retorno/throw | Polling indefinido y contrato terminal distinto |
 
@@ -1091,7 +1102,7 @@ previa al submit; no cancela una generación ya iniciada.
 | `pendingConjunto` | `bibliotecaState` léxico | quick create mediante `window.biblioteca.setPendingConjunto()`; loader | sidebar/detail y reconciliación | Antes de generar bloque nuevo; se limpia al cargar/reconciliar | Reload lo recrea vacío | Card temporal sin job persistido |
 | `pendingPlaneacionesByBatchId` | `bibliotecaState` | Biblioteca, quick create/`finishPlaneacionesGeneration`, delete de bloque | tab Planeaciones y callbacks SSE | Inicio; limpia solo sin errores o delete | Error/partial permanece; reload lo pierde | Dos coordinadores escriben el mismo mapa |
 | `anexosGenerating` | `bibliotecaState` | `AnexoGeneration.generateFromBiblioteca()`, wrappers individuales/regeneración, delete bloque | tab/modales Anexos | Por item; éxito/refetch/delete | Error queda salvo refetch con algún éxito; reload lo pierde | Limpieza asimétrica y posible clave vacía en regeneración |
-| `pendingListaByBatchId` | `bibliotecaState` | submit lista, delete bloque | tab Listas | Inicio; éxito + 1.5 s/refetch; delete | Error queda; reload lo pierde | Skipped y progreso por item no representados |
+| `pendingListaByBatchId` | `bibliotecaState` | `ListaCotejoGeneration.generateFromBiblioteca()`, delete bloque | tab Listas | Inicio; éxito + 1.5 s/refetch; delete | Error queda; reload lo pierde | Skipped y progreso por item no representados |
 | `pendingExamenByBatchId` | `bibliotecaState` | submit/polling, delete bloque | tab Exámenes | Tras job; limpia en completed/refetch o delete | Failed/timeout queda; reload pierde jobId | Sin reanudación; doble submit posible tras reload |
 | Modal flags `submitting/error` | `bibliotecaState` | renders/submits de cada modal | botones y mensajes de modal | Antes del request; modal suele cerrarse al iniciar | Error de inicio vuelve al modal; reload limpia | No son cancelación del proceso |
 | `explorerState.generating/progress` | Dashboard compartido | creación rápida y SSE | panel rápido y Biblioteca para conjunto temporal | Inicio/finally; items quedan para resultado visual | Reload limpia | Global mixta; no mover en Fase 4 |

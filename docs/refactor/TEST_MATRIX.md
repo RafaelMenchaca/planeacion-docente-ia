@@ -694,16 +694,54 @@ operación a `AnexoGeneration.generateFromBiblioteca()` y conserva
 | Refetch solo cuando existe al menos un éxito | Aprobado |
 | Total del smoke aislado | 19 aserciones aprobadas |
 
+### Validación manual aprobada
+
+| Escenario | Estado |
+| --- | --- |
+| Cancelar antes de generar no crea pending ni request | Aprobada |
+| Generar un anexo: card pending, preview, persistencia, base de datos y logs | Aprobada |
+| Generar varios anexos conserva el orden secuencial | Aprobada |
+| Error controlado/éxito parcial conserva feedback y limpieza vigentes, solo si puede probarse con seguridad | No ejecutada; no existe mecanismo controlado seguro, no bloquea |
+| Eliminar bloque después de generar conserva el cleanup; no probar durante una generación activa | Aprobada |
+| Regresión mínima de otros tabs, sin generación adicional ni errores relacionados | Aprobada |
+
+La validación manual de anexos quedó aprobada explícitamente por el usuario. La
+Fase 4 permanece en progreso.
+
+## Segunda sesión funcional de Fase 4 — generación seleccionada de listas de cotejo
+
+El roadmap no define un número de sesión. La extracción mueve literalmente la
+operación a `ListaCotejoGeneration.generateFromBiblioteca()` y conserva
+`submitBibliotecaListaModal()` como validador y wrapper de UI.
+
+### Evidencia estática y smoke
+
+| Verificación | Estado |
+| --- | --- |
+| Sintaxis de feature y página | Aprobada |
+| Comparación del bloque con `HEAD`, salvo parámetros explícitos | Idéntica |
+| Namespace y delegación única | Aprobado |
+| Request único y payload `{planeacion_ids}` ordenado | Aprobado |
+| Pending por planeación seleccionada | Aprobado |
+| Conteos `created` y `skipped` | Aprobado |
+| Espera local exacta de 1500 ms | Aprobada |
+| Cleanup y refetch de éxito | Aprobado |
+| Error conserva items y feedback repetido | Aprobado |
+| Delete de bloque conserva cleanup indirecto | Aprobado |
+| Total del smoke aislado | 33 comprobaciones aprobadas |
+
 ### Validación manual pendiente
 
 | Escenario | Estado |
 | --- | --- |
-| Cancelar antes de generar no crea pending ni request | Pendiente |
-| Generar un anexo: card pending, preview, persistencia, base de datos y logs | Pendiente |
-| Generar varios anexos conserva el orden secuencial | Pendiente |
-| Error controlado/éxito parcial conserva feedback y limpieza vigentes, solo si puede probarse con seguridad | Pendiente; no ejecutar de forma destructiva |
-| Eliminar bloque después de generar conserva el cleanup; no probar durante una generación activa | Pendiente |
-| Regresión mínima de otros tabs, sin generación adicional ni errores relacionados | Pendiente |
+| Cancelar/cerrar modal: cero POST, cero pending y reapertura funcional | Pendiente |
+| Generar una lista: tab, card, un POST, payload, preview, persistencia, base y logs | Pendiente |
+| Generar varias listas: un POST, IDs, pending por card, `created`/`skipped` y persistencia | Pendiente |
+| Reabrir modal: listas existentes bloqueadas, submit reutilizable y cero request al cancelar | Pendiente |
+| `skipped` real, solo si ocurre naturalmente y de forma segura | Pendiente; no forzar |
+| Error controlado, solo si existe un mecanismo real seguro | Pendiente; no alterar tokens ni servicios |
+| Eliminar bloque después de terminar; verificar cleanup y persistencia | Pendiente |
+| Regresión mínima de Planeaciones, Anexos, Exámenes y regreso a Listas | Pendiente |
 
-Ninguna prueba manual de esta sesión está aprobada todavía. La Fase 4 permanece
-en progreso.
+Ninguna prueba manual de esta segunda sesión está aprobada todavía. La Fase 4
+permanece en progreso.
