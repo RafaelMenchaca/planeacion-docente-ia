@@ -590,7 +590,7 @@ Comprobar en todos los recorridos:
 
 Si se conserva una prueba del explorador antiguo por una dependencia todavía no migrada, marcarla explícitamente como **compatibilidad / no regresión temporal**; nunca como experiencia principal soportada.
 
-## Auditoría documental de apertura de Fase 4
+## Sesión 4.0 — Auditoría documental de apertura
 
 Esta auditoría no modificó comportamiento ni aprobó pruebas manuales de Fase 4.
 Define la regresión que debe ejecutar cada extracción funcional posterior. Su
@@ -668,16 +668,16 @@ sesión funcional.
 
 | Verificación | Estado |
 | --- | --- |
-| Identidad de Fase 4 y ausencia de número de sesión aprobado | Aprobado por el usuario |
+| Identidad `Sesión 4.0 — Auditoría documental de apertura` | Aprobada por el usuario |
 | Inventario de flujos, consumidores y contratos | Aprobado por el usuario |
 | Polling, SSE, pending, feedback y riesgos | Aprobado por el usuario |
-| Secuencia sugerida por roadmap y primer corte propuesto | Aprobado por el usuario |
+| Secuencia sugerida por roadmap y Sesión 4.1 como primer corte | Aprobada por el usuario |
 | Prueba funcional de Fase 4 | No ejecutada; no aplica a esta sesión documental |
 
-## Primera sesión funcional de Fase 4 — generación seleccionada de anexos
+## Sesión 4.1 — extracción literal de generación de anexos desde Biblioteca
 
-El roadmap no define un número de sesión. La extracción mueve literalmente la
-operación a `AnexoGeneration.generateFromBiblioteca()` y conserva
+La Sesión 4.1 mueve literalmente la operación a
+`AnexoGeneration.generateFromBiblioteca()` y conserva
 `submitBibliotecaAnexoCreateModal()` como validador y wrapper de UI.
 
 ### Evidencia estática y smoke
@@ -708,10 +708,10 @@ operación a `AnexoGeneration.generateFromBiblioteca()` y conserva
 La validación manual de anexos quedó aprobada explícitamente por el usuario. La
 Fase 4 permanece en progreso.
 
-## Segunda sesión funcional de Fase 4 — generación seleccionada de listas de cotejo
+## Sesión 4.2 — extracción literal de generación seleccionada de listas de cotejo desde Biblioteca
 
-El roadmap no define un número de sesión. La extracción mueve literalmente la
-operación a `ListaCotejoGeneration.generateFromBiblioteca()` y conserva
+La Sesión 4.2 mueve literalmente la operación a
+`ListaCotejoGeneration.generateFromBiblioteca()` y conserva
 `submitBibliotecaListaModal()` como validador y wrapper de UI.
 
 ### Evidencia estática y smoke
@@ -730,18 +730,58 @@ operación a `ListaCotejoGeneration.generateFromBiblioteca()` y conserva
 | Delete de bloque conserva cleanup indirecto | Aprobado |
 | Total del smoke aislado | 33 comprobaciones aprobadas |
 
+### Validación manual aprobada
+
+| Escenario | Estado |
+| --- | --- |
+| Cancelar/cerrar modal: cero POST, cero pending y reapertura funcional | Aprobada |
+| Generar una lista: tab, card, un POST, payload, preview, persistencia, base y logs | Aprobada |
+| Generar varias listas: un POST, IDs, pending por card, `created`/`skipped` y persistencia | Aprobada |
+| Reabrir modal: listas existentes bloqueadas, submit reutilizable y cero request al cancelar | Aprobada |
+| `skipped` real, solo si ocurre naturalmente y de forma segura | No ejecutada; no existe mecanismo controlado seguro, no bloquea |
+| Error controlado, solo si existe un mecanismo real seguro | No ejecutada; no existe mecanismo controlado seguro, no bloquea |
+| Eliminar bloque después de terminar; verificar cleanup y persistencia | Aprobada |
+| Regresión mínima de Planeaciones, Anexos, Exámenes y regreso a Listas | Aprobada |
+
+La validación manual de listas quedó aprobada explícitamente por el usuario. La
+Fase 4 permanece en progreso.
+
+## Sesión 4.3 — extracción literal del inicio y progreso de generación de planeaciones desde Biblioteca
+
+La Sesión 4.3 mueve literalmente el coordinador exclusivo a
+`PlaneacionGeneration.generateFromBiblioteca()` y
+conserva `submitBibliotecaAgregarModal()` como propietario del modal, captura
+DOM, validación y snapshot.
+
+### Evidencia estática y smoke
+
+| Verificación | Estado |
+| --- | --- |
+| Sintaxis de feature y página | Aprobada |
+| Comparación literal del bloque con `HEAD`, salvo indentación | 62 líneas idénticas |
+| Namespace y delegación única | Aprobado |
+| Quick create byte-idéntico a `HEAD` | Aprobado |
+| Generación individual byte-idéntica a `HEAD` | Aprobada |
+| API/service/parser SSE compartidos byte-idénticos a `HEAD` | Aprobados |
+| Payload `{temas,materia,nivel,batch_id}` y endpoint | Aprobados |
+| Eventos y pending por índice | Aprobados |
+| Parciales, cleanup, reconciliación y refetch | Aprobados |
+| Delete de bloque conserva cleanup indirecto | Aprobado |
+| Suite automatizada existente | 1 suite, 2 pruebas aprobadas |
+| Smoke aislado | 31 comprobaciones aprobadas |
+
 ### Validación manual pendiente
 
 | Escenario | Estado |
 | --- | --- |
-| Cancelar/cerrar modal: cero POST, cero pending y reapertura funcional | Pendiente |
-| Generar una lista: tab, card, un POST, payload, preview, persistencia, base y logs | Pendiente |
-| Generar varias listas: un POST, IDs, pending por card, `created`/`skipped` y persistencia | Pendiente |
-| Reabrir modal: listas existentes bloqueadas, submit reutilizable y cero request al cancelar | Pendiente |
-| `skipped` real, solo si ocurre naturalmente y de forma segura | Pendiente; no forzar |
-| Error controlado, solo si existe un mecanismo real seguro | Pendiente; no alterar tokens ni servicios |
-| Eliminar bloque después de terminar; verificar cleanup y persistencia | Pendiente |
-| Regresión mínima de Planeaciones, Anexos, Exámenes y regreso a Listas | Pendiente |
+| Cancelar/cerrar modal antes del submit: cero POST y cero pending | Pendiente |
+| Generar un tema: un request SSE, progreso, card final y persistencia | Pendiente |
+| Generar varios temas: orden, eventos por índice, conteos y persistencia | Pendiente |
+| Reutilizar el modal: sin submitting atascado, tratamiento previo de temas existentes y cero request al cancelar | Pendiente |
+| Resultado parcial/skipped, solo si ocurre de forma natural y segura | Pendiente; no forzar ni alterar tokens, backend o prompts |
+| Quick create vigente: progreso, creación, feedback, reload, persistencia y consola sin regresión | Pendiente |
+| Eliminar bloque después de terminar conserva cleanup y persistencia | Pendiente |
+| Regresión de Planeaciones, Anexos, Listas, Exámenes, previews, descargas y consola | Pendiente |
 
-Ninguna prueba manual de esta segunda sesión está aprobada todavía. La Fase 4
+Ninguna prueba manual de esta tercera sesión está aprobada todavía. La Fase 4
 permanece en progreso.

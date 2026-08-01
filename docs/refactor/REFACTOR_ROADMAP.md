@@ -449,12 +449,14 @@ Separar por dominio el inicio, feedback, progreso, polling, finalización, error
 
 **En progreso.**
 
-La auditoría documental de apertura y la validación manual del primer corte
-funcional quedaron aprobadas por el usuario. Sin números de sesión definidos
-por el roadmap, el primer corte extrajo generación seleccionada de anexos y el
-segundo extrae generación seleccionada de listas desde Biblioteca mediante
-`ListaCotejoGeneration.generateFromBiblioteca()`. La validación manual del
-segundo corte permanece pendiente; la fase no está cerrada.
+La Sesión 4.0 — Auditoría documental de apertura quedó aprobada. Las Sesiones
+4.1 — Extracción literal de generación de anexos desde Biblioteca y 4.2 —
+Extracción literal de generación seleccionada de listas de cotejo desde
+Biblioteca quedaron implementadas y validadas manualmente. La Sesión 4.3 —
+Extracción literal del inicio y progreso de generación de planeaciones desde
+Biblioteca preserva el service y parser SSE compartidos con quick create; su
+implementación y validaciones estáticas están aprobadas, mientras su validación
+manual permanece pendiente. La fase no está cerrada.
 
 ### Dependencias
 

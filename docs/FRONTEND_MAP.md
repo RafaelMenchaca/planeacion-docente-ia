@@ -816,26 +816,25 @@ Fase cerrada: `3 — Capa API frontend`. Sesiones 3.0–3.9 completadas y
 validación manual acumulativa aprobada. La Fase 4 permanece pendiente y no fue
 iniciada; debe comenzar en una nueva conversación.
 
-## Auditoría documental de apertura de Fase 4
+## Sesión 4.0 — Auditoría documental de apertura
 
 ### Identidad y alcance documental
 
 El roadmap define la fase `4 — Generación y polling`, con el objetivo de separar
 por dominio el inicio, feedback, progreso, polling, finalización, error y
-limpieza de procesos largos. No define número ni nombre para su primera sesión.
-Por tanto, esta auditoría se identifica como **auditoría documental de apertura
-de Fase 4, sin número de sesión aprobado**. El nombre es descriptivo y no
-constituye una decisión de numeración.
+limpieza de procesos largos. La identidad formal aprobada para esta auditoría es
+**Sesión 4.0 — Auditoría documental de apertura**.
 
 Riesgo de esta auditoría: **medio documental**. Riesgo funcional si se excede
 el alcance: **alto**. La confirmación explícita del usuario quedó recibida al
 abrir el primer corte funcional; la Fase 4 está **En progreso**. La auditoría no
 modificó código funcional.
 
-El roadmap sí respalda el orden conservador
+El roadmap respalda el orden conservador
 `anexos → listas de cotejo → planeaciones → exámenes`, un recurso por sesión.
-No respalda números ni nombres de esas sesiones. La primera extracción
-funcional se propone, sin numeración aprobada, para la generación de anexos.
+La numeración formal aprobada identifica los cortes ya abiertos como Sesión 4.1
+para anexos, Sesión 4.2 para listas y Sesión 4.3 para planeaciones. El futuro
+corte de exámenes todavía no tiene número asignado.
 
 Convención del inventario: **No aplica** significa que el mecanismo no forma
 parte del flujo; **No confirmado** significa que la búsqueda global no aportó
@@ -851,7 +850,7 @@ o eliminable.
 | Detalle vigente | `pages/detalle.html`, `detalle.page.js` y edición/descarga | No inicia generación; consume planeaciones ya persistidas |
 | Archivados | `pages/archivados.html`, `archivados.page.js` y registro local de jerarquía archivada | Flujo separado; no inicia los cuatro procesos de generación auditados |
 | Jerarquía técnica activa | API/service de plantel, grado, materia, unidad y tema | Creación rápida crea o reutiliza IDs técnicos antes de generar planeaciones |
-| Compatibilidad | `window.biblioteca`, `window.explorerState`, globals API/service, wrappers `bibGenerarAnexo`/`bibRegenerarAnexo`, aliases de `AppUI` | Tienen consumidores activos o ramas de handler conservadas; no se declaran eliminables |
+| Compatibilidad | `window.biblioteca`, `window.explorerState`, globals API/service, `window.PlaneacionGeneration`, wrappers `bibGenerarAnexo`/`bibRegenerarAnexo`, aliases de `AppUI` | Tienen consumidores activos o ramas de handler conservadas; no se declaran eliminables |
 | Legacy visual confirmado | Render jerárquico y coordinadores por unidad de listas/exámenes en `dashboard.page.js` | El código y sus listeners se cargan, pero el render visual no se alcanza porque la inicialización vigente retorna tras `initBiblioteca()` |
 | No clasificado | Generación individual en `planeacion.page.js` | Tiene definición y mapeo en `main.js`, pero `pages/planeacion.html` redirige inmediatamente a Dashboard y no carga ese script; no hay entry point ejecutable confirmado |
 
@@ -865,7 +864,7 @@ UI histórica no inician ninguno de los flujos vigentes de esta auditoría.
 | Campo | Evidencia actual |
 | --- | --- |
 | Acción, página y DOM | En Biblioteca, botón dinámico `data-bib-action="agregar-planeacion"`; modal con `#bib-agr-submit` |
-| Handler y coordinador | Delegación `onBibliotecaClick()` → `openBibliotecaAgregarModal()`; listener directo → `submitBibliotecaAgregarModal()` |
+| Handler y coordinador | Delegación `onBibliotecaClick()` → `openBibliotecaAgregarModal()`; listener directo → `submitBibliotecaAgregarModal()` → `PlaneacionGeneration.generateFromBiblioteca()` |
 | Service y helper API | `generarPlaneacionesUnidadConProgreso()` → `apiUnidadGenerarConProgreso()`; fallback 5xx → `apiUnidadGenerar()` |
 | Endpoint y método | `POST /api/unidades/:unidadId/generar?stream=1`; fallback `POST /api/unidades/:unidadId/generar` |
 | Headers y autenticación | `Content-Type: application/json`, `Authorization: Bearer <token>` y `Accept: text/event-stream, application/json` en stream; sesión obtenida con `requireSession()` |
@@ -877,10 +876,48 @@ UI histórica no inician ninguno de los flujos vigentes de esta auditoría.
 | Espera | SSE sobre el mismo request. No `EventSource`, polling, intervalo, timeout frontend, reconexión, `AbortController` ni cancelación |
 | Éxito y persistencia | Evento terminal `done` devuelve el resumen; aplica resultado y planeaciones optimistas, limpia pending si `error_count === 0` y hace refetch silencioso de Biblioteca |
 | Error y cleanup | Error SSE o HTTP deja `pending.error`; resultados parciales conservan pending. Navegar/reload elimina el estado léxico local, pero no cancela el trabajo backend |
-| Globals/wrappers | `window.generarPlaneacionesUnidadConProgreso`, `window.apiUnidadGenerarConProgreso`; `renderProgressPill`/`statusLabelFromTone` delegan a `window.AppUI` |
+| Globals/wrappers | `window.PlaneacionGeneration.generateFromBiblioteca`, consumidor único `submitBibliotecaAgregarModal()`; `window.generarPlaneacionesUnidadConProgreso`, `window.apiUnidadGenerarConProgreso`; `renderProgressPill`/`statusLabelFromTone` delegan a `window.AppUI` |
 | Logs | Frontend `[planeaciones] generate:start/success`; backend eventos de generación y métricas |
 | Pruebas | No hay prueba automatizada de este flujo; la matriz manual base cubre generación/SSE |
 | Regresiones protegidas | Eventos, orden de items, `batch_id`, IDs técnicos, fallback solo 5xx, mensajes, métricas, persistencia y refetch |
+
+La Sesión 4.3 — **Extracción literal del inicio y progreso de generación de
+planeaciones desde Biblioteca** confirmó mediante su puerta de seguridad un
+bloque exclusivo: `submitBibliotecaAgregarModal()`
+conserva apertura/cierre previo, captura DOM, validación y snapshot; delega una
+vez en `window.PlaneacionGeneration.generateFromBiblioteca()` el cierre posterior
+al submit, selección de conjunto/tab, pending, request, callbacks, resultado,
+reconciliación, refetch y error. El feature se carga como script clásico después
+del service de jerarquía y antes de ambos archivos de página.
+
+El modal obtiene `unidadId`, `conjuntoId`, `materia` y `nivel` del conjunto ya
+cargado. Solo permite abrir si existe `unidad_id`; exige al menos un tema y la
+captura individual exige título y duración mínima de 10. Antes de delegar vuelve
+a leer los selectores de actividades y crea `temasSnap` con `titulo`, `duracion`,
+`actividades_momentos`, `orden` y `generar_imagenes_en: []`. No filtra duplicados
+contra los temas persistidos ni usa flag `submitting`: el backend aplica la
+restricción al crear temas y emite `item_skipped` para duplicados. La sesión se
+obtiene dentro de `generarPlaneacionesUnidadConProgreso()` mediante su wrapper
+vigente, no en el modal ni en el feature.
+
+El parser compartido conserva `fetch`, `ReadableStream`, `TextDecoder`, buffer
+por saltos de línea y JSON de cada línea `data:`. Reenvía eventos no terminales
+al callback; `done` guarda `data`/`payload`, `error` prepara la excepción y
+`[DONE]` se ignora. Si la respuesta es JSON la retorna sin callbacks; si no hay
+body retorna `null`. Al terminar el reader lanza el error guardado o retorna el
+payload terminal; no procesa explícitamente un fragmento final que quedara sin
+salto de línea. El service conserva su fallback a request JSON únicamente para
+errores con `status >= 500`.
+
+Biblioteca no mantiene progreso global: cada `item_started`, `item_completed`,
+`item_error` o `item_skipped` actualiza el item por índice y renderiza. El
+resultado `done` aplica conteos/registros, mezcla las planeaciones persistidas,
+conserva pending cuando `error_count > 0`, limpia cuando es cero y siempre intenta
+el refetch silencioso después de un resultado. `pendingConjunto` no se crea ni se
+escribe en este flujo, aunque el helper compartido de reconciliación puede leerlo
+para quick create. Delete de bloque sigue eliminando el mapa pending; no cancela
+la IIFE ni el trabajo backend. Reload o navegación pierden el pending y no hay
+timeout, abort, reconexión ni cancelación frontend.
 
 #### Creación rápida compartida
 
@@ -896,7 +933,7 @@ UI histórica no inician ninguno de los flujos vigentes de esta auditoría.
 | Espera/cleanup | Mismo SSE sin timeout/cancelación. `finally` limpia `explorerState.generating` y `pendingBatchId`; staging se limpia tras resultado |
 | Persistencia/reload | `finishPlaneacionesGeneration()` reconcilia batch temporal/real y refetch. Reload pierde staging y pending local; backend puede continuar |
 | Clasificación | Dashboard vigente compartido + Biblioteca vigente + jerarquía técnica activa + compatibilidad por globals |
-| Riesgo principal | Extraer solo el submit de Biblioteca rompería la creación rápida, su jerarquía técnica o la reconciliación `pendingConjunto`/batch |
+| Riesgo principal | Modificar el service, parser, callback, payload o reconciliación compartida puede romper creación rápida, jerarquía técnica o `pendingConjunto`; el corte vigente solo movió el adaptador exclusivo de Biblioteca |
 
 #### Generación individual histórica
 
@@ -937,8 +974,8 @@ UI histórica no inician ninguno de los flujos vigentes de esta auditoría.
 | Pruebas | Sin automatización específica; evidencia manual previa protege generación exitosa y versión `v1_anexos_desde_planeacion` |
 | Regresiones | Orden secuencial, unicidad/already_exists, race 23505, cards por item, refetch, timeout backend, payload y logs |
 
-La primera sesión funcional de Fase 4 no tiene número aprobado. Extrajo
-literalmente la operación que comienza después de validar selección y sesión:
+La Sesión 4.1 — **Extracción literal de generación de anexos desde Biblioteca**
+extrajo literalmente la operación que comienza después de validar selección y sesión:
 construcción de cards pending, cierre del modal, selección del tab, requests
 secuenciales, actualización optimista, error por card, render por item, log y
 refetch. `submitBibliotecaAnexoCreateModal()` conserva la lectura del modal, el
@@ -1000,8 +1037,9 @@ clave pending; es un riesgo registrado, no un bug corregido.
 | Pruebas | Sin automatización específica; evidencia manual previa protege selección, `created:1`, `skipped:0`, diez puntos y versión `v2_lista_cotejo_actividades_momentos` |
 | Regresiones | Selección explícita, actividades evaluables, fallback `actividad_cierre`, exactamente cinco criterios de 2/0, total 10, skipped, refetch y métricas |
 
-La segunda sesión funcional de Fase 4 tampoco tiene número aprobado. Extrajo
-literalmente la operación posterior a selección y sesión: cierre del modal,
+La Sesión 4.2 — **Extracción literal de generación seleccionada de listas de
+cotejo desde Biblioteca** extrajo literalmente la operación posterior a
+selección y sesión: cierre del modal,
 selección del tab, construcción de pending, request único, conteo de
 `created`/`skipped`, espera de 1500 ms, cleanup, refetch y feedback de error.
 `submitBibliotecaListaModal()` conserva el modal, exclusión de listas existentes,
@@ -1083,7 +1121,7 @@ unificarse con el polling de Biblioteca sin cambiar contratos observables.
 
 | Flujo | Mecanismo | Función | Endpoint | Intervalo/duración | Terminal | Cleanup actual | Riesgo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Planeaciones por unidad | SSE manual sobre fetch | `apiUnidadGenerarConProgreso()` | POST `/api/unidades/:unidadId/generar?stream=1` | Sin intervalo/timeout frontend | `done` o `error`; items started/completed/error/skipped | Fin del reader; sin abort/reconexión | Request continúa al navegar; fragmentos inválidos se ignoran |
+| Planeaciones por unidad | SSE manual sobre fetch | `PlaneacionGeneration.generateFromBiblioteca()` → `generarPlaneacionesUnidadConProgreso()` → `apiUnidadGenerarConProgreso()` | POST `/api/unidades/:unidadId/generar?stream=1` | Sin intervalo/timeout frontend | `done` o `error`; items started/completed/error/skipped | Fin del reader; sin abort/reconexión | Request continúa al navegar; fragmentos inválidos se ignoran |
 | Planeación individual no confirmada | SSE manual sobre fetch | `apiPlaneacionesGenerateWithProgress()` | POST `/api/planeaciones/generate?stream=1` | Sin intervalo/timeout | `done` o fin sin payload | Fin del reader | Entry point no confirmado y fallback distinto |
 | Anexos | Request largo secuencial | `AnexoGeneration.generateFromBiblioteca()` | POST `/api/anexos/generate` | 90 s backend por intento IA; total variable | HTTP éxito/error por item | Borrado por item/refetch | Navegación no cancela; error puede limpiarse tras éxito parcial |
 | Listas | Request largo | `ListaCotejoGeneration.generateFromBiblioteca()` | POST `/api/listas-cotejo/generate` | 60 s backend por intento IA; luego gracia local 1.5 s | HTTP éxito/error | Borra pending y refetch | Skipped no se reflejan por card |
@@ -1100,7 +1138,7 @@ previa al submit; no cancela una generación ya iniciada.
 | Estado | Propietario | Escritores | Lectores | Creación/limpieza | Error y reload | Riesgo |
 | --- | --- | --- | --- | --- | --- | --- |
 | `pendingConjunto` | `bibliotecaState` léxico | quick create mediante `window.biblioteca.setPendingConjunto()`; loader | sidebar/detail y reconciliación | Antes de generar bloque nuevo; se limpia al cargar/reconciliar | Reload lo recrea vacío | Card temporal sin job persistido |
-| `pendingPlaneacionesByBatchId` | `bibliotecaState` | Biblioteca, quick create/`finishPlaneacionesGeneration`, delete de bloque | tab Planeaciones y callbacks SSE | Inicio; limpia solo sin errores o delete | Error/partial permanece; reload lo pierde | Dos coordinadores escriben el mismo mapa |
+| `pendingPlaneacionesByBatchId` | `bibliotecaState` | `PlaneacionGeneration.generateFromBiblioteca()`, quick create/`finishPlaneacionesGeneration`, delete de bloque | tab Planeaciones y callbacks SSE | Inicio; limpia solo sin errores o delete | Error/partial permanece; reload lo pierde | Dos coordinadores escriben el mismo mapa |
 | `anexosGenerating` | `bibliotecaState` | `AnexoGeneration.generateFromBiblioteca()`, wrappers individuales/regeneración, delete bloque | tab/modales Anexos | Por item; éxito/refetch/delete | Error queda salvo refetch con algún éxito; reload lo pierde | Limpieza asimétrica y posible clave vacía en regeneración |
 | `pendingListaByBatchId` | `bibliotecaState` | `ListaCotejoGeneration.generateFromBiblioteca()`, delete bloque | tab Listas | Inicio; éxito + 1.5 s/refetch; delete | Error queda; reload lo pierde | Skipped y progreso por item no representados |
 | `pendingExamenByBatchId` | `bibliotecaState` | submit/polling, delete bloque | tab Exámenes | Tras job; limpia en completed/refetch o delete | Failed/timeout queda; reload pierde jobId | Sin reanudación; doble submit posible tras reload |

@@ -14,8 +14,10 @@
 - **Última fase cerrada:** 3 — Capa API frontend.
 - **Fase actual:** 4 — Generación y polling.
 - **Estado de Fase 4:** En progreso.
-- **Primera sesión funcional:** generación seleccionada de anexos desde Biblioteca, sin número aprobado; validación manual aprobada.
-- **Sesión funcional actual:** generación seleccionada de listas de cotejo desde Biblioteca, sin número aprobado.
+- **Sesión 4.0:** Auditoría documental de apertura, aprobada.
+- **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
+- **Sesión 4.2:** extracción literal de generación seleccionada de listas de cotejo desde Biblioteca; validación manual aprobada.
+- **Sesión 4.3:** extracción literal del inicio y progreso de generación de planeaciones desde Biblioteca; implementada y con validaciones estáticas aprobadas.
 - **Validación manual de la sesión funcional actual:** pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
@@ -40,11 +42,11 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** validar manualmente el corte de listas antes de avanzar a planeaciones.
+- **Continuación:** validar manualmente el corte de planeaciones antes de avanzar a exámenes.
 
 Las Fases 0, 1, 2 y 3 están completadas. Las validaciones manuales 3.1, 3.2,
-3.4, 3.6 y 3.8 están aprobadas. La Fase 4 está en progreso: anexos quedó
-validado y listas queda pendiente de validación manual.
+3.4, 3.6 y 3.8 están aprobadas. La Fase 4 está en progreso: anexos y listas
+quedaron validados; planeaciones queda pendiente de validación manual.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -2427,7 +2429,7 @@ La Fase 4 debe comenzar en una nueva conversación y debe partir de:
 - `TEST_MATRIX.md`
 - `REFACTOR_DECISIONS.md`
 
-## Auditoría documental de apertura de Fase 4
+## Sesión 4.0 — Auditoría documental de apertura
 
 ### Estado de entrada
 
@@ -2442,24 +2444,16 @@ La Fase 4 debe comenzar en una nueva conversación y debe partir de:
 
 ### Identidad de la sesión
 
-`REFACTOR_ROADMAP.md` define nombre, objetivo, riesgo, alcance y orden sugerido
-de la Fase 4, pero no define número ni nombre de su primera sesión.
-`SESSION_HANDOFF.md` tampoco dejó un identificador aprobado: solo ordenó iniciar
-la fase en una conversación nueva.
-
-Por tanto:
-
-- **Definido por documentación:** Fase `4 — Generación y polling`; objetivo de
-  separar por dominio inicio, feedback, progreso, polling, finalización, error y
-  limpieza; un recurso por sesión; orden sugerido anexos, listas, planeaciones,
-  exámenes.
-- **Propuesto durante esta auditoría:** nombre descriptivo **Auditoría
-  documental de apertura de Fase 4**, sin número de sesión aprobado.
-- **No aprobado:** denominarla `4.0` o asignar números a los siguientes cortes.
+La identidad formal aprobada de este trabajo es **Sesión 4.0 — Auditoría
+documental de apertura**. Se mantiene el alcance documentado para la Fase
+`4 — Generación y polling`: objetivo de separar por dominio inicio, feedback,
+progreso, polling, finalización, error y limpieza; un recurso por sesión; orden
+sugerido anexos, listas, planeaciones, exámenes.
 
 La auditoría fue aprobada explícitamente por el usuario al solicitar el primer
-corte funcional. Esta aprobación abre la Fase 4, pero no autoriza ni define una
-numeración de sesiones.
+corte funcional. La numeración formal aprobada identifica además los cortes ya
+abiertos como Sesiones 4.1, 4.2 y 4.3; no asigna número al trabajo futuro de
+exámenes ni a la auditoría de cierre.
 
 ### Resultado de la auditoría
 
@@ -2545,16 +2539,15 @@ backend. No se modificó ningún log.
 
 ### Secuencia conservadora respaldada y propuesta
 
-El único orden aprobado es el sugerido por el roadmap:
+El orden aprobado y sus sesiones formalmente abiertas son:
 
-1. anexos;
-2. listas de cotejo;
-3. planeaciones;
-4. exámenes.
+1. Sesión 4.1 — anexos;
+2. Sesión 4.2 — listas de cotejo;
+3. Sesión 4.3 — planeaciones;
+4. exámenes, todavía sin número asignado.
 
-Los números y nombres de sesión siguientes **no están definidos**. Como primer
-corte funcional se propone, pendiente de aprobación y sin número, **Extracción
-literal de la generación de anexos desde Biblioteca**. Debe limitarse al
+La Sesión 4.1 — **Extracción literal de generación de anexos desde Biblioteca**
+se definió como primer corte funcional. Debe limitarse al
 coordinador vigente, preservar API directa, secuencia por item, pending,
 feedback, refetch, errores, timeout backend y compatibilidad, y no incorporar
 regeneración ni crear un service nuevo.
@@ -2568,7 +2561,7 @@ general.
 
 La revisión de esta sesión es exclusivamente documental. Debe confirmar:
 
-- nombre descriptivo y ausencia de número aprobado;
+- identidad formal `Sesión 4.0 — Auditoría documental de apertura`;
 - alcance real de Fase 4;
 - inventario por dominio y consumidores;
 - polling, SSE y requests largos;
@@ -2582,13 +2575,13 @@ Estado: **Aprobada explícitamente por el usuario**. La aprobación corresponde
 al contenido documental de apertura y no aprueba pruebas manuales funcionales
 de Fase 4.
 
-## Primera sesión funcional de Fase 4 — Generación seleccionada de anexos
+## Sesión 4.1 — Extracción literal de generación de anexos desde Biblioteca
 
 ### Identidad y estado
 
 - Fase: `4 — Generación y polling`.
-- Número: no definido por el roadmap ni aprobado por otra decisión.
-- Nombre descriptivo: **Extracción literal de generación seleccionada de anexos desde Biblioteca**.
+- Número: `4.1`.
+- Nombre descriptivo: **Extracción literal de generación de anexos desde Biblioteca**.
 - Riesgo: alto.
 - Estado de implementación: completada y validada manualmente.
 
@@ -2637,18 +2630,18 @@ por ausencia de un mecanismo controlado seguro y no bloqueó la aprobación.
 
 ### Siguiente corte sugerido
 
-Sin número aprobado: **extracción literal de generación seleccionada de listas
-de cotejo desde Biblioteca**. Este corte quedó implementado a continuación.
+**Sesión 4.2 — Extracción literal de generación seleccionada de listas de
+cotejo desde Biblioteca**. Este corte quedó implementado a continuación.
 
-## Segunda sesión funcional de Fase 4 — Generación seleccionada de listas de cotejo
+## Sesión 4.2 — Extracción literal de generación seleccionada de listas de cotejo desde Biblioteca
 
 ### Identidad y estado
 
 - Fase: `4 — Generación y polling`.
-- Número: no definido por el roadmap ni aprobado por otra decisión.
+- Número: `4.2`.
 - Nombre descriptivo: **Extracción literal de generación seleccionada de listas de cotejo desde Biblioteca**.
 - Riesgo: alto.
-- Estado de implementación: completada, pendiente de validación manual.
+- Estado de implementación: completada y validada manualmente.
 
 ### Corte implementado
 
@@ -2688,12 +2681,80 @@ reapertura del modal. No se añadieron timeout, cancelación ni bugfixes.
 Pasaron sintaxis, comparación literal contra `HEAD`, suite Jest y smoke aislado
 de 33 comprobaciones para global, delegación única, payload/orden, request
 único, pending, created/skipped, espera de 1500 ms, cleanup/refetch, error y
-cleanup indirecto de bloque. Las pruebas manuales permanecen **Pendientes de
+cleanup indirecto de bloque. El usuario aprobó cancelación, generación,
+request y payload, pending por card, preview, persistencia, modal reutilizable,
+conteos, delete de bloque, tabs, backend y contratos. Skipped y error controlado
+no se forzaron por no existir un mecanismo seguro y no bloquearon la aprobación.
+
+### Siguiente corte sugerido
+
+**Sesión 4.3 — Extracción literal del inicio y progreso de generación de
+planeaciones desde Biblioteca**. Este corte quedó implementado a continuación.
+
+## Sesión 4.3 — Extracción literal del inicio y progreso de generación de planeaciones desde Biblioteca
+
+### Identidad y estado
+
+- Fase: `4 — Generación y polling`.
+- Número: `4.3`.
+- Nombre descriptivo: **Extracción literal del inicio y progreso de generación de planeaciones desde Biblioteca**.
+- Riesgo: crítico.
+- Estado de implementación: completada, pendiente de validación manual.
+
+### Puerta de seguridad y corte implementado
+
+La búsqueda global confirmó tres coordinadores distintos. Biblioteca inicia en
+`submitBibliotecaAgregarModal()`; quick create conserva
+`generatePlaneacionesFromStaging()` y la generación individual no clasificada
+conserva `generarPlaneacion()`. Los dos primeros comparten solo
+`generarPlaneacionesUnidadConProgreso()` y `apiUnidadGenerarConProgreso()`; no
+comparten callback, pending, payload completo ni render. La generación individual
+usa otro service/API y otro endpoint.
+
+Por ello se extrajo únicamente el bloque exclusivo posterior al snapshot. El
+submit conserva modal, lectura DOM, validación, `unidadId`, `conjuntoId`,
+contexto y `temasSnap`; delega una vez en
+`window.PlaneacionGeneration.generateFromBiblioteca({ conjuntoId, unidadId,
+materia, nivel, temasSnap })`. El nuevo feature contiene literalmente:
+
+1. cierre inmediato del modal, selección del conjunto/tab y pending por tema;
+2. payload `{temas, materia, nivel, batch_id}` y llamada al service vigente;
+3. callbacks `item_started`, `item_completed`, `item_error` e `item_skipped`;
+4. aplicación de resultado y mezcla optimista de planeaciones;
+5. limpieza solo si `error_count === 0`, conservación de parciales y feedback;
+6. selección/render final, refetch silencioso y catch vigente.
+
+`pages/dashboard.html` carga el feature como script clásico después de las API y
+services requeridos y antes de `dashboard.page.js`/`biblioteca.page.js`. La
+global temporal registra fecha, motivo, consumidor y condición de retiro.
+
+### Contratos y riesgos preservados
+
+Permanecen intactos `POST /api/unidades/:unidadId/generar?stream=1`, fallback
+JSON solo en errores 5xx, sesión Supabase, Bearer, headers, payload, parser SSE,
+buffer, eventos, orden de callbacks, resultados parciales, conteos, persistencia,
+logs, refetch y ausencia de timeout/cancelación. Quick create,
+`explorerState.generating/progress`, `pendingConjunto`, generación individual,
+APIs/services compartidos, backend, CSS, `wordExport.js`, otros dominios y
+orden previo de scripts no se modificaron.
+
+El pending local se pierde al reload; navegar no cancela el trabajo backend;
+delete de bloque limpia el mapa pero no cancela la generación; un error/parcial
+conserva pending; el parser ignora fragmentos inválidos y no procesa
+explícitamente un último fragmento sin salto de línea. Son riesgos vigentes, no
+bugfixes de esta sesión.
+
+### Validación
+
+Las validaciones estáticas, equivalencia literal y smoke técnico se registran en
+`TEST_MATRIX.md`. Las ocho pruebas manuales —cancelación, generación de uno y
+varios temas, reutilización del modal, parcial natural seguro, quick create,
+delete posterior y regresión acumulativa— permanecen **Pendientes de
 confirmación explícita del usuario**.
 
 ### Siguiente corte sugerido
 
-Sin número aprobado: **extracción literal del inicio y progreso de generación
-de planeaciones desde Biblioteca**. Debe comenzar solo después de validar este
-corte y requiere preservar SSE manual, eventos, fallback, pending y quick
-create sin mezclarlos con exámenes o estado general.
+Sin número asignado todavía: **auditoría específica y, solo si existe un bloque seguro,
+extracción literal de generación y polling de exámenes desde Biblioteca**. Debe
+iniciarse después de validar planeaciones y conservar separados creación del
+job, polling vigente, polling legacy, contratos de preguntas y estado general.
