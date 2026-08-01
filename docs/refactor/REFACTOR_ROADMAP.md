@@ -454,9 +454,13 @@ La Sesión 4.0 — Auditoría documental de apertura quedó aprobada. Las Sesion
 Extracción literal de generación seleccionada de listas de cotejo desde
 Biblioteca quedaron implementadas y validadas manualmente. La Sesión 4.3 —
 Extracción literal del inicio y progreso de generación de planeaciones desde
-Biblioteca preserva el service y parser SSE compartidos con quick create; su
-implementación y validaciones estáticas están aprobadas, mientras su validación
-manual permanece pendiente. La fase no está cerrada.
+Biblioteca preservó el service y parser SSE compartidos con quick create y quedó
+validada manualmente. La Sesión 4.4 — Auditoría específica y extracción literal
+de generación y polling de exámenes desde Biblioteca separó únicamente el
+coordinador vigente en `ExamGeneration.generateFromBiblioteca()`; conserva
+separados el service, estado, render y polling legacy. Su implementación y
+validaciones estáticas están aprobadas y su validación manual permanece
+pendiente. La fase no está cerrada.
 
 ### Dependencias
 

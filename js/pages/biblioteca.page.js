@@ -1873,69 +1873,11 @@ async function submitBibliotecaExamModal() {
       planeacion_ids:      state.selectedPlaneacionIds
     };
 
-    console.info("[examenes] payload generacion (biblioteca)", {
-      unidadId: payload.unidad_id,
-      batchId: payload.batch_id,
-      totalPlaneaciones: payload.planeacion_ids?.length,
-      planeacionIds: payload.planeacion_ids
+    await window.ExamGeneration.generateFromBiblioteca({
+      payload,
+      accessToken: session.access_token,
+      conjuntoId: state.conjuntoId
     });
-
-    const genResponse = await apiExamenesGenerate(payload, session.access_token);
-    const jobId = genResponse?.job_id;
-    if (!jobId) throw new Error("No se recibio job_id del servidor.");
-
-    console.info("[examenes] job:created", { jobId, batchId: payload.batch_id });
-
-    // Close modal immediately — progress will show in the card
-    const conjuntoId = state.conjuntoId;
-    closeBibliotecaExamModal();
-    setSelectedConjunto(conjuntoId, { tab: "examenes" });
-    bibliotecaState.pendingExamenByBatchId[conjuntoId] = { message: "Iniciando generacion de examen...", error: "" };
-    renderBibliotecaContent();
-
-    // Poll in background
-    ;(async () => {
-      console.debug("[polling] examen:start", { jobId, batchId: conjuntoId });
-      try {
-        const POLL_MS  = 3000;
-        const MAX_POLLS = 60;
-        let polls = 0;
-        while (polls < MAX_POLLS) {
-          await new Promise(r => setTimeout(r, POLL_MS));
-          polls++;
-          const statusRes = await apiExamenGenerationStatus(jobId, session.access_token);
-          if (statusRes?.current_step) {
-            bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
-              message: statusRes.current_step,
-              error: ""
-            };
-            renderBibliotecaContent();
-          }
-          if (statusRes?.status === "completed") break;
-          if (statusRes?.status === "failed") {
-            console.error("[biblioteca] Generacion de examen fallida:", statusRes);
-            throw new Error(BIB_EXAM_GENERIC_FAILURE_MESSAGE);
-          }
-        }
-        if (polls >= MAX_POLLS) throw new Error("La generacion tardo demasiado. Intenta de nuevo.");
-
-        console.debug("[polling] examen:finished", { jobId, batchId: conjuntoId, polls });
-
-        delete bibliotecaState.pendingExamenByBatchId[conjuntoId];
-        await loadAndRenderBiblioteca({
-          silent: true,
-          targetBatchId: conjuntoId,
-          activeTab: "examenes"
-        });
-      } catch (pollError) {
-        console.error("[biblioteca] Error en polling de examen:", pollError);
-        bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
-          message: "",
-          error: BIB_EXAM_GENERIC_FAILURE_MESSAGE
-        };
-        renderBibliotecaContent();
-      }
-    })();
 
   } catch (error) {
     console.error("[biblioteca] Error iniciando examen:", error);

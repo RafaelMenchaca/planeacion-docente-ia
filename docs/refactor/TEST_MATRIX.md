@@ -770,18 +770,70 @@ DOM, validación y snapshot.
 | Suite automatizada existente | 1 suite, 2 pruebas aprobadas |
 | Smoke aislado | 31 comprobaciones aprobadas |
 
-### Validación manual pendiente
+### Validación manual aprobada
 
 | Escenario | Estado |
 | --- | --- |
-| Cancelar/cerrar modal antes del submit: cero POST y cero pending | Pendiente |
-| Generar un tema: un request SSE, progreso, card final y persistencia | Pendiente |
-| Generar varios temas: orden, eventos por índice, conteos y persistencia | Pendiente |
-| Reutilizar el modal: sin submitting atascado, tratamiento previo de temas existentes y cero request al cancelar | Pendiente |
-| Resultado parcial/skipped, solo si ocurre de forma natural y segura | Pendiente; no forzar ni alterar tokens, backend o prompts |
-| Quick create vigente: progreso, creación, feedback, reload, persistencia y consola sin regresión | Pendiente |
-| Eliminar bloque después de terminar conserva cleanup y persistencia | Pendiente |
-| Regresión de Planeaciones, Anexos, Listas, Exámenes, previews, descargas y consola | Pendiente |
+| Cancelar/cerrar modal antes del submit: cero POST y cero pending | Aprobada |
+| Generar un tema: un request SSE, progreso, card final y persistencia | Aprobada |
+| Generar varios temas: orden, eventos por índice, conteos y persistencia | Aprobada: `success_count:2`, `error_count:0`, `skipped_count:0`; Gravedad y Movimiento |
+| Reutilizar el modal: sin submitting atascado, tratamiento previo de temas existentes y cero request al cancelar | Aprobada |
+| Resultado parcial/skipped, solo si ocurre de forma natural y segura | No ocurrió: cero errores y cero skipped; no se forzó |
+| Quick create vigente: progreso, creación, feedback, reload, persistencia y consola sin regresión | Aprobada |
+| Eliminar bloque después de terminar conserva cleanup y persistencia | Aprobada |
+| Regresión de Planeaciones, Anexos, Listas, Exámenes, previews, descargas y consola | Aprobada; examen acumulativo de 17 preguntas, cero fallidas y cero retries |
 
-Ninguna prueba manual de esta tercera sesión está aprobada todavía. La Fase 4
-permanece en progreso.
+La validación manual de la Sesión 4.3 quedó aprobada explícitamente por el
+usuario. El error legacy de schema cache de `public.ia_metrics` sigue siendo un
+hallazgo previo no causado por el refactor; `[aiMetrics] job:finished` permaneció
+operativo. La Fase 4 permanece en progreso.
+
+## Sesión 4.4 — auditoría específica y extracción literal de generación y polling de exámenes desde Biblioteca
+
+La Sesión 4.4 mueve literalmente el bloque exclusivo a
+`ExamGeneration.generateFromBiblioteca()` y conserva
+`submitBibliotecaExamModal()` como propietario de DOM, selección, validación,
+tipos/cantidades, sesión, submitting y payload.
+
+### Evidencia estática y smoke
+
+| Verificación | Estado |
+| --- | --- |
+| Sintaxis de feature y página | Aprobada |
+| Comparación literal con `HEAD`, salvo parámetros explícitos | 62 líneas idénticas; solo `accessToken` y `conjuntoId` explícitos |
+| Namespace y delegación única | Aprobado |
+| Creación de job única y `job_id` requerido | Aprobada |
+| Payload `{unidad_id,batch_id,tipos_pregunta,cantidades_pregunta,planeacion_ids}` | Aprobado |
+| Espera inicial/intervalo de 3000 ms y máximo 60 | Aprobados |
+| `queued`/`processing`/desconocido, `current_step`, `completed` y `failed` | Aprobados |
+| Timeout y borde vigente del poll 60 | Preservados, no corregidos |
+| Pending `{message,error}`, cleanup, render y refetch | Aprobados |
+| Legacy, API/service y delete indirecto | Intactos/compatibles |
+| Suite automatizada existente | Aprobada |
+| Smoke aislado | 22 comprobaciones, 6 escenarios aprobados |
+
+### Fase 4 — Sesión 4.4
+
+**Validación manual: Pendiente de confirmación explícita del usuario.** Usar un
+bloque desechable con al menos dos planeaciones y temas distintos.
+
+| Prueba | Estado y evidencia requerida |
+| --- | --- |
+| 1 — Cancelación | Pendiente: cerrar/cancelar tras seleccionar y configurar; cero POST, cero pending y reapertura. |
+| 2 — Generación básica | Pendiente: selección pequeña, cierre/tab/card, POST único, payload/jobId, polling/current_step/completed, examen/preview/reapertura, reload, persistencia, base y logs. |
+| 3 — Contratos de tipos y cantidades | Pendiente: `opcion_multiple`, `verdadero_falso`, `pregunta_abierta`, `ordenacion_jerarquizacion`; tipos/cantidades, total derivado/final, opciones/respuestas y cero faltantes. |
+| 4 — Contexto correcto | Pendiente: dos temas distintos; `planeacion_ids`, `unidad_id`, `batch_id`, contexto/distribución y ausencia de datos ajenos. |
+| 5 — Polling | Pendiente: POST único, GET repetidos, intervalo aproximado, cero job duplicado, fin en `completed` y cero GET posteriores. |
+| 6 — Reutilización del modal | Pendiente: reabrir, botón libre, nueva configuración, cancelar y cero requests adicionales. |
+| 7 — Preview y descarga | Pendiente: abrir/cerrar/reabrir; descargar desde card/preview, abrir archivos y confirmar contenido/nombre. |
+| 8 — Delete | Pendiente: borrar examen solo tras finalizar, reload y persistencia; bloque solo en otro desechable y nunca durante polling. |
+| 9 — Regresión de recursos | Pendiente: sin generar, recorrer Planeaciones, Anexos, Listas y Exámenes; render y cero errores. |
+| 10 — Failed o timeout | Pendiente solo si ocurre natural y seguramente; no forzar tokens, backend, worker, base o timeout. Si no ocurre, registrar “no ejecutado porque no ocurrió de forma natural y segura”. |
+| 11 — Duplicados y reintentos | Pendiente: observar; si hay retries/rechazos, job continúa, total final, cero duplicados visibles, logs y sin feedback técnico; si no, registrar `Reintentos: 0 en la corrida validada`. |
+
+No se reutiliza la evidencia acumulativa de 4.3 como aprobación de 4.4. Debe
+recibirse evidencia resumida de request, jobId, payload/IDs, tipos,
+cantidades/total, `current_step`, `completed`, total final, retries/fallidas,
+contexto, `exam:saved`, `generate:success`, `[aiMetrics] job:finished` y delete si
+se ejecuta; nunca prompts ni respuestas completas de IA. La Fase 4 permanece en
+progreso.

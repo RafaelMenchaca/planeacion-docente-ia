@@ -832,9 +832,10 @@ modificó código funcional.
 
 El roadmap respalda el orden conservador
 `anexos → listas de cotejo → planeaciones → exámenes`, un recurso por sesión.
-La numeración formal aprobada identifica los cortes ya abiertos como Sesión 4.1
-para anexos, Sesión 4.2 para listas y Sesión 4.3 para planeaciones. El futuro
-corte de exámenes todavía no tiene número asignado.
+La numeración formal aprobada identifica los cortes como Sesión 4.1 para anexos,
+Sesión 4.2 para listas, Sesión 4.3 para planeaciones y Sesión 4.4 para la
+auditoría específica y extracción literal de generación y polling de exámenes
+desde Biblioteca.
 
 Convención del inventario: **No aplica** significa que el mecanismo no forma
 parte del flujo; **No confirmado** significa que la búsqueda global no aportó
@@ -1076,7 +1077,7 @@ compatibilidad protegida.
 | Campo | Evidencia actual |
 | --- | --- |
 | Acción, página y DOM | Tab Exámenes, `data-bib-action="generar-examen"`; checkboxes `data-bib-exam-type`, counts y `data-bib-exam-planid`; submit `#bib-exam-submit` |
-| Handler/coordinador | `onBibliotecaClick()` → `openBibliotecaExamModal()` → `submitBibliotecaExamModal()` → IIFE de polling |
+| Handler/coordinador | `onBibliotecaClick()` → `openBibliotecaExamModal()` → `submitBibliotecaExamModal()` → `ExamGeneration.generateFromBiblioteca()` |
 | Service/API | Biblioteca llama directo `apiExamenesGenerate()` y `apiExamenGenerationStatus()`; no usa service |
 | Inicio HTTP | `POST /api/examenes/generate`, JSON + Bearer |
 | Payload protegido | `{unidad_id,batch_id,tipos_pregunta,cantidades_pregunta,planeacion_ids}`; total derivado de cantidades, no enviado como campo independiente |
@@ -1090,10 +1091,40 @@ compatibilidad protegida.
 | Navegación/cancelación | No `AbortController`, cancel endpoint, cleanup al cerrar modal o listener de navegación. Cerrar modal solo aplica antes del job; reload detiene el polling local, no el worker |
 | Reload/persistencia | Job, items y examen persisten en backend. Pending/jobId no persisten en frontend y el polling no se reanuda; un reload posterior puede mostrar el examen terminado |
 | Reintentos | No hay botón de retry dedicado ni retry frontend. Worker reintenta, sustituye duplicados y usa fallbacks según contrato backend |
-| Globals/wrappers | `window.apiExamenesGenerate`, `window.apiExamenGenerationStatus`; service `generarExamenUnidad`/`obtenerEstadoGeneracionExamen` queda para legacy |
+| Globals/wrappers | `window.ExamGeneration.generateFromBiblioteca`, consumidor único `submitBibliotecaExamModal()`; `window.apiExamenesGenerate`, `window.apiExamenGenerationStatus`; service `generarExamenUnidad`/`obtenerEstadoGeneracionExamen` queda para legacy |
 | Logs frontend | Payload Biblioteca, `[examenes] job:created`, `[polling] examen:start/finished` y errores |
 | Logs backend confirmados | `[examenes] generar examen recibido`, `worker:start`, `pregunta aceptada`, `pregunta rechazada, reintentando`, `exam:saved`, `generate:success`, `[aiMetrics] job:finished` |
 | Pruebas | Sin automatización específica; evidencia manual previa protege diez preguntas, distribución, deduplicación, reintentos, fallback, guardado y métricas |
+
+La Sesión 4.4 — **Auditoría específica y extracción literal de generación y
+polling de exámenes desde Biblioteca** confirmó un corte exclusivo. El submit
+vigente conserva apertura y lectura del modal, selección, orden de IDs,
+validaciones, tipos, cantidades, sesión, flag `submitting` y payload; delega una
+vez en `window.ExamGeneration.generateFromBiblioteca({payload, accessToken,
+conjuntoId})`. El feature crea el job, exige `job_id`, cierra el modal, activa el
+tab Exámenes, crea pending, inicia la IIFE de polling y conserva `current_step`,
+terminales, timeout, cleanup, render y refetch. Se carga como script clásico
+después de API/service de exámenes y antes de ambas páginas.
+
+Las planeaciones seleccionables siguen siendo `conjunto.planeaciones` sin
+filtrado por ausencia de tema: el título visual usa `tema`, `custom_title` o
+`Sin titulo`. Los IDs se convierten a `String`, se añaden solo si no estaban ya
+seleccionados y conservan el orden de selección. No se excluyen planeaciones por
+exámenes existentes ni se bloquea el modal por un pending vigente. `submitting`
+se marca antes de `requireSession()`; si devuelve `null`, el retorno vigente no
+restablece el flag. El total no se envía: el backend lo deriva de
+`cantidades_pregunta`. `queued`, `processing`
+y estados desconocidos no terminales continúan el loop; si traen `current_step`
+actualizan la card. `completed` rompe el loop, `failed` entra al error genérico y
+60 consultas sin terminal producen timeout. El borde que trata como timeout un
+`completed` recibido en la consulta 60 se conserva sin corrección.
+
+El job y su examen final persisten en backend, pero `jobId` y pending viven solo
+en memoria. Reload o navegación detienen la observación local sin cancelar el
+worker; si el job termina después del timeout puede aparecer tras un refetch o
+reload posterior. Delete de bloque conserva su eliminación indirecta de
+`pendingExamenByBatchId`, sin cancelar job o polling. La validación manual de
+Sesión 4.4 permanece pendiente; la evidencia acumulativa de 4.3 es solo baseline.
 
 El Dashboard legacy usa `submitUnitExamModal()` y envía
 `{unidad_id,tipos_pregunta,cantidades_pregunta,tema_ids}` mediante
@@ -1125,7 +1156,7 @@ unificarse con el polling de Biblioteca sin cambiar contratos observables.
 | Planeación individual no confirmada | SSE manual sobre fetch | `apiPlaneacionesGenerateWithProgress()` | POST `/api/planeaciones/generate?stream=1` | Sin intervalo/timeout | `done` o fin sin payload | Fin del reader | Entry point no confirmado y fallback distinto |
 | Anexos | Request largo secuencial | `AnexoGeneration.generateFromBiblioteca()` | POST `/api/anexos/generate` | 90 s backend por intento IA; total variable | HTTP éxito/error por item | Borrado por item/refetch | Navegación no cancela; error puede limpiarse tras éxito parcial |
 | Listas | Request largo | `ListaCotejoGeneration.generateFromBiblioteca()` | POST `/api/listas-cotejo/generate` | 60 s backend por intento IA; luego gracia local 1.5 s | HTTP éxito/error | Borra pending y refetch | Skipped no se reflejan por card |
-| Examen Biblioteca | Polling con `setTimeout` awaited | IIFE de `submitBibliotecaExamModal()` | GET `/api/examenes/generacion/:jobId` | 3 s, 60 polls, ~180 s nominal | completed/failed/timeout | Salida del while; sin handle | Poll 60 completado se clasifica timeout; reload no reanuda |
+| Examen Biblioteca | Polling con `setTimeout` awaited | IIFE de `ExamGeneration.generateFromBiblioteca()` | GET `/api/examenes/generacion/:jobId` | 3 s, 60 polls, ~180 s nominal | completed/failed/timeout | Salida del while; sin handle | Poll 60 completado se clasifica timeout; reload no reanuda |
 | Examen Dashboard legacy | Polling con `setTimeout` awaited | `waitForExamGenerationCompletion()` | Mismo GET | 1.5 s inicial, 4 s siguientes, sin límite | completed o failed/partial/cancelled | Retorno/throw | Polling indefinido y contrato terminal distinto |
 
 No existe `EventSource`, `setInterval`, `AbortController` ni mecanismo de
@@ -1141,7 +1172,7 @@ previa al submit; no cancela una generación ya iniciada.
 | `pendingPlaneacionesByBatchId` | `bibliotecaState` | `PlaneacionGeneration.generateFromBiblioteca()`, quick create/`finishPlaneacionesGeneration`, delete de bloque | tab Planeaciones y callbacks SSE | Inicio; limpia solo sin errores o delete | Error/partial permanece; reload lo pierde | Dos coordinadores escriben el mismo mapa |
 | `anexosGenerating` | `bibliotecaState` | `AnexoGeneration.generateFromBiblioteca()`, wrappers individuales/regeneración, delete bloque | tab/modales Anexos | Por item; éxito/refetch/delete | Error queda salvo refetch con algún éxito; reload lo pierde | Limpieza asimétrica y posible clave vacía en regeneración |
 | `pendingListaByBatchId` | `bibliotecaState` | `ListaCotejoGeneration.generateFromBiblioteca()`, delete bloque | tab Listas | Inicio; éxito + 1.5 s/refetch; delete | Error queda; reload lo pierde | Skipped y progreso por item no representados |
-| `pendingExamenByBatchId` | `bibliotecaState` | submit/polling, delete bloque | tab Exámenes | Tras job; limpia en completed/refetch o delete | Failed/timeout queda; reload pierde jobId | Sin reanudación; doble submit posible tras reload |
+| `pendingExamenByBatchId` | `bibliotecaState` | `ExamGeneration.generateFromBiblioteca()`, delete bloque | tab Exámenes | Tras job; limpia en completed/refetch o delete | Failed/timeout queda; reload pierde jobId | Sin reanudación; doble submit posible tras reload |
 | Modal flags `submitting/error` | `bibliotecaState` | renders/submits de cada modal | botones y mensajes de modal | Antes del request; modal suele cerrarse al iniciar | Error de inicio vuelve al modal; reload limpia | No son cancelación del proceso |
 | `explorerState.generating/progress` | Dashboard compartido | creación rápida y SSE | panel rápido y Biblioteca para conjunto temporal | Inicio/finally; items quedan para resultado visual | Reload limpia | Global mixta; no mover en Fase 4 |
 | `examGeneration`/`listaCotejoGeneration` | `explorerState` | coordinadores legacy | render legacy | Inicio/terminal | Reload limpia | No mezclar con pending vigente |

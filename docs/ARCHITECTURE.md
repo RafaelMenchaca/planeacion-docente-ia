@@ -64,14 +64,16 @@ services y wrappers `window.*` conservan sus firmas. Las diferencias de sesión,
 parsing, errores, SSE, blobs, generación y polling permanecen deliberadamente
 separadas. La Sesión 4.0 abrió documentalmente la Fase 4 y quedó aprobada. La
 fase está en progreso: las Sesiones 4.1, 4.2 y 4.3 movieron literalmente las
-operaciones vigentes de generación seleccionada de anexos y listas, y el
-coordinador de inicio/progreso de planeaciones de Biblioteca, a
-`js/features/anexos/anexo-generation.js`,
-`js/features/listas-cotejo/lista-cotejo-generation.js` y
-`js/features/planeaciones/planeacion-generation.js`. Conservan APIs, selección,
-pending, feedback, espera, persistencia y refetch. Quick create, la generación
-individual, los parsers SSE compartidos y los demás flujos de generación y
-polling permanecen en sus propietarios anteriores.
+  operaciones vigentes de generación seleccionada de anexos y listas, el
+  coordinador de inicio/progreso de planeaciones y la creación/polling de
+  exámenes de Biblioteca, a
+  `js/features/anexos/anexo-generation.js`,
+  `js/features/listas-cotejo/lista-cotejo-generation.js` y
+  `js/features/planeaciones/planeacion-generation.js`, y la Sesión 4.4 añadió
+  `js/features/examenes/exam-generation.js`. Conservan APIs, selección, pending,
+  feedback, espera, persistencia y refetch. Quick create, la generación
+  individual, los parsers SSE compartidos y el coordinador/polling legacy de
+  exámenes permanecen en sus propietarios anteriores.
 
 ## Flujo principal: Biblioteca
 
