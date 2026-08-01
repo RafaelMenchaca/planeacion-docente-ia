@@ -458,9 +458,22 @@ Biblioteca preservó el service y parser SSE compartidos con quick create y qued
 validada manualmente. La Sesión 4.4 — Auditoría específica y extracción literal
 de generación y polling de exámenes desde Biblioteca separó únicamente el
 coordinador vigente en `ExamGeneration.generateFromBiblioteca()`; conserva
-separados el service, estado, render y polling legacy. Su implementación y
-validaciones estáticas están aprobadas y su validación manual permanece
-pendiente. La fase no está cerrada.
+separados el service, estado, render y polling legacy. Su implementación,
+validaciones estáticas y validación manual están aprobadas. La Sesión 4.5 —
+Auditoría formal de cierre de generación y polling confirmó las cuatro
+extracciones, consumidores, contratos, orden de scripts, evidencia acumulada y
+ausencia de regresiones introducidas. La decisión técnica es **A. Cerrar Fase
+4**, pendiente de confirmación documental explícita del usuario antes del commit
+de cierre. Hasta entonces la fase permanece **En progreso** y Fase 5 permanece
+**Pendiente**.
+
+Evidencia acumulada de salida: anexos individuales/secuenciales; listas con
+request único, `created:1` y `skipped:0`; planeaciones SSE para Gravedad y
+Movimiento con `success_count:2`, cero errores/skipped; y examen contextual de
+19 preguntas solicitadas/guardadas, cero fallidas y cero retries. Failed y
+timeout de examen no se forzaron por falta de un mecanismo seguro y no bloquean
+el cierre. El fallo legacy de schema cache de `public.ia_metrics` es preexistente
+y no fue causado por Fase 4; `[aiMetrics] job:finished` sigue confirmado.
 
 ### Dependencias
 

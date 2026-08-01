@@ -75,6 +75,13 @@ fase está en progreso: las Sesiones 4.1, 4.2 y 4.3 movieron literalmente las
   individual, los parsers SSE compartidos y el coordinador/polling legacy de
   exámenes permanecen en sus propietarios anteriores.
 
+La Sesión 4.4 quedó validada manualmente y commiteada. La Sesión 4.5 auditó el
+cierre sin modificar código: confirmó los cuatro coordinadores por dominio, sus
+globals y consumidores únicos, el orden clásico de scripts y la integridad de
+quick create, generación individual, legacy, APIs/services y backend. La
+decisión técnica es **A. Cerrar Fase 4**, pendiente de confirmación documental
+explícita del usuario antes del commit de cierre. Fase 5 permanece pendiente.
+
 ## Flujo principal: Biblioteca
 
 `pages/dashboard.html` carga, entre otros, `dashboard.page.js`, `biblioteca.page.js` y `main.js`, en ese orden. `main.js` invoca `window.initDashboardPage()`.

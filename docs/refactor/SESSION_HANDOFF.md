@@ -18,8 +18,9 @@
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
 - **Sesión 4.2:** extracción literal de generación seleccionada de listas de cotejo desde Biblioteca; validación manual aprobada.
 - **Sesión 4.3:** extracción literal del inicio y progreso de generación de planeaciones desde Biblioteca; validación manual aprobada.
-- **Sesión 4.4:** auditoría específica y extracción literal de generación y polling de exámenes desde Biblioteca; implementada y con validaciones estáticas aprobadas.
-- **Validación manual de la sesión funcional actual (4.4):** pendiente de confirmación explícita del usuario.
+- **Sesión 4.4:** auditoría específica y extracción literal de generación y polling de exámenes desde Biblioteca; validación manual aprobada y commit `6344374`.
+- **Sesión 4.5:** auditoría formal de cierre de generación y polling; decisión técnica A, pendiente de revisión documental del usuario.
+- **Validación manual documental de 4.5:** pendiente de confirmación explícita del usuario.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -43,11 +44,13 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** validar manualmente la Sesión 4.4 antes de abrir la auditoría formal de cierre de Fase 4.
+- **Continuación:** revisar documentalmente la Sesión 4.5; después podrá hacerse el commit de cierre. Fase 5 permanece pendiente.
 
 Las Fases 0, 1, 2 y 3 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. La Fase 4 está en progreso: anexos, listas y
-planeaciones quedaron validados; exámenes queda pendiente de validación manual.
+planeaciones y exámenes quedaron validados. La decisión técnica de cierre está
+documentada, pero Fase 4 permanece en progreso hasta la aprobación documental
+explícita del usuario.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -256,8 +259,8 @@ La validación acumulativa requerida quedó aprobada antes de abrir la Fase 2. N
 | Listas de cotejo | Descargar | `bibDescargarLista` → `ListaCotejoDownload.downloadBiblioteca` | card y botón del preview | `GET /api/listas-cotejo/:id` desde card | Ninguno | Sin render general | Modal de nombre; exportador protegido `wordExport.js` | Bajo | Compatibilidad |
 | Listas de cotejo | Eliminar | `bibEliminarLista(listaId, conjuntoId)` | `data-bib-action="eliminar-lista"` | `DELETE /api/listas-cotejo/:id` | Quita lista y actualiza `total_listas_cotejo` | Render parcial y recarga silenciosa | `showBibConfirm`; log de éxito; `alert` en error | Bajo/medio | Biblioteca activa |
 | Exámenes | Abrir/cerrar modal de generación | `openBibliotecaExamModal`, `closeBibliotecaExamModal`, renderer | `data-bib-action="generar-examen"` y controles del modal | Ninguna al abrir/cerrar | `examModal` | Render del modal | Error inline | Medio | Biblioteca activa |
-| Exámenes | Generar | `submitBibliotecaExamModal` | submit del modal | `POST /api/examenes/generate` | `examModal`, `pendingExamenByBatchId` y tab | Render general y recarga al completar | Logs de payload/job; error inline | Alto | Biblioteca activa |
-| Exámenes | Consultar estado | bucle interno de `submitBibliotecaExamModal` | job creado por generación | `GET /api/examenes/generacion/:jobId` cada 3 s, máximo 60 intentos | `pendingExamenByBatchId` | Render general en cada paso | Logs `[polling]`; error genérico visible | Alto | Biblioteca activa |
+| Exámenes | Generar | `submitBibliotecaExamModal` → `ExamGeneration.generateFromBiblioteca` | submit del modal | `POST /api/examenes/generate` | `examModal`, `pendingExamenByBatchId` y tab | Render general y recarga al completar | Logs de payload/job; error inline | Alto | Biblioteca activa |
+| Exámenes | Consultar estado | IIFE de `ExamGeneration.generateFromBiblioteca` | job creado por generación | `GET /api/examenes/generacion/:jobId` cada 3 s, máximo 60 intentos | `pendingExamenByBatchId` | Render general en cada paso | Logs `[polling]`; error genérico visible | Alto | Biblioteca activa |
 | Exámenes | Cancelar | `closeBibliotecaExamModal` | botones, cierre y backdrop del modal previo al submit | Ninguna; no existe cancelación de job en Biblioteca | `examModal.open` | Oculta modal | Sin feedback | Bajo | Biblioteca activa |
 | Exámenes | Ver preview | `openBibliotecaExamenPreview` → `ExamPreview.openBiblioteca` | `data-bib-action="ver-examen"` | `GET /api/examenes/:id` | `explorerState.examPreview` y caché por compatibilidad | Render del modal | Errores visibles del preview | Bajo | Compatibilidad |
 | Exámenes | Descargar | `bibDescargarExamen(examenId)` → `window.downloadExamWord` | `data-bib-action="descargar-examen"` | `GET /api/examenes/:id` si no está en caché | Solo lectura de `bibliotecaState.conjuntos`; el exportador usa caché compartida | Sin render | Modal de nombre; logs start/success/error | Bajo | Biblioteca activa |
@@ -1983,7 +1986,7 @@ frontend usa exclusivamente `/generate`.
 | --- | --- | --- | --- | --- |
 | `apiExamenesGenerate` | `submitBibliotecaExamModal` | Payload Biblioteca, token | Exige `job_id`; error queda en modal | Biblioteca vigente |
 | `generarExamenUnidad` | `submitUnitExamModal` | Payload por temas | Exige `job_id`; error genérico en sección | Legacy |
-| `apiExamenGenerationStatus` | IIFE de `submitBibliotecaExamModal` | Job UUID, token capturado | Actualiza pending; termina/falla/timeout | Polling Biblioteca |
+| `apiExamenGenerationStatus` | IIFE de `ExamGeneration.generateFromBiblioteca` | Job UUID, token capturado | Actualiza pending; termina/falla/timeout | Polling Biblioteca |
 | `obtenerEstadoGeneracionExamen` | `waitForExamGenerationCompletion` | Job UUID | Actualiza `examGeneration`; termina/falla | Polling legacy |
 | `apiExamenesListByUnidad` | `obtenerExamenesPorUnidad` | UUID, token | Payload para normalizar | Service |
 | `obtenerExamenesPorUnidad` | `ensureExamenes` | UUID | Array en `examenesByUnidad`; error visual | Legacy |
@@ -2769,7 +2772,7 @@ de exámenes desde Biblioteca**. Este corte quedó implementado a continuación.
 - Número: `4.4`.
 - Nombre: **Auditoría específica y extracción literal de generación y polling de exámenes desde Biblioteca**.
 - Riesgo: crítico.
-- Estado de implementación: completada, con validaciones estáticas aprobadas y validación manual pendiente.
+- Estado de implementación: completada y validada manualmente.
 
 ### Puerta de seguridad y corte implementado
 
@@ -2841,32 +2844,120 @@ bloque quedaron idénticos a `HEAD`; `git diff --check` pasó.
 
 ### Fase 4 — Sesión 4.4
 
-**Validación manual: Pendiente de confirmación explícita del usuario.** Usar un
-bloque desechable con al menos dos planeaciones y temas distintos.
+**Validación manual: Aprobada.** Se usó un bloque con las planeaciones 668 y 669,
+correspondientes a Gravedad y Movimiento.
 
 | Prueba | Verificación pendiente |
 | --- | --- |
-| 1 — Cancelación | Abrir, seleccionar/configurar, cerrar o cancelar; confirmar cero POST, cero pending y reapertura funcional. |
-| 2 — Generación básica | Selección pequeña; cierre, tab, card, un POST, payload/jobId, polling/current_step/completed, examen/preview/reapertura, reload, persistencia, base y logs. |
-| 3 — Contratos de tipos y cantidades | Probar `opcion_multiple`, `verdadero_falso`, `pregunta_abierta` y `ordenacion_jerarquizacion`; confirmar tipos, cantidades, total derivado/final, opciones/respuestas y cero faltantes. |
-| 4 — Contexto correcto | Dos temas distintos; confirmar `planeacion_ids`, `unidad_id`, `batch_id`, contexto/distribución y ausencia de unidad o planeaciones ajenas. |
-| 5 — Polling | Network: POST único, GET repetidos al job, intervalo aproximado, cero jobs duplicados, fin en `completed` y cero GET posteriores. |
-| 6 — Reutilización del modal | Reabrir tras completar, confirmar botón libre, configurar otra selección, cancelar y observar cero requests adicionales. |
-| 7 — Preview y descarga | Abrir/cerrar/reabrir preview; descargar desde card y preview; abrir archivos y confirmar contenido/nombre vigente. |
-| 8 — Delete | Tras finalizar, borrar examen, recargar y confirmar persistencia; bloque solo en otro desechable y nunca durante polling. |
-| 9 — Regresión de recursos | Sin regenerar, abrir Planeaciones, Anexos, Listas y volver a Exámenes; confirmar render y ausencia de errores. |
-| 10 — Failed o timeout | Solo si ocurre natural y seguramente; no forzar tokens/backend/worker/base/timeouts. Si no ocurre, registrar que no se ejecutó. |
-| 11 — Duplicados y reintentos | Observar la corrida: si hay retries/rechazos, job continúa, total se completa, no hay duplicados visibles, logs los registran y UI no expone detalle técnico; si no, registrar cero retries. |
+| 1 — Cancelación | Aprobada: cero POST y reapertura funcional. |
+| 2 — Generación básica | Aprobada: jobId, polling, `current_step`, `completed`, persistencia y reload. |
+| 3 — Contratos de tipos y cantidades | Aprobada: 19 solicitadas y 19 guardadas; tipos/cantidades documentados abajo. |
+| 4 — Contexto correcto | Aprobada: unidad, batch, planeaciones 668/669 y temas Gravedad/Movimiento. |
+| 5 — Polling | Aprobada: comportamiento y terminal `completed` correctos. |
+| 6 — Reutilización del modal | Aprobada. |
+| 7 — Preview y descarga | Aprobada desde card y preview. |
+| 8 — Delete | Aprobada. |
+| 9 — Regresión de recursos | Aprobada: otros recursos sin regresiones. |
+| 10 — Failed o timeout | No ejecutada: no ocurrió de forma natural y segura; no se forzó. |
+| 11 — Duplicados y reintentos | Aprobada por observación: cero preguntas fallidas y `retries:0`. |
 
-Debe solicitarse evidencia resumida de request, jobId, payload e IDs, tipos,
-cantidades/total, `current_step`, `completed`, total final, retries/fallidas,
-contexto, `exam:saved`, `generate:success`, `[aiMetrics] job:finished` y delete si
-se ejecuta. No solicitar prompts ni respuestas completas de IA.
+Contexto confirmado: `unidadId` `56377d0c-e5b5-4ded-8ab0-9fbb992228c4`,
+`batchId` `3df729c9-a803-4f6e-884d-9685ec971398`, planeaciones 668/669. Tipos y
+cantidades: `opcion_multiple:5`, `verdadero_falso:5`, `emparejamiento:1`,
+`respuesta_corta:3`, `calculo_numerico:3`, `pregunta_abierta:1` y
+`ordenacion_jerarquizacion:1`. Resultado: `totalRequested:19`,
+`totalPreguntas:19`, `preguntasFallidas:0`, `retries:0`.
+
+Se observaron `[examenes] generar examen recibido`, los eventos `exam-debug` de
+input/batch/job, `worker:start`, contexto final, preguntas aceptadas,
+`exam:saved`, `generate:success` y `[aiMetrics] job:finished`. No hubo retries.
 
 ### Siguiente corte sugerido
 
-Sin número asignado: **auditoría formal de cierre de Fase 4**. Es el corte
-conservador porque los cuatro dominios previstos ya tienen coordinador vigente
-separado; primero debe recibirse la confirmación manual de 4.4 y luego auditarse
-la salida de fase sin mezclar bugfixes, estado general, render o legacy. No se
-cierra la fase en esta sesión.
+**Sesión 4.5 — Auditoría formal de cierre de generación y polling**. Este corte
+documental quedó ejecutado a continuación.
+
+## Sesión 4.5 — Auditoría formal de cierre de generación y polling
+
+### Identidad y estado de entrada
+
+- Tipo: auditoría documental y técnica; sin implementación funcional.
+- Riesgo: medio documental; alto si se modifica comportamiento.
+- Frontend inicial: `refactor-front`, `6344374`, working tree limpio.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, working tree limpio.
+- Sesiones 4.0–4.4: aprobadas y commiteadas.
+- Baseline previo a Fase 4: `ecb1785`; apertura documental: `6be271d`.
+
+### Auditoría acumulativa
+
+| Sesión | Feature / resultado | Validación manual | Commit |
+| --- | --- | --- | --- |
+| 4.0 | Auditoría documental de apertura | Aprobada | `6be271d` |
+| 4.1 | `AnexoGeneration.generateFromBiblioteca()` | Aprobada | `5cb3458` |
+| 4.2 | `ListaCotejoGeneration.generateFromBiblioteca()` | Aprobada | `d695acd` |
+| 4.3 | `PlaneacionGeneration.generateFromBiblioteca()` | Aprobada | `d54ca4e` |
+| 4.4 | `ExamGeneration.generateFromBiblioteca()` | Aprobada | `6344374` |
+| 4.5 | Auditoría formal de cierre; sin código funcional | Documental pendiente | No realizado |
+
+Cada feature conserva un consumidor único en `biblioteca.page.js`. Las cuatro
+globals existen sin colisión; APIs/services se cargan antes de los features y
+estos antes de Biblioteca. Quick create no consume `PlaneacionGeneration`; el
+polling legacy no consume `ExamGeneration`. No hay definiciones duplicadas,
+referencias rotas, módulos, `defer`, `async` ni dependencias circulares evidentes.
+
+La comparación `ecb1785..6344374` confirmó solo cuatro archivos feature nuevos,
+cuatro delegaciones en Biblioteca, cuatro líneas de script y documentación.
+`dashboard.page.js`, `planeacion.page.js`, APIs/services compartidos, delete de
+bloque, `wordExport.js`, CSS y packages son byte-idénticos al baseline. Los
+diffs de cada commit confirman extracción literal con parámetros explícitos.
+
+### Evidencia manual acumulada
+
+- 4.1: cancelación, uno/varios anexos secuenciales, pending, preview,
+  persistencia, modal, delete y tabs; `[anexos] generate:start`, `[anexos]
+  generate:success`, `[anexos] delete:success` y `[aiMetrics] job:finished`.
+- 4.2: cancelación, request único, `planeacion_ids`, pending, preview,
+  persistencia, modal, `created:1`, `skipped:0`, delete y tabs; logs de
+  `[listas-cotejo] generate:start`, `[lista-cotejo]
+  lista_generada_por_id`, `[listas-cotejo] generate:success`, `[aiMetrics]
+  job:finished` y `[biblioteca] delete:success`.
+- 4.3: cancelación, uno/varios temas, SSE único con `stream=1`, payload,
+  pending/progreso, persistencia, modal, quick create, delete y recursos;
+  Gravedad/Movimiento, `success_count:2`, cero errores/skipped.
+- 4.4: cancelación, job/polling/current_step/completed, 19 preguntas de siete
+  tipos, contexto Gravedad/Movimiento, cero fallidas/retries, persistencia,
+  modal, preview, descargas, delete y recursos.
+
+Failed/timeout de examen no se forzaron y no bloquean el cierre. El error legacy
+de schema cache de `public.ia_metrics` es preexistente; no es regresión de Fase
+4 y las métricas modernas confirmaron `[aiMetrics] job:finished`.
+
+### Validaciones técnicas y riesgos
+
+Pasaron `node --check` en los cuatro features y `biblioteca.page.js`, Jest con 1
+suite/2 pruebas y el smoke acumulativo final con 38 comprobaciones, cuatro
+globals y cuatro consumidores. Un primer patrón textual del smoke confundió
+`getExamGenerationUserMessage` con el namespace; al comprobar
+`window.ExamGeneration` exactamente, confirmó cero consumo legacy.
+
+Pending en memoria, reload sin reanudación, ausencia de cancelación/
+`AbortController`, procesos sin timeout frontend, continuidad al navegar,
+delete sin cancelación, parciales que conservan pending, polling legacy separado,
+borde del poll 60 y fallo `public.ia_metrics` permanecen riesgos conocidos. No
+son regresiones introducidas ni incumplimientos del objetivo de Fase 4.
+
+### Decisión formal
+
+**A. Cerrar Fase 4.** Los cuatro dominios previstos están separados, contratos y
+consumidores permanecen intactos, las validaciones funcionales están aprobadas y
+no se detectaron regresiones introducidas. La fase continúa **En progreso** hasta
+que el usuario apruebe este diff documental y autorice el commit de cierre. Fase
+5 — Estado de Biblioteca permanece **Pendiente** y no se abre.
+
+### Fase 4 — Sesión 4.5
+
+**Validación manual documental: Pendiente de confirmación explícita del usuario.**
+
+El usuario debe revisar inventario y estado 4.0–4.5, evidencia manual acumulada,
+contratos y riesgos preservados, archivos funcionales de Fase 4, ausencia de
+regresiones, decisión A y que Fase 5 continúa pendiente.

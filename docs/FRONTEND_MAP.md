@@ -1124,7 +1124,8 @@ en memoria. Reload o navegación detienen la observación local sin cancelar el
 worker; si el job termina después del timeout puede aparecer tras un refetch o
 reload posterior. Delete de bloque conserva su eliminación indirecta de
 `pendingExamenByBatchId`, sin cancelar job o polling. La validación manual de
-Sesión 4.4 permanece pendiente; la evidencia acumulativa de 4.3 es solo baseline.
+Sesión 4.4 quedó aprobada con 19 preguntas solicitadas/guardadas, cero fallidas,
+cero retries y contexto confirmado para Gravedad y Movimiento.
 
 El Dashboard legacy usa `submitUnitExamModal()` y envía
 `{unidad_id,tipos_pregunta,cantidades_pregunta,tema_ids}` mediante
@@ -1236,6 +1237,25 @@ persistencia de exámenes.
   documental previa, fuera de los documentos autorizados para este cambio.
 - No se confirmaron pruebas automatizadas de generación/polling; el único test
   actual cubre `validateForm` histórico.
+
+## Sesión 4.5 — Auditoría formal de cierre de generación y polling
+
+La comparación acumulativa usó como baseline real `ecb1785`, último commit
+anterior a la apertura documental de Fase 4. Los únicos cambios funcionales
+entre ese punto y `6344374` son cuatro features específicos, cuatro delegaciones
+únicas desde `biblioteca.page.js` y cuatro líneas de carga clásica en
+`pages/dashboard.html`. Los bloques trasladados conservan el comportamiento
+previo; `dashboard.page.js`, generación individual, API/services compartidos,
+delete de bloque, `wordExport.js`, CSS y packages permanecen idénticos al
+baseline.
+
+La búsqueda global confirmó `AnexoGeneration`, `ListaCotejoGeneration`,
+`PlaneacionGeneration` y `ExamGeneration`, cada uno con un único consumidor en
+Biblioteca, sin definición duplicada ni consumo desde quick create o legacy.
+Las validaciones manuales 4.0–4.4 están aprobadas. Los riesgos ya inventariados
+son comportamiento preservado y deuda de fases futuras, no regresiones de Fase
+4. Decisión técnica: **A. Cerrar Fase 4**, pendiente de confirmación documental
+del usuario antes del commit; Fase 5 no se abre.
 
 ## Riesgos priorizados
 

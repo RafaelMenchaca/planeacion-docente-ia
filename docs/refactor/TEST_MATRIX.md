@@ -814,26 +814,68 @@ tipos/cantidades, sesión, submitting y payload.
 
 ### Fase 4 — Sesión 4.4
 
-**Validación manual: Pendiente de confirmación explícita del usuario.** Usar un
-bloque desechable con al menos dos planeaciones y temas distintos.
+**Validación manual: Aprobada.** Se usaron las planeaciones 668/669 y los temas
+Gravedad/Movimiento.
 
 | Prueba | Estado y evidencia requerida |
 | --- | --- |
-| 1 — Cancelación | Pendiente: cerrar/cancelar tras seleccionar y configurar; cero POST, cero pending y reapertura. |
-| 2 — Generación básica | Pendiente: selección pequeña, cierre/tab/card, POST único, payload/jobId, polling/current_step/completed, examen/preview/reapertura, reload, persistencia, base y logs. |
-| 3 — Contratos de tipos y cantidades | Pendiente: `opcion_multiple`, `verdadero_falso`, `pregunta_abierta`, `ordenacion_jerarquizacion`; tipos/cantidades, total derivado/final, opciones/respuestas y cero faltantes. |
-| 4 — Contexto correcto | Pendiente: dos temas distintos; `planeacion_ids`, `unidad_id`, `batch_id`, contexto/distribución y ausencia de datos ajenos. |
-| 5 — Polling | Pendiente: POST único, GET repetidos, intervalo aproximado, cero job duplicado, fin en `completed` y cero GET posteriores. |
-| 6 — Reutilización del modal | Pendiente: reabrir, botón libre, nueva configuración, cancelar y cero requests adicionales. |
-| 7 — Preview y descarga | Pendiente: abrir/cerrar/reabrir; descargar desde card/preview, abrir archivos y confirmar contenido/nombre. |
-| 8 — Delete | Pendiente: borrar examen solo tras finalizar, reload y persistencia; bloque solo en otro desechable y nunca durante polling. |
-| 9 — Regresión de recursos | Pendiente: sin generar, recorrer Planeaciones, Anexos, Listas y Exámenes; render y cero errores. |
-| 10 — Failed o timeout | Pendiente solo si ocurre natural y seguramente; no forzar tokens, backend, worker, base o timeout. Si no ocurre, registrar “no ejecutado porque no ocurrió de forma natural y segura”. |
-| 11 — Duplicados y reintentos | Pendiente: observar; si hay retries/rechazos, job continúa, total final, cero duplicados visibles, logs y sin feedback técnico; si no, registrar `Reintentos: 0 en la corrida validada`. |
+| 1 — Cancelación | Aprobada: cero POST y reapertura funcional. |
+| 2 — Generación básica | Aprobada: jobId, polling, `current_step`, `completed`, persistencia y reload. |
+| 3 — Contratos de tipos y cantidades | Aprobada: siete tipos; 19 solicitadas y 19 guardadas. |
+| 4 — Contexto correcto | Aprobada: unidad, batch, planeaciones y temas correctos. |
+| 5 — Polling | Aprobada: polling y terminal `completed` correctos. |
+| 6 — Reutilización del modal | Aprobada. |
+| 7 — Preview y descarga | Aprobada desde card y preview. |
+| 8 — Delete | Aprobada. |
+| 9 — Regresión de recursos | Aprobada. |
+| 10 — Failed o timeout | No ejecutada; no ocurrió naturalmente y no se forzó. No bloquea. |
+| 11 — Duplicados y reintentos | Aprobada por observación: cero preguntas fallidas y cero retries. |
 
-No se reutiliza la evidencia acumulativa de 4.3 como aprobación de 4.4. Debe
-recibirse evidencia resumida de request, jobId, payload/IDs, tipos,
-cantidades/total, `current_step`, `completed`, total final, retries/fallidas,
-contexto, `exam:saved`, `generate:success`, `[aiMetrics] job:finished` y delete si
-se ejecuta; nunca prompts ni respuestas completas de IA. La Fase 4 permanece en
-progreso.
+Evidencia: unidad `56377d0c-e5b5-4ded-8ab0-9fbb992228c4`, batch
+`3df729c9-a803-4f6e-884d-9685ec971398`, planeaciones 668/669; cantidades 5, 5,
+1, 3, 3, 1 y 1 para opción múltiple, verdadero/falso, emparejamiento,
+respuesta corta, cálculo numérico, pregunta abierta y ordenación. Se observaron
+los logs de recepción, input/batch/job, worker, contexto, pregunta aceptada,
+`exam:saved`, `generate:success` y `[aiMetrics] job:finished`.
+
+## Sesión 4.5 — auditoría formal de cierre de generación y polling
+
+### Auditoría acumulativa
+
+| Verificación | Estado |
+| --- | --- |
+| Features `AnexoGeneration`, `ListaCotejoGeneration`, `PlaneacionGeneration`, `ExamGeneration` | Aprobados; cuatro globals sin colisión |
+| Consumidor esperado por feature | Aprobado; uno por feature en Biblioteca |
+| Consumo accidental desde quick create/legacy | Ausente |
+| Orden API/service → feature → Biblioteca | Aprobado |
+| Definiciones duplicadas, referencias rotas o dependencia circular evidente | Ausentes |
+| Comparación contra baseline `ecb1785` | Cuatro extracciones literales, cuatro delegaciones y cuatro scripts |
+| Quick create, generación individual y legacy | Byte-idénticos al baseline |
+| API/services, delete de bloque y `wordExport.js` | Byte-idénticos al baseline |
+| CSS y package files | Sin cambios desde baseline |
+| Sintaxis | Cuatro features y Biblioteca aprobados |
+| Jest | 1 suite, 2 pruebas aprobadas |
+| Smoke acumulativo final | 38 comprobaciones; 4 globals y 4 consumidores |
+| Backend | `refactor-back`, `e08d6e4`, limpio y solo lectura |
+| Regresión introducida por Fase 4 | Ninguna detectada |
+
+### Evidencia manual acumulada
+
+| Sesión | Evidencia aprobada |
+| --- | --- |
+| 4.1 | Cancelación, anexos individuales/secuenciales, pending, preview, reload, modal, delete y tabs; `[anexos] generate:start/success`, `[anexos] delete:success` y `[aiMetrics] job:finished`. |
+| 4.2 | Cancelación, request único, `planeacion_ids`, pending, preview, reload, modal, `created:1`, `skipped:0`, delete y tabs; logs start, `lista_generada_por_id`, success, métricas y delete Biblioteca. |
+| 4.3 | Uno/varios temas, SSE único `stream=1`, payload, pending/progreso, reload, modal, quick create, delete y recursos; `success_count:2`, cero errores/skipped. |
+| 4.4 | Job/polling/current_step/completed, 19/19 preguntas, siete tipos, contexto correcto, cero fallidas/retries, reload, modal, preview, descargas, delete y recursos. |
+
+Failed/timeout de 4.4 no se forzaron y no bloquean. El fallo legacy de
+`public.ia_metrics` es preexistente; `[aiMetrics] job:finished` quedó confirmado.
+
+### Fase 4 — Sesión 4.5
+
+**Validación manual documental: Pendiente de confirmación explícita del usuario.**
+
+Revisar: inventario 4.0–4.5; estado aprobado de 4.0–4.4; evidencia manual;
+contratos y riesgos preservados; archivos funcionales; ausencia de regresiones;
+decisión **A. Cerrar Fase 4**; y Fase 5 todavía pendiente. No se requieren nuevas
+generaciones, deletes ni pruebas destructivas.
