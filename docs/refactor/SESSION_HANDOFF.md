@@ -11,16 +11,18 @@
 
 ## Estado del roadmap
 
-- **Última fase cerrada:** 3 — Capa API frontend.
-- **Fase actual:** 4 — Generación y polling.
-- **Estado de Fase 4:** En progreso.
+- **Última fase cerrada:** 4 — Generación y polling.
+- **Fase actual:** ninguna; Fase 5 permanece pendiente y no iniciada.
+- **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
 - **Sesión 4.2:** extracción literal de generación seleccionada de listas de cotejo desde Biblioteca; validación manual aprobada.
 - **Sesión 4.3:** extracción literal del inicio y progreso de generación de planeaciones desde Biblioteca; validación manual aprobada.
 - **Sesión 4.4:** auditoría específica y extracción literal de generación y polling de exámenes desde Biblioteca; validación manual aprobada y commit `6344374`.
-- **Sesión 4.5:** auditoría formal de cierre de generación y polling; decisión técnica A, pendiente de revisión documental del usuario.
-- **Validación manual documental de 4.5:** pendiente de confirmación explícita del usuario.
+- **Sesión 4.5:** auditoría formal de cierre de generación y polling; aprobada y completada en `8dcba86`.
+- **Validaciones estáticas de 4.5:** aprobadas.
+- **Validación manual documental de 4.5:** aprobada explícitamente por el usuario.
+- **Decisión formal:** A. Cerrar Fase 4.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -44,13 +46,13 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** revisar documentalmente la Sesión 4.5; después podrá hacerse el commit de cierre. Fase 5 permanece pendiente.
+- **Continuación:** reintentar Fase 5 — Sesión 5.0 desde su puerta inicial. Fase 5 permanece pendiente y no iniciada.
 
-Las Fases 0, 1, 2 y 3 están completadas. Las validaciones manuales 3.1, 3.2,
-3.4, 3.6 y 3.8 están aprobadas. La Fase 4 está en progreso: anexos, listas y
-planeaciones y exámenes quedaron validados. La decisión técnica de cierre está
-documentada, pero Fase 4 permanece en progreso hasta la aprobación documental
-explícita del usuario.
+Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
+3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
+exámenes quedaron validados; la auditoría 4.5, su validación documental y la
+decisión formal de cierre también fueron aprobadas. Fase 5 permanece pendiente
+y no iniciada.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -2897,7 +2899,7 @@ documental quedó ejecutado a continuación.
 | 4.2 | `ListaCotejoGeneration.generateFromBiblioteca()` | Aprobada | `d695acd` |
 | 4.3 | `PlaneacionGeneration.generateFromBiblioteca()` | Aprobada | `d54ca4e` |
 | 4.4 | `ExamGeneration.generateFromBiblioteca()` | Aprobada | `6344374` |
-| 4.5 | Auditoría formal de cierre; sin código funcional | Documental pendiente | No realizado |
+| 4.5 | Auditoría formal de cierre; sin código funcional | Aprobada | `8dcba86` |
 
 Cada feature conserva un consumidor único en `biblioteca.page.js`. Las cuatro
 globals existen sin colisión; APIs/services se cargan antes de los features y
@@ -2949,15 +2951,16 @@ son regresiones introducidas ni incumplimientos del objetivo de Fase 4.
 ### Decisión formal
 
 **A. Cerrar Fase 4.** Los cuatro dominios previstos están separados, contratos y
-consumidores permanecen intactos, las validaciones funcionales están aprobadas y
-no se detectaron regresiones introducidas. La fase continúa **En progreso** hasta
-que el usuario apruebe este diff documental y autorice el commit de cierre. Fase
-5 — Estado de Biblioteca permanece **Pendiente** y no se abre.
+consumidores permanecen intactos, las validaciones funcionales y documentales
+están aprobadas y no se detectaron regresiones introducidas. La Fase 4 quedó
+**Completada** en `8dcba86`. Fase 5 — Estado de Biblioteca permanece
+**Pendiente** y no iniciada.
 
 ### Fase 4 — Sesión 4.5
 
-**Validación manual documental: Pendiente de confirmación explícita del usuario.**
+**Validación manual documental: Aprobada explícitamente por el usuario.**
 
-El usuario debe revisar inventario y estado 4.0–4.5, evidencia manual acumulada,
-contratos y riesgos preservados, archivos funcionales de Fase 4, ausencia de
-regresiones, decisión A y que Fase 5 continúa pendiente.
+La aprobación confirmó el inventario y estado de 4.0–4.5, la evidencia manual
+acumulada, los contratos y riesgos preservados, los archivos funcionales de Fase
+4, la ausencia de regresiones introducidas, la decisión A y que Fase 5 continúa
+pendiente y no iniciada.

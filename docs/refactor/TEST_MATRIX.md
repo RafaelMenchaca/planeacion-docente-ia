@@ -873,9 +873,10 @@ Failed/timeout de 4.4 no se forzaron y no bloquean. El fallo legacy de
 
 ### Fase 4 — Sesión 4.5
 
-**Validación manual documental: Pendiente de confirmación explícita del usuario.**
+**Validación manual documental: Aprobada explícitamente por el usuario.**
 
-Revisar: inventario 4.0–4.5; estado aprobado de 4.0–4.4; evidencia manual;
-contratos y riesgos preservados; archivos funcionales; ausencia de regresiones;
-decisión **A. Cerrar Fase 4**; y Fase 5 todavía pendiente. No se requieren nuevas
-generaciones, deletes ni pruebas destructivas.
+Evidencia aprobada: inventario 4.0–4.5 revisado; evidencia acumulada revisada;
+contratos preservados revisados; riesgos preservados revisados; ausencia de
+regresiones confirmada; decisión **A. Cerrar Fase 4** aprobada; y Fase 5
+mantenida como pendiente y no iniciada. No quedaron pruebas funcionales nuevas
+pendientes para 4.5.

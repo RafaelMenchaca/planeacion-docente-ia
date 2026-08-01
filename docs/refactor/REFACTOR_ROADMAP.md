@@ -27,7 +27,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
-| 4 | Generación y polling | Separar procesos largos | Alto | En progreso |
+| 4 | Generación y polling | Separar procesos largos | Alto | Completada |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
@@ -447,7 +447,7 @@ Separar por dominio el inicio, feedback, progreso, polling, finalización, error
 
 ### Estado
 
-**En progreso.**
+**Completada.**
 
 La Sesión 4.0 — Auditoría documental de apertura quedó aprobada. Las Sesiones
 4.1 — Extracción literal de generación de anexos desde Biblioteca y 4.2 —
@@ -462,10 +462,9 @@ separados el service, estado, render y polling legacy. Su implementación,
 validaciones estáticas y validación manual están aprobadas. La Sesión 4.5 —
 Auditoría formal de cierre de generación y polling confirmó las cuatro
 extracciones, consumidores, contratos, orden de scripts, evidencia acumulada y
-ausencia de regresiones introducidas. La decisión técnica es **A. Cerrar Fase
-4**, pendiente de confirmación documental explícita del usuario antes del commit
-de cierre. Hasta entonces la fase permanece **En progreso** y Fase 5 permanece
-**Pendiente**.
+ausencia de regresiones introducidas. Sus validaciones estáticas y documentales
+quedaron aprobadas. La decisión formal es **A. Cerrar Fase 4** y el commit de
+cierre es `8dcba86`. Fase 5 permanece **Pendiente** y no iniciada.
 
 Evidencia acumulada de salida: anexos individuales/secuenciales; listas con
 request único, `created:1` y `skipped:0`; planeaciones SSE para Gravedad y

@@ -1254,8 +1254,9 @@ La búsqueda global confirmó `AnexoGeneration`, `ListaCotejoGeneration`,
 Biblioteca, sin definición duplicada ni consumo desde quick create o legacy.
 Las validaciones manuales 4.0–4.4 están aprobadas. Los riesgos ya inventariados
 son comportamiento preservado y deuda de fases futuras, no regresiones de Fase
-4. Decisión técnica: **A. Cerrar Fase 4**, pendiente de confirmación documental
-del usuario antes del commit; Fase 5 no se abre.
+4. La validación documental de 4.5 y la decisión formal **A. Cerrar Fase 4**
+quedaron aprobadas; el cierre consta en `8dcba86`. Fase 5 permanece pendiente y
+no iniciada.
 
 ## Riesgos priorizados
 

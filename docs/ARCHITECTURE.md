@@ -63,7 +63,7 @@ bindings léxicos privados, específicos de dominio y método; las APIs pública
 services y wrappers `window.*` conservan sus firmas. Las diferencias de sesión,
 parsing, errores, SSE, blobs, generación y polling permanecen deliberadamente
 separadas. La Sesión 4.0 abrió documentalmente la Fase 4 y quedó aprobada. La
-fase está en progreso: las Sesiones 4.1, 4.2 y 4.3 movieron literalmente las
+Fase 4 está cerrada formalmente: las Sesiones 4.1, 4.2 y 4.3 movieron literalmente las
   operaciones vigentes de generación seleccionada de anexos y listas, el
   coordinador de inicio/progreso de planeaciones y la creación/polling de
   exámenes de Biblioteca, a
@@ -79,8 +79,10 @@ La Sesión 4.4 quedó validada manualmente y commiteada. La Sesión 4.5 auditó 
 cierre sin modificar código: confirmó los cuatro coordinadores por dominio, sus
 globals y consumidores únicos, el orden clásico de scripts y la integridad de
 quick create, generación individual, legacy, APIs/services y backend. La
-decisión técnica es **A. Cerrar Fase 4**, pendiente de confirmación documental
-explícita del usuario antes del commit de cierre. Fase 5 permanece pendiente.
+decisión formal **A. Cerrar Fase 4** y su validación documental quedaron
+aprobadas en el commit de cierre `8dcba86`. No se detectaron regresiones
+introducidas; los riesgos conocidos permanecen preservados. Fase 5 continúa
+pendiente y no iniciada.
 
 ## Flujo principal: Biblioteca
 
