@@ -949,4 +949,30 @@ entre Fases 5–10 revisados; pruebas futuras revisadas; decisión **A. Abrir Fa
 estáticas quedaron completadas en `525a21a`.
 
 Las pruebas funcionales futuras de Fase 5 permanecen pendientes. La Sesión 5.1
-permanece pendiente y no iniciada.
+se implementó con validación manual pendiente.
+
+## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
+
+La extracción encapsula únicamente el acceso a
+`bibliotecaState.selectedConjuntoId`; la única fuente física, normalización,
+fallbacks y consumidores permanecen. El smoke técnico y las validaciones
+estáticas no sustituyen esta matriz.
+
+**Validación manual: Pendiente de confirmación explícita del usuario.**
+
+| Prueba | Evidencia esperada | Estado |
+| --- | --- | --- |
+| 1. Selección básica | bloque inicial; alternancia; sidebar y detalle coincidentes; sin errores | Pendiente |
+| 2. Tabs por bloque | tabs/recursos correctos al cambiar de bloque y volver; sin cruce | Pendiente |
+| 3. Reload | fallback previo; sin restauración nueva ni errores | Pendiente |
+| 4. Refetch | selección válida conservada sin salto inesperado | Pendiente |
+| 5. Creación de recurso | recurso en batch correcto y mismo bloque seleccionado | Pendiente |
+| 6. Quick Create | navegación vigente; `window.biblioteca` funcional; bloque correcto; persistencia backend tras reload | Pendiente |
+| 7. Delete de otro bloque | selección original conservada antes y después de reload | Pendiente |
+| 8. Delete del bloque seleccionado | fallback previo exacto; sidebar/detalle coherentes; sin referencia eliminada | Pendiente |
+| 9. Último bloque, solo con datos desechables y si es seguro | estado vacío y creación posterior; si no, constancia de no ejecución por seguridad | Pendiente / condicionada por seguridad |
+| 10. Modales | modal cerrado/reabierto después de cambiar selección usa el bloque nuevo | Pendiente |
+| 11. Regresión acumulativa | Planeaciones, Anexos, Listas, Exámenes, previews, descargas, tabs, delete y Quick Create sin errores nuevos | Pendiente |
+
+No se modificó `activeTab`, pending, modales, render, eventos, Quick Create,
+`window.explorerState`, backend ni persistencia. La Fase 5 continúa En progreso.

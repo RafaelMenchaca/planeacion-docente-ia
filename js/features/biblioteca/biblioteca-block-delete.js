@@ -22,8 +22,8 @@
       bibliotecaState.conjuntos = bibliotecaState.conjuntos.filter(
         (c) => normalizeBibliotecaId(c.id) !== safeBatchId
       );
-      if (normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === safeBatchId) {
-        bibliotecaState.selectedConjuntoId = bibliotecaState.conjuntos[0]?.id || null;
+      if (normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === safeBatchId) {
+        BibliotecaSelection.setSelectedConjuntoId(bibliotecaState.conjuntos[0]?.id || null);
       }
       delete bibliotecaState.activeTab[safeBatchId];
       delete bibliotecaState.pendingPlaneacionesByBatchId[safeBatchId];

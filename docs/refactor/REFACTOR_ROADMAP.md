@@ -549,9 +549,15 @@ jerárquico propio en `localStorage`; no se incorpora al estado de Biblioteca.
 estáticas y su validación documental quedaron aprobadas explícitamente por el
 usuario y commiteadas en `525a21a`. El primer corte funcional fue formalizado
 como **Sesión 5.1 — Extracción literal del estado de selección de bloque de
-Biblioteca**. La Sesión 5.1 permanece pendiente y no iniciada; debe reintentarse desde
-su puerta inicial. No incluye tabs, pending, modales, render, Quick Create ni
-`explorerState`.
+Biblioteca**. La sesión encapsuló el acceso sobre la única fuente física
+`bibliotecaState.selectedConjuntoId` con la superficie léxica
+`BibliotecaSelection`; todas las lecturas y escrituras directas conocidas
+delegan sin normalizar ni reinterpretar valores. No se agregó global, archivo o
+script, y se preservaron el fallback crudo de delete, Quick Create, load,
+refetch y reconciliación. No incluye tabs, pending, modales, render, Quick
+Create ni `explorerState`. La implementación y las validaciones estáticas están
+completadas; la validación manual permanece pendiente de confirmación explícita
+del usuario. Fase 5 continúa **En progreso**.
 
 ### Dependencias
 

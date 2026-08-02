@@ -1266,8 +1266,8 @@ el backend estaba limpio en `refactor-back` y permaneció en solo lectura. La
 decisión es **A. Abrir Fase 5**. Esta sesión solo clasifica el estado actual:
 no mueve propiedades ni cambia shapes. La auditoría, sus validaciones estáticas
 y su validación documental quedaron aprobadas y commiteadas en `525a21a`;
-Fase 5 está formalmente abierta y En progreso. La Sesión 5.1 permanece
-pendiente y no iniciada.
+Fase 5 está formalmente abierta y En progreso. La Sesión 5.1 está implementada
+con validación manual pendiente.
 
 ### Propietarios confirmados
 
@@ -1292,7 +1292,7 @@ de estos objetos desde tests; la suite existente no cubre estado de Biblioteca.
 | `loading` | `false`, boolean | `loadAndRenderBiblioteca()` | render general | `true` solo en carga no silenciosa; `false` en éxito/error; reload reinicia | API y render | Biblioteca vigente; carga silenciosa no la activa; F5/F6 |
 | `error` | `""`, string | loader | render general/retry | Vacía al cargar; mensaje en excepción; reload reinicia | API, DOM y render | Biblioteca vigente; F5/F6 |
 | `searchQuery` | `""`, string | input de búsqueda | filtro, estados vacíos y valor DOM | Vive durante la página; sin storage; reload limpia | DOM y render | Biblioteca vigente; F5; binding/render en F6 |
-| `selectedConjuntoId` | `null`; ID normalizado normalmente a string | selección, loader/reconciliación, Quick Create y delete de bloque | sidebar, detalle y fachada | Fallback al primer bloque; se pierde en reload; delete puede asignar el ID crudo del primer elemento | DOM, render, delete, Quick Create | Biblioteca vigente; riesgo confirmado String/Number y múltiples escritores; primer corte F5 propuesto |
+| `selectedConjuntoId` | `null`; única fuente física en `bibliotecaState`; acceso encapsulado por `BibliotecaSelection`; ID normalizado normalmente a string | selección, loader/reconciliación, fachada de Quick Create y delete de bloque delegan en la superficie léxica | sidebar, detalle y comparación de delete delegan en la misma superficie | Fallback al primer bloque; se pierde en reload; delete conserva el ID crudo del primer elemento | DOM, render, delete, Quick Create | Biblioteca vigente; riesgo String/Number preservado; Sesión 5.1 implementada, validación manual pendiente |
 | `expandedIds` | `new Set()` | solo se confirmó `delete(tempId)` en reconciliación | Sin lector ni alta confirmados | Se crea al cargar y se pierde en reload | Sin relación DOM confirmada | No clasificado; no mover hasta confirmar consumidor; F5 |
 | `activeTab` | `{}`; mapa `batchId -> planeaciones|anexos|listas|examenes` | selección/tab, loader/reconciliación, generación y deletes | render de tabs/cards | Default `planeaciones`; delete de bloque limpia su clave; sin storage; reload reinicia | DOM, render, delete y generación | Biblioteca vigente; múltiples escritores y claves coercionadas; F5, render F6 |
 | `pendingBatchId` | `null`; ID de batch reutilizado por Quick Create | fachada `window.biblioteca` y Quick Create | payload de generación de Quick Create | Se fija antes de generar y se limpia en éxito/error/finally; reload reinicia | API/generación compartida | Estado mixto Biblioteca–Quick Create; riesgo de cruce; F5/7 |
@@ -1389,16 +1389,37 @@ estado separado del flujo jerárquico legacy.
   Fase 8, Archivados/compatibilidad/aislamiento legacy; Fase 9, solo eliminación
   con cero consumidores; Fase 10, wrappers/globals y consolidación.
 
-### Siguiente corte propuesto
+### Sesión 5.1 — selección de bloque
 
-El primer corte fue formalizado como **Sesión 5.1 — Extracción literal del
-estado de selección de bloque de Biblioteca**: dar ownership explícito únicamente a
-`selectedConjuntoId` y sus transiciones normalizadas, manteniendo `activeTab`,
-pending, modales, render, Quick Create, `window.biblioteca` y
-`window.explorerState` intactos. La Sesión 5.1 permanece pendiente y no iniciada; debe
-reintentarse desde su puerta inicial. Es el corte conservador porque tiene un
-objeto de estado pequeño, consumidores enumerados y una regresión manual
-delimitable.
+`BibliotecaSelection` es un binding léxico de `biblioteca.page.js` con solo
+`getSelectedConjuntoId()` y `setSelectedConjuntoId(value)`. No contiene una
+copia del ID: ambos métodos leen o escriben la propiedad original de
+`bibliotecaState`. La superficie no normaliza, valida ni aplica fallback; cada
+sitio conserva la expresión previa.
+
+Escritores delegados: conjunto temporal de Quick Create en
+`window.biblioteca.setPendingConjunto`, `setSelectedConjunto`, reconciliación
+optimista, finalización de planeaciones, selección objetivo/fallback del loader
+y fallback del delete de bloque. Lectores delegados: `getSelectedConjunto`,
+comparaciones de reconciliación, sidebar y actualización activa, snapshots y
+validación del loader, y comparación del delete de bloque. Los modales y los
+cuatro coordinadores de generación no leen el ID directamente: reciben el
+`conjuntoId` del handler/dataset y seleccionan indirectamente mediante helpers o
+la fachada vigente. Quick Create continúa consumiendo exclusivamente
+`window.biblioteca`; el explorador legacy no tiene consumidor directo.
+
+Se preservan `String(id)` en `normalizeBibliotecaId`, el rechazo de ID vacío en
+`setSelectedConjunto`, `null` inicial/final, el ID crudo del primer conjunto en
+delete, la elección del primer conjunto tras reload, `activeTab`, pending,
+modales, render, eventos, mensajes y orden clásico de scripts. La Sesión 5.1
+está implementada con validaciones estáticas completadas y validación manual
+pendiente.
+
+### Siguiente corte sugerido
+
+Después de aprobar 5.1, el siguiente corte conservador puede auditar únicamente
+el ownership de `activeTab`. No tiene número asignado ni está iniciado; no debe
+mezclar pending, modales, render, Quick Create o `explorerState`.
 
 ## Riesgos priorizados
 

@@ -83,8 +83,12 @@ decisión formal **A. Cerrar Fase 4** y su validación documental quedaron
 aprobadas en el commit de cierre `8dcba86`. No se detectaron regresiones
 introducidas; los riesgos conocidos permanecen preservados. Fase 5 quedó
 abierta formalmente y En progreso mediante la Sesión 5.0, aprobada y commiteada
-en `525a21a`, sin cambios funcionales. La Sesión 5.1, primer corte de
-`selectedConjuntoId`, permanece pendiente y no iniciada.
+en `525a21a`, sin cambios funcionales. La Sesión 5.1 encapsuló literalmente el
+acceso a `bibliotecaState.selectedConjuntoId` mediante la superficie léxica
+`BibliotecaSelection`: el valor sigue viviendo una sola vez en el mismo estado,
+sin global nuevo, archivo nuevo ni cambio de orden de scripts. Normalización,
+fallback crudo de delete, Quick Create, `activeTab`, pending, render y legacy se
+preservaron; la validación manual de 5.1 permanece pendiente.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

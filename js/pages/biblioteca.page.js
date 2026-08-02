@@ -66,6 +66,20 @@ const bibliotecaState = {
   }
 };
 
+// Fase 5 — Sesión 5.1: ownership léxico de la selección vigente de Biblioteca.
+// La única fuente de verdad permanece en bibliotecaState.selectedConjuntoId.
+// Estas operaciones no normalizan ni reinterpretan valores: cada consumidor
+// conserva exactamente su normalización y fallback previos.
+const BibliotecaSelection = {
+  getSelectedConjuntoId() {
+    return bibliotecaState.selectedConjuntoId;
+  },
+  setSelectedConjuntoId(value) {
+    bibliotecaState.selectedConjuntoId = value;
+    return value;
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -109,7 +123,7 @@ window.biblioteca = {
       examenes:            [],
       listas_cotejo:       []
     };
-    bibliotecaState.selectedConjuntoId = tempId;
+    BibliotecaSelection.setSelectedConjuntoId(tempId);
     bibliotecaState.activeTab[tempId] = "planeaciones";
   },
   refresh: (options = {}) => loadAndRenderBiblioteca(options),
@@ -237,7 +251,7 @@ function getFilteredConjuntosForSidebar() {
 function setSelectedConjunto(conjuntoId, { tab } = {}) {
   const safeId = normalizeBibliotecaId(conjuntoId);
   if (!safeId) return;
-  bibliotecaState.selectedConjuntoId = safeId;
+  BibliotecaSelection.setSelectedConjuntoId(safeId);
   if (tab) {
     bibliotecaState.activeTab[safeId] = tab;
   } else if (!bibliotecaState.activeTab[safeId]) {
@@ -246,7 +260,7 @@ function setSelectedConjunto(conjuntoId, { tab } = {}) {
 }
 
 function getSelectedConjunto() {
-  return findConjuntoById(bibliotecaState.selectedConjuntoId);
+  return findConjuntoById(BibliotecaSelection.getSelectedConjuntoId());
 }
 
 function normalizeGeneratedPlaneaciones(result) {
@@ -305,8 +319,8 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
     bibliotecaState.conjuntos = [conjunto, ...bibliotecaState.conjuntos];
     bibliotecaState.expandedIds.delete(pending.tempId);
     delete bibliotecaState.activeTab[pending.tempId];
-    if (normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(pending.tempId)) {
-      bibliotecaState.selectedConjuntoId = safeBatchId;
+    if (normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(pending.tempId)) {
+      BibliotecaSelection.setSelectedConjuntoId(safeBatchId);
     }
     bibliotecaState.pendingConjunto = null;
   }
@@ -317,7 +331,7 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
   conjunto.status_ui = "ready";
   conjunto.planeaciones = mergePlaneaciones(conjunto.planeaciones, planeaciones || []);
   conjunto.total_planeaciones = conjunto.planeaciones.length;
-  bibliotecaState.selectedConjuntoId = safeBatchId;
+  BibliotecaSelection.setSelectedConjuntoId(safeBatchId);
   bibliotecaState.activeTab[safeBatchId] = "planeaciones";
 }
 
@@ -382,7 +396,7 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
     if (Number(result?.error_count || 0) === 0) {
       delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
     }
-    bibliotecaState.selectedConjuntoId = batchId;
+    BibliotecaSelection.setSelectedConjuntoId(batchId);
     bibliotecaState.activeTab[batchId] = "planeaciones";
   }
 
@@ -834,7 +848,7 @@ function renderBibliotecaTabContent(conjunto) {
 
 function renderConjuntoSidebarItem(conjunto) {
   const id = escapeHtml(String(conjunto.id));
-  const isSelected = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(conjunto.id);
+  const isSelected = normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(conjunto.id);
   const isPending = !!conjunto.isPending;
   const titulo = escapeBibliotecaDisplayText(conjunto.titulo, "Sin titulo");
   const meta = [
@@ -952,7 +966,7 @@ function renderBibliotecaDetail(conjunto) {
 function updateBibliotecaSidebarActive() {
   const list = document.querySelector(".biblioteca-sidebar-list");
   if (!list) return;
-  const currentId = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId);
+  const currentId = normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId());
   list.querySelectorAll("[data-bib-action='select-conjunto']").forEach((btn) => {
     const btnId = normalizeBibliotecaId(btn.dataset.conjuntoId);
     btn.classList.toggle("is-active", btnId === currentId);
@@ -1050,9 +1064,9 @@ async function loadAndRenderBiblioteca(options = {}) {
 
   // Capture pending info before clearing (for reconciliation after quick-create)
   const prevTempId    = bibliotecaState.pendingConjunto?.tempId || null;
-  const wasSelected   = prevTempId ? normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(prevTempId) : false;
+  const wasSelected   = prevTempId ? normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(prevTempId) : false;
   const prevActiveTab = prevTempId ? (bibliotecaState.activeTab[prevTempId] || "planeaciones") : null;
-  const prevSelectedId = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId);
+  const prevSelectedId = normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId());
   const prevConjuntos = getAllConjuntosForSidebar();
 
   if (!silent) {
@@ -1078,7 +1092,7 @@ async function loadAndRenderBiblioteca(options = {}) {
           ? newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId)
           : newList.find(c => !prevIds.has(normalizeBibliotecaId(c.id)));
         if (newConjunto) {
-          bibliotecaState.selectedConjuntoId = normalizeBibliotecaId(newConjunto.id);
+          BibliotecaSelection.setSelectedConjuntoId(normalizeBibliotecaId(newConjunto.id));
           bibliotecaState.activeTab[newConjunto.id] = prevActiveTab;
         }
       }
@@ -1087,7 +1101,7 @@ async function loadAndRenderBiblioteca(options = {}) {
     if (targetBatchId) {
       const target = newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId);
       if (target) {
-        bibliotecaState.selectedConjuntoId = normalizeBibliotecaId(target.id);
+        BibliotecaSelection.setSelectedConjuntoId(normalizeBibliotecaId(target.id));
         bibliotecaState.activeTab[target.id] = targetActiveTab;
       }
     }
@@ -1096,12 +1110,12 @@ async function loadAndRenderBiblioteca(options = {}) {
     bibliotecaState.loading   = false;
     bibliotecaState.pendingConjunto = null;
 
-    const selectedStillExists = findConjuntoById(bibliotecaState.selectedConjuntoId);
+    const selectedStillExists = findConjuntoById(BibliotecaSelection.getSelectedConjuntoId());
     if (!selectedStillExists) {
       const fallback = targetBatchId
         ? newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId)
         : newList.find(c => normalizeBibliotecaId(c.id) === prevSelectedId) || newList[0] || null;
-      bibliotecaState.selectedConjuntoId = fallback ? normalizeBibliotecaId(fallback.id) : null;
+      BibliotecaSelection.setSelectedConjuntoId(fallback ? normalizeBibliotecaId(fallback.id) : null);
       if (fallback && !bibliotecaState.activeTab[fallback.id]) {
         bibliotecaState.activeTab[fallback.id] = "planeaciones";
       }

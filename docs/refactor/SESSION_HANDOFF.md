@@ -27,7 +27,7 @@
 - **Decisión de apertura:** A. Abrir Fase 5.
 - **Validaciones estáticas de 5.0:** aprobadas.
 - **Validación documental de 5.0:** aprobada explícitamente por el usuario.
-- **Sesión 5.1:** pendiente y no iniciada; sin implementación, validaciones ni commit.
+- **Sesión 5.1:** extracción literal implementada; validaciones estáticas completadas; validación manual pendiente; sin commit.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -51,13 +51,14 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** reintentar Fase 5 — Sesión 5.1 desde su puerta inicial.
+- **Continuación:** revisar manualmente la Sesión 5.1; no abrir el siguiente corte antes de su aprobación.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
 exámenes quedaron validados; la auditoría 4.5, su validación documental y la
 decisión formal de cierre también fueron aprobadas. La puerta de la Sesión 5.0
-pasó y Fase 5 quedó En progreso por apertura documental, sin implementación.
+pasó y Fase 5 quedó En progreso; la Sesión 5.1 implementó después el primer
+corte funcional con validación manual pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -713,7 +714,16 @@ No existen handlers inline, listeners adicionales, tests directos, consumidores 
 14. Si el bloque no existe localmente pero sí en backend, usa el título fallback, ejecuta el delete, limpia las claves por batch y recarga; si tampoco existe en backend recibe 404 y no muta estado.
 15. La función `async` resuelve `undefined`; captura sus errores y no expone el JSON recibido.
 
-Globals consumidos: `normalizeBibliotecaId`, `findConjuntoById`, `showBibConfirm`, `window.requireSession`, `apiBibliotecaDeleteBloque`, `bibliotecaState`, `renderBibliotecaContent` y `loadAndRenderBiblioteca`. Expone `window.BibliotecaBlockDelete`; `bibEliminarBloque` permanece global por script clásico como wrapper. La carga vigente requiere `biblioteca.api.js` antes de `biblioteca-block-delete.js`, y este módulo antes de `dashboard.page.js`, `biblioteca.page.js` y `main.js`.
+Dependencias consumidas al invocarse: los bindings léxicos
+`BibliotecaSelection`, `bibliotecaState`, `normalizeBibliotecaId`,
+`findConjuntoById`, `showBibConfirm`, `renderBibliotecaContent` y
+`loadAndRenderBiblioteca`, además de `window.requireSession` y
+`apiBibliotecaDeleteBloque`. Expone `window.BibliotecaBlockDelete`;
+`bibEliminarBloque` permanece global por script clásico como wrapper. La carga
+vigente requiere `biblioteca.api.js` antes de `biblioteca-block-delete.js`, y
+este módulo antes de `dashboard.page.js`, `biblioteca.page.js` y `main.js`; los
+bindings de Biblioteca están definidos antes de que el usuario pueda invocar
+el handler.
 
 ### Contrato backend
 
@@ -3058,16 +3068,91 @@ tabs, modales, Quick Create, compatibilidad/Archivados/legacy, riesgos, límites
 entre Fases 5–10, siguiente corte propuesto, pruebas futuras, Fase 4 completada y
 la decisión **A. Abrir Fase 5**. La sesión quedó commiteada en `525a21a`.
 
-### Siguiente corte propuesto
+## Fase 5 — Sesión 5.1: Extracción literal del estado de selección de bloque de Biblioteca
 
-El roadmap no define numeración para sesiones funcionales de Fase 5. Se propone
-**Extracción literal del estado de selección de bloque de Biblioteca**, limitada
-a `selectedConjuntoId` y sus transiciones. Riesgo alto. Archivos probables:
-`js/pages/biblioteca.page.js`, un módulo de estado solo si la siguiente sesión
-autoriza la convención, `pages/dashboard.html` por carga clásica y documentación.
-Deja fuera `activeTab`, pending, modales, render, Quick Create,
-`window.biblioteca` y `window.explorerState`. Las pruebas futuras son selección,
-fallback tras delete, reload, cambio de tabs sin regresión y Quick Create sin
-estado cruzado. La propuesta fue formalizada como **Sesión 5.1 — Extracción
-literal del estado de selección de bloque de Biblioteca**, pero permanece
-pendiente y no iniciada; debe reintentarse desde su puerta inicial.
+### Puerta, decisión y corte
+
+- Frontend: `refactor-front`, inicio real en `872fdf0`, working tree limpio.
+- Apertura de Fase 5: `525a21a`; corrección/aprobación documental de 5.0:
+  `872fdf0 docs(refactor): finalize Biblioteca state phase opening`.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, working tree limpio.
+- Riesgo: alto.
+- Decisión: **A. Extracción segura implementada.**
+
+La búsqueda global confirmó una definición y todos los accesos directos. El
+valor inicial continúa siendo `null` y la única fuente física continúa en
+`bibliotecaState.selectedConjuntoId`. La nueva superficie léxica
+`BibliotecaSelection` solo delega `getSelectedConjuntoId()` y
+`setSelectedConjuntoId(value)` sobre esa propiedad; no crea global, copia,
+archivo o script.
+
+### Escritores, lectores y comportamiento preservado
+
+Los escritores delegados son: `window.biblioteca.setPendingConjunto`,
+`setSelectedConjunto`, `applyOptimisticPlaneacionesToConjunto`,
+`finishBibliotecaPlaneacionesGeneration`, reconciliación/target/fallback de
+`loadAndRenderBiblioteca` y el fallback de
+`BibliotecaBlockDelete.deleteFromBiblioteca`. Los lectores delegados son:
+`getSelectedConjunto`, comparación del conjunto temporal, sidebar, actualización
+de selección activa, snapshots/validación del loader y comparación del delete.
+
+No cambió ninguna expresión asignada. `setSelectedConjunto` sigue usando
+`normalizeBibliotecaId` (`String`, sin trim) y rechaza `null`, `undefined` o
+cadena vacía. El delete sigue asignando el ID crudo del primer conjunto o
+`null`. Load/refetch conservan selección válida, objetivo o selección previa y,
+si ya no existe, usan el primer conjunto o `null`. Quick Create sigue entrando
+solo por `window.biblioteca`; los modales y coordinadores reciben IDs desde sus
+handlers/datasets y no leen directamente la propiedad. Reload/navegación no
+persisten selección y el backend solo permite reconstruir conjuntos/recursos.
+`activeTab`, pending, render, eventos, mensajes, `window.explorerState` y orden
+de scripts permanecen fuera de alcance.
+
+### Riesgos preservados
+
+- El fallback de delete puede mantener un ID Number mientras las demás rutas
+  suelen normalizar a String.
+- Selección y tabs siguen siendo efímeros y se pierden con reload/navegación.
+- Continúan varios sitios de transición, ahora delegados, y la interacción con
+  Quick Create por la fachada vigente.
+- No se corrigieron pending perdido, delete sin cancelación, submitting
+  atascado, `expandedIds` sin consumidor confirmado ni deuda documental ajena.
+
+### Validaciones estáticas de 5.1
+
+- `node --check` aprobó `biblioteca.page.js` y
+  `biblioteca-block-delete.js`.
+- Jest aprobó 1 suite y 2 pruebas.
+- El smoke técnico aprobó 13 comprobaciones de selección, fallback, delete y
+  fachada de Quick Create.
+- La reversión mecánica de las delegaciones reprodujo byte por byte ambos
+  archivos de `HEAD`, confirmando equivalencia literal del corte.
+
+### Validación manual de 5.1
+
+**Validación manual: Pendiente de confirmación explícita del usuario.**
+
+| Prueba | Resultado a confirmar | Estado |
+| --- | --- | --- |
+| 1. Selección básica | sidebar y contenido siguen el mismo bloque al alternar y volver | Pendiente |
+| 2. Tabs por bloque | recursos y selección no se cruzan; `activeTab` conserva su comportamiento | Pendiente |
+| 3. Reload | aplica el fallback previo y no intenta persistir/restaurar selección | Pendiente |
+| 4. Refetch | conserva la selección válida sin salto inesperado | Pendiente |
+| 5. Creación de recurso | recurso y selección permanecen en el batch correcto | Pendiente |
+| 6. Quick Create | navegación/fachada vigentes, bloque correcto y persistencia backend tras reload | Pendiente |
+| 7. Delete de otro bloque | el bloque seleccionado permanece y el reload es coherente | Pendiente |
+| 8. Delete del seleccionado | usa exactamente el fallback previo y elimina referencias visuales | Pendiente |
+| 9. Último bloque, solo si es seguro | estado vacío vigente y creación posterior; si no es seguro, registrar no ejecutada | Pendiente / condicionada por seguridad |
+| 10. Modales | al cambiar de bloque, el mismo modal recibe el bloque nuevo | Pendiente |
+| 11. Regresión acumulativa | Planeaciones, Anexos, Listas, Exámenes, previews, descargas, tabs, delete y Quick Create sin errores nuevos | Pendiente |
+
+Evidencia solicitada sin datos sensibles: bloque inicial y cambios de selección;
+fallback de reload; resultado de refetch; recurso creado y batch; Quick Create;
+delete de otro bloque y fallback del seleccionado; último bloque si se ejecuta;
+modal con bloque correcto; y errores de consola si existen.
+
+### Siguiente corte sugerido
+
+Tras la aprobación explícita de 5.1 puede auditarse un corte limitado al
+ownership de `activeTab`. No tiene número asignado, no está iniciado y no debe
+mezclar pending, modales, render, Quick Create o `explorerState`. Si aparece una
+regresión, corresponde corregir 5.1 antes de abrir otro corte.
