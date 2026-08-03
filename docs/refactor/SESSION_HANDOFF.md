@@ -27,7 +27,8 @@
 - **Decisión de apertura:** A. Abrir Fase 5.
 - **Validaciones estáticas de 5.0:** aprobadas.
 - **Validación documental de 5.0:** aprobada explícitamente por el usuario.
-- **Sesión 5.1:** extracción literal implementada; validaciones estáticas completadas; validación manual pendiente; sin commit.
+- **Sesión 5.1:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `1b4c620`.
+- **Sesión 5.2:** pendiente y no iniciada.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -51,14 +52,15 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** revisar manualmente la Sesión 5.1; no abrir el siguiente corte antes de su aprobación.
+- **Continuación:** reintentar Fase 5 — Sesión 5.2 desde su puerta inicial.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
 exámenes quedaron validados; la auditoría 4.5, su validación documental y la
 decisión formal de cierre también fueron aprobadas. La puerta de la Sesión 5.0
-pasó y Fase 5 quedó En progreso; la Sesión 5.1 implementó después el primer
-corte funcional con validación manual pendiente.
+pasó y Fase 5 quedó En progreso; la Sesión 5.1 completó y validó después el
+primer corte funcional en `1b4c620`. La Sesión 5.2 permanece pendiente y no
+iniciada.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3129,30 +3131,34 @@ de scripts permanecen fuera de alcance.
 
 ### Validación manual de 5.1
 
-**Validación manual: Pendiente de confirmación explícita del usuario.**
+**Validación manual: Aprobada explícitamente por el usuario.**
 
 | Prueba | Resultado a confirmar | Estado |
 | --- | --- | --- |
-| 1. Selección básica | sidebar y contenido siguen el mismo bloque al alternar y volver | Pendiente |
-| 2. Tabs por bloque | recursos y selección no se cruzan; `activeTab` conserva su comportamiento | Pendiente |
-| 3. Reload | aplica el fallback previo y no intenta persistir/restaurar selección | Pendiente |
-| 4. Refetch | conserva la selección válida sin salto inesperado | Pendiente |
-| 5. Creación de recurso | recurso y selección permanecen en el batch correcto | Pendiente |
-| 6. Quick Create | navegación/fachada vigentes, bloque correcto y persistencia backend tras reload | Pendiente |
-| 7. Delete de otro bloque | el bloque seleccionado permanece y el reload es coherente | Pendiente |
-| 8. Delete del seleccionado | usa exactamente el fallback previo y elimina referencias visuales | Pendiente |
-| 9. Último bloque, solo si es seguro | estado vacío vigente y creación posterior; si no es seguro, registrar no ejecutada | Pendiente / condicionada por seguridad |
-| 10. Modales | al cambiar de bloque, el mismo modal recibe el bloque nuevo | Pendiente |
-| 11. Regresión acumulativa | Planeaciones, Anexos, Listas, Exámenes, previews, descargas, tabs, delete y Quick Create sin errores nuevos | Pendiente |
+| 1. Selección básica | sidebar y contenido siguen el mismo bloque al alternar y volver | Aprobada |
+| 2. Tabs por bloque | recursos y selección no se cruzan; `activeTab` conserva su comportamiento | Aprobada |
+| 3. Reload | aplica el fallback previo y no intenta persistir/restaurar selección | Aprobada |
+| 4. Refetch | conserva la selección válida sin salto inesperado | Aprobada |
+| 5. Creación de recurso | recurso y selección permanecen en el batch correcto | Aprobada |
+| 6. Quick Create | navegación/fachada vigentes, bloque correcto y persistencia backend tras reload | Aprobada |
+| 7. Delete de otro bloque | el bloque seleccionado permanece y el reload es coherente | Aprobada |
+| 8. Delete del seleccionado | usa exactamente el fallback previo y elimina referencias visuales | Aprobada |
+| 9. Último bloque, solo si es seguro | no existe confirmación explícita de ejecución | No ejecutada o no confirmada explícitamente; no bloquea |
+| 10. Modales | al cambiar de bloque, el mismo modal recibe el bloque nuevo | Aprobada |
+| 11. Regresión acumulativa | Planeaciones, Anexos, Listas, Exámenes, previews, descargas, tabs, delete y Quick Create sin errores nuevos | Aprobada |
 
-Evidencia solicitada sin datos sensibles: bloque inicial y cambios de selección;
-fallback de reload; resultado de refetch; recurso creado y batch; Quick Create;
-delete de otro bloque y fallback del seleccionado; último bloque si se ejecuta;
-modal con bloque correcto; y errores de consola si existen.
+La aprobación confirmó selección y coherencia sidebar/contenido, tabs sin cruce,
+reload y refetch, creación en el bloque correcto, Quick Create mediante
+`window.biblioteca`, modales, deletes individuales y de bloque, fallback vigente
+y regresión acumulativa sin errores nuevos. Evidencia registrada:
+`[examenes] delete:success`, `[listas-cotejo] delete:success`,
+`[anexos] delete:success`, `[planeaciones] delete:start/success`,
+`[biblioteca] delete:start/success` y `deletedBatch:true`. No se añadieron IDs.
+La prueba de último bloque no consta ejecutada o confirmada explícitamente y no
+bloquea la aprobación.
 
 ### Siguiente corte sugerido
 
-Tras la aprobación explícita de 5.1 puede auditarse un corte limitado al
-ownership de `activeTab`. No tiene número asignado, no está iniciado y no debe
-mezclar pending, modales, render, Quick Create o `explorerState`. Si aparece una
-regresión, corresponde corregir 5.1 antes de abrir otro corte.
+**Sesión 5.2 — Extracción literal del ownership de `activeTab` en Biblioteca**
+permanece pendiente y no iniciada. Debe reintentarse desde su puerta inicial y
+no debe mezclar pending, modales, render, Quick Create o `explorerState`.

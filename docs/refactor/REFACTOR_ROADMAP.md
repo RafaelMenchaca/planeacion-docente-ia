@@ -555,9 +555,13 @@ Biblioteca**. La sesión encapsuló el acceso sobre la única fuente física
 delegan sin normalizar ni reinterpretar valores. No se agregó global, archivo o
 script, y se preservaron el fallback crudo de delete, Quick Create, load,
 refetch y reconciliación. No incluye tabs, pending, modales, render, Quick
-Create ni `explorerState`. La implementación y las validaciones estáticas están
-completadas; la validación manual permanece pendiente de confirmación explícita
-del usuario. Fase 5 continúa **En progreso**.
+Create ni `explorerState`. La implementación, las validaciones estáticas y la
+validación manual quedaron aprobadas explícitamente por el usuario; la sesión
+está commiteada en `1b4c620`. Fase 5 continúa **En progreso**.
+
+El siguiente corte formal es **Sesión 5.2 — Extracción literal del ownership de
+`activeTab` en Biblioteca**. Permanece pendiente y no iniciada; debe reintentarse
+desde su puerta inicial y no constituye trabajo ya abierto.
 
 ### Dependencias
 

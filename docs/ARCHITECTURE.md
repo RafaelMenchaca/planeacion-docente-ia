@@ -88,7 +88,10 @@ acceso a `bibliotecaState.selectedConjuntoId` mediante la superficie léxica
 `BibliotecaSelection`: el valor sigue viviendo una sola vez en el mismo estado,
 sin global nuevo, archivo nuevo ni cambio de orden de scripts. Normalización,
 fallback crudo de delete, Quick Create, `activeTab`, pending, render y legacy se
-preservaron; la validación manual de 5.1 permanece pendiente.
+preservaron. La implementación, las validaciones estáticas y la validación
+manual de 5.1 quedaron aprobadas y commiteadas en `1b4c620`. La Sesión 5.2 —
+Extracción literal del ownership de `activeTab` en Biblioteca permanece
+pendiente y no iniciada.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

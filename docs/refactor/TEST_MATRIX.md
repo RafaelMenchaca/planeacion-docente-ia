@@ -948,8 +948,9 @@ entre Fases 5–10 revisados; pruebas futuras revisadas; decisión **A. Abrir Fa
 5** aprobada; y Fase 5 abierta y En progreso. La auditoría y sus validaciones
 estáticas quedaron completadas en `525a21a`.
 
-Las pruebas funcionales futuras de Fase 5 permanecen pendientes. La Sesión 5.1
-se implementó con validación manual pendiente.
+Las pruebas funcionales de cortes posteriores de Fase 5 permanecen pendientes.
+La Sesión 5.1 quedó aprobada y commiteada en `1b4c620`; la Sesión 5.2 permanece
+pendiente y no iniciada.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -958,21 +959,26 @@ La extracción encapsula únicamente el acceso a
 fallbacks y consumidores permanecen. El smoke técnico y las validaciones
 estáticas no sustituyen esta matriz.
 
-**Validación manual: Pendiente de confirmación explícita del usuario.**
+**Validación manual: Aprobada explícitamente por el usuario.**
 
 | Prueba | Evidencia esperada | Estado |
 | --- | --- | --- |
-| 1. Selección básica | bloque inicial; alternancia; sidebar y detalle coincidentes; sin errores | Pendiente |
-| 2. Tabs por bloque | tabs/recursos correctos al cambiar de bloque y volver; sin cruce | Pendiente |
-| 3. Reload | fallback previo; sin restauración nueva ni errores | Pendiente |
-| 4. Refetch | selección válida conservada sin salto inesperado | Pendiente |
-| 5. Creación de recurso | recurso en batch correcto y mismo bloque seleccionado | Pendiente |
-| 6. Quick Create | navegación vigente; `window.biblioteca` funcional; bloque correcto; persistencia backend tras reload | Pendiente |
-| 7. Delete de otro bloque | selección original conservada antes y después de reload | Pendiente |
-| 8. Delete del bloque seleccionado | fallback previo exacto; sidebar/detalle coherentes; sin referencia eliminada | Pendiente |
-| 9. Último bloque, solo con datos desechables y si es seguro | estado vacío y creación posterior; si no, constancia de no ejecución por seguridad | Pendiente / condicionada por seguridad |
-| 10. Modales | modal cerrado/reabierto después de cambiar selección usa el bloque nuevo | Pendiente |
-| 11. Regresión acumulativa | Planeaciones, Anexos, Listas, Exámenes, previews, descargas, tabs, delete y Quick Create sin errores nuevos | Pendiente |
+| 1. Selección básica | bloque inicial; alternancia; sidebar y detalle coincidentes; sin errores | Aprobada |
+| 2. Tabs por bloque | tabs/recursos correctos al cambiar de bloque y volver; sin cruce | Aprobada |
+| 3. Reload | fallback previo; sin restauración nueva ni errores | Aprobada |
+| 4. Refetch | selección válida conservada sin salto inesperado | Aprobada |
+| 5. Creación de recurso | recurso en batch correcto y mismo bloque seleccionado | Aprobada |
+| 6. Quick Create | navegación vigente; `window.biblioteca` funcional; bloque correcto; persistencia backend tras reload | Aprobada |
+| 7. Delete de otro bloque | selección original conservada antes y después de reload | Aprobada |
+| 8. Delete del bloque seleccionado | fallback previo exacto; sidebar/detalle coherentes; sin referencia eliminada | Aprobada |
+| 9. Último bloque, solo con datos desechables y si es seguro | no existe confirmación explícita de ejecución | No ejecutada o no confirmada explícitamente; no bloquea |
+| 10. Modales | modal cerrado/reabierto después de cambiar selección usa el bloque nuevo | Aprobada |
+| 11. Regresión acumulativa | Planeaciones, Anexos, Listas, Exámenes, previews, descargas, tabs, delete y Quick Create sin errores nuevos | Aprobada |
+
+Evidencia de delete aportada: `[examenes] delete:success`,
+`[listas-cotejo] delete:success`, `[anexos] delete:success`,
+`[planeaciones] delete:start/success`, `[biblioteca] delete:start/success` y
+`deletedBatch:true`. No se registraron IDs ni datos sensibles.
 
 No se modificó `activeTab`, pending, modales, render, eventos, Quick Create,
 `window.explorerState`, backend ni persistencia. La Fase 5 continúa En progreso.
