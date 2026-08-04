@@ -1268,8 +1268,9 @@ no mueve propiedades ni cambia shapes. La auditoría, sus validaciones estática
 y su validación documental quedaron aprobadas y commiteadas en `525a21a`;
 Fase 5 está formalmente abierta y En progreso. La implementación, las
 validaciones estáticas y la validación manual de la Sesión 5.1 están aprobadas;
-el corte quedó commiteado en `1b4c620`. La Sesión 5.2 permanece pendiente y no
-iniciada.
+el corte quedó commiteado en `1b4c620`. La implementación, las validaciones
+estáticas y la validación manual de la Sesión 5.2 están aprobadas; su commit
+permanece pendiente y Fase 5 continúa En progreso.
 
 ### Propietarios confirmados
 
@@ -1296,7 +1297,7 @@ de estos objetos desde tests; la suite existente no cubre estado de Biblioteca.
 | `searchQuery` | `""`, string | input de búsqueda | filtro, estados vacíos y valor DOM | Vive durante la página; sin storage; reload limpia | DOM y render | Biblioteca vigente; F5; binding/render en F6 |
 | `selectedConjuntoId` | `null`; única fuente física en `bibliotecaState`; acceso encapsulado por `BibliotecaSelection`; ID normalizado normalmente a string | selección, loader/reconciliación, fachada de Quick Create y delete de bloque delegan en la superficie léxica | sidebar, detalle y comparación de delete delegan en la misma superficie | Fallback al primer bloque; se pierde en reload; delete conserva el ID crudo del primer elemento | DOM, render, delete, Quick Create | Biblioteca vigente; riesgo String/Number preservado; Sesión 5.1 aprobada y commiteada en `1b4c620` |
 | `expandedIds` | `new Set()` | solo se confirmó `delete(tempId)` en reconciliación | Sin lector ni alta confirmados | Se crea al cargar y se pierde en reload | Sin relación DOM confirmada | No clasificado; no mover hasta confirmar consumidor; F5 |
-| `activeTab` | `{}`; mapa `batchId -> planeaciones|anexos|listas|examenes` | selección/tab, loader/reconciliación, generación y deletes | render de tabs/cards | Default `planeaciones`; delete de bloque limpia su clave; sin storage; reload reinicia | DOM, render, delete y generación | Biblioteca vigente; múltiples escritores y claves coercionadas; F5, render F6 |
+| `activeTab` | `{}`; única fuente física en `bibliotecaState`; acceso encapsulado por `BibliotecaTabs`; mapa `batchId -> planeaciones|anexos|listas|examenes` | selección/tab, loader/reconciliación y finish de Quick Create delegan; generación y deletes llegan mediante selección/opciones del loader | `renderBibliotecaTabs` y `renderBibliotecaTabContent` delegan lectura | Default `planeaciones`; delete de bloque delega `delete`; sin storage; reload reinicia | DOM, render, delete, generación y Quick Create indirecto | Biblioteca vigente; claves coercionadas, múltiples transiciones y tabs desconocidos preservados; Sesión 5.2 aprobada, commit pendiente |
 | `pendingBatchId` | `null`; ID de batch reutilizado por Quick Create | fachada `window.biblioteca` y Quick Create | payload de generación de Quick Create | Se fija antes de generar y se limpia en éxito/error/finally; reload reinicia | API/generación compartida | Estado mixto Biblioteca–Quick Create; riesgo de cruce; F5/7 |
 | `pendingConjunto` | `null` o objeto temporal con `id/tempId/isPending/status_ui`, metadatos, contadores, `planeaciones`, `examenes` y `listas_cotejo` | fachada Quick Create, loader y reconciliación | sidebar, detalle y tab Planeaciones; progreso indirecto desde `explorerState.progress` | Nace antes de generar bloque nuevo; carga normal/reconciliación lo limpia; reload lo pierde | Render, generación y refetch | Estado mixto; shape parcial y sin job persistido; F5/7 |
 | `pendingPlaneacionesByBatchId` | `{}`; mapa a `{items,error}`; items de Biblioteca y Quick Create no tienen exactamente el mismo shape | `PlaneacionGeneration`, fachada/finish de Quick Create y delete de bloque | tab Planeaciones y callbacks de progreso | Éxito sin errores/delete limpia; parcial/error permanece; reload/navegación pierde | SSE, render, delete y generación | Generación activa / estado mixto; múltiples escritores y shapes variables confirmados; F5, Quick Create F7 |
@@ -1417,11 +1418,33 @@ modales, render, eventos, mensajes y orden clásico de scripts. La implementaci�
 las validaciones estáticas y la validación manual de la Sesión 5.1 quedaron
 aprobadas; commit `1b4c620`.
 
-### Siguiente corte sugerido
+### Sesión 5.2 — ownership de `activeTab`
 
-**Sesión 5.2 — Extracción literal del ownership de `activeTab` en Biblioteca**
-permanece pendiente y no iniciada. Debe reintentarse desde su puerta inicial y
-no debe mezclar pending, modales, render, Quick Create o `explorerState`.
+`BibliotecaTabs` es un binding léxico de `biblioteca.page.js` con tres
+operaciones: `getActiveTab(conjuntoId)`, `setActiveTab(conjuntoId, tab)` y
+`clearActiveTab(conjuntoId)`. El mapa no fue movido ni copiado; cada operación
+lee, asigna o aplica `delete` directamente sobre `bibliotecaState.activeTab`.
+La superficie no normaliza claves, valida nombres ni incorpora fallback.
+
+Escritores delegados: conjunto temporal de Quick Create, selección explícita o
+fallback de `setSelectedConjunto`, reconciliación optimista, finalización de
+planeaciones y target/fallback del loader. Cleanups delegados: ID temporal al
+reconciliar y batch eliminado en `BibliotecaBlockDelete`. Lectores delegados:
+fallback de selección, ambos renders de tabs y snapshot del ID temporal. Los
+cuatro coordinadores y deletes individuales siguen usando
+`setSelectedConjunto`/`loadAndRenderBiblioteca`; Quick Create continúa usando
+solo `window.biblioteca`.
+
+Se conservan el objeto inicial `{}`, coerción normal de claves de objeto,
+valores `planeaciones|anexos|listas|examenes`, aceptación de valores desconocidos
+truthy, fallback `planeaciones`, persistencia por bloque durante la página,
+pérdida tras reload y cleanup por `delete`. La implementación, las validaciones
+estáticas y la validación manual están aprobadas; el commit permanece pendiente.
+
+### Siguiente corte propuesto
+
+Auditar un único estado modal o un único pending map. No está iniciado y no
+tiene número definitivo.
 
 ## Riesgos priorizados
 

@@ -25,7 +25,7 @@
       if (normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === safeBatchId) {
         BibliotecaSelection.setSelectedConjuntoId(bibliotecaState.conjuntos[0]?.id || null);
       }
-      delete bibliotecaState.activeTab[safeBatchId];
+      BibliotecaTabs.clearActiveTab(safeBatchId);
       delete bibliotecaState.pendingPlaneacionesByBatchId[safeBatchId];
       delete bibliotecaState.pendingExamenByBatchId[safeBatchId];
       delete bibliotecaState.pendingListaByBatchId[safeBatchId];

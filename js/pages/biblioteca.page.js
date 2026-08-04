@@ -80,6 +80,23 @@ const BibliotecaSelection = {
   }
 };
 
+// Fase 5 — Sesión 5.2: ownership léxico del tab activo por bloque.
+// La única fuente de verdad permanece en bibliotecaState.activeTab.
+// Estas operaciones no normalizan claves, validan tabs ni aplican fallback:
+// cada consumidor conserva exactamente sus expresiones y orden previos.
+const BibliotecaTabs = {
+  getActiveTab(conjuntoId) {
+    return bibliotecaState.activeTab[conjuntoId];
+  },
+  setActiveTab(conjuntoId, tab) {
+    bibliotecaState.activeTab[conjuntoId] = tab;
+    return tab;
+  },
+  clearActiveTab(conjuntoId) {
+    delete bibliotecaState.activeTab[conjuntoId];
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -124,7 +141,7 @@ window.biblioteca = {
       listas_cotejo:       []
     };
     BibliotecaSelection.setSelectedConjuntoId(tempId);
-    bibliotecaState.activeTab[tempId] = "planeaciones";
+    BibliotecaTabs.setActiveTab(tempId, "planeaciones");
   },
   refresh: (options = {}) => loadAndRenderBiblioteca(options),
   finishPlaneacionesGeneration: (result) => finishBibliotecaPlaneacionesGeneration(result)
@@ -253,9 +270,9 @@ function setSelectedConjunto(conjuntoId, { tab } = {}) {
   if (!safeId) return;
   BibliotecaSelection.setSelectedConjuntoId(safeId);
   if (tab) {
-    bibliotecaState.activeTab[safeId] = tab;
-  } else if (!bibliotecaState.activeTab[safeId]) {
-    bibliotecaState.activeTab[safeId] = "planeaciones";
+    BibliotecaTabs.setActiveTab(safeId, tab);
+  } else if (!BibliotecaTabs.getActiveTab(safeId)) {
+    BibliotecaTabs.setActiveTab(safeId, "planeaciones");
   }
 }
 
@@ -318,7 +335,7 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
     };
     bibliotecaState.conjuntos = [conjunto, ...bibliotecaState.conjuntos];
     bibliotecaState.expandedIds.delete(pending.tempId);
-    delete bibliotecaState.activeTab[pending.tempId];
+    BibliotecaTabs.clearActiveTab(pending.tempId);
     if (normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(pending.tempId)) {
       BibliotecaSelection.setSelectedConjuntoId(safeBatchId);
     }
@@ -332,7 +349,7 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
   conjunto.planeaciones = mergePlaneaciones(conjunto.planeaciones, planeaciones || []);
   conjunto.total_planeaciones = conjunto.planeaciones.length;
   BibliotecaSelection.setSelectedConjuntoId(safeBatchId);
-  bibliotecaState.activeTab[safeBatchId] = "planeaciones";
+  BibliotecaTabs.setActiveTab(safeBatchId, "planeaciones");
 }
 
 function applyGenerationResultToPendingItems(batchId, result) {
@@ -397,7 +414,7 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
       delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
     }
     BibliotecaSelection.setSelectedConjuntoId(batchId);
-    bibliotecaState.activeTab[batchId] = "planeaciones";
+    BibliotecaTabs.setActiveTab(batchId, "planeaciones");
   }
 
   renderBibliotecaContent();
@@ -806,7 +823,7 @@ function renderListasCotejoTab(conjunto) {
 // ---- RENDER CONJUNTO ----
 
 function renderBibliotecaTabs(conjunto) {
-  const activeTab = bibliotecaState.activeTab[conjunto.id] || "planeaciones";
+  const activeTab = BibliotecaTabs.getActiveTab(conjunto.id) || "planeaciones";
   const id = escapeHtml(String(conjunto.id));
   return `
     <div class="biblioteca-tabs" role="tablist">
@@ -835,7 +852,7 @@ function renderBibliotecaTabs(conjunto) {
 }
 
 function renderBibliotecaTabContent(conjunto) {
-  const activeTab = bibliotecaState.activeTab[conjunto.id] || "planeaciones";
+  const activeTab = BibliotecaTabs.getActiveTab(conjunto.id) || "planeaciones";
   return `
     <div class="biblioteca-tab-content">
       ${activeTab === "planeaciones" ? renderPlaneacionesTab(conjunto) : ""}
@@ -1065,7 +1082,7 @@ async function loadAndRenderBiblioteca(options = {}) {
   // Capture pending info before clearing (for reconciliation after quick-create)
   const prevTempId    = bibliotecaState.pendingConjunto?.tempId || null;
   const wasSelected   = prevTempId ? normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(prevTempId) : false;
-  const prevActiveTab = prevTempId ? (bibliotecaState.activeTab[prevTempId] || "planeaciones") : null;
+  const prevActiveTab = prevTempId ? (BibliotecaTabs.getActiveTab(prevTempId) || "planeaciones") : null;
   const prevSelectedId = normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId());
   const prevConjuntos = getAllConjuntosForSidebar();
 
@@ -1085,7 +1102,7 @@ async function loadAndRenderBiblioteca(options = {}) {
 
     // Reconciliation: map tempId expanded state to the newly created real conjunto
     if (prevTempId) {
-      delete bibliotecaState.activeTab[prevTempId];
+      BibliotecaTabs.clearActiveTab(prevTempId);
       if (wasSelected) {
         const prevIds     = new Set(prevConjuntos.map(c => normalizeBibliotecaId(c.id)));
         const newConjunto = targetBatchId
@@ -1093,7 +1110,7 @@ async function loadAndRenderBiblioteca(options = {}) {
           : newList.find(c => !prevIds.has(normalizeBibliotecaId(c.id)));
         if (newConjunto) {
           BibliotecaSelection.setSelectedConjuntoId(normalizeBibliotecaId(newConjunto.id));
-          bibliotecaState.activeTab[newConjunto.id] = prevActiveTab;
+          BibliotecaTabs.setActiveTab(newConjunto.id, prevActiveTab);
         }
       }
     }
@@ -1102,7 +1119,7 @@ async function loadAndRenderBiblioteca(options = {}) {
       const target = newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId);
       if (target) {
         BibliotecaSelection.setSelectedConjuntoId(normalizeBibliotecaId(target.id));
-        bibliotecaState.activeTab[target.id] = targetActiveTab;
+        BibliotecaTabs.setActiveTab(target.id, targetActiveTab);
       }
     }
 
@@ -1116,8 +1133,8 @@ async function loadAndRenderBiblioteca(options = {}) {
         ? newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId)
         : newList.find(c => normalizeBibliotecaId(c.id) === prevSelectedId) || newList[0] || null;
       BibliotecaSelection.setSelectedConjuntoId(fallback ? normalizeBibliotecaId(fallback.id) : null);
-      if (fallback && !bibliotecaState.activeTab[fallback.id]) {
-        bibliotecaState.activeTab[fallback.id] = "planeaciones";
+      if (fallback && !BibliotecaTabs.getActiveTab(fallback.id)) {
+        BibliotecaTabs.setActiveTab(fallback.id, "planeaciones");
       }
     }
 

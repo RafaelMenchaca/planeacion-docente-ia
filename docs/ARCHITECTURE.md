@@ -89,9 +89,13 @@ acceso a `bibliotecaState.selectedConjuntoId` mediante la superficie léxica
 sin global nuevo, archivo nuevo ni cambio de orden de scripts. Normalización,
 fallback crudo de delete, Quick Create, `activeTab`, pending, render y legacy se
 preservaron. La implementación, las validaciones estáticas y la validación
-manual de 5.1 quedaron aprobadas y commiteadas en `1b4c620`. La Sesión 5.2 —
-Extracción literal del ownership de `activeTab` en Biblioteca permanece
-pendiente y no iniciada.
+manual de 5.1 quedaron aprobadas y commiteadas en `1b4c620`. La Sesión 5.2
+encapsuló literalmente el mapa existente `bibliotecaState.activeTab` mediante
+la superficie léxica `BibliotecaTabs`, sin moverlo ni duplicarlo. El fallback
+`planeaciones`, las claves y valores, selección, generación, delete, render,
+eventos, Quick Create y orden de scripts permanecen. La implementación, las
+validaciones estáticas y la validación manual de 5.2 están aprobadas; el commit
+de la sesión permanece pendiente y Fase 5 continúa En progreso.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

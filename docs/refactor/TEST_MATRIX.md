@@ -949,8 +949,9 @@ entre Fases 5–10 revisados; pruebas futuras revisadas; decisión **A. Abrir Fa
 estáticas quedaron completadas en `525a21a`.
 
 Las pruebas funcionales de cortes posteriores de Fase 5 permanecen pendientes.
-La Sesión 5.1 quedó aprobada y commiteada en `1b4c620`; la Sesión 5.2 permanece
-pendiente y no iniciada.
+La Sesión 5.1 quedó aprobada y commiteada en `1b4c620`; la implementación, las
+validaciones estáticas y la validación manual de la Sesión 5.2 están aprobadas,
+con commit pendiente.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -982,3 +983,40 @@ Evidencia de delete aportada: `[examenes] delete:success`,
 
 No se modificó `activeTab`, pending, modales, render, eventos, Quick Create,
 `window.explorerState`, backend ni persistencia. La Fase 5 continúa En progreso.
+
+## Fase 5 — Sesión 5.2: ownership de `activeTab` en Biblioteca
+
+La extracción encapsula exclusivamente el mapa existente
+`bibliotecaState.activeTab` mediante `BibliotecaTabs`. Shape, claves, valores,
+fallbacks, selección, render, eventos y consumidores permanecen. Las
+validaciones estáticas y el smoke no sustituyen estas pruebas.
+
+**Validación manual: Aprobada explícitamente por el usuario.**
+
+| Prueba | Evidencia esperada | Estado |
+| --- | --- | --- |
+| 1. Tab inicial | bloque seleccionado, tab inicial y contenido coinciden; consola limpia | Aprobada |
+| 2. Cambio de tab | Planeaciones, Anexos, Listas y Exámenes muestran contenido/clase activa correctos | Aprobada |
+| 3. Tabs por bloque | A y B conservan exactamente el comportamiento previo, sin recursos cruzados | Aprobada |
+| 4. Reload | fallback previo y ausencia de persistencia nueva | Aprobada |
+| 5. Refetch | tab resultante no cambia inesperadamente | Aprobada |
+| 6. Generación de planeación | Planeaciones se activa en el momento previo; pending/resultado correctos | Aprobada |
+| 7. Generación de anexo | Anexos se activa; pending/resultado y bloque correctos | Aprobada |
+| 8. Generación de lista | Listas se activa; pending/resultado sin cruce | Aprobada |
+| 9. Generación de examen | Exámenes activo durante card/polling y al terminar | Aprobada |
+| 10. Delete individual | tab conservado, refetch y contenido correctos | Aprobada |
+| 11. Delete de otro bloque | selección/tab/contenido del bloque actual permanecen | Aprobada |
+| 12. Delete del seleccionado | selección y tab fallback, sidebar y contenido coherentes; reload correcto | Aprobada |
+| 13. Último bloque, solo si es seguro | estado/mapa vacíos y nuevo bloque con tab inicial; si no, registrar no ejecutada por seguridad | No ejecutada o no confirmada explícitamente; no bloquea |
+| 14. Quick Create | batch real, tab vigente, fachada `window.biblioteca` y reload correctos | Aprobada |
+| 15. Regresión acumulativa | selección, recursos, previews, descargas, delete y Quick Create sin errores nuevos | Aprobada |
+
+La aprobación confirmó al menos una generación inmediata/request largo y el
+polling de examen con Exámenes activo, además de reload/refetch, deletes, Quick
+Create, regresión acumulativa y ausencia de errores nuevos.
+
+Prueba de último bloque: no ejecutada o no confirmada explícitamente; no
+bloquea.
+
+La Fase 5 continúa En progreso. Siguiente corte propuesto: auditar un único
+estado modal o un único pending map. No iniciado y sin número definitivo.

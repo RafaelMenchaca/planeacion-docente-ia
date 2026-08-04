@@ -559,9 +559,16 @@ Create ni `explorerState`. La implementación, las validaciones estáticas y la
 validación manual quedaron aprobadas explícitamente por el usuario; la sesión
 está commiteada en `1b4c620`. Fase 5 continúa **En progreso**.
 
-El siguiente corte formal es **Sesión 5.2 — Extracción literal del ownership de
-`activeTab` en Biblioteca**. Permanece pendiente y no iniciada; debe reintentarse
-desde su puerta inicial y no constituye trabajo ya abierto.
+La **Sesión 5.2 — Extracción literal del ownership de `activeTab` en
+Biblioteca** encapsuló acceso y transiciones mediante `BibliotecaTabs`, sobre la
+única fuente física `bibliotecaState.activeTab`. No agregó archivo, global o
+script; no normaliza claves, valida valores ni aplica fallback. Selección,
+generación, delete, render, eventos, Quick Create y pending conservan sus
+contratos. La implementación, las validaciones estáticas y la validación manual
+están aprobadas; el commit permanece pendiente. Fase 5 continúa **En progreso**.
+
+**Siguiente corte propuesto:** auditar un único estado modal o un único pending
+map. No iniciado y sin número definitivo.
 
 ### Dependencias
 

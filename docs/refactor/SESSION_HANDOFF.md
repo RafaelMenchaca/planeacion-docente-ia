@@ -28,7 +28,7 @@
 - **Validaciones estáticas de 5.0:** aprobadas.
 - **Validación documental de 5.0:** aprobada explícitamente por el usuario.
 - **Sesión 5.1:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `1b4c620`.
-- **Sesión 5.2:** pendiente y no iniciada.
+- **Sesión 5.2:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -52,15 +52,16 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** reintentar Fase 5 — Sesión 5.2 desde su puerta inicial.
+- **Continuación:** siguiente corte propuesto: auditar un único estado modal o un único pending map; no iniciado y sin número definitivo.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
 exámenes quedaron validados; la auditoría 4.5, su validación documental y la
 decisión formal de cierre también fueron aprobadas. La puerta de la Sesión 5.0
 pasó y Fase 5 quedó En progreso; la Sesión 5.1 completó y validó después el
-primer corte funcional en `1b4c620`. La Sesión 5.2 permanece pendiente y no
-iniciada.
+primer corte funcional en `1b4c620`. La Sesión 5.2 implementó el ownership
+léxico de `activeTab`; implementación, validaciones estáticas y validación manual
+están aprobadas, con commit pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3160,5 +3161,106 @@ bloquea la aprobación.
 ### Siguiente corte sugerido
 
 **Sesión 5.2 — Extracción literal del ownership de `activeTab` en Biblioteca**
-permanece pendiente y no iniciada. Debe reintentarse desde su puerta inicial y
-no debe mezclar pending, modales, render, Quick Create o `explorerState`.
+quedó implementada a continuación sin mezclar pending, modales, render, Quick
+Create o `explorerState`.
+
+## Fase 5 — Sesión 5.2: Extracción literal del ownership de `activeTab` en Biblioteca
+
+### Puerta, decisión y fuente de verdad
+
+- Frontend: `refactor-front`, inicio real en `23c5355`, working tree limpio.
+- Sesión 5.0: `525a21a`; corrección de apertura: `872fdf0`.
+- Sesión 5.1: `1b4c620`; corrección/aprobación documental: `23c5355`.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, limpio.
+- Riesgo: alto.
+- Decisión: **A. Extracción segura implementada.**
+
+La única fuente física sigue siendo el objeto inicial `{}` de
+`bibliotecaState.activeTab`. `BibliotecaTabs` es una superficie léxica, no un
+segundo mapa, y delega exclusivamente lectura, asignación y `delete`. No
+normaliza claves, valida tabs ni aplica fallback.
+
+### Comportamiento y consumidores preservados
+
+Las claves son IDs de bloque/conjunto; JavaScript conserva su coerción normal a
+propiedad de objeto. Los valores observados son `planeaciones`, `anexos`,
+`listas` y `examenes`; cualquier valor truthy desconocido sigue almacenándose
+sin validación y produciría el mismo render vacío/no activo previo. Ausencia o
+valor falsy conserva el fallback `planeaciones` donde ya existía.
+
+Al seleccionar un bloque sin tab explícito se crea `planeaciones` solo si no
+hay entrada; al volver, se conserva el tab previo. Reload crea un mapa nuevo y
+el loader aplica el fallback vigente. Refetch sin target conserva la entrada;
+con target escribe `options.activeTab || "planeaciones"`. Quick Create fija
+`planeaciones` para bloque existente o temporal, transfiere el tab temporal al
+batch reconciliado y vuelve a `planeaciones` al finalizar.
+
+Planeaciones, Anexos, Listas y Exámenes continúan activando sus tabs mediante
+`setSelectedConjunto` y/o la opción del loader en los mismos momentos. Los
+deletes individuales conservan el tab de su dominio. Delete de bloque limpia
+siempre la entrada del batch eliminado después del fallback de selección y
+antes de pending/render/refetch; otro bloque conserva su entrada. Si el nuevo
+seleccionado ya tenía tab, se conserva; si no, render usa `planeaciones`.
+
+Lectores directos delegados: `renderBibliotecaTabs`,
+`renderBibliotecaTabContent`, fallback de `setSelectedConjunto`, snapshot de
+reconciliación y fallback del loader. Escritores/cleanups delegados: fachada de
+conjunto temporal, selección, optimista/finalización de planeaciones,
+reconciliación, target/fallback del loader y delete de bloque. Legacy no consume
+el mapa directamente; Quick Create solo lo alcanza mediante `window.biblioteca`.
+
+### Validaciones estáticas de 5.2
+
+- `node --check` aprobó `biblioteca.page.js` y
+  `biblioteca-block-delete.js`.
+- Jest aprobó 1 suite y 2 pruebas.
+- El smoke técnico aprobó 16 comprobaciones del mapa, fallbacks, claves,
+  valores, generación, deletes y fachada Quick Create.
+- La reversión mecánica de cada delegación reprodujo byte por byte ambos
+  JavaScript de `HEAD`.
+
+### Riesgos preservados
+
+- El mapa y sus tabs se pierden en reload/navegación y no son reconstruibles
+  desde backend.
+- Existen múltiples transiciones y claves String/Number coercionadas.
+- Un tab truthy desconocido no se valida y deja contenido/clase activa vacíos.
+- Delete no cancela procesos; pending y submitting permanecen fuera de alcance.
+- `BibliotecaSelection`, selección, render, eventos, coordinadores, Quick
+  Create, `window.biblioteca` y `window.explorerState` no se modificaron.
+
+### Validación manual de 5.2
+
+**Validación manual: Aprobada explícitamente por el usuario.**
+
+| Prueba | Resultado a confirmar | Estado |
+| --- | --- | --- |
+| 1. Tab inicial | tab y contenido iniciales coinciden; consola limpia | Aprobada |
+| 2. Cambio de tab | cuatro tabs, contenido y clase activa correctos | Aprobada |
+| 3. Tabs por bloque | comportamiento previo por bloque y sin recursos cruzados | Aprobada |
+| 4. Reload | fallback previo, sin persistencia nueva | Aprobada |
+| 5. Refetch | tab resultante conserva el comportamiento previo | Aprobada |
+| 6. Generación de planeación | activa Planeaciones en el mismo momento, con pending correcto | Aprobada |
+| 7. Generación de anexo | activa Anexos sin cambiar de bloque | Aprobada |
+| 8. Generación de lista | activa Listas sin cruzar bloques | Aprobada |
+| 9. Generación de examen | activa Exámenes durante pending/polling y al terminar | Aprobada |
+| 10. Delete individual | conserva tab, refetch y contenido | Aprobada |
+| 11. Delete de otro bloque | selección, tab y contenido del bloque actual permanecen | Aprobada |
+| 12. Delete del seleccionado | selección y tab fallback coherentes; reload correcto | Aprobada |
+| 13. Último bloque, solo si es seguro | mapa/estado vacío y nuevo bloque con tab inicial; si no, registrar no ejecutada | No ejecutada o no confirmada explícitamente; no bloquea |
+| 14. Quick Create | navega al batch real, activa el tab previo y conserva fachada | Aprobada |
+| 15. Regresión acumulativa | selección, cuatro dominios, previews, descargas, delete y Quick Create sin errores | Aprobada |
+
+La aprobación confirmó tab inicial y contenido, cambio entre los cuatro tabs,
+tabs independientes por bloque, reload con fallback vigente y sin persistencia,
+refetch estable, activación correcta durante generación, examen con polling,
+deletes individual/de otro bloque/del bloque seleccionado, Quick Create,
+regresión acumulativa y ausencia de errores nuevos.
+
+Prueba de último bloque: no ejecutada o no confirmada explícitamente; no
+bloquea.
+
+### Siguiente corte propuesto
+
+Auditar un único estado modal o un único pending map. No iniciado y sin número
+definitivo.
