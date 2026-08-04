@@ -951,7 +951,7 @@ estáticas quedaron completadas en `525a21a`.
 Las pruebas funcionales de cortes posteriores de Fase 5 permanecen pendientes.
 La Sesión 5.1 quedó aprobada y commiteada en `1b4c620`; la implementación, las
 validaciones estáticas y la validación manual de la Sesión 5.2 están aprobadas,
-con commit pendiente.
+con commit `f5bbfdd`. La Sesión 5.3 permanece pendiente y no iniciada.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -993,6 +993,8 @@ validaciones estáticas y el smoke no sustituyen estas pruebas.
 
 **Validación manual: Aprobada explícitamente por el usuario.**
 
+**Commit funcional: `f5bbfdd`.**
+
 | Prueba | Evidencia esperada | Estado |
 | --- | --- | --- |
 | 1. Tab inicial | bloque seleccionado, tab inicial y contenido coinciden; consola limpia | Aprobada |
@@ -1018,5 +1020,6 @@ Create, regresión acumulativa y ausencia de errores nuevos.
 Prueba de último bloque: no ejecutada o no confirmada explícitamente; no
 bloquea.
 
-La Fase 5 continúa En progreso. Siguiente corte propuesto: auditar un único
-estado modal o un único pending map. No iniciado y sin número definitivo.
+La Fase 5 continúa En progreso. La **Sesión 5.3 — Extracción literal del estado
+del modal de generación de anexos de Biblioteca** permanece pendiente y no
+iniciada; debe reintentarse desde su puerta inicial.

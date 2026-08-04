@@ -94,8 +94,11 @@ encapsuló literalmente el mapa existente `bibliotecaState.activeTab` mediante
 la superficie léxica `BibliotecaTabs`, sin moverlo ni duplicarlo. El fallback
 `planeaciones`, las claves y valores, selección, generación, delete, render,
 eventos, Quick Create y orden de scripts permanecen. La implementación, las
-validaciones estáticas y la validación manual de 5.2 están aprobadas; el commit
-de la sesión permanece pendiente y Fase 5 continúa En progreso.
+validaciones estáticas y la validación manual de 5.2 están aprobadas; la sesión
+quedó commiteada en `f5bbfdd`. `BibliotecaTabs`, la única fuente de verdad y el
+fallback `planeaciones` permanecen preservados. La Sesión 5.3 — Extracción
+literal del estado del modal de generación de anexos de Biblioteca está
+pendiente y no iniciada; Fase 5 continúa En progreso.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

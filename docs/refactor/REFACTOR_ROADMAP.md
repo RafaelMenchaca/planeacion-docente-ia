@@ -565,10 +565,12 @@ Biblioteca** encapsuló acceso y transiciones mediante `BibliotecaTabs`, sobre l
 script; no normaliza claves, valida valores ni aplica fallback. Selección,
 generación, delete, render, eventos, Quick Create y pending conservan sus
 contratos. La implementación, las validaciones estáticas y la validación manual
-están aprobadas; el commit permanece pendiente. Fase 5 continúa **En progreso**.
+están aprobadas; la sesión quedó commiteada en `f5bbfdd`. Fase 5 continúa **En
+progreso**.
 
-**Siguiente corte propuesto:** auditar un único estado modal o un único pending
-map. No iniciado y sin número definitivo.
+El siguiente corte formal es **Sesión 5.3 — Extracción literal del estado del
+modal de generación de anexos de Biblioteca**. Permanece pendiente y no iniciada;
+debe reintentarse desde su puerta inicial.
 
 ### Dependencias
 

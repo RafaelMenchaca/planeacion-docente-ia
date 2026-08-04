@@ -28,7 +28,8 @@
 - **Validaciones estáticas de 5.0:** aprobadas.
 - **Validación documental de 5.0:** aprobada explícitamente por el usuario.
 - **Sesión 5.1:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `1b4c620`.
-- **Sesión 5.2:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
+- **Sesión 5.2:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f5bbfdd`.
+- **Sesión 5.3:** pendiente y no iniciada.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -61,7 +62,8 @@ decisión formal de cierre también fueron aprobadas. La puerta de la Sesión 5.
 pasó y Fase 5 quedó En progreso; la Sesión 5.1 completó y validó después el
 primer corte funcional en `1b4c620`. La Sesión 5.2 implementó el ownership
 léxico de `activeTab`; implementación, validaciones estáticas y validación manual
-están aprobadas, con commit pendiente.
+están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 permanece pendiente y
+no iniciada.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3171,6 +3173,7 @@ Create o `explorerState`.
 - Frontend: `refactor-front`, inicio real en `23c5355`, working tree limpio.
 - Sesión 5.0: `525a21a`; corrección de apertura: `872fdf0`.
 - Sesión 5.1: `1b4c620`; corrección/aprobación documental: `23c5355`.
+- Sesión 5.2: implementación y validaciones aprobadas; commit `f5bbfdd`.
 - Backend solo lectura: `refactor-back`, `e08d6e4`, limpio.
 - Riesgo: alto.
 - Decisión: **A. Extracción segura implementada.**
@@ -3260,7 +3263,8 @@ regresión acumulativa y ausencia de errores nuevos.
 Prueba de último bloque: no ejecutada o no confirmada explícitamente; no
 bloquea.
 
-### Siguiente corte propuesto
+### Siguiente paso
 
-Auditar un único estado modal o un único pending map. No iniciado y sin número
-definitivo.
+Reintentar **Fase 5 — Sesión 5.3: Extracción literal del estado del modal de
+generación de anexos de Biblioteca** desde su puerta inicial. Permanece pendiente
+y no iniciada.
