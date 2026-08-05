@@ -130,6 +130,39 @@ const BibliotecaAnexoModalState = {
   }
 };
 
+// Fase 5 — Sesión 5.4: ownership léxico del estado del modal de listas.
+// La única fuente de verdad permanece en bibliotecaState.listaModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaListaModalState = {
+  getState() {
+    return bibliotecaState.listaModal;
+  },
+  open(state) {
+    bibliotecaState.listaModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.listaModal.open = false;
+  },
+  setSelectedPlaneacionIds(ids) {
+    bibliotecaState.listaModal.selectedPlaneacionIds = ids;
+    return ids;
+  },
+  addSelectedPlaneacionId(id) {
+    bibliotecaState.listaModal.selectedPlaneacionIds.push(id);
+    return id;
+  },
+  setSubmitting(value) {
+    bibliotecaState.listaModal.submitting = value;
+    return value;
+  },
+  setError(value) {
+    bibliotecaState.listaModal.error = value;
+    return value;
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -1957,14 +1990,14 @@ async function submitBibliotecaExamModal() {
 
 function openBibliotecaListaModal(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
-  bibliotecaState.listaModal = {
+  BibliotecaListaModalState.open({
     open:                  true,
     conjuntoId:            conjunto.id,
     planeaciones,
     selectedPlaneacionIds: [],
     submitting:            false,
     error:                 ""
-  };
+  });
   const modal = document.getElementById("biblioteca-lista-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -1972,7 +2005,7 @@ function openBibliotecaListaModal(conjunto) {
 }
 
 function closeBibliotecaListaModal() {
-  bibliotecaState.listaModal.open = false;
+  BibliotecaListaModalState.close();
   const modal = document.getElementById("biblioteca-lista-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -1982,7 +2015,7 @@ function renderBibliotecaListaModal() {
   const modal = document.getElementById("biblioteca-lista-modal");
   if (!modal) return;
 
-  const state    = bibliotecaState.listaModal;
+  const state    = BibliotecaListaModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const listas = Array.isArray(conjunto?.listas_cotejo) ? conjunto.listas_cotejo : [];
   const listaPlaneacionIds = new Set(listas.map((lista) => normalizeBibliotecaId(lista?.planeacion_id)).filter(Boolean));
@@ -1991,7 +2024,7 @@ function renderBibliotecaListaModal() {
   const availableIds = new Set(disponibles.map((p) => normalizeBibliotecaId(p.id)));
   const selectedValidIds = state.selectedPlaneacionIds.filter((id) => availableIds.has(normalizeBibliotecaId(id)));
   if (selectedValidIds.length !== state.selectedPlaneacionIds.length) {
-    bibliotecaState.listaModal.selectedPlaneacionIds = selectedValidIds;
+    BibliotecaListaModalState.setSelectedPlaneacionIds(selectedValidIds);
   }
   const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0 && !state.submitting;
 
@@ -2070,13 +2103,15 @@ function renderBibliotecaListaModal() {
         e.target.checked = false;
         return;
       }
+      const modalState = BibliotecaListaModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.listaModal.selectedPlaneacionIds.includes(pid)) {
-          bibliotecaState.listaModal.selectedPlaneacionIds.push(pid);
+        if (!modalState.selectedPlaneacionIds.includes(pid)) {
+          BibliotecaListaModalState.addSelectedPlaneacionId(pid);
         }
       } else {
-        bibliotecaState.listaModal.selectedPlaneacionIds =
-          bibliotecaState.listaModal.selectedPlaneacionIds.filter(id => id !== pid);
+        BibliotecaListaModalState.setSelectedPlaneacionIds(
+          modalState.selectedPlaneacionIds.filter(id => id !== pid)
+        );
       }
       renderBibliotecaListaModal();
     });
@@ -2084,7 +2119,7 @@ function renderBibliotecaListaModal() {
 }
 
 async function submitBibliotecaListaModal() {
-  const state = bibliotecaState.listaModal;
+  const state = BibliotecaListaModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const listas = Array.isArray(conjunto?.listas_cotejo) ? conjunto.listas_cotejo : [];
   const blockedIds = new Set(listas.map((lista) => normalizeBibliotecaId(lista?.planeacion_id)).filter(Boolean));
@@ -2096,13 +2131,13 @@ async function submitBibliotecaListaModal() {
     .filter((id) => availableIds.has(id)))];
 
   if (!selectedIds.length) {
-    bibliotecaState.listaModal.error = "Selecciona al menos una planeacion.";
+    BibliotecaListaModalState.setError("Selecciona al menos una planeacion.");
     renderBibliotecaListaModal();
     return;
   }
 
-  bibliotecaState.listaModal.submitting = true;
-  bibliotecaState.listaModal.error      = "";
+  BibliotecaListaModalState.setSubmitting(true);
+  BibliotecaListaModalState.setError("");
   renderBibliotecaListaModal();
 
   try {
@@ -2119,8 +2154,8 @@ async function submitBibliotecaListaModal() {
 
   } catch (error) {
     console.error("[biblioteca] Error iniciando listas:", error);
-    bibliotecaState.listaModal.submitting = false;
-    bibliotecaState.listaModal.error      = error.message || "No se pudieron generar las listas.";
+    BibliotecaListaModalState.setSubmitting(false);
+    BibliotecaListaModalState.setError(error.message || "No se pudieron generar las listas.");
     renderBibliotecaListaModal();
   }
 }

@@ -576,11 +576,22 @@ parcial, selección, depuración desde render, `submitting`, error, validaciones
 delegación a `AnexoGeneration`; no modificó generación, pending, render visual,
 eventos, selección, tabs, otros modales, Quick Create ni backend. La
 implementación, las validaciones estáticas y la validación manual están
-**Aprobadas**; el commit de 5.3 permanece pendiente. Fase 5 continúa **En
+**Aprobadas**; la sesión quedó commiteada en `f05e730`. Fase 5 continúa **En
 progreso**.
 
-Siguiente corte propuesto, sin número definitivo y no iniciado: **Auditar otro
-estado modal individual**.
+La **Sesión 5.4 — Extracción literal del estado del modal de generación de
+listas de cotejo** encapsuló el único objeto físico
+`bibliotecaState.listaModal` mediante `BibliotecaListaModalState`. Preservó el
+shape, reemplazo de apertura, cierre parcial, selección, depuración desde
+render, `submitting`, error, validación y snapshot hacia
+`ListaCotejoGeneration`; no modificó generación, payload,
+`pendingListaByBatchId`, cleanup, refetch, render, eventos, selección, tabs,
+otros modales, Quick Create ni backend. Implementación y validaciones estáticas
+**Aprobadas**; la validación manual también quedó **Aprobada** y el commit
+permanece pendiente. Fase 5 continúa **En progreso**.
+
+Siguiente corte propuesto, sin número definitivo y no iniciado: **A. Modal
+individual de exámenes**.
 
 ### Dependencias
 

@@ -29,7 +29,8 @@
 - **Validación documental de 5.0:** aprobada explícitamente por el usuario.
 - **Sesión 5.1:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `1b4c620`.
 - **Sesión 5.2:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f5bbfdd`.
-- **Sesión 5.3:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
+- **Sesión 5.3:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f05e730`.
+- **Sesión 5.4:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -53,7 +54,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** siguiente corte propuesto — auditar otro estado modal individual; no iniciado y sin número definitivo.
+- **Continuación:** validar manualmente 5.4; después, siguiente corte propuesto A — modal individual de exámenes, no iniciado y sin número definitivo.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -62,8 +63,9 @@ decisión formal de cierre también fueron aprobadas. La puerta de la Sesión 5.
 pasó y Fase 5 quedó En progreso; la Sesión 5.1 completó y validó después el
 primer corte funcional en `1b4c620`. La Sesión 5.2 implementó el ownership
 léxico de `activeTab`; implementación, validaciones estáticas y validación manual
-están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 tiene implementación,
-validaciones estáticas y validación manual aprobadas; no tiene commit.
+están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 quedó aprobada y
+commiteada en `f05e730`. La Sesión 5.4 tiene implementación y validaciones
+estáticas y validación manual aprobadas; su commit está pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3356,4 +3358,101 @@ delete sin cancelación; y ownership separado de `anexosGenerating`.
 
 ### Siguiente corte propuesto
 
-**Auditar otro estado modal individual**, sin número definitivo y no iniciado.
+La Sesión 5.4 quedó ejecutada a continuación.
+
+## Fase 5 — Sesión 5.4: Extracción literal del estado del modal de generación de listas de cotejo
+
+### Puerta, auditoría y decisión
+
+- Frontend: `refactor-front`, inicio real en `f05e730`, working tree limpio.
+- Commit funcional real de 5.3: `f05e730`; su estado “commit pendiente” fue
+  reconciliado documentalmente sin detener la sesión.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, limpio.
+- Riesgo: alto.
+- Decisión: **A. Extracción segura implementada.**
+
+La búsqueda global confirmó una sola definición física y todos los accesos
+directos de `bibliotecaState.listaModal`. El valor inicial exacto permanece
+`{open:false, conjuntoId:null, planeaciones:[], selectedPlaneacionIds:[],
+submitting:false, error:""}`. `BibliotecaListaModalState` es una superficie
+léxica en `biblioteca.page.js`; sus operaciones `getState`, `open`, `close`,
+`setSelectedPlaneacionIds`, `addSelectedPlaneacionId`, `setSubmitting` y
+`setError` delegan sobre esa misma propiedad. No existe segunda copia, global,
+archivo o script.
+
+### Ciclo y consumidores preservados
+
+El handler `data-bib-action="generar-lista"` busca el conjunto vigente. Abrir
+reemplaza todo el estado con su referencia de `planeaciones` y selección vacía,
+muestra el modal, bloquea scroll y renderiza, en ese orden. Cierre, cancelación
+y backdrop solo cambian `open=false`, ocultan el DOM y liberan scroll; reabrir o
+cambiar de bloque reemplaza el objeto.
+
+El render conserva la exclusión de planeaciones que ya tienen lista mediante
+`planeacion_id`, la normalización de IDs, los checkboxes deshabilitados, los
+mensajes y la depuración que muta `selectedPlaneacionIds`. Los checkboxes
+mantienen `push`/`filter`. Submit conserva filtrado, normalización,
+deduplicación, mensaje de selección vacía, `submitting=true`, limpieza de error,
+render previo a `requireSession()` y el snapshot.
+
+`ListaCotejoGeneration` sigue recibiendo `{conjuntoId, selectedIds,
+planeaciones, accessToken}` una sola vez. Conserva cierre, activación del tab
+Listas, `pendingListaByBatchId`, POST único `{planeacion_ids:selectedIds}`,
+resultado `created/skipped`, espera de 1500 ms, cleanup, refetch y error
+persistente. No lee el modal directamente. Delete individual muta/refetchea los
+datos; delete de bloque limpia pending pero no el modal ni cancela procesos.
+Reload/navegación pierden el estado efímero; listas y planeaciones persistidas se
+reconstruyen desde backend.
+
+Selección, `BibliotecaTabs`, `BibliotecaAnexoModalState`, otros modales, Quick
+Create, Dashboard, `window.biblioteca`, `window.explorerState`, Archivados,
+legacy, API y backend quedaron intactos. Render visual, DOM, listeners y event
+delegation siguen perteneciendo a Fase 6.
+
+### Validaciones estáticas de 5.4
+
+- `node --check js/pages/biblioteca.page.js`: aprobado.
+- Jest: 1 suite y 2 pruebas aprobadas.
+- Smoke aislado: estado inicial, apertura/cierre/reapertura, selección,
+  depuración, submitting/error, cancelación, cambio de bloque, sin planeaciones,
+  lista existente y delegación aprobados.
+- Reversión mecánica: al revertir solo las delegaciones de 5.4,
+  `biblioteca.page.js` reconstruye `HEAD` byte por byte.
+- Búsqueda posterior: una fuente física, una superficie léxica, sin consumidor
+  desconocido ni global/script nuevo.
+
+### Riesgos preservados
+
+Render muta selección; `requireSession()` nulo puede dejar `submitting=true`;
+close conserva el resto del objeto; estado perdido tras reload/navegación; IDs
+String/Number; delete no cancela generación; error de pending persiste; cleanup
+de éxito espera 1500 ms; `pendingListaByBatchId` conserva ownership separado.
+No se corrigió ninguno.
+
+### Validación manual de 5.4
+
+**Aprobada explícitamente por el usuario.** Se confirmaron apertura y
+planeaciones correctas; selección/deselección, cierre/reapertura, cancelación
+sin request ni pending, cambio de bloque sin cruce, planeación con lista
+existente, generación individual y múltiple, pending/cleanup correctos,
+reutilización sin `submitting` bloqueado, delete/reapertura,
+reload/navegación, modal de anexos y otros modales intactos, regresión
+acumulativa y ausencia de errores nuevos.
+
+Evidencia resumida: `[listas-cotejo] generate:start` con
+`planeacionesCount:1`, `[lista-cotejo] lista_generada_por_id` y
+`[listas-cotejo] generate:success` con `created:1`, `skipped:0`. La regresión
+acumulativa confirmó además generación de anexos, examen con polling/reintentos/
+fallback, generación de planeaciones y deletes de planeación y bloque.
+
+El fallo externo al guardar métricas porque `public.ia_metrics` no aparece en
+el schema cache permanece fuera de alcance; no fue causado ni corregido por
+5.4. Los riesgos del modal documentados arriba permanecen preservados.
+
+**Estado previo al commit:** implementación, validaciones estáticas y validación
+manual aprobadas; commit pendiente. Fase 5 continúa En progreso.
+
+### Siguiente corte propuesto
+
+**A. Modal individual de exámenes**, sin número definitivo y no iniciado. Solo
+puede abrirse después de la aprobación manual de 5.4.

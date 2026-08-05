@@ -102,10 +102,20 @@ superficie léxica `BibliotecaAnexoModalState`, sin moverlo, copiarlo ni exponer
 una global. Apertura, cierre, selección, depuración desde render, `submitting`,
 error y delegación a `AnexoGeneration` conservan su orden y expresiones. La
 implementación, las validaciones estáticas y la validación manual están
-aprobadas; el commit permanece pendiente. `BibliotecaAnexoModalState` quedó
+aprobadas; la sesión quedó commiteada en `f05e730`. `BibliotecaAnexoModalState` quedó
 aprobada, `bibliotecaState.anexoModal` continúa como única fuente de verdad y
-`AnexoGeneration`/`anexosGenerating` permanecen preservados. Fase 5 continúa En
-progreso.
+`AnexoGeneration`/`anexosGenerating` permanecen preservados. La Sesión 5.4
+encapsuló literalmente `bibliotecaState.listaModal` mediante la superficie
+léxica `BibliotecaListaModalState`: apertura, cierre, selección, depuración
+desde render, `submitting`, error y snapshot hacia `ListaCotejoGeneration`
+conservan la fuente física, el shape, el orden y las expresiones previas. La
+generación, `pendingListaByBatchId`, el cleanup de 1500 ms, render, eventos,
+selección, tabs y los demás modales permanecen intactos. Implementación y
+validaciones estáticas y validación manual aprobadas; commit pendiente.
+`BibliotecaListaModalState` quedó aprobada,
+`bibliotecaState.listaModal` sigue siendo la única fuente de verdad y
+`ListaCotejoGeneration`/`pendingListaByBatchId` permanecen preservados. Fase 5
+continúa En progreso.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

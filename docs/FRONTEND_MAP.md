@@ -1271,8 +1271,9 @@ validaciones estáticas y la validación manual de la Sesión 5.1 están aprobad
 el corte quedó commiteado en `1b4c620`. La implementación, las validaciones
 estáticas y la validación manual de la Sesión 5.2 están aprobadas; el corte quedó
 commiteado en `f5bbfdd` y Fase 5 continúa En progreso. La Sesión 5.3 tiene
-implementación, validaciones estáticas y validación manual aprobadas; no tiene
-commit.
+implementación, validaciones estáticas y validación manual aprobadas; quedó
+commiteada en `f05e730`. La Sesión 5.4 está implementada con validaciones
+estáticas y validación manual aprobadas; commit pendiente.
 
 ### Propietarios confirmados
 
@@ -1306,8 +1307,8 @@ de estos objetos desde tests; la suite existente no cubre estado de Biblioteca.
 | `pendingExamenByBatchId` | `{}`; mapa a `{message,error}` | `ExamGeneration` y delete de bloque | tab Exámenes | Nace después del job; completed/delete limpia; failed/timeout permanece; reload pierde `jobId` y polling | Polling, render, delete y API | Generación activa; no reanuda job persistido; F5 |
 | `pendingListaByBatchId` | `{}`; mapa a `{items,result,error}` | `ListaCotejoGeneration` y delete de bloque | tab Listas | Éxito espera 1500 ms y limpia/refetch; error queda; delete/reload limpia | Request largo, render y delete | Generación activa; no representa detalle de skipped por item; F5 |
 | `anexosGenerating` | `{}`; mapa anidado `batchId -> planeacionId -> {titulo,materia,nivel,status,errorMessage}` | `AnexoGeneration`, wrappers de generación/regeneración y delete de bloque | tab y modal de Anexos | Éxito por item limpia; refetch con algún éxito elimina el mapa completo; fallo total queda; reload limpia | Requests secuenciales, render, delete y generación | Generación activa; múltiples escritores y cleanup asimétrico; F5 |
-| `anexoModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaAnexoModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `AnexoGeneration` | Open reemplaza el objeto; close solo cambia `open`; reload limpia | DOM, pending, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; estado F5, render F6; implementación, estáticas y manual de 5.3 aprobadas; commit pendiente |
-| `listaModal` | Mismo patrón, sin tipos/cantidades | open/close, render, checkboxes y submit | modal DOM y `ListaCotejoGeneration` | Open reemplaza; close solo `open`; reload limpia | DOM, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; F5/F6 |
+| `anexoModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaAnexoModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `AnexoGeneration` | Open reemplaza el objeto; close solo cambia `open`; reload limpia | DOM, pending, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; estado F5, render F6; 5.3 aprobada y commiteada en `f05e730` |
+| `listaModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaListaModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `ListaCotejoGeneration` | Open reemplaza; close solo `open`; render filtra selección; reload limpia | DOM, API y generación | Biblioteca vigente; sesión nula puede dejar `submitting`; estado F5, render F6; implementación, estáticas y manual de 5.4 aprobadas; commit pendiente |
 | `examModal` | Modal más `{unidadId,selectedTypes,questionCounts}` | open/close, listeners y submit | modal DOM y `ExamGeneration` | Open reemplaza; close solo `open`; reload limpia | DOM, payload y polling | Biblioteca vigente; sesión nula puede dejar `submitting`; contratos de payload protegidos; F5/F6 |
 | `agregarModal` | `{open,conjuntoId,unidadId,materia,nivel,unidad,temas,error}` | open/close, inputs/selects y submit | modal DOM y `PlaneacionGeneration` | Open reemplaza; close solo `open`; snapshot previo a generar; reload limpia | DOM, SSE y generación | Biblioteca vigente; render/DOM capturan parte del estado; F5/F6 |
 
@@ -1507,18 +1508,67 @@ reorganizaron. `anexosGenerating`, API, payload `{planeacion_id}`, generación,
 regeneración, pending y otros modales quedaron intactos.
 
 Estado de la Sesión 5.3: **Implementación aprobada; validaciones estáticas
-aprobadas; validación manual aprobada; commit pendiente**. La validación manual
+aprobadas; validación manual aprobada; commit `f05e730`**. La validación manual
 confirmó apertura, selección/reapertura, cancelación sin request ni pending,
 cambio de bloque, generación individual y múltiple secuencial, pending correcto,
 reutilización, delete/reapertura, reload/navegación, otros modales y regresión
 acumulativa sin errores nuevos. Los escenarios opcionales sin planeaciones
 elegibles y error/resultado parcial no se confirmaron y no bloquean.
 
+### Sesión 5.4 — estado del modal de generación de listas de cotejo
+
+`BibliotecaListaModalState` es una superficie léxica dentro de
+`biblioteca.page.js`. La única fuente física continúa en
+`bibliotecaState.listaModal`, con el valor inicial exacto `{open:false,
+conjuntoId:null, planeaciones:[], selectedPlaneacionIds:[], submitting:false,
+error:""}`. Expone solo `getState`, `open`, `close`,
+`setSelectedPlaneacionIds`, `addSelectedPlaneacionId`, `setSubmitting` y
+`setError`; no crea copia, global, archivo ni script.
+
+`data-bib-action="generar-lista"` entrega el bloque vigente. Abrir reemplaza el
+objeto con la referencia actual de `planeaciones` y selección vacía; el modal se
+muestra antes de renderizar. Cerrar, cancelar y backdrop solo fijan `open=false`
+y ocultan el DOM. El render conserva la exclusión por `lista.planeacion_id`, la
+normalización de IDs, los checkboxes deshabilitados, mensajes y la depuración
+que muta selección. Los listeners conservan `push`/`filter` y vuelven a
+renderizar.
+
+Submit vuelve a excluir listas persistidas, normaliza/deduplica IDs, conserva
+`Selecciona al menos una planeacion.`, fija `submitting=true`, limpia error,
+renderiza y luego solicita sesión. El riesgo de sesión nula con `submitting`
+atascado permanece. `ListaCotejoGeneration` recibe exactamente `{conjuntoId,
+selectedIds, planeaciones, accessToken}`; cierra, activa Listas, crea
+`pendingListaByBatchId`, ejecuta un POST con `{planeacion_ids:selectedIds}` y,
+en éxito, espera 1500 ms, limpia pending y hace refetch. En error conserva el
+pending con mensaje. Ninguna de esas operaciones fue modificada.
+
+Reabrir o cambiar de bloque reemplaza el estado; delete individual se refleja
+en el conjunto/refetch y delete de bloque no cancela ni limpia explícitamente
+el modal. Reload/navegación reinician el estado efímero; planeaciones y listas
+persistidas sí se reconstruyen por backend. Selección de bloque y tabs solo son
+consumidores indirectos; Quick Create, `window.biblioteca`,
+`window.explorerState`, Archivados y legacy no consumen este modal.
+
+Estado de 5.4: **implementación, validaciones estáticas y validación manual
+aprobadas; commit pendiente**. La validación confirmó apertura y planeaciones
+correctas, selección/reapertura, cancelación sin request ni pending, cambio de
+bloque, lista existente, generación individual y múltiple, pending/cleanup,
+reutilización, delete/reapertura, reload/navegación, modal de anexos, otros
+modales y regresión acumulativa sin errores nuevos. Evidencia resumida:
+`[listas-cotejo] generate:start` con una planeación,
+`[lista-cotejo] lista_generada_por_id` y
+`[listas-cotejo] generate:success` con `created:1`, `skipped:0`.
+Render visual, HTML, listeners y event delegation pertenecen a Fase 6 y
+permanecen sin reorganizar.
+
+El fallo externo `public.ia_metrics` ausente del schema cache permanece fuera
+de alcance y no es una regresión de 5.4.
+
 ### Siguiente corte propuesto
 
-**Auditar otro estado modal individual.** Sin número definitivo y no iniciado.
-Mantiene el corte por una sola shape modal sin mezclar pending, render general
-ni otros dominios.
+**A. Modal individual de exámenes.** Sin número definitivo y no iniciado;
+mantiene un solo shape modal sin mezclar pending, polling, render general ni
+otros dominios.
 
 ## Riesgos priorizados
 

@@ -952,7 +952,9 @@ Las pruebas funcionales de cortes posteriores de Fase 5 permanecen pendientes.
 La Sesión 5.1 quedó aprobada y commiteada en `1b4c620`; la implementación, las
 validaciones estáticas y la validación manual de la Sesión 5.2 están aprobadas,
 con commit `f5bbfdd`. La Sesión 5.3 tiene implementación y validaciones
-estáticas y validación manual aprobadas; no tiene commit.
+estáticas y validación manual aprobadas; quedó commiteada en `f05e730`. La
+Sesión 5.4 tiene implementación y validaciones estáticas aprobadas; su
+validación manual está aprobada y el commit permanece pendiente.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -1056,5 +1058,47 @@ Evidencia: `[anexos] generate:success` para `planeacionId` 359, 360 y 361;
 sin errores nuevos.
 
 No se debe solicitar ni registrar tokens, sesiones, prompts o datos personales.
-La Fase 5 continúa En progreso. Siguiente corte propuesto: **Auditar otro estado
-modal individual**, sin número definitivo y no iniciado.
+La Fase 5 continúa En progreso.
+
+## Fase 5 — Sesión 5.4: estado del modal de generación de listas de cotejo
+
+La extracción encapsula exclusivamente `bibliotecaState.listaModal` mediante
+`BibliotecaListaModalState`. Fuente física, shape, valores, orden, render,
+eventos, `ListaCotejoGeneration`, payload y `pendingListaByBatchId` permanecen.
+Las validaciones estáticas y el smoke no sustituyen esta matriz.
+
+**Validación manual: Aprobada explícitamente por el usuario.**
+
+| Prueba | Evidencia esperada | Estado |
+| --- | --- | --- |
+| 1. Apertura básica | bloque con planeaciones; modal muestra las correctas; consola limpia | Aprobada |
+| 2. Selección y reapertura | marcar/desmarcar, cerrar y reabrir conserva exactamente el comportamiento previo | Aprobada |
+| 3. Cancelación | cero requests y cero pending nuevo; reapertura funcional | Aprobada |
+| 4. Cambio de bloque | abrir en A y luego B; solo planeaciones de B y sin selección cruzada | Aprobada |
+| 5. Planeación con lista existente | inclusión/exclusión, checkbox, mensaje y disponibilidad conservan la regla previa | Aprobada |
+| 6. Sin planeaciones elegibles | estado visual previo; solo si ocurre natural y seguro | No ejecutada o no confirmada explícitamente; no bloquea |
+| 7. Generación individual | cierre, tab Listas, pending, resultado y persistencia tras reload | Aprobada |
+| 8. Generación múltiple | request/comportamiento previo, resultados sin cruce, cleanup y reload | Aprobada |
+| 9. Reutilización | reabrir sin submitting bloqueado; reconstrucción; cerrar sin request adicional | Aprobada |
+| 10. Error o parcial | feedback/cleanup previos solo si ocurre naturalmente; no forzar | No ejecutada; no ocurrió naturalmente; no bloquea |
+| 11. Delete y reapertura | eliminar lista, esperar refetch y confirmar disponibilidad previa de la planeación | Aprobada |
+| 12. Reload y navegación | cerrar, reload, reabrir y alternar bloques; reconstrucción desde datos actuales | Aprobada |
+| 13. Modal de anexos | `BibliotecaAnexoModalState`, apertura, selección, cierre y reapertura intactos | Aprobada |
+| 14. Otros modales | Planeaciones y Exámenes intactos | Aprobada |
+| 15. Regresión acumulativa | selección, tabs, cuatro dominios, previews, descargas, delete y Quick Create sin errores | Aprobada |
+
+Evidencia real: `[listas-cotejo] generate:start` con `planeacionesCount:1`,
+`[lista-cotejo] lista_generada_por_id` y
+`[listas-cotejo] generate:success` con `created:1`, `skipped:0`. La regresión
+acumulativa confirmó generación de anexos, examen con polling, reintentos y
+fallback, generación de planeaciones, delete de planeación y delete de bloque,
+sin errores nuevos.
+
+El fallo externo de `public.ia_metrics` ausente del schema cache no es una
+regresión de 5.4 y permanece fuera de alcance. Render que muta selección,
+sesión nula con posible `submitting=true`, cierre parcial, estado efímero, IDs
+String/Number, delete sin cancelación, pending de error visible, cleanup de
+1500 ms y ownership separado de pending permanecen como riesgos preservados.
+
+Siguiente corte propuesto tras aprobar 5.4: **A. Modal individual de exámenes**,
+sin número definitivo y no iniciado.
