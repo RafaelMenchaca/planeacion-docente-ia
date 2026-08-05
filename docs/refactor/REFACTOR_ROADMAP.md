@@ -568,9 +568,19 @@ contratos. La implementación, las validaciones estáticas y la validación manu
 están aprobadas; la sesión quedó commiteada en `f5bbfdd`. Fase 5 continúa **En
 progreso**.
 
-El siguiente corte formal es **Sesión 5.3 — Extracción literal del estado del
-modal de generación de anexos de Biblioteca**. Permanece pendiente y no iniciada;
-debe reintentarse desde su puerta inicial.
+La **Sesión 5.3 — Extracción literal del estado del modal de generación de
+anexos de Biblioteca** encapsuló el único objeto físico
+`bibliotecaState.anexoModal` mediante la superficie léxica
+`BibliotecaAnexoModalState`. Preservó shape, reemplazo de apertura, cierre
+parcial, selección, depuración desde render, `submitting`, error, validaciones y
+delegación a `AnexoGeneration`; no modificó generación, pending, render visual,
+eventos, selección, tabs, otros modales, Quick Create ni backend. La
+implementación, las validaciones estáticas y la validación manual están
+**Aprobadas**; el commit de 5.3 permanece pendiente. Fase 5 continúa **En
+progreso**.
+
+Siguiente corte propuesto, sin número definitivo y no iniciado: **Auditar otro
+estado modal individual**.
 
 ### Dependencias
 

@@ -96,9 +96,16 @@ la superficie léxica `BibliotecaTabs`, sin moverlo ni duplicarlo. El fallback
 eventos, Quick Create y orden de scripts permanecen. La implementación, las
 validaciones estáticas y la validación manual de 5.2 están aprobadas; la sesión
 quedó commiteada en `f5bbfdd`. `BibliotecaTabs`, la única fuente de verdad y el
-fallback `planeaciones` permanecen preservados. La Sesión 5.3 — Extracción
-literal del estado del modal de generación de anexos de Biblioteca está
-pendiente y no iniciada; Fase 5 continúa En progreso.
+fallback `planeaciones` permanecen preservados. La Sesión 5.3 encapsuló
+literalmente el estado existente `bibliotecaState.anexoModal` mediante la
+superficie léxica `BibliotecaAnexoModalState`, sin moverlo, copiarlo ni exponer
+una global. Apertura, cierre, selección, depuración desde render, `submitting`,
+error y delegación a `AnexoGeneration` conservan su orden y expresiones. La
+implementación, las validaciones estáticas y la validación manual están
+aprobadas; el commit permanece pendiente. `BibliotecaAnexoModalState` quedó
+aprobada, `bibliotecaState.anexoModal` continúa como única fuente de verdad y
+`AnexoGeneration`/`anexosGenerating` permanecen preservados. Fase 5 continúa En
+progreso.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

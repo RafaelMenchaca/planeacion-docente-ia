@@ -12,7 +12,7 @@
 ## Estado del roadmap
 
 - **Última fase cerrada:** 4 — Generación y polling.
-- **Fase actual:** 5 — Estado de Biblioteca, En progreso por apertura documental.
+- **Fase actual:** 5 — Estado de Biblioteca, En progreso.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -29,7 +29,7 @@
 - **Validación documental de 5.0:** aprobada explícitamente por el usuario.
 - **Sesión 5.1:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `1b4c620`.
 - **Sesión 5.2:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f5bbfdd`.
-- **Sesión 5.3:** pendiente y no iniciada.
+- **Sesión 5.3:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -53,7 +53,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** siguiente corte propuesto: auditar un único estado modal o un único pending map; no iniciado y sin número definitivo.
+- **Continuación:** siguiente corte propuesto — auditar otro estado modal individual; no iniciado y sin número definitivo.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -62,8 +62,8 @@ decisión formal de cierre también fueron aprobadas. La puerta de la Sesión 5.
 pasó y Fase 5 quedó En progreso; la Sesión 5.1 completó y validó después el
 primer corte funcional en `1b4c620`. La Sesión 5.2 implementó el ownership
 léxico de `activeTab`; implementación, validaciones estáticas y validación manual
-están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 permanece pendiente y
-no iniciada.
+están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 tiene implementación,
+validaciones estáticas y validación manual aprobadas; no tiene commit.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3265,6 +3265,95 @@ bloquea.
 
 ### Siguiente paso
 
-Reintentar **Fase 5 — Sesión 5.3: Extracción literal del estado del modal de
-generación de anexos de Biblioteca** desde su puerta inicial. Permanece pendiente
-y no iniciada.
+La Sesión 5.3 quedó ejecutada a continuación.
+
+## Fase 5 — Sesión 5.3: Extracción literal del estado del modal de generación de anexos de Biblioteca
+
+### Puerta, decisión y fuente de verdad
+
+- Frontend: `refactor-front`, inicio real en `88844a8`, working tree limpio.
+- Sesión 5.0: `525a21a`; corrección de apertura: `872fdf0`.
+- Sesión 5.1: `1b4c620`; cierre documental: `23c5355`.
+- Sesión 5.2: `f5bbfdd`; cierre documental: `88844a8`.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, limpio.
+- Riesgo: alto.
+- Decisión: **A. Extracción segura implementada.**
+
+La búsqueda global confirmó una definición y todos los accesos directos de
+`bibliotecaState.anexoModal`. Su shape inicial permanece exactamente
+`{open:false, conjuntoId:null, planeaciones:[], selectedPlaneacionIds:[],
+submitting:false, error:""}`. `BibliotecaAnexoModalState` es una superficie
+léxica dentro de `biblioteca.page.js`; no crea un segundo objeto ni se publica
+en `window`. Sus operaciones `getState`, `open`, `close`,
+`setSelectedPlaneacionIds`, `addSelectedPlaneacionId`, `setSubmitting` y
+`setError` delegan directamente sobre la única propiedad física.
+
+### Ciclo y consumidores preservados
+
+La apertura recibe el conjunto del dataset/handler vigente, copia la misma
+referencia de `planeaciones`, reemplaza todo el estado con selección vacía,
+muestra el modal y renderiza. Cierre, cancelación y backdrop solo cambian
+`open=false` y el DOM. Reabrir reemplaza nuevamente el objeto; cambiar de bloque
+elimina la selección anterior. No existe persistencia del modal.
+
+El render conserva la exclusión de planeaciones con anexo o pending, la
+normalización por `String`, los badges/mensajes y la depuración que muta
+`selectedPlaneacionIds`. Los checkboxes conservan `push`/`filter` y IDs de
+dataset. Submit conserva normalización, deduplicación, mensaje vacío,
+`submitting=true`, limpieza de error, orden de `requireSession()` y snapshot.
+La sesión nula puede seguir dejando `submitting` atascado; el catch conserva su
+reset y mensaje. No se corrigió.
+
+`AnexoGeneration` sigue recibiendo `{conjuntoId, selectedIds, planeaciones,
+accessToken}` y conserva pending, cierre, tab Anexos, secuencia, parciales,
+errores, actualización optimista y refetch. No lee el modal directamente.
+`anexosGenerating`, regeneración, delete individual/de bloque, selección,
+`BibliotecaTabs`, otros modales, Quick Create, Dashboard, `window.biblioteca`,
+`window.explorerState`, Archivados y legacy quedaron intactos. Planeaciones y
+anexos persistidos se reconstruyen por refetch; open/selección/submitting/error
+no son reconstruibles.
+
+### Validaciones estáticas de 5.3
+
+- `node --check js/pages/biblioteca.page.js`: aprobado.
+- Jest: 1 suite y 2 pruebas aprobadas.
+- Smoke aislado: 27 comprobaciones de estado inicial, apertura/cierre/reapertura,
+  selección, depuración, submitting/error, cancelación, cambio de bloque, sin
+  planeaciones, planeación cubierta y delegación.
+- Reversión mecánica: al sustituir solo las delegaciones de 5.3, el archivo
+  reconstruye `HEAD` byte por byte.
+- Búsqueda global: una fuente física, una superficie léxica, cero consumidores
+  desconocidos y ningún global/script nuevo.
+
+### Riesgos preservados
+
+Render sigue mutando selección; una sesión nula puede dejar `submitting=true`;
+el estado se pierde con reload/navegación; close conserva el resto del objeto;
+IDs String/Number y múltiples puntos de transición no se reinterpretan; delete
+no cancela generación; pending tiene ownership separado. No son correcciones de
+5.3.
+
+### Validación manual de 5.3
+
+**Validación manual: Aprobada explícitamente por el usuario.** Se confirmaron
+apertura con las planeaciones correctas; selección/deselección y reapertura;
+cancelación sin POST ni pending; cambio de bloque sin estado cruzado; planeación
+con anexo existente; generación individual y múltiple secuencial; pending en las
+cards correctas; reutilización sin `submitting` bloqueado; delete y reapertura;
+reload/navegación; otros modales intactos; regresión acumulativa y ausencia de
+errores nuevos.
+
+Evidencia real resumida: `[anexos] generate:success` para las planeaciones 359,
+360 y 361, además de `[anexos] delete:success`. No se registraron tokens,
+sesiones, UUIDs completos ni datos personales. El escenario sin planeaciones
+elegibles no fue confirmado explícitamente y el error/resultado parcial no
+ocurrió de forma natural; ambos quedan no ejecutados y no bloquean.
+
+Los riesgos documentados permanecen: render muta `selectedPlaneacionIds`;
+sesión nula puede dejar `submitting=true`; el objeto cerrado puede conservarlo
+hasta reapertura; estado perdido tras reload/navegación; IDs String/Number;
+delete sin cancelación; y ownership separado de `anexosGenerating`.
+
+### Siguiente corte propuesto
+
+**Auditar otro estado modal individual**, sin número definitivo y no iniciado.

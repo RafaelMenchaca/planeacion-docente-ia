@@ -951,7 +951,8 @@ estáticas quedaron completadas en `525a21a`.
 Las pruebas funcionales de cortes posteriores de Fase 5 permanecen pendientes.
 La Sesión 5.1 quedó aprobada y commiteada en `1b4c620`; la implementación, las
 validaciones estáticas y la validación manual de la Sesión 5.2 están aprobadas,
-con commit `f5bbfdd`. La Sesión 5.3 permanece pendiente y no iniciada.
+con commit `f5bbfdd`. La Sesión 5.3 tiene implementación y validaciones
+estáticas y validación manual aprobadas; no tiene commit.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -1020,6 +1021,40 @@ Create, regresión acumulativa y ausencia de errores nuevos.
 Prueba de último bloque: no ejecutada o no confirmada explícitamente; no
 bloquea.
 
-La Fase 5 continúa En progreso. La **Sesión 5.3 — Extracción literal del estado
-del modal de generación de anexos de Biblioteca** permanece pendiente y no
-iniciada; debe reintentarse desde su puerta inicial.
+La Fase 5 continúa En progreso. La Sesión 5.3 quedó implementada y se registra a
+continuación.
+
+## Fase 5 — Sesión 5.3: estado del modal de generación de anexos
+
+La extracción encapsula exclusivamente `bibliotecaState.anexoModal` mediante
+`BibliotecaAnexoModalState`. La única fuente física, shape, valores, orden,
+render, eventos, generación y pending permanecen. `node --check`, Jest (1 suite,
+2 pruebas), el smoke aislado de 27 comprobaciones y la reversión mecánica byte a
+byte contra `HEAD` quedaron aprobados.
+
+**Validación manual: Aprobada explícitamente por el usuario.**
+
+| Prueba | Evidencia esperada | Estado |
+| --- | --- | --- |
+| 1. Apertura básica | bloque con planeaciones; modal muestra las correctas; consola limpia | Aprobada |
+| 2. Selección | checkboxes cambian; cerrar/reabrir reconstruye exactamente como antes | Aprobada |
+| 3. Cancelación | cerrar/cancelar produce cero POST y cero pending; reapertura funcional | Aprobada |
+| 4. Cambio de bloque | abrir en A, cerrar, abrir en B; solo planeaciones de B y sin selección de A | Aprobada |
+| 5. Planeación ya cubierta | inclusión/exclusión, checkbox, mensaje y selección conservan la regla previa | Aprobada |
+| 6. Sin planeaciones elegibles | estado visual, botón y mensaje vigentes; solo si ocurre natural y seguro | No ejecutada o no confirmada explícitamente; no bloquea |
+| 7. Generación individual | cierre, tab Anexos, pending correcto, resultado y persistencia tras reload | Aprobada |
+| 8. Generación múltiple | secuencia vigente, pending por card, resultados sin cruce, cleanup y reload | Aprobada |
+| 9. Reutilización | reabrir tras generar sin submitting bloqueado; selección reconstruida; cerrar sin request | Aprobada |
+| 10. Error o parcial | feedback y cleanup vigentes solo si ocurre de forma natural; no forzar fallos | No ejecutada; no ocurrió de forma natural y segura; no bloquea |
+| 11. Delete y reapertura | eliminar anexo, reabrir y confirmar disponibilidad/selección previas | Aprobada |
+| 12. Reload y navegación | cerrar, reload, reabrir y alternar bloques; reconstrucción desde datos actuales | Aprobada |
+| 13. Otros modales | Planeaciones, Listas y Exámenes conservan sus estados | Aprobada |
+| 14. Regresión acumulativa | selección, tabs, cuatro dominios, previews, descargas, delete y Quick Create sin errores | Aprobada |
+
+Evidencia: `[anexos] generate:success` para `planeacionId` 359, 360 y 361;
+`[anexos] delete:success`; generación secuencial y pending por card confirmados;
+sin errores nuevos.
+
+No se debe solicitar ni registrar tokens, sesiones, prompts o datos personales.
+La Fase 5 continúa En progreso. Siguiente corte propuesto: **Auditar otro estado
+modal individual**, sin número definitivo y no iniciado.

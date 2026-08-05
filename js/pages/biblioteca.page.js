@@ -97,6 +97,39 @@ const BibliotecaTabs = {
   }
 };
 
+// Fase 5 â€” SesiÃ³n 5.3: ownership lÃ©xico del estado del modal de anexos.
+// La Ãºnica fuente de verdad permanece en bibliotecaState.anexoModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaAnexoModalState = {
+  getState() {
+    return bibliotecaState.anexoModal;
+  },
+  open(state) {
+    bibliotecaState.anexoModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.anexoModal.open = false;
+  },
+  setSelectedPlaneacionIds(ids) {
+    bibliotecaState.anexoModal.selectedPlaneacionIds = ids;
+    return ids;
+  },
+  addSelectedPlaneacionId(id) {
+    bibliotecaState.anexoModal.selectedPlaneacionIds.push(id);
+    return id;
+  },
+  setSubmitting(value) {
+    bibliotecaState.anexoModal.submitting = value;
+    return value;
+  },
+  setError(value) {
+    bibliotecaState.anexoModal.error = value;
+    return value;
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -1299,14 +1332,14 @@ function onBibliotecaClick(event) {
 
 function openBibliotecaAnexoCreateModal(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
-  bibliotecaState.anexoModal = {
+  BibliotecaAnexoModalState.open({
     open:                  true,
     conjuntoId:            conjunto.id,
     planeaciones,
     selectedPlaneacionIds: [],
     submitting:            false,
     error:                 ""
-  };
+  });
   const modal = document.getElementById("biblioteca-anexo-create-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -1314,7 +1347,7 @@ function openBibliotecaAnexoCreateModal(conjunto) {
 }
 
 function closeBibliotecaAnexoCreateModal() {
-  bibliotecaState.anexoModal.open = false;
+  BibliotecaAnexoModalState.close();
   const modal = document.getElementById("biblioteca-anexo-create-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -1324,7 +1357,7 @@ function renderBibliotecaAnexoCreateModal() {
   const modal = document.getElementById("biblioteca-anexo-create-modal");
   if (!modal) return;
 
-  const state    = bibliotecaState.anexoModal;
+  const state    = BibliotecaAnexoModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
   const generatingMap    = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
@@ -1342,7 +1375,7 @@ function renderBibliotecaAnexoCreateModal() {
     availableIds.has(normalizeBibliotecaId(id))
   );
   if (selectedValidIds.length !== state.selectedPlaneacionIds.length) {
-    bibliotecaState.anexoModal.selectedPlaneacionIds = selectedValidIds;
+    BibliotecaAnexoModalState.setSelectedPlaneacionIds(selectedValidIds);
   }
   const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0 && !state.submitting;
 
@@ -1429,13 +1462,15 @@ function renderBibliotecaAnexoCreateModal() {
         e.target.checked = false;
         return;
       }
+      const modalState = BibliotecaAnexoModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.anexoModal.selectedPlaneacionIds.includes(pid)) {
-          bibliotecaState.anexoModal.selectedPlaneacionIds.push(pid);
+        if (!modalState.selectedPlaneacionIds.includes(pid)) {
+          BibliotecaAnexoModalState.addSelectedPlaneacionId(pid);
         }
       } else {
-        bibliotecaState.anexoModal.selectedPlaneacionIds =
-          bibliotecaState.anexoModal.selectedPlaneacionIds.filter((id) => id !== pid);
+        BibliotecaAnexoModalState.setSelectedPlaneacionIds(
+          modalState.selectedPlaneacionIds.filter((id) => id !== pid)
+        );
       }
       renderBibliotecaAnexoCreateModal();
     });
@@ -1443,7 +1478,7 @@ function renderBibliotecaAnexoCreateModal() {
 }
 
 async function submitBibliotecaAnexoCreateModal() {
-  const state    = bibliotecaState.anexoModal;
+  const state    = BibliotecaAnexoModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes  = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
   const currentGenerating = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
@@ -1463,13 +1498,13 @@ async function submitBibliotecaAnexoCreateModal() {
   )];
 
   if (!selectedIds.length) {
-    bibliotecaState.anexoModal.error = "Selecciona al menos una planeacion.";
+    BibliotecaAnexoModalState.setError("Selecciona al menos una planeacion.");
     renderBibliotecaAnexoCreateModal();
     return;
   }
 
-  bibliotecaState.anexoModal.submitting = true;
-  bibliotecaState.anexoModal.error      = "";
+  BibliotecaAnexoModalState.setSubmitting(true);
+  BibliotecaAnexoModalState.setError("");
   renderBibliotecaAnexoCreateModal();
 
   try {
@@ -1486,8 +1521,8 @@ async function submitBibliotecaAnexoCreateModal() {
 
   } catch (error) {
     console.error("[biblioteca] Error iniciando anexos:", error);
-    bibliotecaState.anexoModal.submitting = false;
-    bibliotecaState.anexoModal.error      = error.message || "No se pudieron generar los anexos.";
+    BibliotecaAnexoModalState.setSubmitting(false);
+    BibliotecaAnexoModalState.setError(error.message || "No se pudieron generar los anexos.");
     renderBibliotecaAnexoCreateModal();
   }
 }
