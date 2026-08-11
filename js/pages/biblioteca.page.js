@@ -208,6 +208,38 @@ const BibliotecaExamModalState = {
   }
 };
 
+// Fase 5 — Sesión 5.6: ownership léxico del estado del modal de planeaciones.
+// La única fuente de verdad permanece en bibliotecaState.agregarModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaPlaneacionModalState = {
+  getState() {
+    return bibliotecaState.agregarModal;
+  },
+  open(state) {
+    bibliotecaState.agregarModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.agregarModal.open = false;
+  },
+  setTemas(temas) {
+    bibliotecaState.agregarModal.temas = temas;
+    return temas;
+  },
+  getTemaByLocalId(localId) {
+    return bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+  },
+  addTema(tema) {
+    bibliotecaState.agregarModal.temas.push(tema);
+    return tema;
+  },
+  setError(value) {
+    bibliotecaState.agregarModal.error = value;
+    return value;
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -2216,7 +2248,7 @@ function openBibliotecaAgregarModal(conjunto) {
     alert("Este bloque no tiene unidad vinculada. Para agregar planeaciones, usa el flujo normal de creacion desde la jerarquia.");
     return;
   }
-  bibliotecaState.agregarModal = {
+  BibliotecaPlaneacionModalState.open({
     open:       true,
     conjuntoId: conjunto.id,
     unidadId:   conjunto.unidad_id,
@@ -2225,7 +2257,7 @@ function openBibliotecaAgregarModal(conjunto) {
     unidad:     conjunto.unidad,
     temas:      [],
     error:      ""
-  };
+  });
   const modal = document.getElementById("biblioteca-agregar-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -2233,7 +2265,7 @@ function openBibliotecaAgregarModal(conjunto) {
 }
 
 function closeBibliotecaAgregarModal() {
-  bibliotecaState.agregarModal.open = false;
+  BibliotecaPlaneacionModalState.close();
   const modal = document.getElementById("biblioteca-agregar-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -2243,7 +2275,7 @@ function renderBibliotecaAgregarModal() {
   const modal = document.getElementById("biblioteca-agregar-modal");
   if (!modal) return;
 
-  const s = bibliotecaState.agregarModal;
+  const s = BibliotecaPlaneacionModalState.getState();
 
   const contextHtml = `
     <div class="rounded-xl border border-cyan-100 bg-cyan-50/60 px-3 py-2.5 text-sm text-slate-700">
@@ -2360,8 +2392,10 @@ function renderBibliotecaAgregarModal() {
   modal.querySelectorAll("[data-bib-agr-remove]").forEach(btn => {
     btn.addEventListener("click", () => {
       const localId = btn.dataset.bibAgrRemove;
-      bibliotecaState.agregarModal.temas =
-        bibliotecaState.agregarModal.temas.filter(t => t.localId !== localId);
+      const modalState = BibliotecaPlaneacionModalState.getState();
+      BibliotecaPlaneacionModalState.setTemas(
+        modalState.temas.filter(t => t.localId !== localId)
+      );
       renderBibliotecaAgregarModal();
     });
   });
@@ -2372,7 +2406,7 @@ function renderBibliotecaAgregarModal() {
       const localId = e.target.dataset.localId;
       const momento = e.target.dataset.momento;
       const val     = (e.target.value || "").trim();
-      const tema    = bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+      const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
       if (!tema) return;
       if (!tema.actividades_momentos) tema.actividades_momentos = {};
       if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {
@@ -2398,7 +2432,7 @@ function addBibliotecaAgregarTema() {
     return;
   }
   if (!Number.isFinite(duracion) || duracion < 10) {
-    bibliotecaState.agregarModal.error = "La duracion minima es 10 minutos.";
+    BibliotecaPlaneacionModalState.setError("La duracion minima es 10 minutos.");
     renderBibliotecaAgregarModal();
     return;
   }
@@ -2408,7 +2442,7 @@ function addBibliotecaAgregarTema() {
     const localId = sel.dataset.localId;
     const momento = sel.dataset.momento;
     const val     = (sel.value || "").trim();
-    const tema    = bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+    const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
     if (!tema) return;
     if (!tema.actividades_momentos) tema.actividades_momentos = {};
     if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {
@@ -2418,22 +2452,22 @@ function addBibliotecaAgregarTema() {
     }
   });
 
-  bibliotecaState.agregarModal.temas.push({
+  BibliotecaPlaneacionModalState.addTema({
     localId: `agr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     titulo,
     duracion,
     actividades_momentos: {}
   });
-  bibliotecaState.agregarModal.error = "";
+  BibliotecaPlaneacionModalState.setError("");
   renderBibliotecaAgregarModal();
   document.getElementById("bib-agr-titulo")?.focus();
 }
 
 async function submitBibliotecaAgregarModal() {
-  const s = bibliotecaState.agregarModal;
+  const s = BibliotecaPlaneacionModalState.getState();
 
   if (s.temas.length === 0) {
-    bibliotecaState.agregarModal.error = "Agrega al menos un tema.";
+    BibliotecaPlaneacionModalState.setError("Agrega al menos un tema.");
     renderBibliotecaAgregarModal();
     return;
   }
@@ -2443,7 +2477,7 @@ async function submitBibliotecaAgregarModal() {
     const localId = sel.dataset.localId;
     const momento = sel.dataset.momento;
     const val     = (sel.value || "").trim();
-    const tema    = bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+    const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
     if (!tema) return;
     if (!tema.actividades_momentos) tema.actividades_momentos = {};
     if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {

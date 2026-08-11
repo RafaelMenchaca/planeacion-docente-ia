@@ -129,7 +129,24 @@ polling permanecen preservados. El contrato
 campos junto con `tipos_pregunta` y `cantidades_pregunta`, y no envía
 `tema_ids`; backend sigue resolviendo los temas desde `planeacion_ids`.
 Implementación, validaciones estáticas y validación manual aprobadas; commit
-pendiente. Fase 5 continúa En progreso.
+`3842f20`. La Sesión 5.6 encapsuló literalmente
+`bibliotecaState.agregarModal` mediante la superficie léxica
+`BibliotecaPlaneacionModalState`. El shape real permanece `{open, conjuntoId,
+unidadId, materia, nivel, unidad, temas, error}` —sin `submitting`— y conserva
+una sola fuente física. Apertura, cierre parcial, temas, actividades por
+momento, error, snapshot y delegación a `PlaneacionGeneration` mantienen sus
+expresiones y orden. `batch_id`, reutilización del bloque, SSE,
+`pendingPlaneacionesByBatchId`, tab Planeaciones, refetch, `duplicate_tema` y
+Quick Create permanecen fuera de la superficie e intactos. Implementación y
+validaciones estáticas aprobadas; validación manual pendiente de confirmación
+explícita del usuario. Fase 5 continúa En progreso.
+
+La auditoría acumulativa de 5.6 confirma que los cuatro modales vigentes poseen
+ownership léxico específico sobre una única propiedad física de
+`bibliotecaState`: `agregarModal`, `anexoModal`, `listaModal` y `examModal`.
+No existe store duplicado, `ModalState` universal, persistencia nueva ni global
+adicional. Generación, pending, render/eventos, Quick Create,
+`window.explorerState` y `window.biblioteca` conservan sus fronteras actuales.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

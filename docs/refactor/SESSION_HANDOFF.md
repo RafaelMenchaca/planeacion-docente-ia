@@ -31,7 +31,8 @@
 - **Sesión 5.2:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f5bbfdd`.
 - **Sesión 5.3:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f05e730`.
 - **Sesión 5.4:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `948d627`.
-- **Sesión 5.5:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
+- **Sesión 5.5:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `3842f20`.
+- **Sesión 5.6:** modal de Planeaciones encapsulado y auditoría acumulativa de modales completada; validaciones estáticas aprobadas; validación manual pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -55,7 +56,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** siguiente corte propuesto A — modal individual de planeaciones, no iniciado y sin número definitivo.
+- **Continuación:** validar manualmente 5.6; después, evaluar consolidación controlada del ownership de pending por dominio, no iniciada y sin número definitivo.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -67,8 +68,9 @@ léxico de `activeTab`; implementación, validaciones estáticas y validación m
 están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 quedó aprobada y
 commiteada en `f05e730`. La Sesión 5.4 quedó aprobada y commiteada en
 `948d627`. La Sesión 5.5 tiene implementación y validaciones estáticas
-aprobadas; su validación manual también quedó aprobada y el commit permanece
-pendiente.
+aprobadas; su validación manual también quedó aprobada y la sesión fue
+commiteada en `3842f20`. La Sesión 5.6 tiene implementación y validaciones
+estáticas aprobadas; su validación manual permanece pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3565,11 +3567,130 @@ forma natural; su comportamiento ya había sido validado previamente y no
 bloquea. Job failed, timeout, backend caído, credenciales inválidas, ausencia
 de planeaciones/tipos y error parcial tampoco se forzaron y no bloquean.
 
-**Estado previo al commit:** implementación, validaciones estáticas y
-validación manual aprobadas; contrato de exámenes preservado; commit pendiente.
+**Estado final:** implementación, validaciones estáticas y validación manual
+aprobadas; contrato de exámenes preservado; commit `3842f20`.
 Fase 5 continúa En progreso.
 
 ### Siguiente corte propuesto
 
-**A. Modal individual de planeaciones**, sin número definitivo y no iniciado.
-Solo puede abrirse después de la aprobación manual de 5.5.
+La Sesión 5.6 quedó ejecutada a continuación.
+
+## Fase 5 — Sesión 5.6: Estado del modal de Planeaciones + auditoría de cierre de estados modales
+
+### Puerta y decisión
+
+- Frontend: `refactor-front`, inicio real en `3842f20`, working tree limpio.
+- 5.5 quedó reconciliada como aprobada y commiteada en `3842f20`.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, limpio.
+- Riesgo: alto.
+- Decisión: **A. Extracción segura implementada.**
+
+La búsqueda global confirmó una sola fuente física para el modal vigente de
+Planeaciones: `bibliotecaState.agregarModal`. Todos sus accesos directos se
+encontraban en `biblioteca.page.js`; `PlaneacionGeneration` recibe un snapshot
+y no lee el modal. Quick Create usa `explorerState.quickCreate`, staging y la
+fachada `window.biblioteca`, no consume `agregarModal`.
+
+### Shape, ciclo y transiciones
+
+El valor inicial exacto permanece `{open:false, conjuntoId:null,
+unidadId:null, materia:"", nivel:"", unidad:null, temas:[], error:""}`. No
+existe propiedad `submitting`. Cada tema conserva `{localId,titulo,duracion,
+actividades_momentos}`.
+
+- `data-bib-action="agregar-planeacion"` resuelve el conjunto mediante
+  `findConjuntoById`; sin `unidad_id` muestra el alert previo y no abre.
+- Abrir reemplaza todo el estado con bloque/unidad/contexto y temas vacíos;
+  muestra el modal, bloquea scroll y renderiza, en ese orden.
+- Cerrar, cancelar y backdrop solo cambian `open=false`, ocultan el DOM y
+  liberan scroll. Reabrir o cambiar de bloque reemplaza el objeto.
+- Alta usa `#bib-agr-titulo` y `#bib-agr-duracion`, default 50, mínimo efectivo
+  10 y `localId` temporal; el `max=300` visual no se impone en el handler.
+- Baja usa `data-bib-agr-remove`. Actividades usan
+  `data-bib-agr-actividad`, `data-local-id` y `data-momento` para
+  `conocimientos_previos`, `desarrollo` y `cierre`.
+- Render, alta y submit capturan/mutan `actividades_momentos`; la extracción
+  conserva esas mutaciones y las deja para Fase 6.
+- Validaciones exactas: título vacío solo enfoca; duración inválida muestra
+  `La duracion minima es 10 minutos.`; submit vacío muestra
+  `Agrega al menos un tema.`.
+
+`BibliotecaPlaneacionModalState` es una superficie léxica privada con
+`getState`, `open`, `close`, `setTemas`, `getTemaByLocalId`, `addTema` y
+`setError`. Todas operan directamente sobre `bibliotecaState.agregarModal`; no
+existe copia, global, archivo o persistencia nueva.
+
+### Snapshot, generación y Quick Create preservados
+
+Submit captura selects pendientes y construye `temasSnap` con
+`{titulo,duracion,actividades_momentos,orden,generar_imagenes_en:[]}`. Delega
+una vez a `PlaneacionGeneration.generateFromBiblioteca({conjuntoId,unidadId,
+materia,nivel,temasSnap})`.
+
+El coordinador permanece intacto: cierra inmediatamente, activa Planeaciones,
+crea `pendingPlaneacionesByBatchId[conjuntoId]`, renderiza y llama
+`generarPlaneacionesUnidadConProgreso`. El body sigue siendo
+`{temas,materia,nivel,batch_id:conjuntoId}`. La API usa
+`POST /api/unidades/:unidadId/generar?stream=1`, Bearer, SSE manual y fallback
+JSON en error HTTP 5xx. Eventos `item_started`, `item_completed`, `item_error`,
+`item_skipped` y `done`, resultados, conteos, cleanup, selección y refetch no
+cambiaron. `duplicate_tema` sigue produciendo skipped.
+
+El modal no usa `force_new_batch`; reutiliza el batch mediante `batch_id`.
+Quick Create permanece separado y puede enviar `force_new_batch:true`/`mode:
+"create"` solo al crear un bloque nuevo. `requireSession()` se ejecuta dentro
+del service; si devuelve null no hay `submitting` modal que limpiar y se
+conserva el comportamiento previo del coordinador con resultado nulo.
+
+### Auditoría acumulativa de cierre de modales
+
+| Modal | Fuente / superficie | Shape y selección | Open / close | Submitting / error | Generador | Pending / tab | Persistencia y riesgos | Estado manual |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Planeaciones | `bibliotecaState.agregarModal` / `BibliotecaPlaneacionModalState` | bloque, unidad, contexto, temas y actividades por momento | open reemplaza; close solo cambia `open`; reopen reconstruye | No aplica / `error` string | `PlaneacionGeneration` | `pendingPlaneacionesByBatchId` / Planeaciones | Ninguna; render muta actividades, sesión nula y estado efímero | Pendiente 5.6 |
+| Anexos | `bibliotecaState.anexoModal` / `BibliotecaAnexoModalState` | bloque, planeaciones y `selectedPlaneacionIds` | open reemplaza; close parcial; reopen reconstruye | boolean / `error` string | `AnexoGeneration` | `anexosGenerating` / Anexos | Ninguna; render muta selección, sesión nula y estado efímero | Aprobada 5.3 |
+| Listas | `bibliotecaState.listaModal` / `BibliotecaListaModalState` | bloque, planeaciones y `selectedPlaneacionIds` | open reemplaza; close parcial; reopen reconstruye | boolean / `error` string | `ListaCotejoGeneration` | `pendingListaByBatchId` / Listas | Ninguna; render muta selección, sesión nula y cleanup diferido | Aprobada 5.4 |
+| Exámenes | `bibliotecaState.examModal` / `BibliotecaExamModalState` | bloque, unidad, planeaciones, tipos y cantidades | open reemplaza; close parcial; reopen reconstruye | boolean / `error` string | `ExamGeneration` | `pendingExamenByBatchId` / Exámenes | Ninguna; polling no reanudable, sin cancelación y estado efímero | Aprobada 5.5 |
+
+Condiciones técnicas confirmadas: una fuente por modal; superficies léxicas y
+específicas; cero store duplicado o modal universal; generación y pending
+externos; render/eventos no absorbidos; Quick Create separado;
+`window.explorerState` no absorbido; `window.biblioteca` no ampliado; cero
+persistencia nueva. El cierre del subdominio queda pendiente únicamente de la
+validación manual de 5.6.
+
+### Validaciones estáticas de 5.6
+
+- `node --check js/pages/biblioteca.page.js`: aprobado.
+- Jest: 1 suite y 2 pruebas aprobadas.
+- Smoke aislado: 23 comprobaciones de shape, ausencia de submitting, unidad,
+  apertura/cierre/reapertura, cambio de bloque, temas, actividades, error,
+  validación, snapshot, delegación y superficies acumulativas aprobadas.
+- Reversión mecánica: 14 hunks reconstruyen `HEAD` exactamente.
+- Superficies protegidas: `BibliotecaSelection`, `BibliotecaTabs` y los tres
+  estados modales anteriores, 5/5 idénticos a `HEAD`.
+- Búsqueda posterior: una fuente física y sin consumidor desconocido.
+
+### Riesgos preservados
+
+No existe bloqueo `submitting`, por lo que el modal no impide doble submit por
+estado propio. Sesión nula conserva el camino previo con resultado nulo.
+Render/eventos mutan actividades; título vacío no genera error inline; máximo
+300 no se valida en el handler; IDs y `localId` mantienen tipos previos; close
+conserva temas hasta reapertura; reload/navegación pierden estado; request SSE
+no es cancelable ni reanudable; delete no cancela generación; skipped puede
+limpiarse con error_count cero; `public.ia_metrics` y `duplicate_tema` quedan
+fuera de alcance. No se corrigió ninguno.
+
+### Validación manual de 5.6
+
+**Pendiente de confirmación explícita del usuario.** Debe cubrir el modal de
+Planeaciones, la regresión mínima de los cuatro modales y la regresión general
+registrada en `TEST_MATRIX.md`. No deben forzarse fallos de backend, sesión, IA
+o timeout.
+
+### Siguiente corte recomendado
+
+Evaluar **Consolidación de ownership de pending states de Biblioteca**, sin
+número y no iniciada. Requiere sub-gate independiente para Planeaciones,
+Anexos, Listas y Exámenes; debe conservar shapes, writers, requests, SSE,
+polling y cleanup, y no crear un `PendingState` universal.

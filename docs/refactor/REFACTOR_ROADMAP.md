@@ -598,13 +598,33 @@ cierre parcial, bloque, unidad, planeaciones, selección, tipos, cantidades,
 creación de job, `pendingExamenByBatchId`, polling, refetch, render, eventos,
 selección, tabs, otros modales, Quick Create ni backend. Implementación y
 validaciones estáticas **Aprobadas**; validación manual **Aprobada**. La sesión
-queda **Aprobada, commit pendiente**. El contrato de exámenes permanece:
+quedó **Aprobada y commiteada en `3842f20`**. El contrato de exámenes permanece:
 Biblioteca envía `unidad_id`, `batch_id`, `planeacion_ids`,
 `tipos_pregunta` y `cantidades_pregunta`, no envía `tema_ids`, y backend
 resuelve los temas desde `planeacion_ids`. Fase 5 continúa **En progreso**.
 
-Siguiente corte propuesto, sin número definitivo y no iniciado: **A. Modal
-individual de planeaciones**.
+La **Sesión 5.6 — Estado del modal de Planeaciones + auditoría de cierre de
+estados modales** encapsuló el único objeto físico
+`bibliotecaState.agregarModal` mediante `BibliotecaPlaneacionModalState`.
+Preservó el shape real —sin `submitting`—, reemplazo de apertura, cierre
+parcial, temas, actividades por momento, error, validación y snapshot hacia
+`PlaneacionGeneration`; no modificó `batch_id`, SSE,
+`pendingPlaneacionesByBatchId`, `duplicate_tema`, conteos, refetch, render,
+eventos ni Quick Create. Implementación y validaciones estáticas **Aprobadas**;
+validación manual **Pendiente de confirmación explícita del usuario**. Fase 5
+continúa **En progreso**.
+
+La auditoría acumulativa confirmó ownership específico y una fuente física por
+modal para Planeaciones, Anexos, Listas y Exámenes. No existen fuentes
+duplicadas, store/modal universal, persistencia nueva o absorción de Quick
+Create/`explorerState`; generación, pending y render/eventos conservan sus
+fronteras. El subdominio queda técnicamente cubierto, condicionado a la
+validación manual de 5.6.
+
+Siguiente corte propuesto, sin número definitivo y no iniciado:
+**Consolidación de ownership de pending states de Biblioteca**, con sub-gate
+independiente por dominio, sin unificar shapes ni modificar request, SSE,
+polling o cleanup.
 
 ### Dependencias
 

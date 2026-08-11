@@ -1274,8 +1274,9 @@ commiteado en `f5bbfdd` y Fase 5 continúa En progreso. La Sesión 5.3 tiene
 implementación, validaciones estáticas y validación manual aprobadas; quedó
 commiteada en `f05e730`. La Sesión 5.4 está implementada, validada y commiteada
 en `948d627`. La Sesión 5.5 tiene implementación y validaciones estáticas
-aprobadas; su validación manual también quedó aprobada y el commit permanece
-pendiente.
+aprobadas; su validación manual también quedó aprobada y quedó commiteada en
+`3842f20`. La Sesión 5.6 tiene implementación y validaciones estáticas
+aprobadas; su validación manual permanece pendiente.
 
 ### Propietarios confirmados
 
@@ -1311,8 +1312,8 @@ de estos objetos desde tests; la suite existente no cubre estado de Biblioteca.
 | `anexosGenerating` | `{}`; mapa anidado `batchId -> planeacionId -> {titulo,materia,nivel,status,errorMessage}` | `AnexoGeneration`, wrappers de generación/regeneración y delete de bloque | tab y modal de Anexos | Éxito por item limpia; refetch con algún éxito elimina el mapa completo; fallo total queda; reload limpia | Requests secuenciales, render, delete y generación | Generación activa; múltiples escritores y cleanup asimétrico; F5 |
 | `anexoModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaAnexoModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `AnexoGeneration` | Open reemplaza el objeto; close solo cambia `open`; reload limpia | DOM, pending, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; estado F5, render F6; 5.3 aprobada y commiteada en `f05e730` |
 | `listaModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaListaModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `ListaCotejoGeneration` | Open reemplaza; close solo `open`; render filtra selección; reload limpia | DOM, API y generación | Biblioteca vigente; sesión nula puede dejar `submitting`; estado F5, render F6; 5.4 aprobada y commiteada en `948d627` |
-| `examModal` | `{open,conjuntoId,unidadId,planeaciones,selectedPlaneacionIds,selectedTypes,questionCounts,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaExamModalState` | open/close, listeners de tipos/cantidades/planeaciones y submit delegan las mismas transiciones | modal DOM lee mediante `getState()`; submit pasa el payload protegido a `ExamGeneration` | Open reemplaza; close solo `open`; reapertura/reload reconstruyen o limpian el estado efímero | DOM, payload, job y polling indirectos | Biblioteca vigente; sesión nula puede dejar `submitting`; contratos y polling protegidos; implementación, estáticas y manual de 5.5 aprobadas; commit pendiente; estado F5, render F6 |
-| `agregarModal` | `{open,conjuntoId,unidadId,materia,nivel,unidad,temas,error}` | open/close, inputs/selects y submit | modal DOM y `PlaneacionGeneration` | Open reemplaza; close solo `open`; snapshot previo a generar; reload limpia | DOM, SSE y generación | Biblioteca vigente; render/DOM capturan parte del estado; F5/F6 |
+| `examModal` | `{open,conjuntoId,unidadId,planeaciones,selectedPlaneacionIds,selectedTypes,questionCounts,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaExamModalState` | open/close, listeners de tipos/cantidades/planeaciones y submit delegan las mismas transiciones | modal DOM lee mediante `getState()`; submit pasa el payload protegido a `ExamGeneration` | Open reemplaza; close solo `open`; reapertura/reload reconstruyen o limpian el estado efímero | DOM, payload, job y polling indirectos | Biblioteca vigente; sesión nula puede dejar `submitting`; contratos y polling protegidos; 5.5 aprobada y commiteada en `3842f20`; estado F5, render F6 |
+| `agregarModal` | `{open,conjuntoId,unidadId,materia,nivel,unidad,temas,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaPlaneacionModalState`; no tiene `submitting` | open/close, altas/bajas de temas, actividades por momento, error y submit delegan acceso/transiciones | modal DOM lee mediante `getState()`; submit pasa snapshot a `PlaneacionGeneration` | Open reemplaza; close solo `open`; reapertura/reload reconstruyen o limpian estado efímero | DOM, SSE y generación indirectos | Biblioteca vigente; render captura/muta actividades; implementación/estáticas 5.6 aprobadas, manual pendiente; estado F5, render/eventos F6 |
 
 Los cuatro pending y `pendingConjunto` son memoria frontend, no datos
 persistidos. Un refetch puede reconstruir bloques y recursos ya guardados, pero
@@ -1599,7 +1600,7 @@ La búsqueda global no confirmó otro consumidor del modal vigente. El
 Dashboard, Archivados y modales anteriores no consumen
 `bibliotecaState.examModal`. Implementación y validaciones estáticas de 5.5:
 **Aprobadas**. Validación manual: **Aprobada explícitamente por el usuario**.
-Commit: **Pendiente**. La corrida confirmó dos planeaciones, cuatro tipos y 12
+Commit: **`3842f20`**. La corrida confirmó dos planeaciones, cuatro tipos y 12
 preguntas solicitadas/guardadas, sin preguntas fallidas ni retries; contexto
 correcto para “Python orientado a objetos” y “javascript para desarrollo web”.
 Biblioteca conserva el payload `{unidad_id,batch_id,planeacion_ids,
@@ -1607,11 +1608,61 @@ tipos_pregunta,cantidades_pregunta}`, no envía `tema_ids` y backend continúa
 resolviendo temas desde `planeacion_ids`. Render visual, HTML y eventos siguen
 en Fase 6.
 
+### Sesión 5.6 — estado del modal de Planeaciones y cierre de estados modales
+
+`BibliotecaPlaneacionModalState` es una superficie léxica privada dentro de
+`biblioteca.page.js`. La fuente física continúa siendo
+`bibliotecaState.agregarModal`; expone únicamente `getState`, `open`, `close`,
+`setTemas`, `getTemaByLocalId`, `addTema` y `setError`. No crea una copia,
+global, archivo, persistencia ni abstracción compartida.
+
+El valor inicial exacto permanece `{open:false, conjuntoId:null,
+unidadId:null, materia:"", nivel:"", unidad:null, temas:[], error:""}`. No
+existe `submitting`. Abrir rechaza primero un conjunto sin `unidad_id`; si es
+válido, reemplaza el objeto con datos del conjunto y temas vacíos, muestra el
+modal, bloquea scroll y renderiza. Cerrar, cancelar o backdrop solo fijan
+`open=false`, ocultan el DOM y liberan scroll. Reabrir o cambiar de bloque
+reemplaza todo el objeto.
+
+Cada tema conserva `{localId,titulo,duracion,actividades_momentos}`. El alta usa
+duración predeterminada 50, exige título y duración mínima 10; el atributo
+visual mantiene máximo 300 sin validación superior en el handler. Los tres
+momentos reales son `conocimientos_previos`, `desarrollo` y `cierre`. Render,
+alta y submit capturan selects `data-bib-agr-actividad`; valores válidos mutan
+el objeto anidado y valores vacíos/inválidos eliminan la clave. Eliminar tema
+usa `data-bib-agr-remove`. Estas mutaciones permanecen en render/eventos y se
+dejan para Fase 6.
+
+Submit valida solo temas no vacíos con `Agrega al menos un tema.`, captura
+actividades y construye `temasSnap` con `{titulo,duracion,
+actividades_momentos,orden,generar_imagenes_en:[]}`. Delega una sola vez a
+`PlaneacionGeneration.generateFromBiblioteca({conjuntoId,unidadId,materia,
+nivel,temasSnap})`. El coordinador cierra, activa Planeaciones, crea
+`pendingPlaneacionesByBatchId`, envía `{temas,materia,nivel,batch_id}` a
+`POST /api/unidades/:unidadId/generar?stream=1`, procesa SSE y hace refetch. El
+modal no envía `force_new_batch`; Quick Create lo usa únicamente al crear un
+bloque nuevo. `duplicate_tema` continúa como `item_skipped`; conteos, fallback
+JSON y cleanup no cambiaron.
+
+Auditoría acumulativa de ownership modal:
+
+| Modal | Fuente física | Superficie | Generador | Pending | Tab | Persistencia | Estado |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Planeaciones | `bibliotecaState.agregarModal` | `BibliotecaPlaneacionModalState` | `PlaneacionGeneration` | `pendingPlaneacionesByBatchId` | `planeaciones` | Ninguna | 5.6 implementada/estáticas aprobadas; manual pendiente |
+| Anexos | `bibliotecaState.anexoModal` | `BibliotecaAnexoModalState` | `AnexoGeneration` | `anexosGenerating` | `anexos` | Ninguna | 5.3 aprobada, `f05e730` |
+| Listas | `bibliotecaState.listaModal` | `BibliotecaListaModalState` | `ListaCotejoGeneration` | `pendingListaByBatchId` | `listas` | Ninguna | 5.4 aprobada, `948d627` |
+| Exámenes | `bibliotecaState.examModal` | `BibliotecaExamModalState` | `ExamGeneration` | `pendingExamenByBatchId` | `examenes` | Ninguna | 5.5 aprobada, `3842f20` |
+
+Los cuatro modales conservan una sola fuente, superficies léxicas específicas y
+generación/pending externos. No existe store o modal universal; Quick Create,
+`window.explorerState` y `window.biblioteca` no fueron absorbidos ni ampliados.
+
 ### Siguiente corte propuesto
 
-**A. Modal individual de planeaciones.** Sin número definitivo y no iniciado;
-debe mantener un solo shape sin mezclar SSE, pending, render general ni otros
-dominios.
+**Consolidación de ownership de pending states de Biblioteca**, sin número y no
+iniciada. Debe usar un sub-gate por dominio, conservar los cuatro shapes y
+evitar un `PendingState` universal o cambios en requests, SSE, polling y
+cleanup.
 
 ## Riesgos priorizados
 
