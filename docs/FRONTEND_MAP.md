@@ -1272,8 +1272,10 @@ el corte quedó commiteado en `1b4c620`. La implementación, las validaciones
 estáticas y la validación manual de la Sesión 5.2 están aprobadas; el corte quedó
 commiteado en `f5bbfdd` y Fase 5 continúa En progreso. La Sesión 5.3 tiene
 implementación, validaciones estáticas y validación manual aprobadas; quedó
-commiteada en `f05e730`. La Sesión 5.4 está implementada con validaciones
-estáticas y validación manual aprobadas; commit pendiente.
+commiteada en `f05e730`. La Sesión 5.4 está implementada, validada y commiteada
+en `948d627`. La Sesión 5.5 tiene implementación y validaciones estáticas
+aprobadas; su validación manual también quedó aprobada y el commit permanece
+pendiente.
 
 ### Propietarios confirmados
 
@@ -1308,8 +1310,8 @@ de estos objetos desde tests; la suite existente no cubre estado de Biblioteca.
 | `pendingListaByBatchId` | `{}`; mapa a `{items,result,error}` | `ListaCotejoGeneration` y delete de bloque | tab Listas | Éxito espera 1500 ms y limpia/refetch; error queda; delete/reload limpia | Request largo, render y delete | Generación activa; no representa detalle de skipped por item; F5 |
 | `anexosGenerating` | `{}`; mapa anidado `batchId -> planeacionId -> {titulo,materia,nivel,status,errorMessage}` | `AnexoGeneration`, wrappers de generación/regeneración y delete de bloque | tab y modal de Anexos | Éxito por item limpia; refetch con algún éxito elimina el mapa completo; fallo total queda; reload limpia | Requests secuenciales, render, delete y generación | Generación activa; múltiples escritores y cleanup asimétrico; F5 |
 | `anexoModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaAnexoModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `AnexoGeneration` | Open reemplaza el objeto; close solo cambia `open`; reload limpia | DOM, pending, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; estado F5, render F6; 5.3 aprobada y commiteada en `f05e730` |
-| `listaModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaListaModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `ListaCotejoGeneration` | Open reemplaza; close solo `open`; render filtra selección; reload limpia | DOM, API y generación | Biblioteca vigente; sesión nula puede dejar `submitting`; estado F5, render F6; implementación, estáticas y manual de 5.4 aprobadas; commit pendiente |
-| `examModal` | Modal más `{unidadId,selectedTypes,questionCounts}` | open/close, listeners y submit | modal DOM y `ExamGeneration` | Open reemplaza; close solo `open`; reload limpia | DOM, payload y polling | Biblioteca vigente; sesión nula puede dejar `submitting`; contratos de payload protegidos; F5/F6 |
+| `listaModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaListaModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `ListaCotejoGeneration` | Open reemplaza; close solo `open`; render filtra selección; reload limpia | DOM, API y generación | Biblioteca vigente; sesión nula puede dejar `submitting`; estado F5, render F6; 5.4 aprobada y commiteada en `948d627` |
+| `examModal` | `{open,conjuntoId,unidadId,planeaciones,selectedPlaneacionIds,selectedTypes,questionCounts,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaExamModalState` | open/close, listeners de tipos/cantidades/planeaciones y submit delegan las mismas transiciones | modal DOM lee mediante `getState()`; submit pasa el payload protegido a `ExamGeneration` | Open reemplaza; close solo `open`; reapertura/reload reconstruyen o limpian el estado efímero | DOM, payload, job y polling indirectos | Biblioteca vigente; sesión nula puede dejar `submitting`; contratos y polling protegidos; implementación, estáticas y manual de 5.5 aprobadas; commit pendiente; estado F5, render F6 |
 | `agregarModal` | `{open,conjuntoId,unidadId,materia,nivel,unidad,temas,error}` | open/close, inputs/selects y submit | modal DOM y `PlaneacionGeneration` | Open reemplaza; close solo `open`; snapshot previo a generar; reload limpia | DOM, SSE y generación | Biblioteca vigente; render/DOM capturan parte del estado; F5/F6 |
 
 Los cuatro pending y `pendingConjunto` son memoria frontend, no datos
@@ -1550,7 +1552,7 @@ consumidores indirectos; Quick Create, `window.biblioteca`,
 `window.explorerState`, Archivados y legacy no consumen este modal.
 
 Estado de 5.4: **implementación, validaciones estáticas y validación manual
-aprobadas; commit pendiente**. La validación confirmó apertura y planeaciones
+aprobadas; commit `948d627`**. La validación confirmó apertura y planeaciones
 correctas, selección/reapertura, cancelación sin request ni pending, cambio de
 bloque, lista existente, generación individual y múltiple, pending/cleanup,
 reutilización, delete/reapertura, reload/navegación, modal de anexos, otros
@@ -1564,11 +1566,52 @@ permanecen sin reorganizar.
 El fallo externo `public.ia_metrics` ausente del schema cache permanece fuera
 de alcance y no es una regresión de 5.4.
 
+### Sesión 5.5 — estado del modal de generación de exámenes
+
+`BibliotecaExamModalState` es una superficie léxica dentro de
+`biblioteca.page.js`. La única fuente física continúa en
+`bibliotecaState.examModal`, con el valor inicial exacto `{open:false,
+conjuntoId:null, unidadId:null, planeaciones:[], selectedPlaneacionIds:[],
+selectedTypes:[], questionCounts:{}, submitting:false, error:""}`. Expone
+`getState`, `open`, `close`, `setSelectedTypes`, `addSelectedType`,
+`setQuestionCount`, `setSelectedPlaneacionIds`, `addSelectedPlaneacionId`,
+`setSubmitting` y `setError`; no crea copia, global, archivo ni script.
+
+Abrir reemplaza el objeto con bloque, `unidad_id` y referencia de planeaciones
+del conjunto; selección, tipos y cantidades comienzan vacíos. Cerrar, cancelar
+y backdrop solo fijan `open=false`; reabrir o cambiar de bloque reemplaza el
+objeto. Los listeners conservan IDs string, `push`/`filter`, los siete tipos y
+sus defaults `5,5,3,1,1,3,1`; desactivar un tipo conserva su cantidad. El input
+mantiene `min=1`, `max=30`, pero el handler solo acepta enteros mayores a cero;
+no se añadió normalización. El modal no calcula ni muestra un total propio.
+
+Submit conserva sus tres mensajes y orden: valida unidad, tipos y planeaciones;
+fija `submitting=true`, limpia error, renderiza y después solicita sesión. El
+payload sigue siendo `{unidad_id,batch_id,tipos_pregunta,
+cantidades_pregunta,planeacion_ids}`; Biblioteca no envía `tema_ids`.
+`ExamGeneration.generateFromBiblioteca` recibe una sola delegación con el mismo
+payload, token y conjunto. POST, `job_id`, cierre, tab Exámenes,
+`pendingExamenByBatchId`, polling cada 3000 ms con máximo 60 consultas,
+`current_step`, terminales, refetch y errores permanecen intactos.
+
+La búsqueda global no confirmó otro consumidor del modal vigente. El
+`explorerState.examModal` legacy es un objeto distinto; Quick Create, previews,
+Dashboard, Archivados y modales anteriores no consumen
+`bibliotecaState.examModal`. Implementación y validaciones estáticas de 5.5:
+**Aprobadas**. Validación manual: **Aprobada explícitamente por el usuario**.
+Commit: **Pendiente**. La corrida confirmó dos planeaciones, cuatro tipos y 12
+preguntas solicitadas/guardadas, sin preguntas fallidas ni retries; contexto
+correcto para “Python orientado a objetos” y “javascript para desarrollo web”.
+Biblioteca conserva el payload `{unidad_id,batch_id,planeacion_ids,
+tipos_pregunta,cantidades_pregunta}`, no envía `tema_ids` y backend continúa
+resolviendo temas desde `planeacion_ids`. Render visual, HTML y eventos siguen
+en Fase 6.
+
 ### Siguiente corte propuesto
 
-**A. Modal individual de exámenes.** Sin número definitivo y no iniciado;
-mantiene un solo shape modal sin mezclar pending, polling, render general ni
-otros dominios.
+**A. Modal individual de planeaciones.** Sin número definitivo y no iniciado;
+debe mantener un solo shape sin mezclar SSE, pending, render general ni otros
+dominios.
 
 ## Riesgos priorizados
 

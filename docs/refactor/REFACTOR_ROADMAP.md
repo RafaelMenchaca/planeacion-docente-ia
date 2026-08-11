@@ -587,11 +587,24 @@ render, `submitting`, error, validación y snapshot hacia
 `ListaCotejoGeneration`; no modificó generación, payload,
 `pendingListaByBatchId`, cleanup, refetch, render, eventos, selección, tabs,
 otros modales, Quick Create ni backend. Implementación y validaciones estáticas
-**Aprobadas**; la validación manual también quedó **Aprobada** y el commit
-permanece pendiente. Fase 5 continúa **En progreso**.
+**Aprobadas**; la validación manual también quedó **Aprobada** y la sesión fue
+commiteada en `948d627`. Fase 5 continúa **En progreso**.
+
+La **Sesión 5.5 — Extracción literal del estado del modal de generación de
+exámenes** encapsuló el único objeto físico `bibliotecaState.examModal`
+mediante `BibliotecaExamModalState`. Preservó shape, reemplazo de apertura,
+cierre parcial, bloque, unidad, planeaciones, selección, tipos, cantidades,
+`submitting`, error, validaciones y payload hacia `ExamGeneration`; no modificó
+creación de job, `pendingExamenByBatchId`, polling, refetch, render, eventos,
+selección, tabs, otros modales, Quick Create ni backend. Implementación y
+validaciones estáticas **Aprobadas**; validación manual **Aprobada**. La sesión
+queda **Aprobada, commit pendiente**. El contrato de exámenes permanece:
+Biblioteca envía `unidad_id`, `batch_id`, `planeacion_ids`,
+`tipos_pregunta` y `cantidades_pregunta`, no envía `tema_ids`, y backend
+resuelve los temas desde `planeacion_ids`. Fase 5 continúa **En progreso**.
 
 Siguiente corte propuesto, sin número definitivo y no iniciado: **A. Modal
-individual de exámenes**.
+individual de planeaciones**.
 
 ### Dependencias
 

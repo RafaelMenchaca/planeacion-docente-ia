@@ -30,7 +30,8 @@
 - **Sesión 5.1:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `1b4c620`.
 - **Sesión 5.2:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f5bbfdd`.
 - **Sesión 5.3:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f05e730`.
-- **Sesión 5.4:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
+- **Sesión 5.4:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `948d627`.
+- **Sesión 5.5:** implementación, validaciones estáticas y validación manual aprobadas; commit pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -54,7 +55,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** validar manualmente 5.4; después, siguiente corte propuesto A — modal individual de exámenes, no iniciado y sin número definitivo.
+- **Continuación:** siguiente corte propuesto A — modal individual de planeaciones, no iniciado y sin número definitivo.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -64,8 +65,10 @@ pasó y Fase 5 quedó En progreso; la Sesión 5.1 completó y validó después e
 primer corte funcional en `1b4c620`. La Sesión 5.2 implementó el ownership
 léxico de `activeTab`; implementación, validaciones estáticas y validación manual
 están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 quedó aprobada y
-commiteada en `f05e730`. La Sesión 5.4 tiene implementación y validaciones
-estáticas y validación manual aprobadas; su commit está pendiente.
+commiteada en `f05e730`. La Sesión 5.4 quedó aprobada y commiteada en
+`948d627`. La Sesión 5.5 tiene implementación y validaciones estáticas
+aprobadas; su validación manual también quedó aprobada y el commit permanece
+pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3449,10 +3452,124 @@ El fallo externo al guardar métricas porque `public.ia_metrics` no aparece en
 el schema cache permanece fuera de alcance; no fue causado ni corregido por
 5.4. Los riesgos del modal documentados arriba permanecen preservados.
 
-**Estado previo al commit:** implementación, validaciones estáticas y validación
-manual aprobadas; commit pendiente. Fase 5 continúa En progreso.
+**Estado final:** implementación, validaciones estáticas y validación manual
+aprobadas; commit `948d627`. Fase 5 continúa En progreso.
 
 ### Siguiente corte propuesto
 
-**A. Modal individual de exámenes**, sin número definitivo y no iniciado. Solo
-puede abrirse después de la aprobación manual de 5.4.
+La Sesión 5.5 quedó ejecutada a continuación.
+
+## Fase 5 — Sesión 5.5: Extracción literal del estado del modal de generación de exámenes
+
+### Puerta, auditoría y decisión
+
+- Frontend: `refactor-front`, inicio real en `948d627`, working tree limpio.
+- Commit funcional real de 5.4: `948d627`; su estado “commit pendiente” fue
+  reconciliado documentalmente sin detener la sesión.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, limpio.
+- Riesgo: muy alto.
+- Decisión: **A. Extracción segura implementada.**
+
+La búsqueda global confirmó una sola definición física y todos los accesos
+directos de `bibliotecaState.examModal`. El valor inicial exacto permanece
+`{open:false, conjuntoId:null, unidadId:null, planeaciones:[],
+selectedPlaneacionIds:[], selectedTypes:[], questionCounts:{},
+submitting:false, error:""}`. `BibliotecaExamModalState` es una superficie
+léxica en `biblioteca.page.js`; sus operaciones `getState`, `open`, `close`,
+`setSelectedTypes`, `addSelectedType`, `setQuestionCount`,
+`setSelectedPlaneacionIds`, `addSelectedPlaneacionId`, `setSubmitting` y
+`setError` delegan sobre esa misma propiedad. No existe segunda copia, global,
+archivo o script.
+
+### Ciclo, snapshot y consumidores preservados
+
+`data-bib-action="generar-examen"` resuelve el conjunto vigente. Abrir reemplaza
+el objeto con `conjunto.id`, `conjunto.unidad_id || null`, su referencia de
+planeaciones, selección/tipos vacíos y cantidades vacías; luego muestra el
+modal, bloquea scroll y renderiza. Cierre, cancelación y backdrop solo cambian
+`open=false`, ocultan el DOM y liberan scroll. Reabrir o cambiar de bloque
+reemplaza el objeto.
+
+Los checkboxes de planeaciones conservan IDs string y `push`/`filter`, sin
+depuración desde render. Los tipos internos y defaults permanecen:
+`opcion_multiple:5`, `verdadero_falso:5`, `respuesta_corta:3`,
+`emparejamiento:1`, `pregunta_abierta:1`, `calculo_numerico:3` y
+`ordenacion_jerarquizacion:1`. Ninguno inicia seleccionado. Desactivar conserva
+la cantidad; el input conserva `min=1`, `max=30`, aunque el listener solo acepta
+enteros mayores a cero. El modal no calcula ni muestra un total propio.
+
+Submit conserva el orden y mensajes exactos: unidad vinculada, al menos un tipo
+y al menos una planeación; después fija `submitting=true`, limpia error,
+renderiza y solicita sesión. Construye `cantidades_pregunta` solo para tipos
+seleccionados, con el fallback vigente `|| 5`, y entrega una vez a
+`ExamGeneration.generateFromBiblioteca` el payload
+`{unidad_id,batch_id,tipos_pregunta,cantidades_pregunta,planeacion_ids}` junto
+con token y `conjuntoId`. Biblioteca no envía `tema_ids`; backend conserva el
+mapeo planeación → tema y la unidad protegida.
+
+`ExamGeneration` continúa creando el job por POST, cerrando el modal, activando
+Exámenes, creando `pendingExamenByBatchId` e iniciando el polling de 3000 ms con
+máximo 60 consultas. `current_step`, `completed`, `failed`, timeout, cleanup,
+refetch, mensajes y logs no cambiaron. Delete individual y de bloque, preview,
+selección, tabs, modales anteriores, Quick Create, Dashboard,
+`window.biblioteca`, `window.explorerState`, Archivados, legacy, scripts, API y
+backend quedaron intactos. El `explorerState.examModal` legacy es un estado
+distinto, no un consumidor del modal vigente.
+
+### Validaciones estáticas de 5.5
+
+- `node --check js/pages/biblioteca.page.js`: aprobado.
+- Jest: 1 suite y 2 pruebas aprobadas.
+- Smoke aislado: 19 comprobaciones de shape, tipos/defaults, apertura, cierre,
+  reapertura, selección, cantidades, validaciones, submitting, payload y
+  delegación aprobadas.
+- Búsqueda posterior: una fuente física, una superficie léxica, sin consumidor
+  desconocido ni global/script nuevo.
+- Comparación mecánica contra `HEAD`: delegaciones reversibles sin cambio
+  funcional intencional.
+
+### Riesgos preservados
+
+`requireSession()` nulo puede dejar `submitting=true`; cierre conserva el resto
+del objeto; estado y observación del job se pierden con reload/navegación; IDs
+String/Number; el handler no aplica el `max=30`; tipos/cantidades desactivados se
+conservan; delete no cancela jobs; failed/timeout dejan pending; polling no se
+reanuda y el poll 60 puede clasificar un completed limítrofe como timeout.
+`pendingExamenByBatchId`, polling, deduplicación, reintentos y el fallo externo
+de `public.ia_metrics` mantienen ownership y comportamiento separados. No se
+corrigió ninguno.
+
+### Validación manual de 5.5
+
+**Aprobada explícitamente por el usuario.** La Sesión 5.5 quedó aprobada
+funcionalmente: apertura con bloque, unidad y planeaciones correctos;
+selección/tipos/cantidades y reapertura; cancelación sin request, job ni
+pending; cambio de bloque sin estado cruzado; generación mínima y con varias
+planeaciones; distribución por tipos; pending, job, polling y persistencia tras
+reload; reutilización; delete/reapertura; modales anteriores, modal de
+planeaciones y regresión acumulativa intactos, sin errores nuevos.
+
+Evidencia resumida: dos planeaciones (`690`, `691`); tipos
+`opcion_multiple:5`, `verdadero_falso:5`, `emparejamiento:1` y
+`ordenacion_jerarquizacion:1`; `totalRequested:12`; contexto correcto para
+“Python orientado a objetos” y “javascript para desarrollo web”; resultado de
+12 preguntas, cero fallidas, cero retries, `exam:saved` y `generate:success`.
+No se registraron UUIDs completos, user IDs, tokens ni datos personales.
+
+Contrato preservado: Biblioteca envía `unidad_id`, `batch_id`,
+`planeacion_ids`, `tipos_pregunta` y `cantidades_pregunta`; Biblioteca no envía
+`tema_ids`; backend continúa resolviendo los temas desde `planeacion_ids`.
+
+Reintentos/fallback no se ejecutaron en esta corrida porque no ocurrieron de
+forma natural; su comportamiento ya había sido validado previamente y no
+bloquea. Job failed, timeout, backend caído, credenciales inválidas, ausencia
+de planeaciones/tipos y error parcial tampoco se forzaron y no bloquean.
+
+**Estado previo al commit:** implementación, validaciones estáticas y
+validación manual aprobadas; contrato de exámenes preservado; commit pendiente.
+Fase 5 continúa En progreso.
+
+### Siguiente corte propuesto
+
+**A. Modal individual de planeaciones**, sin número definitivo y no iniciado.
+Solo puede abrirse después de la aprobación manual de 5.5.

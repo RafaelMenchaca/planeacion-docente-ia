@@ -163,6 +163,51 @@ const BibliotecaListaModalState = {
   }
 };
 
+// Fase 5 — Sesión 5.5: ownership léxico del estado del modal de exámenes.
+// La única fuente de verdad permanece en bibliotecaState.examModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaExamModalState = {
+  getState() {
+    return bibliotecaState.examModal;
+  },
+  open(state) {
+    bibliotecaState.examModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.examModal.open = false;
+  },
+  setSelectedTypes(types) {
+    bibliotecaState.examModal.selectedTypes = types;
+    return types;
+  },
+  addSelectedType(type) {
+    bibliotecaState.examModal.selectedTypes.push(type);
+    return type;
+  },
+  setQuestionCount(type, count) {
+    bibliotecaState.examModal.questionCounts[type] = count;
+    return count;
+  },
+  setSelectedPlaneacionIds(ids) {
+    bibliotecaState.examModal.selectedPlaneacionIds = ids;
+    return ids;
+  },
+  addSelectedPlaneacionId(id) {
+    bibliotecaState.examModal.selectedPlaneacionIds.push(id);
+    return id;
+  },
+  setSubmitting(value) {
+    bibliotecaState.examModal.submitting = value;
+    return value;
+  },
+  setError(value) {
+    bibliotecaState.examModal.error = value;
+    return value;
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -1768,7 +1813,7 @@ async function openBibliotecaListaPreview(listaId) {
 
 function openBibliotecaExamModal(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
-  bibliotecaState.examModal = {
+  BibliotecaExamModalState.open({
     open:                  true,
     conjuntoId:            conjunto.id,
     unidadId:              conjunto.unidad_id || null,
@@ -1778,7 +1823,7 @@ function openBibliotecaExamModal(conjunto) {
     questionCounts:        {},
     submitting:            false,
     error:                 ""
-  };
+  });
   const modal = document.getElementById("biblioteca-exam-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -1786,7 +1831,7 @@ function openBibliotecaExamModal(conjunto) {
 }
 
 function closeBibliotecaExamModal() {
-  bibliotecaState.examModal.open = false;
+  BibliotecaExamModalState.close();
   const modal = document.getElementById("biblioteca-exam-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -1796,7 +1841,7 @@ function renderBibliotecaExamModal() {
   const modal = document.getElementById("biblioteca-exam-modal");
   if (!modal) return;
 
-  const state = bibliotecaState.examModal;
+  const state = BibliotecaExamModalState.getState();
 
   const tiposHtml = BIB_EXAM_TIPOS.map(tipo => {
     const isSelected = state.selectedTypes.includes(tipo.value);
@@ -1883,17 +1928,19 @@ function renderBibliotecaExamModal() {
   modal.querySelectorAll("[data-bib-exam-type]").forEach(cb => {
     cb.addEventListener("change", e => {
       const tipo = e.target.dataset.bibExamType;
+      const modalState = BibliotecaExamModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.examModal.selectedTypes.includes(tipo)) {
-          bibliotecaState.examModal.selectedTypes.push(tipo);
+        if (!modalState.selectedTypes.includes(tipo)) {
+          BibliotecaExamModalState.addSelectedType(tipo);
           const found = BIB_EXAM_TIPOS.find(t => t.value === tipo);
-          if (!bibliotecaState.examModal.questionCounts[tipo]) {
-            bibliotecaState.examModal.questionCounts[tipo] = found?.defaultCount || 5;
+          if (!modalState.questionCounts[tipo]) {
+            BibliotecaExamModalState.setQuestionCount(tipo, found?.defaultCount || 5);
           }
         }
       } else {
-        bibliotecaState.examModal.selectedTypes =
-          bibliotecaState.examModal.selectedTypes.filter(t => t !== tipo);
+        BibliotecaExamModalState.setSelectedTypes(
+          modalState.selectedTypes.filter(t => t !== tipo)
+        );
       }
       renderBibliotecaExamModal();
     });
@@ -1904,7 +1951,7 @@ function renderBibliotecaExamModal() {
       const tipo = e.target.dataset.bibExamCount;
       const val  = parseInt(e.target.value, 10);
       if (tipo && !isNaN(val) && val > 0) {
-        bibliotecaState.examModal.questionCounts[tipo] = val;
+        BibliotecaExamModalState.setQuestionCount(tipo, val);
       }
     });
   });
@@ -1912,43 +1959,45 @@ function renderBibliotecaExamModal() {
   modal.querySelectorAll("[data-bib-exam-planid]").forEach(cb => {
     cb.addEventListener("change", e => {
       const pid = e.target.dataset.bibExamPlanid;
+      const modalState = BibliotecaExamModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.examModal.selectedPlaneacionIds.includes(pid)) {
-          bibliotecaState.examModal.selectedPlaneacionIds.push(pid);
+        if (!modalState.selectedPlaneacionIds.includes(pid)) {
+          BibliotecaExamModalState.addSelectedPlaneacionId(pid);
         }
       } else {
-        bibliotecaState.examModal.selectedPlaneacionIds =
-          bibliotecaState.examModal.selectedPlaneacionIds.filter(id => id !== pid);
+        BibliotecaExamModalState.setSelectedPlaneacionIds(
+          modalState.selectedPlaneacionIds.filter(id => id !== pid)
+        );
       }
       const counter = document.getElementById("bib-exam-topics-count");
       if (counter) {
-        counter.textContent = `${bibliotecaState.examModal.selectedPlaneacionIds.length} de ${bibliotecaState.examModal.planeaciones.length} tema(s)`;
+        counter.textContent = `${modalState.selectedPlaneacionIds.length} de ${modalState.planeaciones.length} tema(s)`;
       }
     });
   });
 }
 
 async function submitBibliotecaExamModal() {
-  const state = bibliotecaState.examModal;
+  const state = BibliotecaExamModalState.getState();
 
   if (!state.unidadId) {
-    bibliotecaState.examModal.error = "Este bloque no tiene unidad vinculada.";
+    BibliotecaExamModalState.setError("Este bloque no tiene unidad vinculada.");
     renderBibliotecaExamModal();
     return;
   }
   if (!state.selectedTypes.length) {
-    bibliotecaState.examModal.error = "Selecciona al menos un tipo de pregunta.";
+    BibliotecaExamModalState.setError("Selecciona al menos un tipo de pregunta.");
     renderBibliotecaExamModal();
     return;
   }
   if (!state.selectedPlaneacionIds.length) {
-    bibliotecaState.examModal.error = "Selecciona al menos una planeacion.";
+    BibliotecaExamModalState.setError("Selecciona al menos una planeacion.");
     renderBibliotecaExamModal();
     return;
   }
 
-  bibliotecaState.examModal.submitting = true;
-  bibliotecaState.examModal.error      = "";
+  BibliotecaExamModalState.setSubmitting(true);
+  BibliotecaExamModalState.setError("");
   renderBibliotecaExamModal();
 
   try {
@@ -1980,8 +2029,8 @@ async function submitBibliotecaExamModal() {
 
   } catch (error) {
     console.error("[biblioteca] Error iniciando examen:", error);
-    bibliotecaState.examModal.submitting = false;
-    bibliotecaState.examModal.error      = error.message || "No se pudo generar el examen.";
+    BibliotecaExamModalState.setSubmitting(false);
+    BibliotecaExamModalState.setError(error.message || "No se pudo generar el examen.");
     renderBibliotecaExamModal();
   }
 }

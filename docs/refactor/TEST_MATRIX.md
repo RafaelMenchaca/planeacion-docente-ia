@@ -953,8 +953,10 @@ La Sesión 5.1 quedó aprobada y commiteada en `1b4c620`; la implementación, la
 validaciones estáticas y la validación manual de la Sesión 5.2 están aprobadas,
 con commit `f5bbfdd`. La Sesión 5.3 tiene implementación y validaciones
 estáticas y validación manual aprobadas; quedó commiteada en `f05e730`. La
-Sesión 5.4 tiene implementación y validaciones estáticas aprobadas; su
-validación manual está aprobada y el commit permanece pendiente.
+Sesión 5.4 tiene implementación, validaciones estáticas y validación manual
+aprobadas; quedó commiteada en `948d627`. La Sesión 5.5 tiene implementación y
+validaciones estáticas y validación manual aprobadas; el commit permanece
+pendiente.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -1100,5 +1102,55 @@ sesión nula con posible `submitting=true`, cierre parcial, estado efímero, IDs
 String/Number, delete sin cancelación, pending de error visible, cleanup de
 1500 ms y ownership separado de pending permanecen como riesgos preservados.
 
-Siguiente corte propuesto tras aprobar 5.4: **A. Modal individual de exámenes**,
-sin número definitivo y no iniciado.
+**Commit funcional de 5.4: `948d627`.**
+
+## Fase 5 — Sesión 5.5: estado del modal de generación de exámenes
+
+La extracción encapsula exclusivamente `bibliotecaState.examModal` mediante
+`BibliotecaExamModalState`. Fuente física, shape, bloque, unidad, planeaciones,
+selección, tipos, cantidades, orden, render, eventos, payload,
+`ExamGeneration`, job, `pendingExamenByBatchId` y polling permanecen. Las
+validaciones estáticas y el smoke no sustituyen esta matriz.
+
+**Validación manual: Aprobada explícitamente por el usuario.**
+
+| Prueba | Evidencia esperada | Estado |
+| --- | --- | --- |
+| 1. Apertura básica | bloque y unidad correctos; planeaciones correctas; consola sin errores nuevos | Aprobada |
+| 2. Selección y reapertura | marcar/desmarcar planeaciones, cambiar tipos/cantidades, cerrar y reabrir conserva la reconstrucción previa | Aprobada |
+| 3. Cancelación | cero request de generación, cero job y cero pending nuevo; reapertura funcional | Aprobada |
+| 4. Cambio de bloque | abrir en A y luego B; unidad/planeaciones de B y cero estado cruzado | Aprobada |
+| 5. Tipos de pregunta | checkboxes, inputs, estado disabled y valores internos vigentes para los tipos reales de UI | Aprobada |
+| 6. Cantidades | cantidades, total/resultados y validaciones vigentes; no forzar valores inseguros | Aprobada |
+| 7. Generación mínima | una planeación/configuración pequeña; cierre, tab Exámenes, pending, job, polling, guardado y reload | Aprobada |
+| 8. Varias planeaciones | al menos dos del mismo bloque; contexto usa sus temas y no otra unidad; persistencia | Aprobada |
+| 9. Distribución por tipos | al menos dos tipos; cantidades solicitadas, total solicitado/generado y tipos del resultado | Aprobada |
+| 10. Reintentos y fallback | solo si ocurre naturalmente: rechazo no cancela job, reintento y total completo sin error prematuro | No ejecutada en esta corrida; comportamiento ya validado previamente; no bloquea |
+| 11. Reutilización | reabrir tras generar sin submitting bloqueado; reconstrucción; cerrar sin job adicional | Aprobada |
+| 12. Delete y reapertura | eliminar examen, esperar refetch, reabrir y confirmar estado; regenerar solo si es seguro | Aprobada |
+| 13. Reload y navegación | cerrar, recargar, reabrir y cambiar de bloque; reconstrucción vigente | Aprobada |
+| 14. Modales anteriores | Anexos y Listas abren, cierran y conservan sus superficies aprobadas | Aprobada |
+| 15. Modal de planeaciones | agregar/generar planeaciones no fue afectado | Aprobada |
+| 16. Regresión acumulativa | selección, tabs, cuatro dominios, previews, descargas, delete y Quick Create sin errores nuevos | Aprobada |
+
+Casos opcionales —backend caído, job `failed`, timeout, sin planeaciones, sin
+tipos, error parcial y credenciales inválidas— no ocurrieron de forma natural y
+segura, no se forzaron y no bloquean.
+
+Evidencia resumida: `totalPlaneaciones:2`, planeaciones 690 y 691; cuatro tipos
+con cantidades `5/5/1/1`; `totalRequested:12`; contexto correcto para “Python
+orientado a objetos” y “javascript para desarrollo web”; `totalPreguntas:12`,
+cero fallidas, cero retries, `exam:saved` y `generate:success`.
+
+Contrato confirmado: Biblioteca envía `unidad_id`, `batch_id`,
+`planeacion_ids`, `tipos_pregunta` y `cantidades_pregunta`; no envía
+`tema_ids`. Backend continúa resolviendo los temas desde `planeacion_ids`.
+
+Riesgos preservados: sesión nula con posible `submitting=true`, cierre parcial,
+estado/job no reanudable tras reload o navegación, IDs String/Number, límite
+visual de 30 no impuesto por el listener, cantidades de tipos desactivados
+conservadas, delete sin cancelación, pending persistente en error/timeout y
+frontera del poll 60. No son correcciones de 5.5.
+
+Siguiente corte propuesto tras aprobar 5.5: **A. Modal individual de
+planeaciones**, sin número definitivo y no iniciado.

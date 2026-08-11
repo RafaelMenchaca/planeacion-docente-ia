@@ -111,11 +111,25 @@ desde render, `submitting`, error y snapshot hacia `ListaCotejoGeneration`
 conservan la fuente física, el shape, el orden y las expresiones previas. La
 generación, `pendingListaByBatchId`, el cleanup de 1500 ms, render, eventos,
 selección, tabs y los demás modales permanecen intactos. Implementación y
-validaciones estáticas y validación manual aprobadas; commit pendiente.
+validaciones estáticas y validación manual aprobadas; commit `948d627`.
 `BibliotecaListaModalState` quedó aprobada,
 `bibliotecaState.listaModal` sigue siendo la única fuente de verdad y
-`ListaCotejoGeneration`/`pendingListaByBatchId` permanecen preservados. Fase 5
-continúa En progreso.
+`ListaCotejoGeneration`/`pendingListaByBatchId` permanecen preservados. La
+Sesión 5.5 encapsula literalmente `bibliotecaState.examModal` mediante la
+superficie léxica `BibliotecaExamModalState`. La propiedad original conserva
+la única fuente física, su shape, bloque, unidad, planeaciones, selección,
+tipos, cantidades, `submitting` y error; la superficie solo delega las mismas
+transiciones. `ExamGeneration`, el payload protegido, la creación del job,
+`pendingExamenByBatchId`, polling, render, eventos y modales anteriores no se
+modificaron. La Sesión 5.5 quedó implementada y validada manualmente;
+`BibliotecaExamModalState` está aprobada y `bibliotecaState.examModal` sigue
+siendo la única fuente de verdad. `ExamGeneration`, `pendingExamenByBatchId` y
+polling permanecen preservados. El contrato
+`unidad_id`/`batch_id`/`planeacion_ids` continúa intacto: Biblioteca envía esos
+campos junto con `tipos_pregunta` y `cantidades_pregunta`, y no envía
+`tema_ids`; backend sigue resolviendo los temas desde `planeacion_ids`.
+Implementación, validaciones estáticas y validación manual aprobadas; commit
+pendiente. Fase 5 continúa En progreso.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,
