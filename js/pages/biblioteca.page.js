@@ -240,6 +240,71 @@ const BibliotecaPlaneacionModalState = {
   }
 };
 
+// Fase 5 — Sesión 5.7: ownership léxico de los pending de Biblioteca.
+// Cada superficie conserva su fuente física y shape propios; no existe un
+// pending universal ni normalización adicional de claves o valores.
+const BibliotecaPlaneacionesPending = {
+  get(batchId) {
+    return bibliotecaState.pendingPlaneacionesByBatchId[batchId];
+  },
+  set(batchId, value) {
+    bibliotecaState.pendingPlaneacionesByBatchId[batchId] = value;
+    return value;
+  },
+  delete(batchId) {
+    delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
+  }
+};
+
+const BibliotecaAnexosPending = {
+  getBatch(batchId) {
+    return bibliotecaState.anexosGenerating[batchId];
+  },
+  setBatch(batchId, value) {
+    bibliotecaState.anexosGenerating[batchId] = value;
+    return value;
+  },
+  deleteBatch(batchId) {
+    delete bibliotecaState.anexosGenerating[batchId];
+  },
+  getItem(batchId, planeacionId) {
+    return bibliotecaState.anexosGenerating[batchId]?.[planeacionId];
+  },
+  setItem(batchId, planeacionId, value) {
+    bibliotecaState.anexosGenerating[batchId][planeacionId] = value;
+    return value;
+  },
+  deleteItem(batchId, planeacionId) {
+    delete bibliotecaState.anexosGenerating[batchId][planeacionId];
+  }
+};
+
+const BibliotecaListaPending = {
+  get(batchId) {
+    return bibliotecaState.pendingListaByBatchId[batchId];
+  },
+  set(batchId, value) {
+    bibliotecaState.pendingListaByBatchId[batchId] = value;
+    return value;
+  },
+  delete(batchId) {
+    delete bibliotecaState.pendingListaByBatchId[batchId];
+  }
+};
+
+const BibliotecaExamPending = {
+  get(batchId) {
+    return bibliotecaState.pendingExamenByBatchId[batchId];
+  },
+  set(batchId, value) {
+    bibliotecaState.pendingExamenByBatchId[batchId] = value;
+    return value;
+  },
+  delete(batchId) {
+    delete bibliotecaState.pendingExamenByBatchId[batchId];
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -254,14 +319,14 @@ window.biblioteca = {
     const safeId = normalizeBibliotecaId(conjuntoId);
     if (!safeId) return;
     setSelectedConjunto(safeId, { tab: "planeaciones" });
-    bibliotecaState.pendingPlaneacionesByBatchId[safeId] = {
+    BibliotecaPlaneacionesPending.set(safeId, {
       items: (Array.isArray(temas) ? temas : []).map((tema) => ({
         titulo: tema?.titulo || "",
         status: "pending",
         message: ""
       })),
       error: ""
-    };
+    });
     renderBibliotecaContent();
   },
   setPendingConjunto: (data) => {
@@ -499,7 +564,7 @@ function applyGenerationResultToPendingItems(batchId, result) {
   const safeBatchId = normalizeBibliotecaId(batchId);
   if (!safeBatchId) return;
 
-  const pending = bibliotecaState.pendingPlaneacionesByBatchId[safeBatchId];
+  const pending = BibliotecaPlaneacionesPending.get(safeBatchId);
   if (!pending) return;
 
   const records = [
@@ -537,11 +602,11 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
   const planeaciones = normalizeGeneratedPlaneaciones(result);
 
   if (batchId) {
-    if (!bibliotecaState.pendingPlaneacionesByBatchId[batchId] && Number(result?.error_count || 0) > 0) {
+    if (!BibliotecaPlaneacionesPending.get(batchId) && Number(result?.error_count || 0) > 0) {
       const progressItems = Array.isArray(window.explorerState?.progress?.items)
         ? window.explorerState.progress.items
         : [];
-      bibliotecaState.pendingPlaneacionesByBatchId[batchId] = {
+      BibliotecaPlaneacionesPending.set(batchId, {
         items: progressItems.map(item => ({
           titulo: item.titulo || "",
           status: item.status || "pending",
@@ -549,12 +614,12 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
           message: item.message || ""
         })),
         error: `${result.error_count} planeacion(es) no se pudieron generar.`
-      };
+      });
     }
     applyGenerationResultToPendingItems(batchId, result || {});
     applyOptimisticPlaneacionesToConjunto(batchId, planeaciones);
     if (Number(result?.error_count || 0) === 0) {
-      delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
+      BibliotecaPlaneacionesPending.delete(batchId);
     }
     BibliotecaSelection.setSelectedConjuntoId(batchId);
     BibliotecaTabs.setActiveTab(batchId, "planeaciones");
@@ -659,7 +724,7 @@ function renderPlaneacionesTab(conjunto) {
       );
     }
   } else {
-    const pending = bibliotecaState.pendingPlaneacionesByBatchId[conjunto.id];
+    const pending = BibliotecaPlaneacionesPending.get(conjunto.id);
     if (pending) {
       const errorHtml = pending.error
         ? `<div class="mt-1 text-xs text-rose-600">${escapeHtml(pending.error)}</div>`
@@ -726,7 +791,7 @@ function renderExamenesTab(conjunto) {
   }
 
   const examenes = Array.isArray(conjunto.examenes) ? conjunto.examenes : [];
-  const pending  = bibliotecaState.pendingExamenByBatchId[conjunto.id];
+  const pending  = BibliotecaExamPending.get(conjunto.id);
 
   let pendingHtml = "";
   if (pending) {
@@ -803,7 +868,7 @@ function renderAnexosTab(conjunto) {
   }
 
   const anexos         = Array.isArray(conjunto.anexos) ? conjunto.anexos : [];
-  const generatingMap  = bibliotecaState.anexosGenerating[conjunto.id] || {};
+  const generatingMap  = BibliotecaAnexosPending.getBatch(conjunto.id) || {};
 
   const anexosByPlanId = new Map(
     anexos.map((a) => [normalizeBibliotecaId(a.planeacion_id), a])
@@ -893,7 +958,7 @@ function renderListasCotejoTab(conjunto) {
   }
 
   const listas  = Array.isArray(conjunto.listas_cotejo) ? conjunto.listas_cotejo : [];
-  const pending = bibliotecaState.pendingListaByBatchId[conjunto.id];
+  const pending = BibliotecaListaPending.get(conjunto.id);
 
   let pendingHtml = "";
   if (pending) {
@@ -1470,7 +1535,7 @@ function renderBibliotecaAnexoCreateModal() {
   const state    = BibliotecaAnexoModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
-  const generatingMap    = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
+  const generatingMap    = BibliotecaAnexosPending.getBatch(state.conjuntoId) || {};
   const anexosPlaneacionIds = new Set([
     ...anexosExistentes.map((a) => normalizeBibliotecaId(a.planeacion_id)),
     ...Object.keys(generatingMap)
@@ -1591,7 +1656,7 @@ async function submitBibliotecaAnexoCreateModal() {
   const state    = BibliotecaAnexoModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes  = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
-  const currentGenerating = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
+  const currentGenerating = BibliotecaAnexosPending.getBatch(state.conjuntoId) || {};
   const blockedIds = new Set([
     ...anexosExistentes.map((a) => normalizeBibliotecaId(a.planeacion_id)),
     ...Object.keys(currentGenerating)
@@ -1649,16 +1714,16 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
   const plan = (Array.isArray(conjunto?.planeaciones) ? conjunto.planeaciones : [])
     .find((p) => normalizeBibliotecaId(p.id) === safePlanId);
 
-  if (!bibliotecaState.anexosGenerating[safeBatchId]) {
-    bibliotecaState.anexosGenerating[safeBatchId] = {};
+  if (!BibliotecaAnexosPending.getBatch(safeBatchId)) {
+    BibliotecaAnexosPending.setBatch(safeBatchId, {});
   }
-  bibliotecaState.anexosGenerating[safeBatchId][safePlanId] = {
+  BibliotecaAnexosPending.setItem(safeBatchId, safePlanId, {
     titulo:  plan?.tema || plan?.custom_title || "Sin titulo",
     materia: plan?.materia || null,
     nivel:   plan?.nivel   || null,
     status:  "generating",
     errorMessage: ""
-  };
+  });
   setSelectedConjunto(safeBatchId, { tab: "anexos" });
   renderBibliotecaDetailInPlace();
 
@@ -1674,7 +1739,7 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
     );
     if (conjuntoObj) {
       if (!Array.isArray(conjuntoObj.anexos)) conjuntoObj.anexos = [];
-      const item = bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId];
+      const item = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
       conjuntoObj.anexos.push({
         id:           res?.anexo_id || `tmp-${safePlanId}`,
         planeacion_id: safePlanId,
@@ -1687,10 +1752,10 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
       conjuntoObj.total_anexos = conjuntoObj.anexos.length;
     }
 
-    if (bibliotecaState.anexosGenerating[safeBatchId]) {
-      delete bibliotecaState.anexosGenerating[safeBatchId][safePlanId];
-      if (Object.keys(bibliotecaState.anexosGenerating[safeBatchId]).length === 0) {
-        delete bibliotecaState.anexosGenerating[safeBatchId];
+    if (BibliotecaAnexosPending.getBatch(safeBatchId)) {
+      BibliotecaAnexosPending.deleteItem(safeBatchId, safePlanId);
+      if (Object.keys(BibliotecaAnexosPending.getBatch(safeBatchId)).length === 0) {
+        BibliotecaAnexosPending.deleteBatch(safeBatchId);
       }
     }
 
@@ -1698,9 +1763,10 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
     await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
   } catch (error) {
     console.error("[biblioteca] Error generando anexo:", error);
-    if (bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId]) {
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].status       = "error";
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].errorMessage = error.message || "No se pudo generar el anexo.";
+    const pendingItem = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
+    if (pendingItem) {
+      pendingItem.status       = "error";
+      pendingItem.errorMessage = error.message || "No se pudo generar el anexo.";
     }
     renderBibliotecaDetailInPlace();
   }
@@ -1712,16 +1778,16 @@ async function bibRegenerarAnexo(anexoId, conjuntoId, planeacionId) {
   const safePlanId   = normalizeBibliotecaId(planeacionId);
   if (!safeAnexoId || !safeBatchId) return;
 
-  if (!bibliotecaState.anexosGenerating[safeBatchId]) {
-    bibliotecaState.anexosGenerating[safeBatchId] = {};
+  if (!BibliotecaAnexosPending.getBatch(safeBatchId)) {
+    BibliotecaAnexosPending.setBatch(safeBatchId, {});
   }
-  bibliotecaState.anexosGenerating[safeBatchId][safePlanId] = {
+  BibliotecaAnexosPending.setItem(safeBatchId, safePlanId, {
     titulo:  "Regenerando...",
     materia: null,
     nivel:   null,
     status:  "generating",
     errorMessage: ""
-  };
+  });
   setSelectedConjunto(safeBatchId, { tab: "anexos" });
   renderBibliotecaDetailInPlace();
 
@@ -1731,18 +1797,19 @@ async function bibRegenerarAnexo(anexoId, conjuntoId, planeacionId) {
 
     await apiRegenerarAnexo(safeAnexoId, session.access_token);
 
-    if (bibliotecaState.anexosGenerating[safeBatchId]) {
-      delete bibliotecaState.anexosGenerating[safeBatchId][safePlanId];
-      if (Object.keys(bibliotecaState.anexosGenerating[safeBatchId]).length === 0) {
-        delete bibliotecaState.anexosGenerating[safeBatchId];
+    if (BibliotecaAnexosPending.getBatch(safeBatchId)) {
+      BibliotecaAnexosPending.deleteItem(safeBatchId, safePlanId);
+      if (Object.keys(BibliotecaAnexosPending.getBatch(safeBatchId)).length === 0) {
+        BibliotecaAnexosPending.deleteBatch(safeBatchId);
       }
     }
     await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
   } catch (error) {
     console.error("[biblioteca] Error regenerando anexo:", error);
-    if (bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId]) {
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].status       = "error";
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].errorMessage = error.message || "No se pudo regenerar el anexo.";
+    const pendingItem = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
+    if (pendingItem) {
+      pendingItem.status       = "error";
+      pendingItem.errorMessage = error.message || "No se pudo regenerar el anexo.";
     }
     renderBibliotecaDetailInPlace();
   }

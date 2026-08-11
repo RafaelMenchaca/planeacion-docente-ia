@@ -32,7 +32,8 @@
 - **Sesión 5.3:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `f05e730`.
 - **Sesión 5.4:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `948d627`.
 - **Sesión 5.5:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `3842f20`.
-- **Sesión 5.6:** modal de Planeaciones encapsulado y auditoría acumulativa de modales completada; validaciones estáticas aprobadas; validación manual pendiente.
+- **Sesión 5.6:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `d45a493`.
+- **Sesión 5.7:** cuatro pending encapsulados mediante superficies específicas; validaciones estáticas completadas; validación manual pendiente.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -56,7 +57,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** validar manualmente 5.6; después, evaluar consolidación controlada del ownership de pending por dominio, no iniciada y sin número definitivo.
+- **Continuación:** validar manualmente 5.7; después, evaluar auditoría formal de cierre de Fase 5, no iniciada y sin número definitivo.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -69,8 +70,9 @@ están aprobadas y commiteadas en `f5bbfdd`. La Sesión 5.3 quedó aprobada y
 commiteada en `f05e730`. La Sesión 5.4 quedó aprobada y commiteada en
 `948d627`. La Sesión 5.5 tiene implementación y validaciones estáticas
 aprobadas; su validación manual también quedó aprobada y la sesión fue
-commiteada en `3842f20`. La Sesión 5.6 tiene implementación y validaciones
-estáticas aprobadas; su validación manual permanece pendiente.
+commiteada en `3842f20`. La Sesión 5.6 quedó aprobada y commiteada en
+`d45a493`. La Sesión 5.7 tiene implementación y validaciones estáticas
+completadas; su validación manual permanece pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3646,7 +3648,7 @@ conserva el comportamiento previo del coordinador con resultado nulo.
 
 | Modal | Fuente / superficie | Shape y selección | Open / close | Submitting / error | Generador | Pending / tab | Persistencia y riesgos | Estado manual |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Planeaciones | `bibliotecaState.agregarModal` / `BibliotecaPlaneacionModalState` | bloque, unidad, contexto, temas y actividades por momento | open reemplaza; close solo cambia `open`; reopen reconstruye | No aplica / `error` string | `PlaneacionGeneration` | `pendingPlaneacionesByBatchId` / Planeaciones | Ninguna; render muta actividades, sesión nula y estado efímero | Pendiente 5.6 |
+| Planeaciones | `bibliotecaState.agregarModal` / `BibliotecaPlaneacionModalState` | bloque, unidad, contexto, temas y actividades por momento | open reemplaza; close solo cambia `open`; reopen reconstruye | No aplica / `error` string | `PlaneacionGeneration` | `pendingPlaneacionesByBatchId` / Planeaciones | Ninguna; render muta actividades, sesión nula y estado efímero | Aprobada 5.6 |
 | Anexos | `bibliotecaState.anexoModal` / `BibliotecaAnexoModalState` | bloque, planeaciones y `selectedPlaneacionIds` | open reemplaza; close parcial; reopen reconstruye | boolean / `error` string | `AnexoGeneration` | `anexosGenerating` / Anexos | Ninguna; render muta selección, sesión nula y estado efímero | Aprobada 5.3 |
 | Listas | `bibliotecaState.listaModal` / `BibliotecaListaModalState` | bloque, planeaciones y `selectedPlaneacionIds` | open reemplaza; close parcial; reopen reconstruye | boolean / `error` string | `ListaCotejoGeneration` | `pendingListaByBatchId` / Listas | Ninguna; render muta selección, sesión nula y cleanup diferido | Aprobada 5.4 |
 | Exámenes | `bibliotecaState.examModal` / `BibliotecaExamModalState` | bloque, unidad, planeaciones, tipos y cantidades | open reemplaza; close parcial; reopen reconstruye | boolean / `error` string | `ExamGeneration` | `pendingExamenByBatchId` / Exámenes | Ninguna; polling no reanudable, sin cancelación y estado efímero | Aprobada 5.5 |
@@ -3655,8 +3657,7 @@ Condiciones técnicas confirmadas: una fuente por modal; superficies léxicas y
 específicas; cero store duplicado o modal universal; generación y pending
 externos; render/eventos no absorbidos; Quick Create separado;
 `window.explorerState` no absorbido; `window.biblioteca` no ampliado; cero
-persistencia nueva. El cierre del subdominio queda pendiente únicamente de la
-validación manual de 5.6.
+persistencia nueva. El subdominio de modales quedó aprobado.
 
 ### Validaciones estáticas de 5.6
 
@@ -3683,14 +3684,87 @@ fuera de alcance. No se corrigió ninguno.
 
 ### Validación manual de 5.6
 
-**Pendiente de confirmación explícita del usuario.** Debe cubrir el modal de
+**Aprobada explícitamente por el usuario.** Se confirmó el modal de
 Planeaciones, la regresión mínima de los cuatro modales y la regresión general
-registrada en `TEST_MATRIX.md`. No deben forzarse fallos de backend, sesión, IA
-o timeout.
+registrada en `TEST_MATRIX.md`; los casos artificiales no se forzaron. Commit
+funcional: `d45a493`.
 
 ### Siguiente corte recomendado
 
-Evaluar **Consolidación de ownership de pending states de Biblioteca**, sin
-número y no iniciada. Requiere sub-gate independiente para Planeaciones,
-Anexos, Listas y Exámenes; debe conservar shapes, writers, requests, SSE,
-polling y cleanup, y no crear un `PendingState` universal.
+La Sesión 5.7 quedó ejecutada a continuación.
+
+## Fase 5 — Sesión 5.7: Ownership consolidado de pending states de Biblioteca
+
+### Gate y sub-gates
+
+- Frontend: `refactor-front`, inicio real en `d45a493`, working tree limpio.
+- 5.6 quedó reconciliada como aprobada y commiteada en `d45a493`.
+- Backend solo lectura: `refactor-back`, `e08d6e4`, limpio.
+- Planeaciones: **PASS**; una fuente y escritores/lectores completos.
+- Anexos: **PASS**; mapa anidado y cleanup asimétrico delegables literalmente.
+- Listas: **PASS**; shape y delay de 1500 ms preservables.
+- Exámenes: **PASS**; message/error y polling preservables sin guardar jobId.
+
+### Superficies implementadas
+
+Las cuatro superficies son léxicas y operan directamente sobre las propiedades
+originales de `bibliotecaState`:
+
+- `BibliotecaPlaneacionesPending`: `get`, `set`, `delete`.
+- `BibliotecaAnexosPending`: `getBatch`, `setBatch`, `deleteBatch`, `getItem`,
+  `setItem`, `deleteItem`.
+- `BibliotecaListaPending`: `get`, `set`, `delete`.
+- `BibliotecaExamPending`: `get`, `set`, `delete`.
+
+No se creó copia, global, archivo de estado, `PendingState` universal,
+normalización, persistencia o validación nueva. Los coordinadores, render,
+fachada Quick Create y delete de bloque solo sustituyen expresiones directas
+por llamadas equivalentes.
+
+### Auditoría acumulativa
+
+| Dominio | Fuente / clave | Shape | Escritores | Lectores | Creación | Éxito | Error | Cleanup/delete/reload | Generador |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Planeaciones | `pendingPlaneacionesByBatchId[batchId]` | `{items,error}`; item `{titulo,status,message}` y `statusLabel` opcional en reconciliación | `PlaneacionGeneration`, fachada/finish Quick Create, delete bloque | SSE, reconciliación y tab | antes de SSE o desde Quick Create | conteos/resultados mutan items; cero errores elimina | agregado o item error permanece | `duplicate_tema` skipped preservado; delete bloque elimina; reload pierde | `PlaneacionGeneration` + Quick Create separado |
+| Anexos | `anexosGenerating[batchId][planeacionId]` | `{titulo,materia,nivel,status,errorMessage}` | `AnexoGeneration`, wrappers individual/regeneración, delete bloque | cards y modal | antes de requests secuenciales | elimina item; refetch con algún éxito elimina batch | item queda `error`; fallo total permanece | cleanup asimétrico, delete bloque elimina, reload pierde | `AnexoGeneration` y wrappers vigentes |
+| Listas | `pendingListaByBatchId[batchId]` | `{items,result,error}` | `ListaCotejoGeneration`, delete bloque | tab Listas | antes del POST único | espera 1500 ms, elimina, refetch | reemplaza conservando items y permanece | delete bloque elimina; reload pierde | `ListaCotejoGeneration` |
+| Exámenes | `pendingExamenByBatchId[batchId]` | `{message,error}`, sin `jobId` | `ExamGeneration`, delete bloque | tab Exámenes | después de recibir `job_id` | current_step reemplaza; completed elimina/refetch | failed/timeout reemplaza y permanece | polling 3000 ms/60 intacto; delete no cancela; reload pierde | `ExamGeneration` |
+
+Delete de bloque mantiene el orden Planeaciones, Exámenes, Listas, Anexos. Los
+deletes individuales no cancelan procesos ni agregan cleanup. Quick Create
+conserva `pendingConjunto`, `pendingBatchId`, `explorerState`, staging, SSE y la
+fachada `window.biblioteca`; solo la implementación interna de start/finish usa
+la superficie de Planeaciones.
+
+### Riesgos preservados
+
+Los cuatro pending son efímeros y no se reanudan. Las claves String/Number no
+se normalizaron adicionalmente. Planeaciones conserva shapes de item variables
+y limpieza de skipped con cero errores. Anexos conserva cleanup asimétrico y
+pending atascado si sesión nula. Listas conserva errores visibles y delay de
+1500 ms. Exámenes conserva jobId solo en closure, poll 60 limítrofe,
+failed/timeout visible y delete sin cancelación. Delete de bloque puede ser
+seguido por escrituras tardías de procesos que continúan. No se corrigió nada.
+
+### Validaciones estáticas de 5.7
+
+- `node --check` de los seis JavaScript modificados: aprobado.
+- Jest: aprobado.
+- Smoke aislado: 35 comprobaciones de las cuatro superficies, shapes, progreso,
+  error, cleanup, delay, polling y orden de delete aprobadas.
+- Búsqueda posterior: las únicas referencias directas a las cuatro propiedades
+  viven dentro de sus superficies; no hay consumidor desconocido.
+- Comparación literal: sustituciones mecánicas hunk por hunk; sin cambio
+  funcional intencional.
+
+### Validación manual de 5.7
+
+**Pendiente de confirmación explícita del usuario.** Debe cubrir generación y
+pending de los cuatro dominios, cruces de bloque/tab, Quick Create, delete de
+bloque, reload y consola, sin forzar errores artificiales.
+
+### Siguiente corte recomendado
+
+Después de aprobar manualmente 5.7, evaluar una **auditoría formal de cierre de
+Fase 5**, sin número y no iniciada. Solo debe abrirse si la revisión confirma
+que no queda otro estado vigente y acotado que requiera extracción.

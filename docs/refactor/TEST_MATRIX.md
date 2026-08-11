@@ -956,8 +956,10 @@ estáticas y validación manual aprobadas; quedó commiteada en `f05e730`. La
 Sesión 5.4 tiene implementación, validaciones estáticas y validación manual
 aprobadas; quedó commiteada en `948d627`. La Sesión 5.5 tiene implementación y
 validaciones estáticas y validación manual aprobadas; quedó commiteada en
-`3842f20`. La Sesión 5.6 tiene implementación y validaciones estáticas
-aprobadas; su validación manual permanece pendiente.
+`3842f20`. La Sesión 5.6 tiene implementación, validaciones estáticas y
+validación manual aprobadas; quedó commiteada en `d45a493`. La Sesión 5.7 tiene
+implementación y validaciones estáticas completadas; su validación manual
+permanece pendiente.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -1163,47 +1165,48 @@ unidad, contexto, temas, actividades, error, snapshot, `PlaneacionGeneration`,
 SSE, `pendingPlaneacionesByBatchId`, tab, refetch y Quick Create permanecen.
 Las validaciones estáticas y el smoke no sustituyen esta matriz.
 
-**Validación manual: Pendiente de confirmación explícita del usuario.**
+**Validación manual: Aprobada explícitamente por el usuario.** Commit funcional:
+`d45a493`.
 
 ### Modal de Planeaciones
 
 | Prueba | Evidencia esperada | Estado |
 | --- | --- | --- |
-| 1. Apertura | bloque, unidad, materia y nivel correctos; temas inicialmente vacíos | Pendiente |
-| 2. Bloque sin unidad | alert previo; modal no abre; cero request/pending | Pendiente |
-| 3. Alta de tema | título y duración válidos agregan un tema con actividades vacías | Pendiente |
-| 4. Validación de duración | valor menor a 10 conserva mensaje previo; no genera | Pendiente |
-| 5. Actividades por momento | conocimientos previos, desarrollo y cierre conservan selección al agregar otro tema y al generar | Pendiente |
-| 6. Eliminación de tema | solo el tema elegido desaparece; restantes intactos | Pendiente |
-| 7. Cancelación | cerrar/cancelar/backdrop produce cero request y cero pending nuevo | Pendiente |
-| 8. Cierre y reapertura | close conserva objeto internamente; reopen reconstruye temas vacíos como antes | Pendiente |
-| 9. Cambio de bloque | abrir A y luego B usa contexto de B, sin temas/actividades cruzados | Pendiente |
-| 10. Generación individual | cierre, tab Planeaciones, pending, SSE, resultado y refetch correctos | Pendiente |
-| 11. Generación múltiple | orden, actividades, pending por item, conteos y resultados correctos | Pendiente |
-| 12. Reutilización | después de generar puede reabrirse, agregar y cancelar sin request adicional | Pendiente |
-| 13. Reload/navegación | estado modal se pierde y datos persistidos se reconstruyen desde backend | Pendiente |
-| 14. Batch existente | `batch_id` conserva el bloque; no crea otro bloque ni usa `force_new_batch` | Pendiente |
-| 15. `duplicate_tema` | solo si ocurre naturalmente: item skipped, mensaje/conteos y resto del proceso vigentes | Pendiente; no forzar |
+| 1. Apertura | bloque, unidad, materia y nivel correctos; temas inicialmente vacíos | Aprobada |
+| 2. Bloque sin unidad | alert previo; modal no abre; cero request/pending | Aprobada |
+| 3. Alta de tema | título y duración válidos agregan un tema con actividades vacías | Aprobada |
+| 4. Validación de duración | valor menor a 10 conserva mensaje previo; no genera | Aprobada |
+| 5. Actividades por momento | conocimientos previos, desarrollo y cierre conservan selección al agregar otro tema y al generar | Aprobada |
+| 6. Eliminación de tema | solo el tema elegido desaparece; restantes intactos | Aprobada |
+| 7. Cancelación | cerrar/cancelar/backdrop produce cero request y cero pending nuevo | Aprobada |
+| 8. Cierre y reapertura | close conserva objeto internamente; reopen reconstruye temas vacíos como antes | Aprobada |
+| 9. Cambio de bloque | abrir A y luego B usa contexto de B, sin temas/actividades cruzados | Aprobada |
+| 10. Generación individual | cierre, tab Planeaciones, pending, SSE, resultado y refetch correctos | Aprobada |
+| 11. Generación múltiple | orden, actividades, pending por item, conteos y resultados correctos | Aprobada |
+| 12. Reutilización | después de generar puede reabrirse, agregar y cancelar sin request adicional | Aprobada |
+| 13. Reload/navegación | estado modal se pierde y datos persistidos se reconstruyen desde backend | Aprobada |
+| 14. Batch existente | `batch_id` conserva el bloque; no crea otro bloque ni usa `force_new_batch` | Aprobada |
+| 15. `duplicate_tema` | solo si ocurre naturalmente: item skipped, mensaje/conteos y resto del proceso vigentes | No ejecutada/no confirmada; no bloquea |
 
 ### Regresión modal acumulativa
 
 | Prueba | Evidencia esperada | Estado |
 | --- | --- | --- |
-| Planeaciones | abrir, agregar un tema, cerrar y reabrir | Pendiente |
-| Anexos | abrir, cambiar selección, cancelar y reabrir | Pendiente |
-| Listas | abrir, cambiar selección, cancelar y reabrir | Pendiente |
-| Exámenes | abrir, cambiar planeaciones/tipos/cantidades, cancelar y reabrir | Pendiente |
-| Ownership acumulativo | cada modal conserva su bloque y no cruza estado con otro | Pendiente |
+| Planeaciones | abrir, agregar un tema, cerrar y reabrir | Aprobada |
+| Anexos | abrir, cambiar selección, cancelar y reabrir | Aprobada |
+| Listas | abrir, cambiar selección, cancelar y reabrir | Aprobada |
+| Exámenes | abrir, cambiar planeaciones/tipos/cantidades, cancelar y reabrir | Aprobada |
+| Ownership acumulativo | cada modal conserva su bloque y no cruza estado con otro | Aprobada |
 
 ### Regresión general
 
 | Prueba | Evidencia esperada | Estado |
 | --- | --- | --- |
-| Selección y tabs | cambiar bloques/tabs sin estado cruzado | Pendiente |
-| Quick Create | creación/generación, pending, navegación y reload intactos | Pendiente |
-| Delete | delete individual y de bloque conservan selección, tab y refetch | Pendiente |
-| Previews y descargas | cuatro dominios abren/descargan como antes | Pendiente |
-| Consola y red | sin errores nuevos, requests duplicados ni listeners dobles | Pendiente |
+| Selección y tabs | cambiar bloques/tabs sin estado cruzado | Aprobada |
+| Quick Create | creación/generación, pending, navegación y reload intactos | Aprobada |
+| Delete | delete individual y de bloque conservan selección, tab y refetch | Aprobada |
+| Previews y descargas | cuatro dominios abren/descargan como antes | Aprobada |
+| Consola y red | sin errores nuevos, requests duplicados ni listeners dobles | Aprobada |
 
 No deben forzarse backend caído, credenciales inválidas, errores de IA,
 timeouts ni duplicados artificiales. Si `duplicate_tema` no ocurre naturalmente,
@@ -1215,6 +1218,43 @@ se impone en handler; close conserva datos hasta reopen; estado/SSE se pierden
 al navegar; request no cancelable; delete no cancela; skipped puede limpiarse
 con error_count cero; `ia_metrics` queda fuera de alcance.
 
-Siguiente corte propuesto tras aprobar 5.6: **Consolidación de ownership de
-pending states de Biblioteca**, sin número definitivo y no iniciado, con
-sub-gate por dominio y sin unificar shapes, requests, SSE, polling o cleanup.
+## Fase 5 — Sesión 5.7: ownership consolidado de pending states
+
+La extracción conserva cuatro fuentes y shapes independientes mediante
+`BibliotecaPlaneacionesPending`, `BibliotecaAnexosPending`,
+`BibliotecaListaPending` y `BibliotecaExamPending`. Las validaciones estáticas y
+el smoke no sustituyen esta matriz.
+
+**Validación manual: Pendiente de confirmación explícita del usuario.**
+
+| Dominio | Prueba | Evidencia esperada | Estado |
+| --- | --- | --- | --- |
+| Planeaciones | Un tema | pending por tema, SSE, success, cleanup y resultado persistido | Pendiente |
+| Planeaciones | Varios temas | items independientes, progreso/conteos y cero pending cruzado | Pendiente |
+| Planeaciones | `duplicate_tema` | solo si ocurre naturalmente: skipped y conteos previos | Pendiente; no forzar |
+| Planeaciones | Delete | delete individual intacto; delete de bloque limpia pending sin cancelar SSE | Pendiente |
+| Anexos | Uno | card pending correcta, success, cleanup y refetch | Pendiente |
+| Anexos | Varios | requests secuenciales y pending independiente por card | Pendiente |
+| Anexos | Cleanup/delete | éxito/partial natural conserva cleanup previo; delete intacto | Pendiente |
+| Listas | Generación | items, request único, resultado y error visual sin cambios | Pendiente |
+| Listas | Delay/cleanup | pending visible aproximadamente 1500 ms antes de cleanup/refetch | Pendiente |
+| Listas | Delete | delete individual y de bloque intactos | Pendiente |
+| Exámenes | Generación | job, polling cada 3000 ms, `current_step` y terminal completed | Pendiente |
+| Exámenes | Cleanup/delete | completed elimina pending; delete intacto y sin cancelación nueva | Pendiente |
+| Cruces | Bloques y tabs | cambiar durante/tras generación; tab correcto y sin pending cruzado | Pendiente |
+| Cruces | Quick Create | staging, SSE, reconciliación, batch temporal/real y reload intactos | Pendiente |
+| Cruces | Delete de bloque | limpia Planeaciones, Exámenes, Listas y Anexos en el orden vigente | Pendiente |
+| Cruces | Reload/consola | pending efímero se pierde; recursos persistidos reaparecen; sin errores nuevos | Pendiente |
+
+No deben forzarse backend caído, credenciales inválidas, errores IA, failed,
+timeout o resultados parciales artificiales. Los casos que no ocurran
+naturalmente se registran como no ejecutados y no bloquean por sí solos.
+
+Riesgos preservados: shapes variables de Planeaciones; cleanup asimétrico de
+Anexos; espera de 1500 ms y error persistente de Listas; jobId ausente, poll 60
+y failed/timeout persistentes de Exámenes; pending efímero, delete sin
+cancelación y posibles escrituras tardías en los cuatro dominios.
+
+Siguiente corte recomendado tras aprobar 5.7: **auditoría formal de cierre de
+Fase 5**, sin número definitivo y no iniciada. Debe confirmar primero que no
+queda otro estado vigente y acotado que justifique una extracción adicional.

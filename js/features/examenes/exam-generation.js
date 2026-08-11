@@ -16,7 +16,7 @@
     // Close modal immediately — progress will show in the card
     closeBibliotecaExamModal();
     setSelectedConjunto(conjuntoId, { tab: "examenes" });
-    bibliotecaState.pendingExamenByBatchId[conjuntoId] = { message: "Iniciando generacion de examen...", error: "" };
+    BibliotecaExamPending.set(conjuntoId, { message: "Iniciando generacion de examen...", error: "" });
     renderBibliotecaContent();
 
     // Poll in background
@@ -31,10 +31,10 @@
           polls++;
           const statusRes = await apiExamenGenerationStatus(jobId, accessToken);
           if (statusRes?.current_step) {
-            bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
+            BibliotecaExamPending.set(conjuntoId, {
               message: statusRes.current_step,
               error: ""
-            };
+            });
             renderBibliotecaContent();
           }
           if (statusRes?.status === "completed") break;
@@ -47,7 +47,7 @@
 
         console.debug("[polling] examen:finished", { jobId, batchId: conjuntoId, polls });
 
-        delete bibliotecaState.pendingExamenByBatchId[conjuntoId];
+        BibliotecaExamPending.delete(conjuntoId);
         await loadAndRenderBiblioteca({
           silent: true,
           targetBatchId: conjuntoId,
@@ -55,10 +55,10 @@
         });
       } catch (pollError) {
         console.error("[biblioteca] Error en polling de examen:", pollError);
-        bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
+        BibliotecaExamPending.set(conjuntoId, {
           message: "",
           error: BIB_EXAM_GENERIC_FAILURE_MESSAGE
-        };
+        });
         renderBibliotecaContent();
       }
     })();

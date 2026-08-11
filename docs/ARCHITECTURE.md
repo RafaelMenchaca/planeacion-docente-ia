@@ -138,8 +138,8 @@ momento, error, snapshot y delegación a `PlaneacionGeneration` mantienen sus
 expresiones y orden. `batch_id`, reutilización del bloque, SSE,
 `pendingPlaneacionesByBatchId`, tab Planeaciones, refetch, `duplicate_tema` y
 Quick Create permanecen fuera de la superficie e intactos. Implementación y
-validaciones estáticas aprobadas; validación manual pendiente de confirmación
-explícita del usuario. Fase 5 continúa En progreso.
+validaciones estáticas y validación manual aprobadas; commit `d45a493`. Fase 5
+continúa En progreso.
 
 La auditoría acumulativa de 5.6 confirma que los cuatro modales vigentes poseen
 ownership léxico específico sobre una única propiedad física de
@@ -147,6 +147,18 @@ ownership léxico específico sobre una única propiedad física de
 No existe store duplicado, `ModalState` universal, persistencia nueva ni global
 adicional. Generación, pending, render/eventos, Quick Create,
 `window.explorerState` y `window.biblioteca` conservan sus fronteras actuales.
+
+La Sesión 5.7 encapsula literalmente los cuatro pending vigentes mediante
+`BibliotecaPlaneacionesPending`, `BibliotecaAnexosPending`,
+`BibliotecaListaPending` y `BibliotecaExamPending`. Sus únicas fuentes físicas
+continúan en `bibliotecaState`; cada superficie conserva su shape, claves y
+operaciones propias. Los coordinadores solo sustituyen accesos directos por
+`get`/`set`/`delete` equivalentes. SSE, requests secuenciales, delay de 1500 ms,
+polling de 3000 ms y 60 consultas, errores, cleanup, delete de bloque, render y
+Quick Create permanecen funcionalmente intactos. No existe pending universal,
+shape común, persistencia nueva ni global adicional. Implementación y
+validaciones estáticas completadas; validación manual pendiente de confirmación
+explícita del usuario.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

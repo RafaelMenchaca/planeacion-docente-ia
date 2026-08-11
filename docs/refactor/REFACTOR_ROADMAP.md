@@ -611,20 +611,30 @@ parcial, temas, actividades por momento, error, validación y snapshot hacia
 `PlaneacionGeneration`; no modificó `batch_id`, SSE,
 `pendingPlaneacionesByBatchId`, `duplicate_tema`, conteos, refetch, render,
 eventos ni Quick Create. Implementación y validaciones estáticas **Aprobadas**;
-validación manual **Pendiente de confirmación explícita del usuario**. Fase 5
-continúa **En progreso**.
+validación manual **Aprobada**; sesión commiteada en `d45a493`. Fase 5 continúa
+**En progreso**.
 
 La auditoría acumulativa confirmó ownership específico y una fuente física por
 modal para Planeaciones, Anexos, Listas y Exámenes. No existen fuentes
 duplicadas, store/modal universal, persistencia nueva o absorción de Quick
 Create/`explorerState`; generación, pending y render/eventos conservan sus
-fronteras. El subdominio queda técnicamente cubierto, condicionado a la
-validación manual de 5.6.
+fronteras. El subdominio de modales quedó aprobado.
 
-Siguiente corte propuesto, sin número definitivo y no iniciado:
-**Consolidación de ownership de pending states de Biblioteca**, con sub-gate
-independiente por dominio, sin unificar shapes ni modificar request, SSE,
-polling o cleanup.
+La **Sesión 5.7 — Ownership consolidado de pending states de Biblioteca**
+aprobó los cuatro sub-gates y encapsuló las fuentes físicas originales mediante
+`BibliotecaPlaneacionesPending`, `BibliotecaAnexosPending`,
+`BibliotecaListaPending` y `BibliotecaExamPending`. Cada superficie mantiene su
+shape y sus operaciones específicas; no existe store universal. Se preservaron
+escritores y lectores de Biblioteca/Quick Create, SSE, requests secuenciales,
+delay de listas de 1500 ms, polling de examen de 3000 ms y 60 consultas,
+errores, cleanup asimétrico, delete de bloque y pérdida tras reload. La
+implementación y validaciones estáticas están **Completadas**; validación manual
+**Pendiente de confirmación explícita del usuario**. Fase 5 continúa **En
+progreso**.
+
+Siguiente corte recomendado, sin número definitivo y no iniciado: **auditoría
+formal de cierre de Fase 5**, condicionada a la aprobación manual de 5.7 y a
+confirmar que no queda otro estado vigente/acotado que requiera extracción.
 
 ### Dependencias
 

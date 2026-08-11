@@ -1275,8 +1275,10 @@ implementación, validaciones estáticas y validación manual aprobadas; quedó
 commiteada en `f05e730`. La Sesión 5.4 está implementada, validada y commiteada
 en `948d627`. La Sesión 5.5 tiene implementación y validaciones estáticas
 aprobadas; su validación manual también quedó aprobada y quedó commiteada en
-`3842f20`. La Sesión 5.6 tiene implementación y validaciones estáticas
-aprobadas; su validación manual permanece pendiente.
+`3842f20`. La Sesión 5.6 tiene implementación, validaciones estáticas y
+validación manual aprobadas; quedó commiteada en `d45a493`. La Sesión 5.7 tiene
+implementación y validaciones estáticas completadas; su validación manual
+permanece pendiente.
 
 ### Propietarios confirmados
 
@@ -1306,14 +1308,14 @@ de estos objetos desde tests; la suite existente no cubre estado de Biblioteca.
 | `activeTab` | `{}`; única fuente física en `bibliotecaState`; acceso encapsulado por `BibliotecaTabs`; mapa `batchId -> planeaciones|anexos|listas|examenes` | selección/tab, loader/reconciliación y finish de Quick Create delegan; generación y deletes llegan mediante selección/opciones del loader | `renderBibliotecaTabs` y `renderBibliotecaTabContent` delegan lectura | Default `planeaciones`; delete de bloque delega `delete`; sin storage; reload reinicia | DOM, render, delete, generación y Quick Create indirecto | Biblioteca vigente; claves coercionadas, múltiples transiciones y tabs desconocidos preservados; Sesión 5.2 aprobada y commiteada en `f5bbfdd` |
 | `pendingBatchId` | `null`; ID de batch reutilizado por Quick Create | fachada `window.biblioteca` y Quick Create | payload de generación de Quick Create | Se fija antes de generar y se limpia en éxito/error/finally; reload reinicia | API/generación compartida | Estado mixto Biblioteca–Quick Create; riesgo de cruce; F5/7 |
 | `pendingConjunto` | `null` o objeto temporal con `id/tempId/isPending/status_ui`, metadatos, contadores, `planeaciones`, `examenes` y `listas_cotejo` | fachada Quick Create, loader y reconciliación | sidebar, detalle y tab Planeaciones; progreso indirecto desde `explorerState.progress` | Nace antes de generar bloque nuevo; carga normal/reconciliación lo limpia; reload lo pierde | Render, generación y refetch | Estado mixto; shape parcial y sin job persistido; F5/7 |
-| `pendingPlaneacionesByBatchId` | `{}`; mapa a `{items,error}`; items de Biblioteca y Quick Create no tienen exactamente el mismo shape | `PlaneacionGeneration`, fachada/finish de Quick Create y delete de bloque | tab Planeaciones y callbacks de progreso | Éxito sin errores/delete limpia; parcial/error permanece; reload/navegación pierde | SSE, render, delete y generación | Generación activa / estado mixto; múltiples escritores y shapes variables confirmados; F5, Quick Create F7 |
-| `pendingExamenByBatchId` | `{}`; mapa a `{message,error}` | `ExamGeneration` y delete de bloque | tab Exámenes | Nace después del job; completed/delete limpia; failed/timeout permanece; reload pierde `jobId` y polling | Polling, render, delete y API | Generación activa; no reanuda job persistido; F5 |
-| `pendingListaByBatchId` | `{}`; mapa a `{items,result,error}` | `ListaCotejoGeneration` y delete de bloque | tab Listas | Éxito espera 1500 ms y limpia/refetch; error queda; delete/reload limpia | Request largo, render y delete | Generación activa; no representa detalle de skipped por item; F5 |
-| `anexosGenerating` | `{}`; mapa anidado `batchId -> planeacionId -> {titulo,materia,nivel,status,errorMessage}` | `AnexoGeneration`, wrappers de generación/regeneración y delete de bloque | tab y modal de Anexos | Éxito por item limpia; refetch con algún éxito elimina el mapa completo; fallo total queda; reload limpia | Requests secuenciales, render, delete y generación | Generación activa; múltiples escritores y cleanup asimétrico; F5 |
+| `pendingPlaneacionesByBatchId` | `{}`; mapa a `{items,error}`; items de Biblioteca y Quick Create no tienen exactamente el mismo shape; única fuente encapsulada por `BibliotecaPlaneacionesPending` | `PlaneacionGeneration`, fachada/finish de Quick Create y delete de bloque delegan en la superficie | tab Planeaciones y callbacks de progreso leen mediante `get` | Éxito sin errores/delete limpia; parcial/error permanece; reload/navegación pierde | SSE, render, delete y generación | Generación activa / estado mixto; shapes variables preservados; 5.7 implementada/estáticas completadas, manual pendiente; Quick Create F7 |
+| `pendingExamenByBatchId` | `{}`; mapa a `{message,error}`; única fuente encapsulada por `BibliotecaExamPending` | `ExamGeneration` y delete de bloque delegan | tab Exámenes lee mediante `get` | Nace después del job; completed/delete limpia; failed/timeout permanece; reload pierde `jobId` y polling | Polling, render, delete y API | Generación activa; no reanuda job persistido; 5.7 implementada/estáticas completadas, manual pendiente |
+| `pendingListaByBatchId` | `{}`; mapa a `{items,result,error}`; única fuente encapsulada por `BibliotecaListaPending` | `ListaCotejoGeneration` y delete de bloque delegan | tab Listas lee mediante `get` | Éxito espera 1500 ms y limpia/refetch; error queda; delete/reload limpia | Request largo, render y delete | Generación activa; no representa skipped por item; 5.7 implementada/estáticas completadas, manual pendiente |
+| `anexosGenerating` | `{}`; mapa anidado `batchId -> planeacionId -> {titulo,materia,nivel,status,errorMessage}`; única fuente encapsulada por `BibliotecaAnexosPending` | `AnexoGeneration`, wrappers de generación/regeneración y delete de bloque delegan | tab/modal de Anexos leen mediante `getBatch`/`getItem` | Éxito por item limpia; refetch con algún éxito elimina el mapa completo; fallo total queda; reload limpia | Requests secuenciales, render, delete y generación | Generación activa; múltiples escritores y cleanup asimétrico preservados; 5.7 implementada/estáticas completadas, manual pendiente |
 | `anexoModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaAnexoModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `AnexoGeneration` | Open reemplaza el objeto; close solo cambia `open`; reload limpia | DOM, pending, API y generación | Biblioteca vigente; render filtra/muta selección y sesión nula puede dejar `submitting`; estado F5, render F6; 5.3 aprobada y commiteada en `f05e730` |
 | `listaModal` | `{open,conjuntoId,planeaciones,selectedPlaneacionIds,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaListaModalState` | open/close, render, checkboxes y submit delegan sus transiciones en la superficie léxica | modal DOM lee mediante `getState()`; submit pasa snapshot a `ListaCotejoGeneration` | Open reemplaza; close solo `open`; render filtra selección; reload limpia | DOM, API y generación | Biblioteca vigente; sesión nula puede dejar `submitting`; estado F5, render F6; 5.4 aprobada y commiteada en `948d627` |
 | `examModal` | `{open,conjuntoId,unidadId,planeaciones,selectedPlaneacionIds,selectedTypes,questionCounts,submitting,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaExamModalState` | open/close, listeners de tipos/cantidades/planeaciones y submit delegan las mismas transiciones | modal DOM lee mediante `getState()`; submit pasa el payload protegido a `ExamGeneration` | Open reemplaza; close solo `open`; reapertura/reload reconstruyen o limpian el estado efímero | DOM, payload, job y polling indirectos | Biblioteca vigente; sesión nula puede dejar `submitting`; contratos y polling protegidos; 5.5 aprobada y commiteada en `3842f20`; estado F5, render F6 |
-| `agregarModal` | `{open,conjuntoId,unidadId,materia,nivel,unidad,temas,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaPlaneacionModalState`; no tiene `submitting` | open/close, altas/bajas de temas, actividades por momento, error y submit delegan acceso/transiciones | modal DOM lee mediante `getState()`; submit pasa snapshot a `PlaneacionGeneration` | Open reemplaza; close solo `open`; reapertura/reload reconstruyen o limpian estado efímero | DOM, SSE y generación indirectos | Biblioteca vigente; render captura/muta actividades; implementación/estáticas 5.6 aprobadas, manual pendiente; estado F5, render/eventos F6 |
+| `agregarModal` | `{open,conjuntoId,unidadId,materia,nivel,unidad,temas,error}`; única fuente física en `bibliotecaState`, encapsulada por `BibliotecaPlaneacionModalState`; no tiene `submitting` | open/close, altas/bajas de temas, actividades por momento, error y submit delegan acceso/transiciones | modal DOM lee mediante `getState()`; submit pasa snapshot a `PlaneacionGeneration` | Open reemplaza; close solo `open`; reapertura/reload reconstruyen o limpian estado efímero | DOM, SSE y generación indirectos | Biblioteca vigente; render captura/muta actividades; 5.6 aprobada y commiteada en `d45a493`; estado F5, render/eventos F6 |
 
 Los cuatro pending y `pendingConjunto` son memoria frontend, no datos
 persistidos. Un refetch puede reconstruir bloques y recursos ya guardados, pero
@@ -1648,7 +1650,7 @@ Auditoría acumulativa de ownership modal:
 
 | Modal | Fuente física | Superficie | Generador | Pending | Tab | Persistencia | Estado |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Planeaciones | `bibliotecaState.agregarModal` | `BibliotecaPlaneacionModalState` | `PlaneacionGeneration` | `pendingPlaneacionesByBatchId` | `planeaciones` | Ninguna | 5.6 implementada/estáticas aprobadas; manual pendiente |
+| Planeaciones | `bibliotecaState.agregarModal` | `BibliotecaPlaneacionModalState` | `PlaneacionGeneration` | `pendingPlaneacionesByBatchId` | `planeaciones` | Ninguna | 5.6 aprobada, `d45a493` |
 | Anexos | `bibliotecaState.anexoModal` | `BibliotecaAnexoModalState` | `AnexoGeneration` | `anexosGenerating` | `anexos` | Ninguna | 5.3 aprobada, `f05e730` |
 | Listas | `bibliotecaState.listaModal` | `BibliotecaListaModalState` | `ListaCotejoGeneration` | `pendingListaByBatchId` | `listas` | Ninguna | 5.4 aprobada, `948d627` |
 | Exámenes | `bibliotecaState.examModal` | `BibliotecaExamModalState` | `ExamGeneration` | `pendingExamenByBatchId` | `examenes` | Ninguna | 5.5 aprobada, `3842f20` |
@@ -1657,12 +1659,31 @@ Los cuatro modales conservan una sola fuente, superficies léxicas específicas 
 generación/pending externos. No existe store o modal universal; Quick Create,
 `window.explorerState` y `window.biblioteca` no fueron absorbidos ni ampliados.
 
-### Siguiente corte propuesto
+### Sesión 5.7 — ownership consolidado de pending states de Biblioteca
 
-**Consolidación de ownership de pending states de Biblioteca**, sin número y no
-iniciada. Debe usar un sub-gate por dominio, conservar los cuatro shapes y
-evitar un `PendingState` universal o cambios en requests, SSE, polling y
-cleanup.
+Los cuatro sub-gates pasaron. Las superficies son léxicas, específicas y
+operan sobre las propiedades originales de `bibliotecaState`:
+
+| Dominio | Fuente y clave | Shape preservado | Superficie / operaciones | Creación y progreso | Éxito / error / cleanup |
+| --- | --- | --- | --- | --- | --- |
+| Planeaciones | `pendingPlaneacionesByBatchId[batchId]` | `{items,error}`; items pueden añadir `statusLabel` en Quick Create/reconciliación | `BibliotecaPlaneacionesPending`: `get`, `set`, `delete` | Biblioteca y Quick Create crean; SSE muta `pending/generating/ready/error/skipped` | `error_count===0` elimina; parcial/error permanece; `duplicate_tema` puede quedar skipped y limpiarse con cero errores |
+| Anexos | `anexosGenerating[batchId][planeacionId]` | `{titulo,materia,nivel,status,errorMessage}` | `BibliotecaAnexosPending`: get/set/delete de batch e item | Lote y wrappers crean; requests continúan secuenciales | Éxito elimina item; algún éxito + refetch elimina batch; fallo total deja errores; cleanup asimétrico intacto |
+| Listas | `pendingListaByBatchId[batchId]` | `{items,result,error}` | `BibliotecaListaPending`: `get`, `set`, `delete` | Se crea antes del POST único | Éxito espera 1500 ms, elimina y refetch; error reemplaza conservando items y permanece |
+| Exámenes | `pendingExamenByBatchId[batchId]` | `{message,error}`; sin `jobId` | `BibliotecaExamPending`: `get`, `set`, `delete` | Nace tras `job_id`; `current_step` reemplaza message | completed elimina/refetch; failed o timeout reemplaza con error y permanece |
+
+Delete de bloque conserva el orden Planeaciones → Exámenes → Listas → Anexos.
+Reload/navegación siguen perdiendo los cuatro estados y no cancelan SSE,
+requests, jobs o polling. Render usa getters equivalentes; Quick Create conserva
+la fachada `window.biblioteca`, su staging y reconciliación. No se unificaron
+shapes ni se creó `PendingState` universal. Implementación y validaciones
+estáticas completadas; validación manual pendiente.
+
+### Siguiente corte recomendado
+
+Tras validar manualmente 5.7, realizar una **auditoría formal de cierre de Fase
+5**. La auditoría deberá confirmar que no queda otro estado vigente y acotado de
+Biblioteca que justifique una extracción adicional; no está iniciada ni tiene
+número definitivo.
 
 ## Riesgos priorizados
 

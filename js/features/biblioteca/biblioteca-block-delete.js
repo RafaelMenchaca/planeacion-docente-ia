@@ -26,10 +26,10 @@
         BibliotecaSelection.setSelectedConjuntoId(bibliotecaState.conjuntos[0]?.id || null);
       }
       BibliotecaTabs.clearActiveTab(safeBatchId);
-      delete bibliotecaState.pendingPlaneacionesByBatchId[safeBatchId];
-      delete bibliotecaState.pendingExamenByBatchId[safeBatchId];
-      delete bibliotecaState.pendingListaByBatchId[safeBatchId];
-      delete bibliotecaState.anexosGenerating[safeBatchId];
+      BibliotecaPlaneacionesPending.delete(safeBatchId);
+      BibliotecaExamPending.delete(safeBatchId);
+      BibliotecaListaPending.delete(safeBatchId);
+      BibliotecaAnexosPending.deleteBatch(safeBatchId);
 
       renderBibliotecaContent();
       await loadAndRenderBiblioteca({ silent: true });

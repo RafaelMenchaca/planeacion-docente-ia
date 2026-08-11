@@ -7,18 +7,18 @@
     );
 
     // Insertar cards temporales "generating" antes de cerrar el modal
-    if (!bibliotecaState.anexosGenerating[conjuntoId]) {
-      bibliotecaState.anexosGenerating[conjuntoId] = {};
+    if (!BibliotecaAnexosPending.getBatch(conjuntoId)) {
+      BibliotecaAnexosPending.setBatch(conjuntoId, {});
     }
     for (const pid of selectedIds) {
       const p = planMap.get(pid);
-      bibliotecaState.anexosGenerating[conjuntoId][pid] = {
+      BibliotecaAnexosPending.setItem(conjuntoId, pid, {
         titulo:  p?.tema || p?.custom_title || "Sin titulo",
         materia: p?.materia || null,
         nivel:   p?.nivel   || null,
         status:  "generating",
         errorMessage: ""
-      };
+      });
     }
 
     closeBibliotecaAnexoCreateModal();
@@ -40,7 +40,7 @@
           );
           if (conjuntoObj) {
             if (!Array.isArray(conjuntoObj.anexos)) conjuntoObj.anexos = [];
-            const item = bibliotecaState.anexosGenerating[conjuntoId]?.[pid];
+            const item = BibliotecaAnexosPending.getItem(conjuntoId, pid);
             conjuntoObj.anexos.push({
               id:           res.anexo_id || `tmp-${pid}`,
               planeacion_id: pid,
@@ -54,16 +54,17 @@
           }
 
           // Quitar card temporal de este pid
-          if (bibliotecaState.anexosGenerating[conjuntoId]) {
-            delete bibliotecaState.anexosGenerating[conjuntoId][pid];
+          if (BibliotecaAnexosPending.getBatch(conjuntoId)) {
+            BibliotecaAnexosPending.deleteItem(conjuntoId, pid);
           }
           anySuccess = true;
           successCount += 1;
         } catch (itemErr) {
           console.error("[biblioteca] Error generando anexo para planeacion", pid, itemErr);
-          if (bibliotecaState.anexosGenerating[conjuntoId]?.[pid]) {
-            bibliotecaState.anexosGenerating[conjuntoId][pid].status       = "error";
-            bibliotecaState.anexosGenerating[conjuntoId][pid].errorMessage = itemErr?.message || "No se pudo generar el anexo.";
+          const pendingItem = BibliotecaAnexosPending.getItem(conjuntoId, pid);
+          if (pendingItem) {
+            pendingItem.status       = "error";
+            pendingItem.errorMessage = itemErr?.message || "No se pudo generar el anexo.";
           }
         }
 
@@ -71,10 +72,10 @@
       }
 
       // Limpiar mapa si ya no queda nada generando (solo errores o vacío)
-      const remaining = bibliotecaState.anexosGenerating[conjuntoId] || {};
+      const remaining = BibliotecaAnexosPending.getBatch(conjuntoId) || {};
       const allDone   = Object.values(remaining).every((v) => v.status === "error");
       if (allDone && Object.keys(remaining).length === 0) {
-        delete bibliotecaState.anexosGenerating[conjuntoId];
+        BibliotecaAnexosPending.deleteBatch(conjuntoId);
       }
 
       console.info("[anexos] generate:success", {
@@ -86,7 +87,7 @@
       // Reload silencioso para confirmar datos reales del servidor
       if (anySuccess) {
         await loadAndRenderBiblioteca({ silent: true, targetBatchId: conjuntoId, activeTab: "anexos" });
-        delete bibliotecaState.anexosGenerating[conjuntoId];
+        BibliotecaAnexosPending.deleteBatch(conjuntoId);
       }
     })();
   }
