@@ -958,8 +958,9 @@ aprobadas; quedó commiteada en `948d627`. La Sesión 5.5 tiene implementación 
 validaciones estáticas y validación manual aprobadas; quedó commiteada en
 `3842f20`. La Sesión 5.6 tiene implementación, validaciones estáticas y
 validación manual aprobadas; quedó commiteada en `d45a493`. La Sesión 5.7 tiene
-implementación y validaciones estáticas completadas; su validación manual
-permanece pendiente.
+implementación, validaciones estáticas y validación manual aprobadas; quedó
+commiteada en `9b3c23d`. La Sesión 5.8 completó y aprobó la auditoría formal de
+cierre; Fase 5 está completada y Fase 6 permanece pendiente y no iniciada.
 
 ## Fase 5 — Sesión 5.1: selección de bloque de Biblioteca
 
@@ -1225,26 +1226,26 @@ La extracción conserva cuatro fuentes y shapes independientes mediante
 `BibliotecaListaPending` y `BibliotecaExamPending`. Las validaciones estáticas y
 el smoke no sustituyen esta matriz.
 
-**Validación manual: Pendiente de confirmación explícita del usuario.**
+**Validación manual: Aprobada explícitamente por el usuario.**
 
 | Dominio | Prueba | Evidencia esperada | Estado |
 | --- | --- | --- | --- |
-| Planeaciones | Un tema | pending por tema, SSE, success, cleanup y resultado persistido | Pendiente |
-| Planeaciones | Varios temas | items independientes, progreso/conteos y cero pending cruzado | Pendiente |
-| Planeaciones | `duplicate_tema` | solo si ocurre naturalmente: skipped y conteos previos | Pendiente; no forzar |
-| Planeaciones | Delete | delete individual intacto; delete de bloque limpia pending sin cancelar SSE | Pendiente |
-| Anexos | Uno | card pending correcta, success, cleanup y refetch | Pendiente |
-| Anexos | Varios | requests secuenciales y pending independiente por card | Pendiente |
-| Anexos | Cleanup/delete | éxito/partial natural conserva cleanup previo; delete intacto | Pendiente |
-| Listas | Generación | items, request único, resultado y error visual sin cambios | Pendiente |
-| Listas | Delay/cleanup | pending visible aproximadamente 1500 ms antes de cleanup/refetch | Pendiente |
-| Listas | Delete | delete individual y de bloque intactos | Pendiente |
-| Exámenes | Generación | job, polling cada 3000 ms, `current_step` y terminal completed | Pendiente |
-| Exámenes | Cleanup/delete | completed elimina pending; delete intacto y sin cancelación nueva | Pendiente |
-| Cruces | Bloques y tabs | cambiar durante/tras generación; tab correcto y sin pending cruzado | Pendiente |
-| Cruces | Quick Create | staging, SSE, reconciliación, batch temporal/real y reload intactos | Pendiente |
-| Cruces | Delete de bloque | limpia Planeaciones, Exámenes, Listas y Anexos en el orden vigente | Pendiente |
-| Cruces | Reload/consola | pending efímero se pierde; recursos persistidos reaparecen; sin errores nuevos | Pendiente |
+| Planeaciones | Un tema | pending por tema, SSE, success, cleanup y resultado persistido | Aprobada |
+| Planeaciones | Varios temas | items independientes, progreso/conteos y cero pending cruzado | Aprobada |
+| Planeaciones | `duplicate_tema` | solo si ocurre naturalmente: skipped y conteos previos | No ejecutada/no confirmada en esta corrida; no bloquea |
+| Planeaciones | Delete | delete individual intacto; delete de bloque limpia pending sin cancelar SSE | Aprobada |
+| Anexos | Uno | card pending correcta, success, cleanup y refetch | Aprobada |
+| Anexos | Varios | requests secuenciales y pending independiente por card | No confirmado específicamente en 5.7; validado previamente; no bloquea |
+| Anexos | Cleanup/delete | éxito/partial natural conserva cleanup previo; delete intacto | Aprobada para flujo normal y delete de bloque; partial no forzado |
+| Listas | Generación | items, request único, resultado y error visual sin cambios | Aprobada para flujo normal; error no forzado |
+| Listas | Delay/cleanup | pending visible aproximadamente 1500 ms antes de cleanup/refetch | Aprobada |
+| Listas | Delete | delete individual y de bloque intactos | Aprobada por regresión acumulativa/delete de bloque |
+| Exámenes | Generación | job, polling cada 3000 ms, `current_step` y terminal completed | Aprobada |
+| Exámenes | Cleanup/delete | completed elimina pending; delete intacto y sin cancelación nueva | Aprobada; retry natural observado sin cancelación |
+| Cruces | Bloques y tabs | cambiar durante/tras generación; tab correcto y sin pending cruzado | Aprobada |
+| Cruces | Quick Create | staging, SSE, reconciliación, batch temporal/real y reload intactos | Aprobada |
+| Cruces | Delete de bloque | limpia Planeaciones, Exámenes, Listas y Anexos en el orden vigente | Aprobada |
+| Cruces | Reload/consola | pending efímero se pierde; recursos persistidos reaparecen; sin errores nuevos | Aprobada |
 
 No deben forzarse backend caído, credenciales inválidas, errores IA, failed,
 timeout o resultados parciales artificiales. Los casos que no ocurran
@@ -1255,6 +1256,29 @@ Anexos; espera de 1500 ms y error persistente de Listas; jobId ausente, poll 60
 y failed/timeout persistentes de Exámenes; pending efímero, delete sin
 cancelación y posibles escrituras tardías en los cuatro dominios.
 
-Siguiente corte recomendado tras aprobar 5.7: **auditoría formal de cierre de
-Fase 5**, sin número definitivo y no iniciada. Debe confirmar primero que no
-queda otro estado vigente y acotado que justifique una extracción adicional.
+Evidencia natural: `[planeaciones] generate:success`, `[anexos] generate:success`,
+`[listas-cotejo] generate:success`, `[examenes] generate:success` y
+`[biblioteca] delete:success`. Commit: `9b3c23d`.
+
+## Fase 5 — Sesión 5.8: auditoría formal de cierre
+
+La auditoría acumulativa verificó las sesiones 5.0–5.7, ownership y fuentes
+físicas, consumidores directos/indirectos, contratos de generación, SSE,
+polling, delete, Quick Create, render/eventos, legacy, documentación e historial.
+No se detectaron segunda fuente, store universal, persistencia nueva, regresión
+introducida ni bloqueo funcional real.
+
+| Revisión | Resultado |
+| --- | --- |
+| Inventario de sesiones, commits y validaciones 5.0–5.7 | Aprobado |
+| Selección, tabs, cuatro modales y cuatro pending | Ownership y fuente única confirmados |
+| Generación, SSE, polling, payload de exámenes y delete | Contratos preservados |
+| Quick Create, `window.explorerState` y `window.biblioteca` | Separación/compatibilidad preservadas |
+| Render/eventos, Archivados, jerarquía y legacy | Sin reorganización ni eliminación |
+| Backend y archivos protegidos | Limpios/intactos |
+| Riesgos conocidos | No bloqueantes, futuros o externos; sin corrección |
+| Pruebas manuales adicionales para 5.8 | No requeridas |
+
+**Decisión: A. Fase 5 puede cerrarse.** Fase 5 y la Sesión 5.8 quedan
+completadas; la auditoría de cierre queda aprobada. Fase 6 permanece pendiente y
+no iniciada.

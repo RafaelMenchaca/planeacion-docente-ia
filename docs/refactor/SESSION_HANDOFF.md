@@ -11,8 +11,9 @@
 
 ## Estado del roadmap
 
-- **Última fase cerrada:** 4 — Generación y polling.
-- **Fase actual:** 5 — Estado de Biblioteca, En progreso.
+- **Última fase cerrada:** 5 — Estado de Biblioteca.
+- **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
+- **Fase actual:** ninguna; Fase 6 permanece pendiente y no iniciada.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -33,7 +34,9 @@
 - **Sesión 5.4:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `948d627`.
 - **Sesión 5.5:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `3842f20`.
 - **Sesión 5.6:** implementación, validaciones estáticas y validación manual aprobadas; commiteada en `d45a493`.
-- **Sesión 5.7:** cuatro pending encapsulados mediante superficies específicas; validaciones estáticas completadas; validación manual pendiente.
+- **Sesión 5.7:** cuatro pending encapsulados mediante superficies específicas; implementación y validaciones aprobadas; commiteada en `9b3c23d`.
+- **Sesión 5.8:** auditoría formal de cierre completada y aprobada; sin cambios funcionales.
+- **Decisión formal:** A. Fase 5 puede cerrarse.
 - **Sesión 3.0:** Auditoría de capa API frontend, completada.
 - **Sesión 3.1:** Consolidación de lecturas de Biblioteca, completada.
 - **Validación manual 3.1:** aprobada.
@@ -57,7 +60,7 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** validar manualmente 5.7; después, evaluar auditoría formal de cierre de Fase 5, no iniciada y sin número definitivo.
+- **Continuación:** Fase 6 permanece pendiente y no iniciada; debe abrirse únicamente mediante una sesión posterior autorizada.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -71,8 +74,9 @@ commiteada en `f05e730`. La Sesión 5.4 quedó aprobada y commiteada en
 `948d627`. La Sesión 5.5 tiene implementación y validaciones estáticas
 aprobadas; su validación manual también quedó aprobada y la sesión fue
 commiteada en `3842f20`. La Sesión 5.6 quedó aprobada y commiteada en
-`d45a493`. La Sesión 5.7 tiene implementación y validaciones estáticas
-completadas; su validación manual permanece pendiente.
+`d45a493`. La Sesión 5.7 quedó aprobada y commiteada en `9b3c23d`. La Sesión
+5.8 completó y aprobó la auditoría formal; Fase 5 está completada y Fase 6
+permanece pendiente y no iniciada.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3759,12 +3763,51 @@ seguido por escrituras tardías de procesos que continúan. No se corrigió nada
 
 ### Validación manual de 5.7
 
-**Pendiente de confirmación explícita del usuario.** Debe cubrir generación y
-pending de los cuatro dominios, cruces de bloque/tab, Quick Create, delete de
-bloque, reload y consola, sin forzar errores artificiales.
+**Aprobada explícitamente por el usuario.** Se confirmaron: Planeaciones con uno
+y varios temas, batch nuevo/reutilizado, SSE, pending, success, cleanup y delete;
+Anexos con pending por card y cleanup; Listas con pending, resultado y cleanup;
+Exámenes con job, polling, progreso, contexto temático, completed, retry natural
+sin cancelación y resultado guardado; además de cambios de bloque, tabs, ausencia
+de pending cruzado, Quick Create, delete de bloque, reload, consola sin errores
+nuevos y ausencia de requests duplicados visibles. Evidencia natural:
+`[planeaciones] generate:success`, `[anexos] generate:success`,
+`[listas-cotejo] generate:success`, `[examenes] generate:success` y
+`[biblioteca] delete:success`. Commit: `9b3c23d`.
 
 ### Siguiente corte recomendado
 
-Después de aprobar manualmente 5.7, evaluar una **auditoría formal de cierre de
-Fase 5**, sin número y no iniciada. Solo debe abrirse si la revisión confirma
-que no queda otro estado vigente y acotado que requiera extracción.
+La Sesión 5.8 quedó ejecutada a continuación.
+
+## Fase 5 — Sesión 5.8: Auditoría formal de cierre
+
+### Resultado
+
+La revisión acumulativa de código, historial y documentación confirmó que el
+objetivo canónico de Fase 5 está cumplido. Selección, tabs, cuatro modales y
+cuatro pending poseen ownership léxico específico sobre sus fuentes originales;
+no hay segunda fuente, store universal, persistencia nueva ni acceso directo
+residual no clasificado. Quick Create, `window.explorerState`,
+`window.biblioteca`, generación, SSE, polling, delete, render/eventos,
+Archivados, jerarquía técnica, legacy y backend conservaron sus contratos.
+
+| Sesión | Objetivo | Validación | Commit | Estado |
+| --- | --- | --- | --- | --- |
+| 5.0 | Auditoría de apertura | Documental aprobada | `525a21a` | Aprobada y commiteada |
+| 5.1 | Selección de bloque | Estática/manual aprobadas | `1b4c620` | Aprobada y commiteada |
+| 5.2 | Tab activo | Estática/manual aprobadas | `f5bbfdd` | Aprobada y commiteada |
+| 5.3 | Modal de Anexos | Estática/manual aprobadas | `f05e730` | Aprobada y commiteada |
+| 5.4 | Modal de Listas | Estática/manual aprobadas | `948d627` | Aprobada y commiteada |
+| 5.5 | Modal de Exámenes | Estática/manual aprobadas | `3842f20` | Aprobada y commiteada |
+| 5.6 | Modal de Planeaciones y cierre modal | Estática/manual aprobadas | `d45a493` | Aprobada y commiteada |
+| 5.7 | Ownership de pending | Estática/manual aprobadas | `9b3c23d` | Aprobada y commiteada |
+
+Estado restante: `conjuntos`, `loading`, `error` y `searchQuery` corresponden a
+carga/render de Fases 6–7; `pendingBatchId` y `pendingConjunto`, a Quick Create
+de Fase 7; `expandedIds` permanece documentado sin consumidor confirmado. No
+justifican una extracción adicional en Fase 5.
+
+### Decisión formal
+
+**A. Fase 5 puede cerrarse.** Fase 5 y la Sesión 5.8 quedan completadas; la
+auditoría de cierre queda aprobada. No se requieren pruebas manuales adicionales.
+Fase 6 permanece pendiente y no iniciada.

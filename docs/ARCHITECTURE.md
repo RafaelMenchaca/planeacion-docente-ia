@@ -157,8 +157,19 @@ operaciones propias. Los coordinadores solo sustituyen accesos directos por
 polling de 3000 ms y 60 consultas, errores, cleanup, delete de bloque, render y
 Quick Create permanecen funcionalmente intactos. No existe pending universal,
 shape común, persistencia nueva ni global adicional. Implementación y
-validaciones estáticas completadas; validación manual pendiente de confirmación
-explícita del usuario.
+validaciones estáticas y validación manual aprobadas; commit `9b3c23d`.
+
+La Sesión 5.8 auditó formalmente el cierre sin modificar código funcional. La
+revisión acumulativa confirmó ownership identificable para selección, tabs,
+cuatro modales y cuatro pending; una sola fuente física por estado; ausencia de
+stores universales, copias divergentes o persistencia nueva; y preservación de
+Quick Create, `window.explorerState`, `window.biblioteca`, generación, SSE,
+polling, delete, render/eventos, Archivados, legacy y backend. Los estados de
+carga/render y Quick Create que permanecen sin superficie específica están
+delimitados para fases posteriores o como deuda conocida y no bloquean. La
+decisión formal es **A. Fase 5 puede cerrarse**: Fase 5 y la Sesión 5.8 quedan
+completadas, la auditoría de cierre queda aprobada y Fase 6 permanece pendiente
+y no iniciada.
 
 La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
 `bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,

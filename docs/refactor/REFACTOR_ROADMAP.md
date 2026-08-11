@@ -28,7 +28,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
 | 4 | Generación y polling | Separar procesos largos | Alto | Completada |
-| 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | En progreso |
+| 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Completada |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Pendiente |
@@ -529,7 +529,7 @@ Crear un estado identificable de Biblioteca y reducir su dependencia de `window.
 
 ### Estado
 
-**En progreso.**
+**Completada.**
 
 La Sesión 5.0 — Auditoría documental de apertura superó la puerta de entrada
 desde `e1991de`: Fase 4 y su Sesión 4.5 constan completadas, la validación
@@ -628,13 +628,24 @@ shape y sus operaciones específicas; no existe store universal. Se preservaron
 escritores y lectores de Biblioteca/Quick Create, SSE, requests secuenciales,
 delay de listas de 1500 ms, polling de examen de 3000 ms y 60 consultas,
 errores, cleanup asimétrico, delete de bloque y pérdida tras reload. La
-implementación y validaciones estáticas están **Completadas**; validación manual
-**Pendiente de confirmación explícita del usuario**. Fase 5 continúa **En
-progreso**.
+implementación, validaciones estáticas y validación manual están **Aprobadas**;
+la sesión quedó commiteada en `9b3c23d`.
 
-Siguiente corte recomendado, sin número definitivo y no iniciado: **auditoría
-formal de cierre de Fase 5**, condicionada a la aprobación manual de 5.7 y a
-confirmar que no queda otro estado vigente/acotado que requiera extracción.
+La **Sesión 5.8 — Auditoría formal de cierre de Fase 5** reconcilió 5.7 y auditó
+acumulativamente las sesiones 5.0–5.7, sus superficies, fuentes físicas,
+consumidores, historial, contratos y regresiones. Confirmó ownership
+identificable para selección, tabs, cuatro modales y cuatro pending; ausencia de
+copias divergentes, stores universales y persistencia nueva; y preservación de
+Quick Create, `window.explorerState`, `window.biblioteca`, generación, SSE,
+polling, delete, render/eventos, Archivados, legacy y backend. `conjuntos`,
+`loading`, `error` y `searchQuery` quedan delimitados para carga/render en Fases
+6–7; `pendingBatchId` y `pendingConjunto`, para Quick Create en Fase 7;
+`expandedIds`, como deuda sin consumidor confirmado. No existe bloqueo
+funcional real.
+
+**Decisión formal: A. Fase 5 puede cerrarse.** La Sesión 5.8 y la auditoría de
+cierre están **Completadas y Aprobadas**. Fase 6 permanece **Pendiente** y no
+iniciada.
 
 ### Dependencias
 
