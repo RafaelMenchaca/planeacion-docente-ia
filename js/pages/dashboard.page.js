@@ -1773,80 +1773,31 @@ function renderActividadesEvaluadasHtml(lista) {
   `;
 }
 
-function renderListaCotejoPreviewBody(lista) {
-  if (!lista) return '<p class="text-sm text-slate-500">No se pudo cargar la lista.</p>';
-  const criterios = Array.isArray(lista.criterios) ? lista.criterios : [];
-  return `
-    <div class="space-y-3">
-      <div class="overflow-x-auto rounded-xl border border-slate-200">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Criterio</th>
-              <th class="w-20 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">Si (2 pts)</th>
-              <th class="w-20 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">No (0 pts)</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            ${criterios.map((c, i) => `
-              <tr class="${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}">
-                <td class="px-3 py-2.5 text-slate-700">${escapeHtml(c.criterio || "")}</td>
-                <td class="px-3 py-2.5 text-center text-slate-500">${escapeHtml(String(c.si ?? 2))}</td>
-                <td class="px-3 py-2.5 text-center text-slate-500">${escapeHtml(String(c.no ?? 0))}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-          <tfoot class="bg-slate-50">
-            <tr>
-              <td class="px-3 py-2.5 text-xs font-semibold text-slate-600">Total</td>
-              <td class="px-3 py-2.5 text-center text-xs font-semibold text-slate-700">${escapeHtml(String(lista.total_puntos || 10))} pts</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  `;
-}
-
+// Compatibilidad temporal: conserva la firma pública y los consumidores del dashboard/Biblioteca.
+// Motivo: mantener la API global durante la extracción.
+// Consumidores actuales: renderAll(), Biblioteca y el explorador jerárquico.
+// Condición para retirarlo: búsqueda global sin consumidores de window.renderListaCotejoPreviewModal.
+// Fase prevista de retiro: Fase 10.
 function renderListaCotejoPreviewModal() {
-  const modal = document.getElementById("lista-cotejo-preview-modal");
-  const title = document.getElementById("lista-cotejo-preview-title");
-  const meta = document.getElementById("lista-cotejo-preview-meta");
-  const body = document.getElementById("lista-cotejo-preview-body");
-  const error = document.getElementById("lista-cotejo-preview-error");
-  if (!modal || !title || !meta || !body || !error) return;
-
-  const state = explorerState.listaCotejoPreview;
-  modal.classList.toggle("hidden", !state.open);
-  syncBodyScrollLock();
-
-  if (!state.open) {
-    error.classList.add("hidden");
-    error.textContent = "";
-    body.innerHTML = "";
-    return;
-  }
-
-  const lista = state.listaData;
-  title.textContent = lista?.titulo || "Lista de cotejo";
-  meta.textContent = lista?.tema ? `Tema: ${escapeHtml(lista.tema)}` : "";
-  error.classList.add("hidden");
-  body.innerHTML = renderListaCotejoPreviewBody(lista);
+  return window.ListaCotejoPreview.render();
 }
 
+// Compatibilidad temporal: conserva la apertura usada por el explorador histórico.
+// Motivo: mantener la firma local durante la extracción del preview.
+// Consumidores actuales: handleContentClick del explorador jerárquico.
+// Condición para retirarlo: retiro separado del consumidor legacy confirmado.
+// Fase prevista de retiro: Fase 8-9.
 function openListaCotejoPreview(listaId) {
-  if (!listaId) return;
-  const unidadId = explorerState.current.unidadId;
-  const listas = explorerState.listasCotejoByUnidad[unidadId] || [];
-  const lista = listas.find((l) => l.id === listaId) || null;
-  explorerState.listaCotejoPreview = { open: true, listaId, listaData: lista, loading: false, error: "" };
-  renderListaCotejoPreviewModal();
+  return window.ListaCotejoPreview.open(listaId);
 }
 
+// Compatibilidad temporal: conserva la firma pública de cierre del modal.
+// Motivo: mantener listeners y Escape sin cambiar el flujo de cierre.
+// Consumidores actuales: listeners de Dashboard y compatibilidad global.
+// Condición para retirarlo: búsqueda global sin consumidores de window.closeListaCotejoPreview.
+// Fase prevista de retiro: Fase 10.
 function closeListaCotejoPreview() {
-  explorerState.listaCotejoPreview = { open: false, listaId: null, listaData: null, loading: false, error: "" };
-  renderListaCotejoPreviewModal();
+  return window.ListaCotejoPreview.close();
 }
 
 function shouldShowListaCotejoSection(unidadId) {
@@ -3925,26 +3876,6 @@ function getExamTypeLabel(tipo) {
   return EXAM_TIPOS_PREGUNTA.find((item) => item.value === tipo)?.label || tipo || "Tipo";
 }
 
-function getStringSeed(str) {
-  let hash = 0;
-  const s = typeof str === "string" ? str : "";
-  for (let i = 0; i < s.length; i++) {
-    hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash) || 1;
-}
-
-function shuffleArrayDeterministic(arr, seed) {
-  const a = [...arr];
-  let s = seed;
-  for (let i = a.length - 1; i > 0; i--) {
-    s = (s * 1664525 + 1013904223) & 0xffffffff;
-    const j = Math.abs(s) % (i + 1);
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 function getExamOptionLabel(index) {
   let currentIndex = Number.isInteger(index) ? index : 0;
   let label = "";
@@ -3957,342 +3888,40 @@ function getExamOptionLabel(index) {
   return `${label})`;
 }
 
-function normalizeExamAnswerScalar(value) {
-  if (typeof value === "string") return value.trim();
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  return "";
-}
-
-function normalizeExamComparableText(value) {
-  return normalizeExamAnswerScalar(value)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function getExamCorrectOptionAnswerText(question, answerText) {
-  const normalizedAnswer = normalizeExamComparableText(answerText);
-  const options = Array.isArray(question?.opciones) ? question.opciones : [];
-  const optionIndex = options.findIndex((option) => normalizeExamComparableText(option) === normalizedAnswer);
-
-  return answerText;
-}
-
-function buildExamAnswerLines(question) {
-  const respuestaCorrecta = question?.respuesta_correcta;
-
-  if (Array.isArray(respuestaCorrecta)) {
-    return respuestaCorrecta.map((item, index) => {
-      if (item && typeof item === "object" && !Array.isArray(item)) {
-        const left = normalizeExamAnswerScalar(item.lado_a);
-        const right = normalizeExamAnswerScalar(item.lado_b);
-
-        if (left || right) {
-          return [left, right].filter(Boolean).join(" - ");
-        }
-
-        const objectValues = Object.values(item)
-          .map((value) => normalizeExamAnswerScalar(value))
-          .filter(Boolean);
-        return objectValues.join(" - ");
-      }
-
-      const value = normalizeExamAnswerScalar(item);
-      return value ? `${index + 1}. ${value}` : "";
-    }).filter(Boolean);
-  }
-
-  const answerText = normalizeExamAnswerScalar(respuestaCorrecta);
-  if (!answerText) return [];
-
-  if (question?.tipo === "opcion_multiple" || question?.tipo === "verdadero_falso") {
-    return [getExamCorrectOptionAnswerText(question, answerText)];
-  }
-
-  return [answerText];
-}
-
-function renderExamAnswerSheetPreviewItem(question, index) {
-  const answerLines = buildExamAnswerLines(question);
-  const answerHtml = answerLines.length > 1
-    ? `<div class="mt-2 space-y-1 text-sm text-emerald-900">${answerLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>`
-    : `<p class="mt-2 text-sm font-semibold text-emerald-900">${escapeHtml(answerLines[0] || "Sin respuesta disponible.")}</p>`;
-
-  return `
-    <article class="rounded-2xl border border-emerald-200 bg-white/90 p-4">
-      <p class="text-sm font-semibold text-slate-900">Pregunta ${index + 1}</p>
-      <p class="mt-2 text-sm text-slate-700">${escapeHtml(question?.pregunta || "")}</p>
-      <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">Respuesta correcta</p>
-      ${answerHtml}
-    </article>
-  `;
-}
-
-function renderExamAnswerSheetPreviewSection(examen) {
-  const preguntas = Array.isArray(examen?.examen_ia?.preguntas) ? examen.examen_ia.preguntas : [];
-  if (preguntas.length === 0) return "";
-
-  return `
-    <section class="border-t border-dashed border-slate-300 pt-6">
-      <div class="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-4 sm:p-5">
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Seccion final</p>
-        <h4 class="mt-2 text-lg font-semibold text-slate-900">Hoja de respuestas</h4>
-        <p class="mt-1 text-sm text-slate-600">Incluye cada pregunta con su respuesta correcta.</p>
-        <div class="mt-4 space-y-3">
-          ${preguntas.map((question, index) => renderExamAnswerSheetPreviewItem(question, index)).join("")}
-        </div>
-      </div>
-    </section>
-  `;
-}
-
-async function ensureExamenDetalle(examenId, { force = false } = {}) {
-  if (!examenId) return null;
-  if (!force && explorerState.examenDetalleById[examenId]) {
-    return explorerState.examenDetalleById[examenId];
-  }
-
-  const examen = await obtenerExamenDetalle(examenId);
-  explorerState.examenDetalleById[examenId] = examen;
-  return examen;
-}
-
-function renderExamQuestionPreview(question, index) {
-  const opciones = Array.isArray(question?.opciones) ? question.opciones : [];
-  const pares = Array.isArray(question?.pares) ? question.pares : [];
-  const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
-
-  const opcionesHtml = opciones.length > 0
-    ? question?.tipo === "verdadero_falso"
-      ? `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item, oi) => `<li class="flex items-start gap-2"><span>${oi + 1}.&nbsp;&nbsp;${escapeHtml(item)}</span></li>`).join("")}</ul>`
-      : `<ul class="mt-2 list-none space-y-1 pl-0 text-sm text-slate-600">${opciones.map((item) => `<li class="flex items-start gap-2"><span>${escapeHtml(item)}</span></li>`).join("")}</ul>`
-    : "";
-  const seed = getStringSeed(question?.pregunta || "");
-  const ladoB = shuffleArrayDeterministic(pares.map((p) => p.lado_b || ""), seed);
-  const paresHtml = pares.length > 0
-    ? `<div class="mt-2 flex gap-10 text-sm text-slate-600">
-        <div class="space-y-2">${pares.map((pair, pi) => `<p>${pi + 1}.&nbsp;&nbsp;${escapeHtml(pair.lado_a || "")}</p>`).join("")}</div>
-        <div class="space-y-2">${ladoB.map((b, bi) => `<p>${String.fromCharCode(65 + bi)}.&nbsp;&nbsp;${escapeHtml(b)}</p>`).join("")}</div>
-      </div>`
-    : "";
-  const elementosShuffled = shuffleArrayDeterministic(elementos, seed);
-  const elementosHtml = elementosShuffled.length > 0
-    ? `<ol class="mt-2 space-y-1 pl-0 text-sm text-slate-600 list-none">${elementosShuffled.map((item, ei) => `<li>${ei + 1}.&nbsp;&nbsp;${escapeHtml(item)}</li>`).join("")}</ol>`
-    : "";
-
-  return `
-    <article class="rounded-2xl border border-slate-200 bg-white p-4">
-      <p class="text-sm font-semibold text-slate-900">Pregunta ${index + 1}</p>
-      <p class="mt-2 text-sm text-slate-700">${escapeHtml(question?.pregunta || "")}</p>
-      ${opcionesHtml}
-      ${paresHtml}
-      ${elementosHtml}
-    </article>
-  `;
-}
-
+// Compatibilidad temporal: conserva la firma pública y los consumidores del dashboard/Biblioteca.
+// Motivo: mantener la API global durante la extracción.
+// Consumidores actuales: renderAll(), Biblioteca y el explorador jerárquico.
+// Condición para retirarlo: búsqueda global sin consumidores de window.renderExamPreviewModal.
+// Fase prevista de retiro: Fase 10.
 function renderExamPreviewModal() {
-  const modal = document.getElementById("unit-exam-preview-modal");
-  const title = document.getElementById("unit-exam-preview-title");
-  const meta = document.getElementById("unit-exam-preview-meta");
-  const body = document.getElementById("unit-exam-preview-body");
-  const error = document.getElementById("unit-exam-preview-error");
-  const download = document.getElementById("unit-exam-preview-download");
-  const close = document.getElementById("unit-exam-preview-close");
-
-  if (!modal || !title || !meta || !body || !error || !download || !close) return;
-
-  const state = explorerState.examPreview;
-  const examen = state.examenId ? explorerState.examenDetalleById[state.examenId] : null;
-
-  modal.classList.toggle("hidden", !state.open);
-  syncBodyScrollLock();
-
-  if (!state.open) {
-    error.classList.add("hidden");
-    error.textContent = "";
-    body.innerHTML = "";
-    meta.textContent = "";
-    return;
-  }
-
-  title.textContent = examen?.titulo || "Vista previa del examen";
-  meta.textContent = examen?.created_at
-    ? `${formatExamDate(examen.created_at)} · ${Array.isArray(examen?.examen_ia?.preguntas) ? examen.examen_ia.preguntas.length : (examen.total_preguntas || 0)} pregunta(s)`
-    : "";
-
-  if (state.error) {
-    error.classList.remove("hidden");
-    error.textContent = state.error;
-  } else {
-    error.classList.add("hidden");
-    error.textContent = "";
-  }
-
-  if (state.loading) {
-    body.innerHTML = '<p class="text-sm text-slate-500">Cargando examen...</p>';
-  } else if (!examen?.examen_ia?.preguntas?.length) {
-    body.innerHTML = '<p class="text-sm text-slate-500">No hay contenido disponible para este examen.</p>';
-  } else {
-    body.innerHTML = `
-      <div class="space-y-4">
-        ${examen.examen_ia?.instrucciones_generales ? `<div class="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">${escapeHtml(examen.examen_ia.instrucciones_generales)}</div>` : ""}
-        ${examen.examen_ia.preguntas.map((question, index) => renderExamQuestionPreview(question, index)).join("")}
-        ${renderExamAnswerSheetPreviewSection(examen)}
-      </div>
-    `;
-  }
-
-  download.disabled = state.loading || !examen?.examen_ia;
-  close.disabled = state.loading;
+  return window.ExamPreview.render();
 }
 
-function buildExamWordHtml(examen) {
-  const examenIa = examen?.examen_ia || {};
-  const preguntas = Array.isArray(examenIa.preguntas) ? examenIa.preguntas : [];
-
-  const preguntasHtml = preguntas.map((question, index) => {
-    const opciones = Array.isArray(question?.opciones) ? question.opciones : [];
-    const pares = Array.isArray(question?.pares) ? question.pares : [];
-    const elementos = Array.isArray(question?.elementos) ? question.elementos : [];
-
-    const opcionesHtml = opciones.length > 0
-      ? question?.tipo === "verdadero_falso"
-        ? `<div class="options">${opciones.map((item, oi) => `<p>${oi + 1}.&nbsp;&nbsp;${escapeHtml(item)}</p>`).join("")}</div>`
-        : `<div class="options">${opciones.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</div>`
-      : "";
-    const exportSeed = getStringSeed(question?.pregunta || "");
-    const exportLadoB = shuffleArrayDeterministic(pares.map((p) => p.lado_b || ""), exportSeed);
-    const paresHtml = pares.length > 0
-      ? `<table class="match-table">
-          <thead><tr><th>Columna A</th><th class="match-gap"></th><th>Columna B</th></tr></thead>
-          <tbody>${pares.map((pair, pi) => `<tr>
-            <td class="match-col">${pi + 1}.&nbsp;&nbsp;${escapeHtml(pair.lado_a || "")}</td>
-            <td class="match-gap"></td>
-            <td class="match-col">${String.fromCharCode(65 + pi)}.&nbsp;&nbsp;${escapeHtml(exportLadoB[pi] || "")}</td>
-          </tr>`).join("")}</tbody>
-        </table>`
-      : "";
-    const exportElementos = shuffleArrayDeterministic(elementos, exportSeed);
-    const elementosHtml = exportElementos.length > 0
-      ? `<ol>${exportElementos.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`
-      : "";
-
-    return `
-      <div class="question-block">
-        <p><strong>${index + 1}.</strong> ${escapeHtml(question?.pregunta || "")}</p>
-        ${opcionesHtml}
-        ${paresHtml}
-        ${elementosHtml}
-      </div>
-    `;
-  }).join("");
-
-  const answerSheetHtml = preguntas.length > 0
-    ? `
-      <section class="answer-sheet">
-        <h2>Hoja de respuestas</h2>
-        <p class="answer-sheet-copy">Incluye cada pregunta con su respuesta correcta.</p>
-        ${preguntas.map((question, index) => {
-          const answerLines = buildExamAnswerLines(question);
-          const answerHtml = answerLines.length > 1
-            ? `<div class="answer-values">${answerLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>`
-            : `<p class="answer-values">${escapeHtml(answerLines[0] || "Sin respuesta disponible.")}</p>`;
-
-          return `
-            <div class="answer-item">
-              <p><strong>${index + 1}.</strong> ${escapeHtml(question?.pregunta || "")}</p>
-              <p class="answer-label"><strong>Respuesta correcta:</strong></p>
-              ${answerHtml}
-            </div>
-          `;
-        }).join("")}
-      </section>
-    `
-    : "";
-
-  return `
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; font-size: 11pt; color: #0f172a; }
-          h1 { text-align: center; margin-bottom: 10px; }
-          h2 { margin: 0 0 12px; font-size: 15pt; }
-          .student-info { margin: 8px 0 18px; font-size: 11pt; }
-          .box { border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; background: #f8fafc; }
-          .question-block { margin-bottom: 18px; }
-          .options { margin: 10px 0 0 28px; }
-          .options p { margin: 6px 0; }
-          .answer-sheet { page-break-before: always; margin-top: 28px; padding-top: 18px; border-top: 2px solid #cbd5e1; }
-          .answer-sheet-copy { margin-bottom: 14px; color: #475569; }
-          .answer-item { margin-bottom: 16px; }
-          .answer-label { margin: 8px 0 4px; }
-          .answer-values { margin-left: 18px; }
-          .answer-values p { margin: 4px 0; }
-          p { margin: 6px 0; }
-          ul, ol { margin: 8px 0 0 22px; }
-          .match-table { width: 100%; border-collapse: collapse; margin: 10px 0 0 28px; }
-          .match-table th { text-align: left; font-size: 9pt; color: #475569; font-weight: normal; padding-bottom: 4px; border: none; background: none; }
-          .match-table td { border: none; padding: 5px 0; vertical-align: top; }
-          .match-col { width: 38%; }
-          .match-gap { width: 24%; }
-        </style>
-      </head>
-      <body>
-        <h1>${escapeHtml(examenIa.titulo || examen?.titulo || "Examen de unidad")}</h1>
-        <p class="student-info">Nombre del alumno: __________________________________&nbsp;&nbsp;&nbsp;&nbsp;Fecha: __________</p>
-        ${examenIa.instrucciones_generales ? `<div class="box"><strong>Instrucciones:</strong><br>${escapeHtml(examenIa.instrucciones_generales)}</div>` : ""}
-        ${preguntasHtml}
-        ${answerSheetHtml}
-      </body>
-    </html>
-  `;
-}
-
+// Compatibilidad temporal: conserva la firma pública y el comportamiento de descarga.
+// Motivo: mantener el contrato global mientras Biblioteca migra al módulo canónico.
+// Consumidores actuales: cards de Biblioteca, preview y explorador jerárquico.
+// Condición para retirarlo: búsqueda global sin consumidores de window.downloadExamWord.
+// Fase prevista de retiro: Fase 10.
 async function downloadExamWord(examenId, filenameOverride) {
-  const examen = await ensureExamenDetalle(examenId);
-  if (!examen?.examen_ia) {
-    throw new Error("No hay contenido disponible para exportar.");
-  }
-
-  const html = buildExamWordHtml(examen);
-  const blob = new Blob([html], { type: "application/msword" });
-  const url = URL.createObjectURL(blob);
-  const enlace = document.createElement("a");
-  enlace.href = url;
-  const defaultName = (examen.titulo || "Examen_unidad").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") || "Examen_unidad";
-  enlace.download = `${filenameOverride || defaultName}.doc`;
-  document.body.appendChild(enlace);
-  enlace.click();
-  document.body.removeChild(enlace);
-  URL.revokeObjectURL(url);
+  return window.ExamDownload.download(examenId, filenameOverride);
 }
 
+// Compatibilidad temporal: conserva la apertura usada por el explorador histórico.
+// Motivo: mantener la firma local durante la extracción del preview.
+// Consumidores actuales: handleContentClick del explorador jerárquico.
+// Condición para retirarlo: retiro separado del consumidor legacy confirmado.
+// Fase prevista de retiro: Fase 8-9.
 async function openExamPreview(examenId) {
-  explorerState.examPreview = {
-    open: true,
-    examenId,
-    loading: true,
-    error: ""
-  };
-  renderExamPreviewModal();
-
-  try {
-    await ensureExamenDetalle(examenId);
-    explorerState.examPreview.loading = false;
-    renderExamPreviewModal();
-  } catch (error) {
-    explorerState.examPreview.loading = false;
-    explorerState.examPreview.error = formatFetchError(error, "No se pudo cargar el examen.");
-    renderExamPreviewModal();
-  }
+  return window.ExamPreview.open(examenId);
 }
 
+// Compatibilidad temporal: conserva la firma pública de cierre del modal.
+// Motivo: mantener listeners y Escape sin cambiar el flujo de cierre.
+// Consumidores actuales: listeners de Dashboard y compatibilidad global.
+// Condición para retirarlo: búsqueda global sin consumidores de window.closeExamPreviewModal.
+// Fase prevista de retiro: Fase 10.
 function closeExamPreviewModal() {
-  if (explorerState.examPreview.loading) return;
-  explorerState.examPreview = { open: false, examenId: null, loading: false, error: "" };
-  renderExamPreviewModal();
+  return window.ExamPreview.close();
 }
 
 function shouldShowExamSection(unidadId) {
@@ -5872,12 +5501,7 @@ function bindDashboardEvents() {
   document.getElementById("lista-cotejo-preview-download")?.addEventListener("click", async () => {
     const lista = explorerState.listaCotejoPreview?.listaData;
     if (!lista) return;
-    const suggested = window.AppUI.buildDownloadSuggestedName("Lista_cotejo", lista.tema || lista.titulo);
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-    if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista, filename);
-    }
+    return window.ListaCotejoDownload.download(lista);
   });
 
   document.getElementById("unit-exam-form")?.addEventListener("submit", (event) => {

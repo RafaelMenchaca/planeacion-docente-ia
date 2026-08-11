@@ -26,10 +26,165 @@ La jerarquía técnica puede seguir existiendo como modelo de datos, API, select
 | `js/api/` | Wrappers HTTP por recurso. |
 | `js/services/` | Autenticación y orquestación. |
 | `js/pages/` | Estado, eventos e inicialización de páginas. |
+| `js/features/` | Acciones modulares por dominio extraídas en Fases 1, 2 y 4. |
 | `js/ui/` | Componentes, modales, helpers y descargas. |
 | `tests/` | Suite automatizada existente. |
 
-`js/features/` no existe en el estado auditado.
+La auditoría de la capa HTTP y sus contratos se mantiene en
+[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+
+## Capa HTTP actual
+
+La arquitectura ejecutable es mixta:
+
+- `js/api/` contiene todo el HTTP contra Express.
+- Los services de exámenes, listas, jerarquía y planeaciones delegan a sus
+  respectivos API files, obtienen sesión y, en algunos casos, normalizan la
+  respuesta.
+- Biblioteca consume directamente `biblioteca.api.js`, partes de las API de
+  generación y `anexos.api.js`.
+- `planeaciones.service.js` combina wrappers HTTP con un registro local usado
+  por Archivados.
+- Los únicos `fetch` fuera de `js/api/` cargan fragmentos HTML desde páginas o
+  UI; no llaman al backend Express.
+- La autenticación y Storage puntuales adicionales se realizan mediante el SDK
+  de Supabase.
+
+`API_BASE_URL` y `window.API_BASE_URL` nacen del mismo archivo, pero los
+wrappers actuales leen la forma léxica. El orden de carga es contractual porque
+se usan scripts clásicos y globals `window.*`, además de funciones globales
+implícitas. Los contratos de Biblioteca, Detalle, Archivados y explorador
+legacy se mantienen separados.
+
+La Fase 3 cerró la consolidación interna de las fronteras HTTP pequeñas y
+equivalentes sin crear un cliente universal. `bibliotecaGet`,
+`bibliotecaDelete`, `anexosGet`, `listasCotejoGet` y `examResourceGet` son
+bindings léxicos privados, específicos de dominio y método; las APIs públicas,
+services y wrappers `window.*` conservan sus firmas. Las diferencias de sesión,
+parsing, errores, SSE, blobs, generación y polling permanecen deliberadamente
+separadas. La Sesión 4.0 abrió documentalmente la Fase 4 y quedó aprobada. La
+Fase 4 está cerrada formalmente: las Sesiones 4.1, 4.2 y 4.3 movieron literalmente las
+  operaciones vigentes de generación seleccionada de anexos y listas, el
+  coordinador de inicio/progreso de planeaciones y la creación/polling de
+  exámenes de Biblioteca, a
+  `js/features/anexos/anexo-generation.js`,
+  `js/features/listas-cotejo/lista-cotejo-generation.js` y
+  `js/features/planeaciones/planeacion-generation.js`, y la Sesión 4.4 añadió
+  `js/features/examenes/exam-generation.js`. Conservan APIs, selección, pending,
+  feedback, espera, persistencia y refetch. Quick create, la generación
+  individual, los parsers SSE compartidos y el coordinador/polling legacy de
+  exámenes permanecen en sus propietarios anteriores.
+
+La Sesión 4.4 quedó validada manualmente y commiteada. La Sesión 4.5 auditó el
+cierre sin modificar código: confirmó los cuatro coordinadores por dominio, sus
+globals y consumidores únicos, el orden clásico de scripts y la integridad de
+quick create, generación individual, legacy, APIs/services y backend. La
+decisión formal **A. Cerrar Fase 4** y su validación documental quedaron
+aprobadas en el commit de cierre `8dcba86`. No se detectaron regresiones
+introducidas; los riesgos conocidos permanecen preservados. Fase 5 quedó
+abierta formalmente y En progreso mediante la Sesión 5.0, aprobada y commiteada
+en `525a21a`, sin cambios funcionales. La Sesión 5.1 encapsuló literalmente el
+acceso a `bibliotecaState.selectedConjuntoId` mediante la superficie léxica
+`BibliotecaSelection`: el valor sigue viviendo una sola vez en el mismo estado,
+sin global nuevo, archivo nuevo ni cambio de orden de scripts. Normalización,
+fallback crudo de delete, Quick Create, `activeTab`, pending, render y legacy se
+preservaron. La implementación, las validaciones estáticas y la validación
+manual de 5.1 quedaron aprobadas y commiteadas en `1b4c620`. La Sesión 5.2
+encapsuló literalmente el mapa existente `bibliotecaState.activeTab` mediante
+la superficie léxica `BibliotecaTabs`, sin moverlo ni duplicarlo. El fallback
+`planeaciones`, las claves y valores, selección, generación, delete, render,
+eventos, Quick Create y orden de scripts permanecen. La implementación, las
+validaciones estáticas y la validación manual de 5.2 están aprobadas; la sesión
+quedó commiteada en `f5bbfdd`. `BibliotecaTabs`, la única fuente de verdad y el
+fallback `planeaciones` permanecen preservados. La Sesión 5.3 encapsuló
+literalmente el estado existente `bibliotecaState.anexoModal` mediante la
+superficie léxica `BibliotecaAnexoModalState`, sin moverlo, copiarlo ni exponer
+una global. Apertura, cierre, selección, depuración desde render, `submitting`,
+error y delegación a `AnexoGeneration` conservan su orden y expresiones. La
+implementación, las validaciones estáticas y la validación manual están
+aprobadas; la sesión quedó commiteada en `f05e730`. `BibliotecaAnexoModalState` quedó
+aprobada, `bibliotecaState.anexoModal` continúa como única fuente de verdad y
+`AnexoGeneration`/`anexosGenerating` permanecen preservados. La Sesión 5.4
+encapsuló literalmente `bibliotecaState.listaModal` mediante la superficie
+léxica `BibliotecaListaModalState`: apertura, cierre, selección, depuración
+desde render, `submitting`, error y snapshot hacia `ListaCotejoGeneration`
+conservan la fuente física, el shape, el orden y las expresiones previas. La
+generación, `pendingListaByBatchId`, el cleanup de 1500 ms, render, eventos,
+selección, tabs y los demás modales permanecen intactos. Implementación y
+validaciones estáticas y validación manual aprobadas; commit `948d627`.
+`BibliotecaListaModalState` quedó aprobada,
+`bibliotecaState.listaModal` sigue siendo la única fuente de verdad y
+`ListaCotejoGeneration`/`pendingListaByBatchId` permanecen preservados. La
+Sesión 5.5 encapsula literalmente `bibliotecaState.examModal` mediante la
+superficie léxica `BibliotecaExamModalState`. La propiedad original conserva
+la única fuente física, su shape, bloque, unidad, planeaciones, selección,
+tipos, cantidades, `submitting` y error; la superficie solo delega las mismas
+transiciones. `ExamGeneration`, el payload protegido, la creación del job,
+`pendingExamenByBatchId`, polling, render, eventos y modales anteriores no se
+modificaron. La Sesión 5.5 quedó implementada y validada manualmente;
+`BibliotecaExamModalState` está aprobada y `bibliotecaState.examModal` sigue
+siendo la única fuente de verdad. `ExamGeneration`, `pendingExamenByBatchId` y
+polling permanecen preservados. El contrato
+`unidad_id`/`batch_id`/`planeacion_ids` continúa intacto: Biblioteca envía esos
+campos junto con `tipos_pregunta` y `cantidades_pregunta`, y no envía
+`tema_ids`; backend sigue resolviendo los temas desde `planeacion_ids`.
+Implementación, validaciones estáticas y validación manual aprobadas; commit
+`3842f20`. La Sesión 5.6 encapsuló literalmente
+`bibliotecaState.agregarModal` mediante la superficie léxica
+`BibliotecaPlaneacionModalState`. El shape real permanece `{open, conjuntoId,
+unidadId, materia, nivel, unidad, temas, error}` —sin `submitting`— y conserva
+una sola fuente física. Apertura, cierre parcial, temas, actividades por
+momento, error, snapshot y delegación a `PlaneacionGeneration` mantienen sus
+expresiones y orden. `batch_id`, reutilización del bloque, SSE,
+`pendingPlaneacionesByBatchId`, tab Planeaciones, refetch, `duplicate_tema` y
+Quick Create permanecen fuera de la superficie e intactos. Implementación y
+validaciones estáticas y validación manual aprobadas; commit `d45a493`. Fase 5
+continúa En progreso.
+
+La auditoría acumulativa de 5.6 confirma que los cuatro modales vigentes poseen
+ownership léxico específico sobre una única propiedad física de
+`bibliotecaState`: `agregarModal`, `anexoModal`, `listaModal` y `examModal`.
+No existe store duplicado, `ModalState` universal, persistencia nueva ni global
+adicional. Generación, pending, render/eventos, Quick Create,
+`window.explorerState` y `window.biblioteca` conservan sus fronteras actuales.
+
+La Sesión 5.7 encapsula literalmente los cuatro pending vigentes mediante
+`BibliotecaPlaneacionesPending`, `BibliotecaAnexosPending`,
+`BibliotecaListaPending` y `BibliotecaExamPending`. Sus únicas fuentes físicas
+continúan en `bibliotecaState`; cada superficie conserva su shape, claves y
+operaciones propias. Los coordinadores solo sustituyen accesos directos por
+`get`/`set`/`delete` equivalentes. SSE, requests secuenciales, delay de 1500 ms,
+polling de 3000 ms y 60 consultas, errores, cleanup, delete de bloque, render y
+Quick Create permanecen funcionalmente intactos. No existe pending universal,
+shape común, persistencia nueva ni global adicional. Implementación y
+validaciones estáticas y validación manual aprobadas; commit `9b3c23d`.
+
+La Sesión 5.8 auditó formalmente el cierre sin modificar código funcional. La
+revisión acumulativa confirmó ownership identificable para selección, tabs,
+cuatro modales y cuatro pending; una sola fuente física por estado; ausencia de
+stores universales, copias divergentes o persistencia nueva; y preservación de
+Quick Create, `window.explorerState`, `window.biblioteca`, generación, SSE,
+polling, delete, render/eventos, Archivados, legacy y backend. Los estados de
+carga/render y Quick Create que permanecen sin superficie específica están
+delimitados para fases posteriores o como deuda conocida y no bloquean. La
+decisión formal es **A. Fase 5 puede cerrarse**: Fase 5 y la Sesión 5.8 quedan
+completadas, la auditoría de cierre queda aprobada y Fase 6 permanece pendiente
+y no iniciada.
+
+La auditoría de apertura de Fase 5 confirmó tres fronteras de estado. El
+`bibliotecaState` privado de `biblioteca.page.js` posee carga, selección, tabs,
+pending y modales de la Biblioteca vigente. `window.explorerState` sigue siendo
+mixto: Quick Create y los previews de examen/lista son consumidores activos,
+mientras otros grupos pertenecen a compatibilidad o al explorador visual
+legacy. `archivedState` y el registro jerárquico persistido de Archivados son
+propietarios separados. Ninguno de estos objetos fue movido, renombrado o
+expuesto de una forma nueva.
+
+La frontera de fases permanece contractual: Fase 5 trata ownership y shapes de
+estado; Fase 6, render y eventos; Fase 7, Dashboard y Quick Create; Fases 8–9,
+aislamiento y posible eliminación del legacy; y Fase 10, retiro de wrappers y
+globals. El detalle propiedad-consumidor está en
+[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Flujo principal: Biblioteca
 

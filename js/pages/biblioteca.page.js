@@ -66,6 +66,245 @@ const bibliotecaState = {
   }
 };
 
+// Fase 5 — Sesión 5.1: ownership léxico de la selección vigente de Biblioteca.
+// La única fuente de verdad permanece en bibliotecaState.selectedConjuntoId.
+// Estas operaciones no normalizan ni reinterpretan valores: cada consumidor
+// conserva exactamente su normalización y fallback previos.
+const BibliotecaSelection = {
+  getSelectedConjuntoId() {
+    return bibliotecaState.selectedConjuntoId;
+  },
+  setSelectedConjuntoId(value) {
+    bibliotecaState.selectedConjuntoId = value;
+    return value;
+  }
+};
+
+// Fase 5 — Sesión 5.2: ownership léxico del tab activo por bloque.
+// La única fuente de verdad permanece en bibliotecaState.activeTab.
+// Estas operaciones no normalizan claves, validan tabs ni aplican fallback:
+// cada consumidor conserva exactamente sus expresiones y orden previos.
+const BibliotecaTabs = {
+  getActiveTab(conjuntoId) {
+    return bibliotecaState.activeTab[conjuntoId];
+  },
+  setActiveTab(conjuntoId, tab) {
+    bibliotecaState.activeTab[conjuntoId] = tab;
+    return tab;
+  },
+  clearActiveTab(conjuntoId) {
+    delete bibliotecaState.activeTab[conjuntoId];
+  }
+};
+
+// Fase 5 â€” SesiÃ³n 5.3: ownership lÃ©xico del estado del modal de anexos.
+// La Ãºnica fuente de verdad permanece en bibliotecaState.anexoModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaAnexoModalState = {
+  getState() {
+    return bibliotecaState.anexoModal;
+  },
+  open(state) {
+    bibliotecaState.anexoModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.anexoModal.open = false;
+  },
+  setSelectedPlaneacionIds(ids) {
+    bibliotecaState.anexoModal.selectedPlaneacionIds = ids;
+    return ids;
+  },
+  addSelectedPlaneacionId(id) {
+    bibliotecaState.anexoModal.selectedPlaneacionIds.push(id);
+    return id;
+  },
+  setSubmitting(value) {
+    bibliotecaState.anexoModal.submitting = value;
+    return value;
+  },
+  setError(value) {
+    bibliotecaState.anexoModal.error = value;
+    return value;
+  }
+};
+
+// Fase 5 — Sesión 5.4: ownership léxico del estado del modal de listas.
+// La única fuente de verdad permanece en bibliotecaState.listaModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaListaModalState = {
+  getState() {
+    return bibliotecaState.listaModal;
+  },
+  open(state) {
+    bibliotecaState.listaModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.listaModal.open = false;
+  },
+  setSelectedPlaneacionIds(ids) {
+    bibliotecaState.listaModal.selectedPlaneacionIds = ids;
+    return ids;
+  },
+  addSelectedPlaneacionId(id) {
+    bibliotecaState.listaModal.selectedPlaneacionIds.push(id);
+    return id;
+  },
+  setSubmitting(value) {
+    bibliotecaState.listaModal.submitting = value;
+    return value;
+  },
+  setError(value) {
+    bibliotecaState.listaModal.error = value;
+    return value;
+  }
+};
+
+// Fase 5 — Sesión 5.5: ownership léxico del estado del modal de exámenes.
+// La única fuente de verdad permanece en bibliotecaState.examModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaExamModalState = {
+  getState() {
+    return bibliotecaState.examModal;
+  },
+  open(state) {
+    bibliotecaState.examModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.examModal.open = false;
+  },
+  setSelectedTypes(types) {
+    bibliotecaState.examModal.selectedTypes = types;
+    return types;
+  },
+  addSelectedType(type) {
+    bibliotecaState.examModal.selectedTypes.push(type);
+    return type;
+  },
+  setQuestionCount(type, count) {
+    bibliotecaState.examModal.questionCounts[type] = count;
+    return count;
+  },
+  setSelectedPlaneacionIds(ids) {
+    bibliotecaState.examModal.selectedPlaneacionIds = ids;
+    return ids;
+  },
+  addSelectedPlaneacionId(id) {
+    bibliotecaState.examModal.selectedPlaneacionIds.push(id);
+    return id;
+  },
+  setSubmitting(value) {
+    bibliotecaState.examModal.submitting = value;
+    return value;
+  },
+  setError(value) {
+    bibliotecaState.examModal.error = value;
+    return value;
+  }
+};
+
+// Fase 5 — Sesión 5.6: ownership léxico del estado del modal de planeaciones.
+// La única fuente de verdad permanece en bibliotecaState.agregarModal.
+// Estas operaciones conservan el reemplazo total y las mutaciones parciales
+// previas sin normalizar, validar ni limpiar valores adicionales.
+const BibliotecaPlaneacionModalState = {
+  getState() {
+    return bibliotecaState.agregarModal;
+  },
+  open(state) {
+    bibliotecaState.agregarModal = state;
+    return state;
+  },
+  close() {
+    bibliotecaState.agregarModal.open = false;
+  },
+  setTemas(temas) {
+    bibliotecaState.agregarModal.temas = temas;
+    return temas;
+  },
+  getTemaByLocalId(localId) {
+    return bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+  },
+  addTema(tema) {
+    bibliotecaState.agregarModal.temas.push(tema);
+    return tema;
+  },
+  setError(value) {
+    bibliotecaState.agregarModal.error = value;
+    return value;
+  }
+};
+
+// Fase 5 — Sesión 5.7: ownership léxico de los pending de Biblioteca.
+// Cada superficie conserva su fuente física y shape propios; no existe un
+// pending universal ni normalización adicional de claves o valores.
+const BibliotecaPlaneacionesPending = {
+  get(batchId) {
+    return bibliotecaState.pendingPlaneacionesByBatchId[batchId];
+  },
+  set(batchId, value) {
+    bibliotecaState.pendingPlaneacionesByBatchId[batchId] = value;
+    return value;
+  },
+  delete(batchId) {
+    delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
+  }
+};
+
+const BibliotecaAnexosPending = {
+  getBatch(batchId) {
+    return bibliotecaState.anexosGenerating[batchId];
+  },
+  setBatch(batchId, value) {
+    bibliotecaState.anexosGenerating[batchId] = value;
+    return value;
+  },
+  deleteBatch(batchId) {
+    delete bibliotecaState.anexosGenerating[batchId];
+  },
+  getItem(batchId, planeacionId) {
+    return bibliotecaState.anexosGenerating[batchId]?.[planeacionId];
+  },
+  setItem(batchId, planeacionId, value) {
+    bibliotecaState.anexosGenerating[batchId][planeacionId] = value;
+    return value;
+  },
+  deleteItem(batchId, planeacionId) {
+    delete bibliotecaState.anexosGenerating[batchId][planeacionId];
+  }
+};
+
+const BibliotecaListaPending = {
+  get(batchId) {
+    return bibliotecaState.pendingListaByBatchId[batchId];
+  },
+  set(batchId, value) {
+    bibliotecaState.pendingListaByBatchId[batchId] = value;
+    return value;
+  },
+  delete(batchId) {
+    delete bibliotecaState.pendingListaByBatchId[batchId];
+  }
+};
+
+const BibliotecaExamPending = {
+  get(batchId) {
+    return bibliotecaState.pendingExamenByBatchId[batchId];
+  },
+  set(batchId, value) {
+    bibliotecaState.pendingExamenByBatchId[batchId] = value;
+    return value;
+  },
+  delete(batchId) {
+    delete bibliotecaState.pendingExamenByBatchId[batchId];
+  }
+};
+
 // Superficie pública para comunicación entre scripts
 window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
@@ -80,14 +319,14 @@ window.biblioteca = {
     const safeId = normalizeBibliotecaId(conjuntoId);
     if (!safeId) return;
     setSelectedConjunto(safeId, { tab: "planeaciones" });
-    bibliotecaState.pendingPlaneacionesByBatchId[safeId] = {
+    BibliotecaPlaneacionesPending.set(safeId, {
       items: (Array.isArray(temas) ? temas : []).map((tema) => ({
         titulo: tema?.titulo || "",
         status: "pending",
         message: ""
       })),
       error: ""
-    };
+    });
     renderBibliotecaContent();
   },
   setPendingConjunto: (data) => {
@@ -109,8 +348,8 @@ window.biblioteca = {
       examenes:            [],
       listas_cotejo:       []
     };
-    bibliotecaState.selectedConjuntoId = tempId;
-    bibliotecaState.activeTab[tempId] = "planeaciones";
+    BibliotecaSelection.setSelectedConjuntoId(tempId);
+    BibliotecaTabs.setActiveTab(tempId, "planeaciones");
   },
   refresh: (options = {}) => loadAndRenderBiblioteca(options),
   finishPlaneacionesGeneration: (result) => finishBibliotecaPlaneacionesGeneration(result)
@@ -237,16 +476,16 @@ function getFilteredConjuntosForSidebar() {
 function setSelectedConjunto(conjuntoId, { tab } = {}) {
   const safeId = normalizeBibliotecaId(conjuntoId);
   if (!safeId) return;
-  bibliotecaState.selectedConjuntoId = safeId;
+  BibliotecaSelection.setSelectedConjuntoId(safeId);
   if (tab) {
-    bibliotecaState.activeTab[safeId] = tab;
-  } else if (!bibliotecaState.activeTab[safeId]) {
-    bibliotecaState.activeTab[safeId] = "planeaciones";
+    BibliotecaTabs.setActiveTab(safeId, tab);
+  } else if (!BibliotecaTabs.getActiveTab(safeId)) {
+    BibliotecaTabs.setActiveTab(safeId, "planeaciones");
   }
 }
 
 function getSelectedConjunto() {
-  return findConjuntoById(bibliotecaState.selectedConjuntoId);
+  return findConjuntoById(BibliotecaSelection.getSelectedConjuntoId());
 }
 
 function normalizeGeneratedPlaneaciones(result) {
@@ -304,9 +543,9 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
     };
     bibliotecaState.conjuntos = [conjunto, ...bibliotecaState.conjuntos];
     bibliotecaState.expandedIds.delete(pending.tempId);
-    delete bibliotecaState.activeTab[pending.tempId];
-    if (normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(pending.tempId)) {
-      bibliotecaState.selectedConjuntoId = safeBatchId;
+    BibliotecaTabs.clearActiveTab(pending.tempId);
+    if (normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(pending.tempId)) {
+      BibliotecaSelection.setSelectedConjuntoId(safeBatchId);
     }
     bibliotecaState.pendingConjunto = null;
   }
@@ -317,15 +556,15 @@ function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
   conjunto.status_ui = "ready";
   conjunto.planeaciones = mergePlaneaciones(conjunto.planeaciones, planeaciones || []);
   conjunto.total_planeaciones = conjunto.planeaciones.length;
-  bibliotecaState.selectedConjuntoId = safeBatchId;
-  bibliotecaState.activeTab[safeBatchId] = "planeaciones";
+  BibliotecaSelection.setSelectedConjuntoId(safeBatchId);
+  BibliotecaTabs.setActiveTab(safeBatchId, "planeaciones");
 }
 
 function applyGenerationResultToPendingItems(batchId, result) {
   const safeBatchId = normalizeBibliotecaId(batchId);
   if (!safeBatchId) return;
 
-  const pending = bibliotecaState.pendingPlaneacionesByBatchId[safeBatchId];
+  const pending = BibliotecaPlaneacionesPending.get(safeBatchId);
   if (!pending) return;
 
   const records = [
@@ -363,11 +602,11 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
   const planeaciones = normalizeGeneratedPlaneaciones(result);
 
   if (batchId) {
-    if (!bibliotecaState.pendingPlaneacionesByBatchId[batchId] && Number(result?.error_count || 0) > 0) {
+    if (!BibliotecaPlaneacionesPending.get(batchId) && Number(result?.error_count || 0) > 0) {
       const progressItems = Array.isArray(window.explorerState?.progress?.items)
         ? window.explorerState.progress.items
         : [];
-      bibliotecaState.pendingPlaneacionesByBatchId[batchId] = {
+      BibliotecaPlaneacionesPending.set(batchId, {
         items: progressItems.map(item => ({
           titulo: item.titulo || "",
           status: item.status || "pending",
@@ -375,15 +614,15 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
           message: item.message || ""
         })),
         error: `${result.error_count} planeacion(es) no se pudieron generar.`
-      };
+      });
     }
     applyGenerationResultToPendingItems(batchId, result || {});
     applyOptimisticPlaneacionesToConjunto(batchId, planeaciones);
     if (Number(result?.error_count || 0) === 0) {
-      delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
+      BibliotecaPlaneacionesPending.delete(batchId);
     }
-    bibliotecaState.selectedConjuntoId = batchId;
-    bibliotecaState.activeTab[batchId] = "planeaciones";
+    BibliotecaSelection.setSelectedConjuntoId(batchId);
+    BibliotecaTabs.setActiveTab(batchId, "planeaciones");
   }
 
   renderBibliotecaContent();
@@ -485,7 +724,7 @@ function renderPlaneacionesTab(conjunto) {
       );
     }
   } else {
-    const pending = bibliotecaState.pendingPlaneacionesByBatchId[conjunto.id];
+    const pending = BibliotecaPlaneacionesPending.get(conjunto.id);
     if (pending) {
       const errorHtml = pending.error
         ? `<div class="mt-1 text-xs text-rose-600">${escapeHtml(pending.error)}</div>`
@@ -552,7 +791,7 @@ function renderExamenesTab(conjunto) {
   }
 
   const examenes = Array.isArray(conjunto.examenes) ? conjunto.examenes : [];
-  const pending  = bibliotecaState.pendingExamenByBatchId[conjunto.id];
+  const pending  = BibliotecaExamPending.get(conjunto.id);
 
   let pendingHtml = "";
   if (pending) {
@@ -629,7 +868,7 @@ function renderAnexosTab(conjunto) {
   }
 
   const anexos         = Array.isArray(conjunto.anexos) ? conjunto.anexos : [];
-  const generatingMap  = bibliotecaState.anexosGenerating[conjunto.id] || {};
+  const generatingMap  = BibliotecaAnexosPending.getBatch(conjunto.id) || {};
 
   const anexosByPlanId = new Map(
     anexos.map((a) => [normalizeBibliotecaId(a.planeacion_id), a])
@@ -719,7 +958,7 @@ function renderListasCotejoTab(conjunto) {
   }
 
   const listas  = Array.isArray(conjunto.listas_cotejo) ? conjunto.listas_cotejo : [];
-  const pending = bibliotecaState.pendingListaByBatchId[conjunto.id];
+  const pending = BibliotecaListaPending.get(conjunto.id);
 
   let pendingHtml = "";
   if (pending) {
@@ -792,7 +1031,7 @@ function renderListasCotejoTab(conjunto) {
 // ---- RENDER CONJUNTO ----
 
 function renderBibliotecaTabs(conjunto) {
-  const activeTab = bibliotecaState.activeTab[conjunto.id] || "planeaciones";
+  const activeTab = BibliotecaTabs.getActiveTab(conjunto.id) || "planeaciones";
   const id = escapeHtml(String(conjunto.id));
   return `
     <div class="biblioteca-tabs" role="tablist">
@@ -821,7 +1060,7 @@ function renderBibliotecaTabs(conjunto) {
 }
 
 function renderBibliotecaTabContent(conjunto) {
-  const activeTab = bibliotecaState.activeTab[conjunto.id] || "planeaciones";
+  const activeTab = BibliotecaTabs.getActiveTab(conjunto.id) || "planeaciones";
   return `
     <div class="biblioteca-tab-content">
       ${activeTab === "planeaciones" ? renderPlaneacionesTab(conjunto) : ""}
@@ -834,7 +1073,7 @@ function renderBibliotecaTabContent(conjunto) {
 
 function renderConjuntoSidebarItem(conjunto) {
   const id = escapeHtml(String(conjunto.id));
-  const isSelected = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(conjunto.id);
+  const isSelected = normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(conjunto.id);
   const isPending = !!conjunto.isPending;
   const titulo = escapeBibliotecaDisplayText(conjunto.titulo, "Sin titulo");
   const meta = [
@@ -952,7 +1191,7 @@ function renderBibliotecaDetail(conjunto) {
 function updateBibliotecaSidebarActive() {
   const list = document.querySelector(".biblioteca-sidebar-list");
   if (!list) return;
-  const currentId = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId);
+  const currentId = normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId());
   list.querySelectorAll("[data-bib-action='select-conjunto']").forEach((btn) => {
     const btnId = normalizeBibliotecaId(btn.dataset.conjuntoId);
     btn.classList.toggle("is-active", btnId === currentId);
@@ -1050,9 +1289,9 @@ async function loadAndRenderBiblioteca(options = {}) {
 
   // Capture pending info before clearing (for reconciliation after quick-create)
   const prevTempId    = bibliotecaState.pendingConjunto?.tempId || null;
-  const wasSelected   = prevTempId ? normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === normalizeBibliotecaId(prevTempId) : false;
-  const prevActiveTab = prevTempId ? (bibliotecaState.activeTab[prevTempId] || "planeaciones") : null;
-  const prevSelectedId = normalizeBibliotecaId(bibliotecaState.selectedConjuntoId);
+  const wasSelected   = prevTempId ? normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId()) === normalizeBibliotecaId(prevTempId) : false;
+  const prevActiveTab = prevTempId ? (BibliotecaTabs.getActiveTab(prevTempId) || "planeaciones") : null;
+  const prevSelectedId = normalizeBibliotecaId(BibliotecaSelection.getSelectedConjuntoId());
   const prevConjuntos = getAllConjuntosForSidebar();
 
   if (!silent) {
@@ -1071,15 +1310,15 @@ async function loadAndRenderBiblioteca(options = {}) {
 
     // Reconciliation: map tempId expanded state to the newly created real conjunto
     if (prevTempId) {
-      delete bibliotecaState.activeTab[prevTempId];
+      BibliotecaTabs.clearActiveTab(prevTempId);
       if (wasSelected) {
         const prevIds     = new Set(prevConjuntos.map(c => normalizeBibliotecaId(c.id)));
         const newConjunto = targetBatchId
           ? newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId)
           : newList.find(c => !prevIds.has(normalizeBibliotecaId(c.id)));
         if (newConjunto) {
-          bibliotecaState.selectedConjuntoId = normalizeBibliotecaId(newConjunto.id);
-          bibliotecaState.activeTab[newConjunto.id] = prevActiveTab;
+          BibliotecaSelection.setSelectedConjuntoId(normalizeBibliotecaId(newConjunto.id));
+          BibliotecaTabs.setActiveTab(newConjunto.id, prevActiveTab);
         }
       }
     }
@@ -1087,8 +1326,8 @@ async function loadAndRenderBiblioteca(options = {}) {
     if (targetBatchId) {
       const target = newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId);
       if (target) {
-        bibliotecaState.selectedConjuntoId = normalizeBibliotecaId(target.id);
-        bibliotecaState.activeTab[target.id] = targetActiveTab;
+        BibliotecaSelection.setSelectedConjuntoId(normalizeBibliotecaId(target.id));
+        BibliotecaTabs.setActiveTab(target.id, targetActiveTab);
       }
     }
 
@@ -1096,14 +1335,14 @@ async function loadAndRenderBiblioteca(options = {}) {
     bibliotecaState.loading   = false;
     bibliotecaState.pendingConjunto = null;
 
-    const selectedStillExists = findConjuntoById(bibliotecaState.selectedConjuntoId);
+    const selectedStillExists = findConjuntoById(BibliotecaSelection.getSelectedConjuntoId());
     if (!selectedStillExists) {
       const fallback = targetBatchId
         ? newList.find(c => normalizeBibliotecaId(c.id) === targetBatchId)
         : newList.find(c => normalizeBibliotecaId(c.id) === prevSelectedId) || newList[0] || null;
-      bibliotecaState.selectedConjuntoId = fallback ? normalizeBibliotecaId(fallback.id) : null;
-      if (fallback && !bibliotecaState.activeTab[fallback.id]) {
-        bibliotecaState.activeTab[fallback.id] = "planeaciones";
+      BibliotecaSelection.setSelectedConjuntoId(fallback ? normalizeBibliotecaId(fallback.id) : null);
+      if (fallback && !BibliotecaTabs.getActiveTab(fallback.id)) {
+        BibliotecaTabs.setActiveTab(fallback.id, "planeaciones");
       }
     }
 
@@ -1268,14 +1507,14 @@ function onBibliotecaClick(event) {
 
 function openBibliotecaAnexoCreateModal(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
-  bibliotecaState.anexoModal = {
+  BibliotecaAnexoModalState.open({
     open:                  true,
     conjuntoId:            conjunto.id,
     planeaciones,
     selectedPlaneacionIds: [],
     submitting:            false,
     error:                 ""
-  };
+  });
   const modal = document.getElementById("biblioteca-anexo-create-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -1283,7 +1522,7 @@ function openBibliotecaAnexoCreateModal(conjunto) {
 }
 
 function closeBibliotecaAnexoCreateModal() {
-  bibliotecaState.anexoModal.open = false;
+  BibliotecaAnexoModalState.close();
   const modal = document.getElementById("biblioteca-anexo-create-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -1293,10 +1532,10 @@ function renderBibliotecaAnexoCreateModal() {
   const modal = document.getElementById("biblioteca-anexo-create-modal");
   if (!modal) return;
 
-  const state    = bibliotecaState.anexoModal;
+  const state    = BibliotecaAnexoModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
-  const generatingMap    = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
+  const generatingMap    = BibliotecaAnexosPending.getBatch(state.conjuntoId) || {};
   const anexosPlaneacionIds = new Set([
     ...anexosExistentes.map((a) => normalizeBibliotecaId(a.planeacion_id)),
     ...Object.keys(generatingMap)
@@ -1311,7 +1550,7 @@ function renderBibliotecaAnexoCreateModal() {
     availableIds.has(normalizeBibliotecaId(id))
   );
   if (selectedValidIds.length !== state.selectedPlaneacionIds.length) {
-    bibliotecaState.anexoModal.selectedPlaneacionIds = selectedValidIds;
+    BibliotecaAnexoModalState.setSelectedPlaneacionIds(selectedValidIds);
   }
   const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0 && !state.submitting;
 
@@ -1398,13 +1637,15 @@ function renderBibliotecaAnexoCreateModal() {
         e.target.checked = false;
         return;
       }
+      const modalState = BibliotecaAnexoModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.anexoModal.selectedPlaneacionIds.includes(pid)) {
-          bibliotecaState.anexoModal.selectedPlaneacionIds.push(pid);
+        if (!modalState.selectedPlaneacionIds.includes(pid)) {
+          BibliotecaAnexoModalState.addSelectedPlaneacionId(pid);
         }
       } else {
-        bibliotecaState.anexoModal.selectedPlaneacionIds =
-          bibliotecaState.anexoModal.selectedPlaneacionIds.filter((id) => id !== pid);
+        BibliotecaAnexoModalState.setSelectedPlaneacionIds(
+          modalState.selectedPlaneacionIds.filter((id) => id !== pid)
+        );
       }
       renderBibliotecaAnexoCreateModal();
     });
@@ -1412,10 +1653,10 @@ function renderBibliotecaAnexoCreateModal() {
 }
 
 async function submitBibliotecaAnexoCreateModal() {
-  const state    = bibliotecaState.anexoModal;
+  const state    = BibliotecaAnexoModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes  = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
-  const currentGenerating = bibliotecaState.anexosGenerating[state.conjuntoId] || {};
+  const currentGenerating = BibliotecaAnexosPending.getBatch(state.conjuntoId) || {};
   const blockedIds = new Set([
     ...anexosExistentes.map((a) => normalizeBibliotecaId(a.planeacion_id)),
     ...Object.keys(currentGenerating)
@@ -1432,13 +1673,13 @@ async function submitBibliotecaAnexoCreateModal() {
   )];
 
   if (!selectedIds.length) {
-    bibliotecaState.anexoModal.error = "Selecciona al menos una planeacion.";
+    BibliotecaAnexoModalState.setError("Selecciona al menos una planeacion.");
     renderBibliotecaAnexoCreateModal();
     return;
   }
 
-  bibliotecaState.anexoModal.submitting = true;
-  bibliotecaState.anexoModal.error      = "";
+  BibliotecaAnexoModalState.setSubmitting(true);
+  BibliotecaAnexoModalState.setError("");
   renderBibliotecaAnexoCreateModal();
 
   try {
@@ -1446,101 +1687,17 @@ async function submitBibliotecaAnexoCreateModal() {
     if (!session) return;
 
     const conjuntoId = state.conjuntoId;
-
-    // Construir mapa con info de cada planeacion seleccionada para las cards temporales
-    const planMap = new Map(
-      (Array.isArray(state.planeaciones) ? state.planeaciones : [])
-        .map((p) => [normalizeBibliotecaId(p.id), p])
-    );
-
-    // Insertar cards temporales "generating" antes de cerrar el modal
-    if (!bibliotecaState.anexosGenerating[conjuntoId]) {
-      bibliotecaState.anexosGenerating[conjuntoId] = {};
-    }
-    for (const pid of selectedIds) {
-      const p = planMap.get(pid);
-      bibliotecaState.anexosGenerating[conjuntoId][pid] = {
-        titulo:  p?.tema || p?.custom_title || "Sin titulo",
-        materia: p?.materia || null,
-        nivel:   p?.nivel   || null,
-        status:  "generating",
-        errorMessage: ""
-      };
-    }
-
-    closeBibliotecaAnexoCreateModal();
-    setSelectedConjunto(conjuntoId, { tab: "anexos" });
-    renderBibliotecaDetailInPlace();
-
-    ;(async () => {
-      let anySuccess = false;
-      let successCount = 0;
-      console.info("[anexos] generate:start", { batchId: conjuntoId, planeacionesCount: selectedIds.length });
-
-      for (const pid of selectedIds) {
-        try {
-          const res = await apiGenerarAnexo(pid, session.access_token);
-
-          // Update optimista: crear anexo en el estado local para que aparezca inmediatamente
-          const conjuntoObj = bibliotecaState.conjuntos.find(
-            (c) => normalizeBibliotecaId(c.id) === normalizeBibliotecaId(conjuntoId)
-          );
-          if (conjuntoObj) {
-            if (!Array.isArray(conjuntoObj.anexos)) conjuntoObj.anexos = [];
-            const item = bibliotecaState.anexosGenerating[conjuntoId]?.[pid];
-            conjuntoObj.anexos.push({
-              id:           res.anexo_id || `tmp-${pid}`,
-              planeacion_id: pid,
-              titulo:        item?.titulo  || "Anexo",
-              materia:       item?.materia || null,
-              nivel:         item?.nivel   || null,
-              status:        "generated",
-              created_at:    new Date().toISOString()
-            });
-            conjuntoObj.total_anexos = conjuntoObj.anexos.length;
-          }
-
-          // Quitar card temporal de este pid
-          if (bibliotecaState.anexosGenerating[conjuntoId]) {
-            delete bibliotecaState.anexosGenerating[conjuntoId][pid];
-          }
-          anySuccess = true;
-          successCount += 1;
-        } catch (itemErr) {
-          console.error("[biblioteca] Error generando anexo para planeacion", pid, itemErr);
-          if (bibliotecaState.anexosGenerating[conjuntoId]?.[pid]) {
-            bibliotecaState.anexosGenerating[conjuntoId][pid].status       = "error";
-            bibliotecaState.anexosGenerating[conjuntoId][pid].errorMessage = itemErr?.message || "No se pudo generar el anexo.";
-          }
-        }
-
-        renderBibliotecaDetailInPlace();
-      }
-
-      // Limpiar mapa si ya no queda nada generando (solo errores o vacío)
-      const remaining = bibliotecaState.anexosGenerating[conjuntoId] || {};
-      const allDone   = Object.values(remaining).every((v) => v.status === "error");
-      if (allDone && Object.keys(remaining).length === 0) {
-        delete bibliotecaState.anexosGenerating[conjuntoId];
-      }
-
-      console.info("[anexos] generate:success", {
-        batchId: conjuntoId,
-        successCount,
-        totalSolicitados: selectedIds.length
-      });
-
-      // Reload silencioso para confirmar datos reales del servidor
-      if (anySuccess) {
-        await loadAndRenderBiblioteca({ silent: true, targetBatchId: conjuntoId, activeTab: "anexos" });
-        delete bibliotecaState.anexosGenerating[conjuntoId];
-      }
-    })();
+    window.AnexoGeneration.generateFromBiblioteca({
+      conjuntoId,
+      selectedIds,
+      planeaciones: state.planeaciones,
+      accessToken: session.access_token
+    });
 
   } catch (error) {
     console.error("[biblioteca] Error iniciando anexos:", error);
-    bibliotecaState.anexoModal.submitting = false;
-    bibliotecaState.anexoModal.error      = error.message || "No se pudieron generar los anexos.";
+    BibliotecaAnexoModalState.setSubmitting(false);
+    BibliotecaAnexoModalState.setError(error.message || "No se pudieron generar los anexos.");
     renderBibliotecaAnexoCreateModal();
   }
 }
@@ -1557,16 +1714,16 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
   const plan = (Array.isArray(conjunto?.planeaciones) ? conjunto.planeaciones : [])
     .find((p) => normalizeBibliotecaId(p.id) === safePlanId);
 
-  if (!bibliotecaState.anexosGenerating[safeBatchId]) {
-    bibliotecaState.anexosGenerating[safeBatchId] = {};
+  if (!BibliotecaAnexosPending.getBatch(safeBatchId)) {
+    BibliotecaAnexosPending.setBatch(safeBatchId, {});
   }
-  bibliotecaState.anexosGenerating[safeBatchId][safePlanId] = {
+  BibliotecaAnexosPending.setItem(safeBatchId, safePlanId, {
     titulo:  plan?.tema || plan?.custom_title || "Sin titulo",
     materia: plan?.materia || null,
     nivel:   plan?.nivel   || null,
     status:  "generating",
     errorMessage: ""
-  };
+  });
   setSelectedConjunto(safeBatchId, { tab: "anexos" });
   renderBibliotecaDetailInPlace();
 
@@ -1582,7 +1739,7 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
     );
     if (conjuntoObj) {
       if (!Array.isArray(conjuntoObj.anexos)) conjuntoObj.anexos = [];
-      const item = bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId];
+      const item = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
       conjuntoObj.anexos.push({
         id:           res?.anexo_id || `tmp-${safePlanId}`,
         planeacion_id: safePlanId,
@@ -1595,10 +1752,10 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
       conjuntoObj.total_anexos = conjuntoObj.anexos.length;
     }
 
-    if (bibliotecaState.anexosGenerating[safeBatchId]) {
-      delete bibliotecaState.anexosGenerating[safeBatchId][safePlanId];
-      if (Object.keys(bibliotecaState.anexosGenerating[safeBatchId]).length === 0) {
-        delete bibliotecaState.anexosGenerating[safeBatchId];
+    if (BibliotecaAnexosPending.getBatch(safeBatchId)) {
+      BibliotecaAnexosPending.deleteItem(safeBatchId, safePlanId);
+      if (Object.keys(BibliotecaAnexosPending.getBatch(safeBatchId)).length === 0) {
+        BibliotecaAnexosPending.deleteBatch(safeBatchId);
       }
     }
 
@@ -1606,9 +1763,10 @@ async function bibGenerarAnexo(planeacionId, conjuntoId) {
     await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
   } catch (error) {
     console.error("[biblioteca] Error generando anexo:", error);
-    if (bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId]) {
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].status       = "error";
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].errorMessage = error.message || "No se pudo generar el anexo.";
+    const pendingItem = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
+    if (pendingItem) {
+      pendingItem.status       = "error";
+      pendingItem.errorMessage = error.message || "No se pudo generar el anexo.";
     }
     renderBibliotecaDetailInPlace();
   }
@@ -1620,16 +1778,16 @@ async function bibRegenerarAnexo(anexoId, conjuntoId, planeacionId) {
   const safePlanId   = normalizeBibliotecaId(planeacionId);
   if (!safeAnexoId || !safeBatchId) return;
 
-  if (!bibliotecaState.anexosGenerating[safeBatchId]) {
-    bibliotecaState.anexosGenerating[safeBatchId] = {};
+  if (!BibliotecaAnexosPending.getBatch(safeBatchId)) {
+    BibliotecaAnexosPending.setBatch(safeBatchId, {});
   }
-  bibliotecaState.anexosGenerating[safeBatchId][safePlanId] = {
+  BibliotecaAnexosPending.setItem(safeBatchId, safePlanId, {
     titulo:  "Regenerando...",
     materia: null,
     nivel:   null,
     status:  "generating",
     errorMessage: ""
-  };
+  });
   setSelectedConjunto(safeBatchId, { tab: "anexos" });
   renderBibliotecaDetailInPlace();
 
@@ -1639,490 +1797,122 @@ async function bibRegenerarAnexo(anexoId, conjuntoId, planeacionId) {
 
     await apiRegenerarAnexo(safeAnexoId, session.access_token);
 
-    if (bibliotecaState.anexosGenerating[safeBatchId]) {
-      delete bibliotecaState.anexosGenerating[safeBatchId][safePlanId];
-      if (Object.keys(bibliotecaState.anexosGenerating[safeBatchId]).length === 0) {
-        delete bibliotecaState.anexosGenerating[safeBatchId];
+    if (BibliotecaAnexosPending.getBatch(safeBatchId)) {
+      BibliotecaAnexosPending.deleteItem(safeBatchId, safePlanId);
+      if (Object.keys(BibliotecaAnexosPending.getBatch(safeBatchId)).length === 0) {
+        BibliotecaAnexosPending.deleteBatch(safeBatchId);
       }
     }
     await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
   } catch (error) {
     console.error("[biblioteca] Error regenerando anexo:", error);
-    if (bibliotecaState.anexosGenerating[safeBatchId]?.[safePlanId]) {
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].status       = "error";
-      bibliotecaState.anexosGenerating[safeBatchId][safePlanId].errorMessage = error.message || "No se pudo regenerar el anexo.";
+    const pendingItem = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
+    if (pendingItem) {
+      pendingItem.status       = "error";
+      pendingItem.errorMessage = error.message || "No se pudo regenerar el anexo.";
     }
     renderBibliotecaDetailInPlace();
   }
 }
 
+// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
+// Motivo: mantener el handler data-bib-action="descargar-anexo" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function bibDescargarAnexo(anexoId) {
-  console.debug("[downloads] anexo:start", { anexoId });
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-    const res = await apiObtenerAnexoDetalle(anexoId, session.access_token);
-    const anexo = res?.anexo;
-    if (!anexo) throw new Error("No se pudo obtener el anexo.");
-
-    const suggested = window.AppUI.buildDownloadSuggestedName(
-      "Anexo",
-      anexo.tema || anexo.titulo
-    );
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-
-    descargarAnexoWord(anexo, filename);
-    console.debug("[downloads] anexo:success", { anexoId });
-  } catch (error) {
-    console.error("[downloads] anexo:error", { anexoId, message: error?.message });
-    alert("No se pudo descargar el anexo. Intenta nuevamente.");
-  }
+  return window.AnexoDownload.downloadBiblioteca(anexoId);
 }
 
+// Compatibilidad temporal: conserva la firma local usada por la card y el preview.
+// Motivo: mantener el exportador actual mientras los consumidores migran al módulo canónico.
+// Consumidores actuales: bibDescargarAnexo y botón del preview de Biblioteca.
+// Condición para retirarlo: migrar ambos consumidores y confirmar búsqueda global sin referencias.
+// Fase prevista de retiro: Fase 10.
 function descargarAnexoWord(anexo, filenameOverride) {
-  const contenido = anexo.contenido || {};
-  const tituloGeneral = contenido.titulo_general || anexo.titulo || "Anexos";
-  const descripcion   = contenido.descripcion || "";
-  const listaAnexos   = Array.isArray(contenido.anexos) ? contenido.anexos : [];
-  const materia       = anexo.materia || "";
-  const tema          = anexo.tema    || "";
-
-  function renderAnexoHtml(a) {
-    let html = `<h2 style="font-size:13pt; margin-top:18pt; margin-bottom:4pt; font-weight:bold;">ANEXO ${a.numero || ""}: ${escapeHtml(a.titulo || "")}</h2>`;
-
-    if (a.instrucciones) {
-      html += `<p style="font-style:italic; margin-bottom:8pt;"><strong>Instrucciones:</strong> ${escapeHtml(a.instrucciones)}</p>`;
-    }
-
-    if (Array.isArray(a.contenido)) {
-      for (const bloque of a.contenido) {
-        if (bloque.subtitulo) {
-          html += `<p style="font-weight:bold; margin-top:8pt;">${escapeHtml(bloque.subtitulo)}</p>`;
-        }
-        if (bloque.texto) {
-          html += `<p style="margin-bottom:6pt;">${escapeHtml(bloque.texto)}</p>`;
-        }
-        if (Array.isArray(bloque.preguntas) && bloque.preguntas.length) {
-          html += `<ol style="margin-left:20pt;">`;
-          bloque.preguntas.forEach((q) => {
-            html += `<li style="margin-bottom:4pt;">${escapeHtml(q)}</li>`;
-          });
-          html += `</ol>`;
-        }
-      }
-    }
-
-    if (a.tabla && Array.isArray(a.tabla.columnas) && Array.isArray(a.tabla.filas)) {
-      html += `<table style="border-collapse:collapse; width:100%; margin-top:8pt;">`;
-      html += `<tr>`;
-      a.tabla.columnas.forEach((col) => {
-        html += `<th style="border:1px solid #999; background:#f0f0f0; padding:4pt 6pt; font-weight:bold;">${escapeHtml(col)}</th>`;
-      });
-      html += `</tr>`;
-      a.tabla.filas.forEach((fila) => {
-        html += `<tr>`;
-        (Array.isArray(fila) ? fila : []).forEach((celda) => {
-          html += `<td style="border:1px solid #999; padding:4pt 6pt;">${escapeHtml(celda || "")}</td>`;
-        });
-        html += `</tr>`;
-      });
-      html += `</table>`;
-    }
-
-    return html;
-  }
-
-  const encabezado = `
-    <p style="margin-bottom:6pt;">Nombre del alumno: ___________________________&nbsp;&nbsp;&nbsp;&nbsp;Fecha: ____________</p>
-    ${materia ? `<p style="margin-bottom:2pt;"><strong>Materia:</strong> ${escapeHtml(materia)}</p>` : ""}
-    ${tema    ? `<p style="margin-bottom:10pt;"><strong>Tema:</strong> ${escapeHtml(tema)}</p>`    : ""}
-  `;
-
-  const cuerpo = listaAnexos.map(renderAnexoHtml).join("");
-
-  const htmlDoc = `
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; font-size: 11pt; }
-          h1   { text-align: center; font-size: 14pt; margin-bottom: 6pt; }
-          p.descripcion { text-align: center; color: #555; margin-bottom: 16pt; font-size: 10pt; }
-        </style>
-      </head>
-      <body>
-        <h1>${escapeHtml(tituloGeneral)}</h1>
-        ${descripcion ? `<p class="descripcion">${escapeHtml(descripcion)}</p>` : ""}
-        ${encabezado}
-        ${cuerpo}
-      </body>
-    </html>
-  `;
-
-  const blob = new Blob([htmlDoc], { type: "application/msword" });
-  const url  = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href     = url;
-  const defaultAnexoName = tituloGeneral.replace(/[^a-zA-Z0-9\s\-_]/g, "").trim() || "Anexos";
-  link.download = `${filenameOverride || defaultAnexoName}.doc`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return window.AnexoDownload.download(anexo, filenameOverride);
 }
 
 // ---- ANEXO PREVIEW MODAL ----
 
+// Compatibilidad temporal: conserva la apertura desde cards de Biblioteca.
+// Motivo: mantener el handler data-bib-action="ver-anexo" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function openBibliotecaAnexoPreview(anexoId) {
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    const modal = document.getElementById("biblioteca-anexo-modal");
-    if (!modal) return;
-
-    const card = modal.querySelector(".biblioteca-modal-card");
-    if (!card) return;
-
-    card.innerHTML = `
-      <div class="bib-anexo-head">
-        <h3>Cargando anexo...</h3>
-        <button type="button" id="bib-anexo-close" class="bib-lista-close">X</button>
-      </div>
-      <div class="bib-anexo-body" style="padding:1rem;">
-        <p class="text-sm text-slate-500">Un momento...</p>
-      </div>
-    `;
-    document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
-    modal.classList.remove("hidden");
-    document.body.classList.add("overflow-hidden");
-
-    const res   = await apiObtenerAnexoDetalle(anexoId, session.access_token);
-    const anexo = res?.anexo;
-    if (!anexo) throw new Error("No se pudo cargar el anexo.");
-
-    renderBibliotecaAnexoModal(anexo);
-  } catch (error) {
-    console.error("[biblioteca] Error cargando anexo:", error);
-    const card = document.getElementById("biblioteca-anexo-modal")?.querySelector(".biblioteca-modal-card");
-    if (card) {
-      card.innerHTML = `
-        <div class="bib-anexo-head">
-          <h3>Error</h3>
-          <button type="button" id="bib-anexo-close" class="bib-lista-close">X</button>
-        </div>
-        <div class="bib-anexo-body" style="padding:1rem;">
-          <p class="text-sm text-rose-600">No se pudo cargar el anexo.</p>
-        </div>
-      `;
-      document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
-    }
-  }
+  return window.AnexoPreview.open(anexoId);
 }
 
+// Compatibilidad temporal: conserva el cierre del modal dinámico existente.
+// Motivo: mantener backdrop y botones de cierre sin cambiar su contrato.
+// Consumidores actuales: modal dinámico de Biblioteca y render del preview.
+// Condición para retirarlo: migrar listeners y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 function closeBibliotecaAnexoModal() {
-  const modal = document.getElementById("biblioteca-anexo-modal");
-  if (modal) modal.classList.add("hidden");
-  document.body.classList.remove("overflow-hidden");
+  return window.AnexoPreview.close();
 }
 
+// Compatibilidad temporal: conserva el renderer local usado por la apertura.
+// Motivo: mantener la firma durante la extracción literal del preview.
+// Consumidores actuales: openBibliotecaAnexoPreview y compatibilidad local.
+// Condición para retirarlo: migrar consumidores y confirmar búsqueda global sin referencias.
+// Fase prevista de retiro: Fase 10.
 function renderBibliotecaAnexoModal(anexo) {
-  const modal = document.getElementById("biblioteca-anexo-modal");
-  if (!modal) return;
-
-  const card       = modal.querySelector(".biblioteca-modal-card");
-  const contenido  = anexo.contenido || {};
-  const titulo     = contenido.titulo_general || anexo.titulo || "Anexos";
-  const descripcion = contenido.descripcion || "";
-  const listaAnexos = Array.isArray(contenido.anexos) ? contenido.anexos : [];
-
-  function renderAnexoBlock(a) {
-    let html = `<div style="margin-bottom:1.5rem;">`;
-    html += `<p style="font-weight:700; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase; color:#64748b; margin-bottom:2px;">ANEXO ${a.numero || ""}</p>`;
-    html += `<h4 style="font-size:1rem; font-weight:700; color:#1e293b; margin-bottom:6px;">${escapeHtml(a.titulo || "")}</h4>`;
-
-    if (a.instrucciones) {
-      html += `<p style="font-style:italic; color:#475569; margin-bottom:10px; font-size:0.875rem;"><em>Instrucciones:</em> ${escapeHtml(a.instrucciones)}</p>`;
-    }
-
-    if (Array.isArray(a.contenido)) {
-      for (const bloque of a.contenido) {
-        if (bloque.subtitulo) {
-          html += `<p style="font-weight:600; color:#334155; margin-top:10px; margin-bottom:4px;">${escapeHtml(bloque.subtitulo)}</p>`;
-        }
-        if (bloque.texto) {
-          html += `<p style="color:#475569; margin-bottom:6px; font-size:0.875rem;">${escapeHtml(bloque.texto)}</p>`;
-        }
-        if (Array.isArray(bloque.preguntas) && bloque.preguntas.length) {
-          html += `<ol style="padding-left:1.25rem; margin-bottom:6px;">`;
-          bloque.preguntas.forEach((q, i) => {
-            html += `<li style="color:#475569; font-size:0.875rem; margin-bottom:3px;">${escapeHtml(q)}</li>`;
-          });
-          html += `</ol>`;
-        }
-      }
-    }
-
-    if (a.tabla && Array.isArray(a.tabla.columnas) && Array.isArray(a.tabla.filas)) {
-      html += `<div style="overflow-x:auto; margin-top:8px;">`;
-      html += `<table style="border-collapse:collapse; width:100%; font-size:0.8125rem;">`;
-      html += `<thead><tr>`;
-      a.tabla.columnas.forEach((col) => {
-        html += `<th style="border:1px solid #cbd5e1; background:#f1f5f9; padding:5px 8px; text-align:left; font-weight:600;">${escapeHtml(col)}</th>`;
-      });
-      html += `</tr></thead><tbody>`;
-      a.tabla.filas.forEach((fila) => {
-        html += `<tr>`;
-        (Array.isArray(fila) ? fila : []).forEach((celda) => {
-          html += `<td style="border:1px solid #cbd5e1; padding:5px 8px;">${escapeHtml(celda || "")}</td>`;
-        });
-        html += `</tr>`;
-      });
-      html += `</tbody></table></div>`;
-    }
-
-    html += `</div>`;
-    return html;
-  }
-
-  const cuerpoHtml = listaAnexos.length
-    ? listaAnexos.map(renderAnexoBlock).join('<hr style="border:none; border-top:1px solid #e2e8f0; margin:1rem 0;">')
-    : `<p style="color:#94a3b8; font-size:0.875rem;">Este anexo no tiene contenido.</p>`;
-
-  card.innerHTML = `
-    <div class="bib-anexo-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding-bottom:0.75rem; border-bottom:1px solid #e2e8f0; margin-bottom:1rem;">
-      <div>
-        <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#0891b2; margin-bottom:2px;">MATERIAL PARA ALUMNOS</p>
-        <h3 style="font-size:1.125rem; font-weight:700; color:#1e293b;">${escapeHtml(titulo)}</h3>
-        ${descripcion ? `<p style="font-size:0.8125rem; color:#64748b; margin-top:2px;">${escapeHtml(descripcion)}</p>` : ""}
-        ${anexo.materia || anexo.nivel ? `<p style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">${[anexo.materia, anexo.nivel, anexo.tema].filter(Boolean).map(escapeHtml).join(" · ")}</p>` : ""}
-      </div>
-      <button type="button" id="bib-anexo-close" class="bib-lista-close" style="flex-shrink:0;">X</button>
-    </div>
-    <div class="bib-anexo-body" style="overflow-y:auto; max-height:45vh; padding-right:4px;">
-      ${cuerpoHtml}
-    </div>
-    <div style="display:flex; justify-content:flex-end; padding-top:0.75rem; border-top:1px solid #e2e8f0; margin-top:0.75rem;">
-      <button type="button" id="bib-anexo-descargar" class="bib-lista-submit"
-        data-anexo-id="${escapeHtml(String(anexo.id))}">
-        Descargar Word
-      </button>
-    </div>
-  `;
-
-  document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
-  document.getElementById("bib-anexo-descargar")?.addEventListener("click", async () => {
-    const suggested = window.AppUI.buildDownloadSuggestedName("Anexo", anexo.tema || anexo.titulo);
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-    closeBibliotecaAnexoModal();
-    descargarAnexoWord(anexo, filename);
-  });
+  return window.AnexoPreview.render(anexo);
 }
 
 // ---- DOWNLOAD HELPERS ----
 
+// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
+// Motivo: mantener el handler data-bib-action="descargar-planeacion" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function bibDescargarPlaneacion(planeacionId) {
-  console.debug("[downloads] planeacion:start", { planeacionId });
-  try {
-    const planeacion = await window.obtenerPlaneacionDetalle(planeacionId);
-    if (!planeacion) {
-      alert("No se pudo obtener la planeacion.");
-      return;
-    }
-
-    const suggested = window.AppUI.buildDownloadSuggestedName(
-      "Planeacion",
-      planeacion.tema || planeacion.materia
-    );
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-
-    const filas = Array.isArray(planeacion.tabla_ia) ? planeacion.tabla_ia : [];
-    const filasHtml = filas.map(fila => `
-      <tr>
-        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.tiempo_sesion || ""}</td>
-        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.actividades || ""}</td>
-        <td style="border:1px solid #000;padding:8px;text-align:center;font-size:10pt;vertical-align:middle;">${fila.tiempo_min || ""}</td>
-        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.producto || ""}</td>
-        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.instrumento || ""}</td>
-        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.formativa || ""}</td>
-        <td style="border:1px solid #000;padding:8px;font-size:10pt;vertical-align:middle;">${fila.sumativa || ""}</td>
-      </tr>`).join("");
-
-    const contenidoHTML = `
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <!--[if gte mso 9]>
-          <xml>
-            <w:WordDocument>
-              <w:View>Print</w:View>
-              <w:Zoom>100</w:Zoom>
-              <w:DoNotOptimizeForBrowser/>
-            </w:WordDocument>
-          </xml>
-          <![endif]-->
-          <style>
-            @page Section1 { size: 29.7cm 21cm; margin: 2cm; }
-            div.Section1 { page: Section1; }
-            body { font-family: Arial, sans-serif; font-size: 11pt; }
-            h2 { text-align: center; margin-bottom: 15px; }
-            table { border-collapse: collapse; width: 100%; }
-            th { background-color: #8ca2d2; color: white; border: 1px solid #000; padding: 8px; font-size: 10pt; text-transform: uppercase; }
-            td { border: 1px solid #000; padding: 8px; vertical-align: middle; font-size: 10pt; }
-          </style>
-        </head>
-        <body>
-          <div class="Section1">
-            <h2>Planeacion didactica</h2>
-            <table style="margin-bottom:15px;">
-              <tr>
-                <td><strong>Asignatura:</strong> ${planeacion.materia || ""}</td>
-                <td><strong>Nivel:</strong> ${planeacion.nivel || ""}</td>
-              </tr>
-              <tr>
-                <td><strong>Tema:</strong> ${planeacion.tema || ""}</td>
-                <td><strong>Subtema:</strong> ${planeacion.subtema || ""}</td>
-              </tr>
-              <tr>
-                <td><strong>Duracion:</strong> ${planeacion.duracion || ""} min</td>
-                <td><strong>Sesiones:</strong> ${planeacion.sesiones || ""}</td>
-              </tr>
-            </table>
-            <table>
-              <thead>
-                <tr>
-                  <th>Momento / Sesion</th>
-                  <th>Actividades</th>
-                  <th>Tiempo (min)</th>
-                  <th>Producto</th>
-                  <th>Instrumento</th>
-                  <th>Formativa</th>
-                  <th>Sumativa</th>
-                </tr>
-              </thead>
-              <tbody>${filasHtml}</tbody>
-            </table>
-          </div>
-        </body>
-      </html>`;
-
-    const blob = new Blob([contenidoHTML], { type: "application/msword" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    console.debug("[downloads] planeacion:success", { planeacionId });
-  } catch (error) {
-    console.error("[downloads] planeacion:error", { planeacionId, message: error?.message });
-    alert("No se pudo descargar la planeacion. Intenta nuevamente.");
-  }
+  return window.PlaneacionDownload.downloadFromBiblioteca(planeacionId);
 }
 
+// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="descargar-examen".
+// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
 async function bibDescargarExamen(examenId) {
-  console.debug("[downloads] exam:start", { examenId });
-  try {
-    const conjunto = bibliotecaState.conjuntos.find(c =>
-      Array.isArray(c.examenes) &&
-      c.examenes.some(e => normalizeBibliotecaId(e.id) === normalizeBibliotecaId(examenId))
-    );
-    const suggested = window.AppUI.buildDownloadSuggestedName(
-      "Examen",
-      conjunto?.titulo || ""
-    );
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-
-    if (typeof window.downloadExamWord === "function") {
-      await window.downloadExamWord(examenId, filename);
-    }
-    console.debug("[downloads] exam:success", { examenId });
-  } catch (error) {
-    console.error("[downloads] exam:error", { examenId, message: error?.message });
-  }
+  return window.ExamDownload.downloadFromBiblioteca(examenId);
 }
 
+// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
+// Motivo: mantener el handler data-bib-action="descargar-lista" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function bibDescargarLista(listaId) {
-  console.debug("[downloads] lista:start", { listaId });
-  try {
-    const lista = await window.obtenerListaCoTejoDetalle(listaId);
-
-    const suggested = window.AppUI.buildDownloadSuggestedName(
-      "Lista_cotejo",
-      lista?.tema || lista?.titulo
-    );
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
-    if (filename === null) return;
-
-    if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista, filename);
-    }
-    console.debug("[downloads] lista:success", { listaId });
-  } catch (error) {
-    console.error("[downloads] lista:error", { listaId, message: error?.message });
-  }
+  return window.ListaCotejoDownload.downloadBiblioteca(listaId);
 }
 
-// ---- EXAM PREVIEW (reusa modal existente de dashboard.page.js) ----
-
+// Compatibilidad temporal: conserva la apertura local de Biblioteca durante la extracción.
+// Motivo: mantener el handler data-bib-action="ver-examen" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function openBibliotecaExamenPreview(examenId) {
-  if (!window.explorerState) return;
-
-  console.debug("[preview] exam:open", { examenId });
-
-  window.explorerState.examPreview = { open: true, examenId, loading: true, error: "" };
-  if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
-
-  try {
-    const examen = await window.obtenerExamenDetalle(examenId);
-    window.explorerState.examenDetalleById = window.explorerState.examenDetalleById || {};
-    window.explorerState.examenDetalleById[examenId] = examen;
-    window.explorerState.examPreview.loading = false;
-    if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
-  } catch (error) {
-    console.error("[preview] exam:error", { examenId, message: error?.message });
-    window.explorerState.examPreview.loading = false;
-    window.explorerState.examPreview.error   = "No se pudo cargar el examen.";
-    if (typeof window.renderExamPreviewModal === "function") window.renderExamPreviewModal();
-  }
+  return window.ExamPreview.openBiblioteca(examenId);
 }
 
-// ---- LISTA PREVIEW (reusa modal existente de dashboard.page.js) ----
-
+// Compatibilidad temporal: conserva la apertura local de Biblioteca durante la extracción.
+// Motivo: mantener el handler data-bib-action="ver-lista" sin cambiar su contrato.
+// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
+// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
+// Fase prevista de retiro: Fase 10.
 async function openBibliotecaListaPreview(listaId) {
-  if (!window.explorerState) return;
-
-  console.debug("[preview] lista:open", { listaId });
-
-  window.explorerState.listaCotejoPreview = { open: true, listaId, listaData: null, loading: true, error: "" };
-  if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
-
-  try {
-    const lista = await window.obtenerListaCoTejoDetalle(listaId);
-    window.explorerState.listaCotejoPreview = { open: true, listaId, listaData: lista, loading: false, error: "" };
-    if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
-  } catch (error) {
-    console.error("[preview] lista:error", { listaId, message: error?.message });
-    window.explorerState.listaCotejoPreview = {
-      ...window.explorerState.listaCotejoPreview,
-      loading: false,
-      error: "No se pudo cargar la lista de cotejo."
-    };
-    if (typeof window.renderListaCotejoPreviewModal === "function") window.renderListaCotejoPreviewModal();
-  }
+  return window.ListaCotejoPreview.openBiblioteca(listaId);
 }
 
 // ---- BIBLIOTECA EXAM GENERATION MODAL ----
 
 function openBibliotecaExamModal(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
-  bibliotecaState.examModal = {
+  BibliotecaExamModalState.open({
     open:                  true,
     conjuntoId:            conjunto.id,
     unidadId:              conjunto.unidad_id || null,
@@ -2132,7 +1922,7 @@ function openBibliotecaExamModal(conjunto) {
     questionCounts:        {},
     submitting:            false,
     error:                 ""
-  };
+  });
   const modal = document.getElementById("biblioteca-exam-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -2140,7 +1930,7 @@ function openBibliotecaExamModal(conjunto) {
 }
 
 function closeBibliotecaExamModal() {
-  bibliotecaState.examModal.open = false;
+  BibliotecaExamModalState.close();
   const modal = document.getElementById("biblioteca-exam-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -2150,7 +1940,7 @@ function renderBibliotecaExamModal() {
   const modal = document.getElementById("biblioteca-exam-modal");
   if (!modal) return;
 
-  const state = bibliotecaState.examModal;
+  const state = BibliotecaExamModalState.getState();
 
   const tiposHtml = BIB_EXAM_TIPOS.map(tipo => {
     const isSelected = state.selectedTypes.includes(tipo.value);
@@ -2237,17 +2027,19 @@ function renderBibliotecaExamModal() {
   modal.querySelectorAll("[data-bib-exam-type]").forEach(cb => {
     cb.addEventListener("change", e => {
       const tipo = e.target.dataset.bibExamType;
+      const modalState = BibliotecaExamModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.examModal.selectedTypes.includes(tipo)) {
-          bibliotecaState.examModal.selectedTypes.push(tipo);
+        if (!modalState.selectedTypes.includes(tipo)) {
+          BibliotecaExamModalState.addSelectedType(tipo);
           const found = BIB_EXAM_TIPOS.find(t => t.value === tipo);
-          if (!bibliotecaState.examModal.questionCounts[tipo]) {
-            bibliotecaState.examModal.questionCounts[tipo] = found?.defaultCount || 5;
+          if (!modalState.questionCounts[tipo]) {
+            BibliotecaExamModalState.setQuestionCount(tipo, found?.defaultCount || 5);
           }
         }
       } else {
-        bibliotecaState.examModal.selectedTypes =
-          bibliotecaState.examModal.selectedTypes.filter(t => t !== tipo);
+        BibliotecaExamModalState.setSelectedTypes(
+          modalState.selectedTypes.filter(t => t !== tipo)
+        );
       }
       renderBibliotecaExamModal();
     });
@@ -2258,7 +2050,7 @@ function renderBibliotecaExamModal() {
       const tipo = e.target.dataset.bibExamCount;
       const val  = parseInt(e.target.value, 10);
       if (tipo && !isNaN(val) && val > 0) {
-        bibliotecaState.examModal.questionCounts[tipo] = val;
+        BibliotecaExamModalState.setQuestionCount(tipo, val);
       }
     });
   });
@@ -2266,43 +2058,45 @@ function renderBibliotecaExamModal() {
   modal.querySelectorAll("[data-bib-exam-planid]").forEach(cb => {
     cb.addEventListener("change", e => {
       const pid = e.target.dataset.bibExamPlanid;
+      const modalState = BibliotecaExamModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.examModal.selectedPlaneacionIds.includes(pid)) {
-          bibliotecaState.examModal.selectedPlaneacionIds.push(pid);
+        if (!modalState.selectedPlaneacionIds.includes(pid)) {
+          BibliotecaExamModalState.addSelectedPlaneacionId(pid);
         }
       } else {
-        bibliotecaState.examModal.selectedPlaneacionIds =
-          bibliotecaState.examModal.selectedPlaneacionIds.filter(id => id !== pid);
+        BibliotecaExamModalState.setSelectedPlaneacionIds(
+          modalState.selectedPlaneacionIds.filter(id => id !== pid)
+        );
       }
       const counter = document.getElementById("bib-exam-topics-count");
       if (counter) {
-        counter.textContent = `${bibliotecaState.examModal.selectedPlaneacionIds.length} de ${bibliotecaState.examModal.planeaciones.length} tema(s)`;
+        counter.textContent = `${modalState.selectedPlaneacionIds.length} de ${modalState.planeaciones.length} tema(s)`;
       }
     });
   });
 }
 
 async function submitBibliotecaExamModal() {
-  const state = bibliotecaState.examModal;
+  const state = BibliotecaExamModalState.getState();
 
   if (!state.unidadId) {
-    bibliotecaState.examModal.error = "Este bloque no tiene unidad vinculada.";
+    BibliotecaExamModalState.setError("Este bloque no tiene unidad vinculada.");
     renderBibliotecaExamModal();
     return;
   }
   if (!state.selectedTypes.length) {
-    bibliotecaState.examModal.error = "Selecciona al menos un tipo de pregunta.";
+    BibliotecaExamModalState.setError("Selecciona al menos un tipo de pregunta.");
     renderBibliotecaExamModal();
     return;
   }
   if (!state.selectedPlaneacionIds.length) {
-    bibliotecaState.examModal.error = "Selecciona al menos una planeacion.";
+    BibliotecaExamModalState.setError("Selecciona al menos una planeacion.");
     renderBibliotecaExamModal();
     return;
   }
 
-  bibliotecaState.examModal.submitting = true;
-  bibliotecaState.examModal.error      = "";
+  BibliotecaExamModalState.setSubmitting(true);
+  BibliotecaExamModalState.setError("");
   renderBibliotecaExamModal();
 
   try {
@@ -2326,74 +2120,16 @@ async function submitBibliotecaExamModal() {
       planeacion_ids:      state.selectedPlaneacionIds
     };
 
-    console.info("[examenes] payload generacion (biblioteca)", {
-      unidadId: payload.unidad_id,
-      batchId: payload.batch_id,
-      totalPlaneaciones: payload.planeacion_ids?.length,
-      planeacionIds: payload.planeacion_ids
+    await window.ExamGeneration.generateFromBiblioteca({
+      payload,
+      accessToken: session.access_token,
+      conjuntoId: state.conjuntoId
     });
-
-    const genResponse = await apiExamenesGenerate(payload, session.access_token);
-    const jobId = genResponse?.job_id;
-    if (!jobId) throw new Error("No se recibio job_id del servidor.");
-
-    console.info("[examenes] job:created", { jobId, batchId: payload.batch_id });
-
-    // Close modal immediately — progress will show in the card
-    const conjuntoId = state.conjuntoId;
-    closeBibliotecaExamModal();
-    setSelectedConjunto(conjuntoId, { tab: "examenes" });
-    bibliotecaState.pendingExamenByBatchId[conjuntoId] = { message: "Iniciando generacion de examen...", error: "" };
-    renderBibliotecaContent();
-
-    // Poll in background
-    ;(async () => {
-      console.debug("[polling] examen:start", { jobId, batchId: conjuntoId });
-      try {
-        const POLL_MS  = 3000;
-        const MAX_POLLS = 60;
-        let polls = 0;
-        while (polls < MAX_POLLS) {
-          await new Promise(r => setTimeout(r, POLL_MS));
-          polls++;
-          const statusRes = await apiExamenGenerationStatus(jobId, session.access_token);
-          if (statusRes?.current_step) {
-            bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
-              message: statusRes.current_step,
-              error: ""
-            };
-            renderBibliotecaContent();
-          }
-          if (statusRes?.status === "completed") break;
-          if (statusRes?.status === "failed") {
-            console.error("[biblioteca] Generacion de examen fallida:", statusRes);
-            throw new Error(BIB_EXAM_GENERIC_FAILURE_MESSAGE);
-          }
-        }
-        if (polls >= MAX_POLLS) throw new Error("La generacion tardo demasiado. Intenta de nuevo.");
-
-        console.debug("[polling] examen:finished", { jobId, batchId: conjuntoId, polls });
-
-        delete bibliotecaState.pendingExamenByBatchId[conjuntoId];
-        await loadAndRenderBiblioteca({
-          silent: true,
-          targetBatchId: conjuntoId,
-          activeTab: "examenes"
-        });
-      } catch (pollError) {
-        console.error("[biblioteca] Error en polling de examen:", pollError);
-        bibliotecaState.pendingExamenByBatchId[conjuntoId] = {
-          message: "",
-          error: BIB_EXAM_GENERIC_FAILURE_MESSAGE
-        };
-        renderBibliotecaContent();
-      }
-    })();
 
   } catch (error) {
     console.error("[biblioteca] Error iniciando examen:", error);
-    bibliotecaState.examModal.submitting = false;
-    bibliotecaState.examModal.error      = error.message || "No se pudo generar el examen.";
+    BibliotecaExamModalState.setSubmitting(false);
+    BibliotecaExamModalState.setError(error.message || "No se pudo generar el examen.");
     renderBibliotecaExamModal();
   }
 }
@@ -2402,14 +2138,14 @@ async function submitBibliotecaExamModal() {
 
 function openBibliotecaListaModal(conjunto) {
   const planeaciones = Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [];
-  bibliotecaState.listaModal = {
+  BibliotecaListaModalState.open({
     open:                  true,
     conjuntoId:            conjunto.id,
     planeaciones,
     selectedPlaneacionIds: [],
     submitting:            false,
     error:                 ""
-  };
+  });
   const modal = document.getElementById("biblioteca-lista-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -2417,7 +2153,7 @@ function openBibliotecaListaModal(conjunto) {
 }
 
 function closeBibliotecaListaModal() {
-  bibliotecaState.listaModal.open = false;
+  BibliotecaListaModalState.close();
   const modal = document.getElementById("biblioteca-lista-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -2427,7 +2163,7 @@ function renderBibliotecaListaModal() {
   const modal = document.getElementById("biblioteca-lista-modal");
   if (!modal) return;
 
-  const state    = bibliotecaState.listaModal;
+  const state    = BibliotecaListaModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const listas = Array.isArray(conjunto?.listas_cotejo) ? conjunto.listas_cotejo : [];
   const listaPlaneacionIds = new Set(listas.map((lista) => normalizeBibliotecaId(lista?.planeacion_id)).filter(Boolean));
@@ -2436,7 +2172,7 @@ function renderBibliotecaListaModal() {
   const availableIds = new Set(disponibles.map((p) => normalizeBibliotecaId(p.id)));
   const selectedValidIds = state.selectedPlaneacionIds.filter((id) => availableIds.has(normalizeBibliotecaId(id)));
   if (selectedValidIds.length !== state.selectedPlaneacionIds.length) {
-    bibliotecaState.listaModal.selectedPlaneacionIds = selectedValidIds;
+    BibliotecaListaModalState.setSelectedPlaneacionIds(selectedValidIds);
   }
   const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0 && !state.submitting;
 
@@ -2515,13 +2251,15 @@ function renderBibliotecaListaModal() {
         e.target.checked = false;
         return;
       }
+      const modalState = BibliotecaListaModalState.getState();
       if (e.target.checked) {
-        if (!bibliotecaState.listaModal.selectedPlaneacionIds.includes(pid)) {
-          bibliotecaState.listaModal.selectedPlaneacionIds.push(pid);
+        if (!modalState.selectedPlaneacionIds.includes(pid)) {
+          BibliotecaListaModalState.addSelectedPlaneacionId(pid);
         }
       } else {
-        bibliotecaState.listaModal.selectedPlaneacionIds =
-          bibliotecaState.listaModal.selectedPlaneacionIds.filter(id => id !== pid);
+        BibliotecaListaModalState.setSelectedPlaneacionIds(
+          modalState.selectedPlaneacionIds.filter(id => id !== pid)
+        );
       }
       renderBibliotecaListaModal();
     });
@@ -2529,7 +2267,7 @@ function renderBibliotecaListaModal() {
 }
 
 async function submitBibliotecaListaModal() {
-  const state = bibliotecaState.listaModal;
+  const state = BibliotecaListaModalState.getState();
   const conjunto = findConjuntoById(state.conjuntoId);
   const listas = Array.isArray(conjunto?.listas_cotejo) ? conjunto.listas_cotejo : [];
   const blockedIds = new Set(listas.map((lista) => normalizeBibliotecaId(lista?.planeacion_id)).filter(Boolean));
@@ -2541,13 +2279,13 @@ async function submitBibliotecaListaModal() {
     .filter((id) => availableIds.has(id)))];
 
   if (!selectedIds.length) {
-    bibliotecaState.listaModal.error = "Selecciona al menos una planeacion.";
+    BibliotecaListaModalState.setError("Selecciona al menos una planeacion.");
     renderBibliotecaListaModal();
     return;
   }
 
-  bibliotecaState.listaModal.submitting = true;
-  bibliotecaState.listaModal.error      = "";
+  BibliotecaListaModalState.setSubmitting(true);
+  BibliotecaListaModalState.setError("");
   renderBibliotecaListaModal();
 
   try {
@@ -2555,58 +2293,17 @@ async function submitBibliotecaListaModal() {
     if (!session) return;
 
     const conjuntoId = state.conjuntoId;
-
-    // Close modal immediately — progress shows in card
-    closeBibliotecaListaModal();
-    setSelectedConjunto(conjuntoId, { tab: "listas" });
-
-    // Build per-item data for per-card display
-    const selectedIdSet = new Set(selectedIds);
-    const pendingItems = (Array.isArray(state.planeaciones) ? state.planeaciones : [])
-      .filter(p => selectedIdSet.has(normalizeBibliotecaId(p.id)))
-      .map(p => ({ titulo: p.tema || p.custom_title || "Lista de cotejo", planeacionId: p.id }));
-
-    bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-      items:  pendingItems,
-      result: null,
-      error:  ""
-    };
-    renderBibliotecaContent();
-
-    // Generate in background
-    ;(async () => {
-      try {
-        const payload = { planeacion_ids: selectedIds };
-        const res = await apiListasCoTejoGenerate(payload, session.access_token);
-        const created = res?.created ?? 0;
-        const skipped = Array.isArray(res?.skipped) ? res.skipped.length : (res?.skipped ?? 0);
-
-        console.info("[listas-cotejo] generate:success", { batchId: conjuntoId, created, skipped });
-
-        // Keep cards visible until real data loads (1.5s grace)
-        await new Promise(r => setTimeout(r, 1500));
-        delete bibliotecaState.pendingListaByBatchId[conjuntoId];
-        await loadAndRenderBiblioteca({
-          silent: true,
-          targetBatchId: conjuntoId,
-          activeTab: "listas"
-        });
-      } catch (genError) {
-        console.error("[biblioteca] Error generando listas:", genError);
-        const currentPending = bibliotecaState.pendingListaByBatchId[conjuntoId];
-        bibliotecaState.pendingListaByBatchId[conjuntoId] = {
-          items:   currentPending?.items || [],
-          result:  null,
-          error:   genError.message || "No se pudieron generar las listas de cotejo."
-        };
-        renderBibliotecaContent();
-      }
-    })();
+    window.ListaCotejoGeneration.generateFromBiblioteca({
+      conjuntoId,
+      selectedIds,
+      planeaciones: state.planeaciones,
+      accessToken: session.access_token
+    });
 
   } catch (error) {
     console.error("[biblioteca] Error iniciando listas:", error);
-    bibliotecaState.listaModal.submitting = false;
-    bibliotecaState.listaModal.error      = error.message || "No se pudieron generar las listas.";
+    BibliotecaListaModalState.setSubmitting(false);
+    BibliotecaListaModalState.setError(error.message || "No se pudieron generar las listas.");
     renderBibliotecaListaModal();
   }
 }
@@ -2618,7 +2315,7 @@ function openBibliotecaAgregarModal(conjunto) {
     alert("Este bloque no tiene unidad vinculada. Para agregar planeaciones, usa el flujo normal de creacion desde la jerarquia.");
     return;
   }
-  bibliotecaState.agregarModal = {
+  BibliotecaPlaneacionModalState.open({
     open:       true,
     conjuntoId: conjunto.id,
     unidadId:   conjunto.unidad_id,
@@ -2627,7 +2324,7 @@ function openBibliotecaAgregarModal(conjunto) {
     unidad:     conjunto.unidad,
     temas:      [],
     error:      ""
-  };
+  });
   const modal = document.getElementById("biblioteca-agregar-modal");
   if (modal) modal.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
@@ -2635,7 +2332,7 @@ function openBibliotecaAgregarModal(conjunto) {
 }
 
 function closeBibliotecaAgregarModal() {
-  bibliotecaState.agregarModal.open = false;
+  BibliotecaPlaneacionModalState.close();
   const modal = document.getElementById("biblioteca-agregar-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
@@ -2645,7 +2342,7 @@ function renderBibliotecaAgregarModal() {
   const modal = document.getElementById("biblioteca-agregar-modal");
   if (!modal) return;
 
-  const s = bibliotecaState.agregarModal;
+  const s = BibliotecaPlaneacionModalState.getState();
 
   const contextHtml = `
     <div class="rounded-xl border border-cyan-100 bg-cyan-50/60 px-3 py-2.5 text-sm text-slate-700">
@@ -2762,8 +2459,10 @@ function renderBibliotecaAgregarModal() {
   modal.querySelectorAll("[data-bib-agr-remove]").forEach(btn => {
     btn.addEventListener("click", () => {
       const localId = btn.dataset.bibAgrRemove;
-      bibliotecaState.agregarModal.temas =
-        bibliotecaState.agregarModal.temas.filter(t => t.localId !== localId);
+      const modalState = BibliotecaPlaneacionModalState.getState();
+      BibliotecaPlaneacionModalState.setTemas(
+        modalState.temas.filter(t => t.localId !== localId)
+      );
       renderBibliotecaAgregarModal();
     });
   });
@@ -2774,7 +2473,7 @@ function renderBibliotecaAgregarModal() {
       const localId = e.target.dataset.localId;
       const momento = e.target.dataset.momento;
       const val     = (e.target.value || "").trim();
-      const tema    = bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+      const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
       if (!tema) return;
       if (!tema.actividades_momentos) tema.actividades_momentos = {};
       if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {
@@ -2800,7 +2499,7 @@ function addBibliotecaAgregarTema() {
     return;
   }
   if (!Number.isFinite(duracion) || duracion < 10) {
-    bibliotecaState.agregarModal.error = "La duracion minima es 10 minutos.";
+    BibliotecaPlaneacionModalState.setError("La duracion minima es 10 minutos.");
     renderBibliotecaAgregarModal();
     return;
   }
@@ -2810,7 +2509,7 @@ function addBibliotecaAgregarTema() {
     const localId = sel.dataset.localId;
     const momento = sel.dataset.momento;
     const val     = (sel.value || "").trim();
-    const tema    = bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+    const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
     if (!tema) return;
     if (!tema.actividades_momentos) tema.actividades_momentos = {};
     if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {
@@ -2820,22 +2519,22 @@ function addBibliotecaAgregarTema() {
     }
   });
 
-  bibliotecaState.agregarModal.temas.push({
+  BibliotecaPlaneacionModalState.addTema({
     localId: `agr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     titulo,
     duracion,
     actividades_momentos: {}
   });
-  bibliotecaState.agregarModal.error = "";
+  BibliotecaPlaneacionModalState.setError("");
   renderBibliotecaAgregarModal();
   document.getElementById("bib-agr-titulo")?.focus();
 }
 
 async function submitBibliotecaAgregarModal() {
-  const s = bibliotecaState.agregarModal;
+  const s = BibliotecaPlaneacionModalState.getState();
 
   if (s.temas.length === 0) {
-    bibliotecaState.agregarModal.error = "Agrega al menos un tema.";
+    BibliotecaPlaneacionModalState.setError("Agrega al menos un tema.");
     renderBibliotecaAgregarModal();
     return;
   }
@@ -2845,7 +2544,7 @@ async function submitBibliotecaAgregarModal() {
     const localId = sel.dataset.localId;
     const momento = sel.dataset.momento;
     const val     = (sel.value || "").trim();
-    const tema    = bibliotecaState.agregarModal.temas.find(t => t.localId === localId);
+    const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
     if (!tema) return;
     if (!tema.actividades_momentos) tema.actividades_momentos = {};
     if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {
@@ -2870,260 +2569,54 @@ async function submitBibliotecaAgregarModal() {
     generar_imagenes_en: []
   }));
 
-  // Close modal immediately
-  closeBibliotecaAgregarModal();
-
-  // Show progress in card
-  setSelectedConjunto(conjuntoId, { tab: "planeaciones" });
-  bibliotecaState.pendingPlaneacionesByBatchId[conjuntoId] = {
-    items: temasSnap.map(t => ({ titulo: t.titulo, status: "pending", message: "" })),
-    error: ""
-  };
-  renderBibliotecaContent();
-
-  // Generate in background
-  ;(async () => {
-    try {
-      const body = {
-        temas:    temasSnap,
-        materia:  materia || undefined,
-        nivel:    nivel   || undefined,
-        batch_id: conjuntoId
-      };
-
-      const result = await generarPlaneacionesUnidadConProgreso({ unidadId, body }, (evt) => {
-        const pending = bibliotecaState.pendingPlaneacionesByBatchId[conjuntoId];
-        if (!pending) return;
-        const idx = (evt.index ?? 1) - 1;
-        if (idx >= 0 && pending.items[idx]) {
-          if (evt.type === "item_started")    pending.items[idx].status = "generating";
-          if (evt.type === "item_completed")  pending.items[idx].status = "ready";
-          if (evt.type === "item_error") {
-            pending.items[idx].status  = "error";
-            pending.items[idx].message = evt.message || "Error";
-          }
-          if (evt.type === "item_skipped") {
-            pending.items[idx].status  = "skipped";
-            pending.items[idx].message = evt.message || "Ya existe";
-          }
-          renderBibliotecaContent();
-        }
-      });
-
-      const batchId = getGenerationBatchId(result) || conjuntoId;
-      applyGenerationResultToPendingItems(batchId, result || {});
-      applyOptimisticPlaneacionesToConjunto(batchId, normalizeGeneratedPlaneaciones(result || {}));
-      if (Number(result?.error_count || 0) === 0) {
-        delete bibliotecaState.pendingPlaneacionesByBatchId[conjuntoId];
-        if (batchId !== conjuntoId) delete bibliotecaState.pendingPlaneacionesByBatchId[batchId];
-      }
-      setSelectedConjunto(batchId, { tab: "planeaciones" });
-      renderBibliotecaContent();
-
-      await loadAndRenderBiblioteca({
-        silent: true,
-        targetBatchId: batchId,
-        activeTab: "planeaciones"
-      });
-    } catch (error) {
-      console.error("[biblioteca] Error generando planeaciones:", error);
-      const pending = bibliotecaState.pendingPlaneacionesByBatchId[conjuntoId];
-      if (pending) pending.error = error.message || "No se pudieron generar las planeaciones.";
-      renderBibliotecaContent();
-    }
-  })();
+  window.PlaneacionGeneration.generateFromBiblioteca({
+    conjuntoId,
+    unidadId,
+    materia,
+    nivel,
+    temasSnap
+  });
 }
 
 // ---- DELETE ACTIONS ----
 
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="eliminar-bloque".
+// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
 async function bibEliminarBloque(conjuntoId) {
-  const safeBatchId = normalizeBibliotecaId(conjuntoId);
-  if (!safeBatchId) return;
-
-  const conjunto = findConjuntoById(safeBatchId);
-  const nombre = conjunto?.titulo || "este bloque";
-
-  const confirmado = await showBibConfirm(
-    `¿Eliminar "${nombre}"?`,
-    `Se eliminará el bloque completo: planeaciones, exámenes, listas de cotejo y anexos. Esta acción no se puede deshacer.`
-  );
-  if (!confirmado) return;
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    await apiBibliotecaDeleteBloque(safeBatchId, session.access_token);
-    console.info("[biblioteca] delete:success", { resourceType: "bloque", batchId: safeBatchId });
-
-    bibliotecaState.conjuntos = bibliotecaState.conjuntos.filter(
-      (c) => normalizeBibliotecaId(c.id) !== safeBatchId
-    );
-    if (normalizeBibliotecaId(bibliotecaState.selectedConjuntoId) === safeBatchId) {
-      bibliotecaState.selectedConjuntoId = bibliotecaState.conjuntos[0]?.id || null;
-    }
-    delete bibliotecaState.activeTab[safeBatchId];
-    delete bibliotecaState.pendingPlaneacionesByBatchId[safeBatchId];
-    delete bibliotecaState.pendingExamenByBatchId[safeBatchId];
-    delete bibliotecaState.pendingListaByBatchId[safeBatchId];
-    delete bibliotecaState.anexosGenerating[safeBatchId];
-
-    renderBibliotecaContent();
-    await loadAndRenderBiblioteca({ silent: true });
-  } catch (error) {
-    console.error("[biblioteca] Error eliminando bloque:", error);
-    alert(error.message || "No se pudo eliminar el bloque. Intenta nuevamente.");
-  }
+  return window.BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId);
 }
 
+// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="eliminar-planeacion".
+// Retiro: Fase 10, tras migrar el handler y confirmar búsqueda global limpia.
 async function bibEliminarPlaneacion(planeacionId, conjuntoId) {
-  const safePlanId  = normalizeBibliotecaId(planeacionId);
-  const safeBatchId = normalizeBibliotecaId(conjuntoId);
-  if (!safePlanId || !safeBatchId) return;
-
-  const confirmado = await showBibConfirm(
-    "¿Eliminar esta planeación?",
-    "Se eliminarán también sus listas de cotejo y anexos asociados. Esta acción no se puede deshacer."
-  );
-  if (!confirmado) return;
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    await apiDeletePlaneacionDirecta(safePlanId, session.access_token);
-    console.info("[biblioteca] delete:success", { resourceType: "planeacion", planeacionId: safePlanId, batchId: safeBatchId });
-
-    const conjunto = bibliotecaState.conjuntos.find(
-      (c) => normalizeBibliotecaId(c.id) === safeBatchId
-    );
-    if (conjunto) {
-      conjunto.planeaciones = (Array.isArray(conjunto.planeaciones) ? conjunto.planeaciones : [])
-        .filter((p) => normalizeBibliotecaId(p.id) !== safePlanId);
-      conjunto.total_planeaciones = conjunto.planeaciones.length;
-      conjunto.listas_cotejo = (Array.isArray(conjunto.listas_cotejo) ? conjunto.listas_cotejo : [])
-        .filter((l) => normalizeBibliotecaId(l.planeacion_id) !== safePlanId);
-      conjunto.total_listas_cotejo = conjunto.listas_cotejo.length;
-      conjunto.anexos = (Array.isArray(conjunto.anexos) ? conjunto.anexos : [])
-        .filter((a) => normalizeBibliotecaId(a.planeacion_id) !== safePlanId);
-      conjunto.total_anexos = conjunto.anexos.length;
-    }
-
-    setSelectedConjunto(safeBatchId, { tab: "planeaciones" });
-    renderBibliotecaDetailInPlace();
-    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "planeaciones" });
-  } catch (error) {
-    console.error("[biblioteca] Error eliminando planeacion:", error);
-    alert(error.message || "No se pudo eliminar la planeación. Intenta nuevamente.");
-  }
+  return window.PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId);
 }
 
+// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="eliminar-examen".
+// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
 async function bibEliminarExamen(examenId, conjuntoId) {
-  const safeExamenId = normalizeBibliotecaId(examenId);
-  const safeBatchId  = normalizeBibliotecaId(conjuntoId);
-  if (!safeExamenId || !safeBatchId) return;
-
-  const confirmado = await showBibConfirm(
-    "¿Eliminar este examen?",
-    "Esta acción no se puede deshacer."
-  );
-  if (!confirmado) return;
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    await apiDeleteExamen(safeExamenId, session.access_token);
-    console.info("[biblioteca] delete:success", { resourceType: "examen", examenId: safeExamenId, batchId: safeBatchId });
-
-    const conjunto = bibliotecaState.conjuntos.find(
-      (c) => normalizeBibliotecaId(c.id) === safeBatchId
-    );
-    if (conjunto) {
-      conjunto.examenes = (Array.isArray(conjunto.examenes) ? conjunto.examenes : [])
-        .filter((e) => normalizeBibliotecaId(e.id) !== safeExamenId);
-      conjunto.total_examenes = conjunto.examenes.length;
-    }
-
-    setSelectedConjunto(safeBatchId, { tab: "examenes" });
-    renderBibliotecaDetailInPlace();
-    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "examenes" });
-  } catch (error) {
-    console.error("[biblioteca] Error eliminando examen:", error);
-    alert(error.message || "No se pudo eliminar el examen. Intenta nuevamente.");
-  }
+  return window.ExamDelete.deleteFromBiblioteca(examenId, conjuntoId);
 }
 
+// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="eliminar-lista".
+// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
 async function bibEliminarLista(listaId, conjuntoId) {
-  const safeListaId = normalizeBibliotecaId(listaId);
-  const safeBatchId = normalizeBibliotecaId(conjuntoId);
-  if (!safeListaId || !safeBatchId) return;
-
-  const confirmado = await showBibConfirm(
-    "¿Eliminar esta lista de cotejo?",
-    "Esta acción no se puede deshacer."
-  );
-  if (!confirmado) return;
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    await apiDeleteListaCotejo(safeListaId, session.access_token);
-    console.info("[biblioteca] delete:success", { resourceType: "lista_cotejo", listaId: safeListaId, batchId: safeBatchId });
-
-    const conjunto = bibliotecaState.conjuntos.find(
-      (c) => normalizeBibliotecaId(c.id) === safeBatchId
-    );
-    if (conjunto) {
-      conjunto.listas_cotejo = (Array.isArray(conjunto.listas_cotejo) ? conjunto.listas_cotejo : [])
-        .filter((l) => normalizeBibliotecaId(l.id) !== safeListaId);
-      conjunto.total_listas_cotejo = conjunto.listas_cotejo.length;
-    }
-
-    setSelectedConjunto(safeBatchId, { tab: "listas" });
-    renderBibliotecaDetailInPlace();
-    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "listas" });
-  } catch (error) {
-    console.error("[biblioteca] Error eliminando lista de cotejo:", error);
-    alert(error.message || "No se pudo eliminar la lista de cotejo. Intenta nuevamente.");
-  }
+  return window.ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId);
 }
 
+// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
+// Motivo: compatibilidad con el handler actual de Biblioteca.
+// Consumidor: data-bib-action="eliminar-anexo".
+// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
 async function bibEliminarAnexo(anexoId, conjuntoId) {
-  const safeAnexoId = normalizeBibliotecaId(anexoId);
-  const safeBatchId = normalizeBibliotecaId(conjuntoId);
-  if (!safeAnexoId || !safeBatchId) return;
-
-  const confirmado = await showBibConfirm(
-    "¿Eliminar este anexo?",
-    "Esta acción no se puede deshacer."
-  );
-  if (!confirmado) return;
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    await apiDeleteAnexo(safeAnexoId, session.access_token);
-    console.info("[biblioteca] delete:success", { resourceType: "anexo", anexoId: safeAnexoId, batchId: safeBatchId });
-
-    const conjunto = bibliotecaState.conjuntos.find(
-      (c) => normalizeBibliotecaId(c.id) === safeBatchId
-    );
-    if (conjunto) {
-      conjunto.anexos = (Array.isArray(conjunto.anexos) ? conjunto.anexos : [])
-        .filter((a) => normalizeBibliotecaId(a.id) !== safeAnexoId);
-      conjunto.total_anexos = conjunto.anexos.length;
-    }
-
-    setSelectedConjunto(safeBatchId, { tab: "anexos" });
-    renderBibliotecaDetailInPlace();
-    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
-  } catch (error) {
-    console.error("[biblioteca] Error eliminando anexo:", error);
-    alert(error.message || "No se pudo eliminar el anexo. Intenta nuevamente.");
-  }
+  return window.AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId);
 }
 
 // ---- INJECT MODALS ----

@@ -23,12 +23,12 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 
 | Fase | Nombre | Objetivo principal | Riesgo | Estado |
 | --- | --- | --- | --- | --- |
-| 0 | Línea base y protección | Establecer punto seguro | Bajo | En progreso |
-| 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Pendiente |
-| 2 | Acciones por dominio | Separar documentos | Bajo/medio | Pendiente |
-| 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Pendiente |
-| 4 | Generación y polling | Separar procesos largos | Alto | Pendiente |
-| 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Pendiente |
+| 0 | Línea base y protección | Establecer punto seguro | Bajo | Completada |
+| 1 | Extracciones aisladas | Crear primeros módulos | Bajo | Completada |
+| 2 | Acciones por dominio | Separar documentos | Bajo/medio | Completada |
+| 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
+| 4 | Generación y polling | Separar procesos largos | Alto | Completada |
+| 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Completada |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Pendiente |
@@ -45,7 +45,7 @@ Asegurar un estado conocido, documentado y recuperable antes de modificar códig
 
 ### Estado
 
-**En progreso.** Al 2026-07-23 se confirmaron repositorios inicialmente limpios, documentación canónica, auditoría de logs y tags remotos de recuperación apuntando al `HEAD`. La línea base manual completa sigue pendiente y esta sesión documental no genera commit.
+**Completada.** Se confirmaron repositorios limpios, commits recuperables, tags previos al refactor, documentación canónica y validación manual acumulativa del flujo vigente. El usuario confirmó generación principal, navegación, previews, descargas, apertura de archivos, tabs, recarga y ausencia de regresiones relacionadas. Las deudas backend conocidas no bloquean esta línea base.
 
 ### Dependencias
 
@@ -118,7 +118,13 @@ Crear los primeros módulos de Biblioteca mediante extracciones literales, peque
 
 ### Estado
 
-**Pendiente.**
+**Completada.**
+
+Sesión 1.1 completada: se extrajeron preview, cierre de preview y descarga Word de examen a `js/features/examenes/`. Sesión 1.2 completada: se extrajeron preview, cierre y coordinadores de descarga de listas de cotejo a `js/features/listas-cotejo/`, conservando `wordExport.js` como generador Word protegido. Sesión 1.3 completada: se extrajeron preview, cierre y descarga de anexos a `js/features/anexos/`, conservando su exportador Word propio. La validación manual acumulativa de esas tres sesiones fue aprobada por el usuario.
+
+Sesión 1.4 completada: `bibDescargarPlaneacion(planeacionId)` se extrajo literalmente a `js/features/planeaciones/planeacion-download.js`, con namespace y wrapper de compatibilidad. Las validaciones estáticas, la suite, el smoke de equivalencia y la validación acumulativa requerida quedaron aprobados antes de abrir la Fase 2.
+
+La auditoría final no encontró más candidatos aislados propios de Fase 1 ni consumidores desconocidos. Permanecieron excluidos navegación y detalle de planeación, edición, exportaciones de `detalle.page.js`, generación, polling, eliminación, API, estado, render general y legacy. Esos trabajos quedaron asignados a fases posteriores.
 
 ### Dependencias
 
@@ -187,7 +193,49 @@ Separar gradualmente las acciones específicas de planeaciones, anexos, listas d
 
 ### Estado
 
-**Pendiente.**
+**Completada.**
+
+Sesión 2.0 completada en auditoría: se localizaron y clasificaron las acciones activas de Planeaciones, Anexos, Listas de cotejo, Exámenes y bloques de Biblioteca; se confirmaron consumidores, APIs, IDs, estado, renders, confirmaciones y efectos backend. No quedaron acciones desconocidas.
+
+```text
+Sesión 2.1 — Completada
+Validación manual 2.1 — Aprobada
+Sesión 2.2 — Completada
+Validación manual 2.2 — Aprobada
+Sesión 2.3 — Completada
+Validación manual 2.3 — Aprobada
+Sesión 2.4 — Completada
+Validación manual 2.4 — Aprobada
+Sesión 2.5 — Completada
+Validación manual 2.5 — Aprobada
+Sesión 2.6 — Completada
+Decisión 2.6 — La eliminación de bloque puede extraerse
+Sesión 2.7 — Completada
+Validación manual 2.7 — Aprobada
+Sesión 2.8 — Auditoría de cierre completada
+Validación manual acumulativa — Aprobada
+Fase cerrada — 2 — Acciones por dominio
+Próxima fase — 3 — Capa API frontend
+Primera sesión sugerida — 3.0 — Auditoría de capa API frontend
+```
+
+En la Sesión 2.1 se trasladó literalmente el coordinador `bibDescargarExamen(examenId)` a `js/features/examenes/exam-download.js` como `ExamDownload.downloadFromBiblioteca(examenId)`. El wrapper global, los logs, la lectura de `bibliotecaState`, el modal de nombre y la delegación a `window.downloadExamWord` permanecen sin cambios de contrato. Las validaciones estáticas, la suite, el smoke técnico y la validación manual acumulativa fueron aprobadas.
+
+En la Sesión 2.2 se trasladó literalmente `bibEliminarExamen(examenId, conjuntoId)` a `js/features/examenes/exam-delete.js` como `ExamDelete.deleteFromBiblioteca(examenId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación local, contador, tab, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobadas.
+
+En la Sesión 2.3 se trasladó literalmente `bibEliminarLista(listaId, conjuntoId)` a `js/features/listas-cotejo/lista-cotejo-delete.js` como `ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación de `listas_cotejo`, contador, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobados.
+
+En la Sesión 2.4 se trasladó literalmente `bibEliminarAnexo(anexoId, conjuntoId)` a `js/features/anexos/anexo-delete.js` como `AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId)`. Se conservaron confirmación, sesión, API, UUIDs, mutación de `anexos`, contador, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobados.
+
+En la Sesión 2.5 se trasladó literalmente `bibEliminarPlaneacion(planeacionId, conjuntoId)` a `js/features/planeaciones/planeacion-delete.js` como `PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId)`. Se conservaron confirmación, sesión, endpoint directo, mutaciones de planeaciones/anexos/listas, contadores, tab, selección, render parcial, recarga silenciosa, logs, alerta y retorno. El contrato backend continúa siendo secuencial y no transaccional; los exámenes y el batch permanecen intactos. Las validaciones estáticas, la suite, el smoke técnico y la validación manual fueron aprobados.
+
+La Sesión 2.6 auditó específicamente `bibEliminarBloque(conjuntoId)`, su único consumidor activo, la API, las mutaciones de estado, el render general, la recarga y los efectos backend. No quedaron consumidores desconocidos. La extracción literal es viable sin migrar estado, reescribir render ni modificar backend, por lo que se definió la Sesión 2.7 — Eliminación de bloque desde Biblioteca.
+
+La auditoría confirmó que el backend elimina secuencialmente anexos, listas, exámenes y planeaciones antes de intentar eliminar `planeacion_batches`. No existe transacción ni rollback. Un fallo exclusivo del último delete devuelve HTTP 200 con `{ ok: true, deleted: { batch: false } }`; el frontend actual ignora ese campo, trata la operación como éxito y la recarga puede volver a mostrar un bloque vacío. Jobs, métricas y jerarquía no se eliminan.
+
+En la Sesión 2.7 se trasladó literalmente `bibEliminarBloque(conjuntoId)` a `js/features/biblioteca/biblioteca-block-delete.js` como `BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId)`. Se conservaron confirmación, sesión, API, ausencia de inspección de `deleted.batch`, filtrado de conjuntos, selección, tab, cuatro mapas pending, render general, recarga silenciosa, logs, alerta y retorno. La comparación literal, la sintaxis, la suite y el smoke técnico —incluido `deleted.batch:false`— fueron aprobados. El usuario aprobó después la validación manual de cancelación, eliminación completa del batch y sus cuatro dominios, persistencia, selección, regresión acumulativa y ausencia de ejecución legacy.
+
+La Sesión 2.8 reauditó todas las acciones y wrappers vigentes. No quedaron consumidores desconocidos ni acciones pequeñas inequívocas propias de Fase 2. Generación y polling pasan a Fase 4; estado, tabs y pending maps a Fase 5; render, modales y event delegation a Fase 6; quick create, navegación y dependencias activas de Dashboard a Fase 7; API dispersa a Fase 3; legacy y wrappers permanecen para Fases 8–10. La decisión final es cerrar Fase 2 y abrir Fase 3.
 
 ### Dependencias
 
@@ -244,7 +292,105 @@ Eliminar llamadas HTTP dispersas y hacer que las páginas coordinen flujos mient
 
 ### Estado
 
-**Pendiente.**
+**Completada.** La Sesión `3.0 — Auditoría de capa API frontend` quedó
+completada en documentación. Se inventariaron todas las funciones de
+`js/api`, `js/services` y `js/core`, los tres `fetch` directos fuera de API,
+sesión, headers, parsing, errores, aliases, globals, consumidores, Archivados y
+legacy. Los contratos se contrastaron con rutas, controllers y services del
+backend sin modificarlo. El mapa ejecutable está en
+[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+
+La Sesión `3.1 — Consolidación de lecturas de Biblioteca` quedó completada y
+validada manualmente. `apiBibliotecaConjuntos(accessToken)` y
+`apiBibliotecaConjuntoById(batchId, accessToken)` delegan la repetición de GET,
+Bearer, `cache: "no-store"` y parsing al helper privado y específico
+`bibliotecaGet(path, accessToken)`. Firmas, globals, URLs, retornos y errores
+permanecen iguales. El smoke técnico, `node --check` y Jest pasaron. El usuario
+aprobó carga, navegación entre bloques/tabs, recarga, Detalle, metadata,
+previews, descargas y deletes, sin duplicados inesperados ni errores
+relacionados.
+
+La Sesión `3.2 — Consolidación interna de deletes de Biblioteca` quedó
+completada y validada manualmente. Los cinco wrappers públicos conservan firma,
+global, endpoint codificado, Bearer, ausencia de body, parsing, retorno y errores, y
+delegan solo la mecánica equivalente a `bibliotecaDelete(path, accessToken)`.
+El helper es privado y exclusivo de DELETE; `bibliotecaGet` quedó intacto. Los
+smokes previo y posterior, `node --check` y Jest pasaron. El usuario aprobó las
+cinco cancelaciones, los cinco deletes reales, la persistencia en base de datos
+y los logs de éxito, sin errores relacionados.
+
+La Sesión `3.3 — Auditoría puntual de APIs de anexos` quedó completada como
+auditoría documental. Confirmó cinco globals en `anexos.api.js`, el delete
+activo en `biblioteca.api.js`, cuatro helpers internos ya compartidos y la
+ausencia de `js/services/anexos.service.js`. La lectura de detalle tiene dos
+consumidores activos; las lecturas por batch y por planeación no tienen
+consumidor confirmado. Generación tiene un flujo activo; regeneración conserva
+una rama de compatibilidad sin emisor DOM.
+
+La Sesión `3.4 — Consolidación interna de lecturas de anexos` quedó completada
+en código. `apiObtenerAnexosPorBatch`, `apiObtenerAnexoPorPlaneacion` y
+`apiObtenerAnexoDetalle` conservan firmas, globals, paths, encoding,
+contenedores y fallbacks, y delegan solo GET implícito, Bearer sin
+`Content-Type`, `cache:"no-store"` y URL base al helper léxico privado
+`anexosGet`. `requestAnexosJson`, parsing, errores, metadata, generación,
+regeneración, delete y consumidores quedaron intactos. Los smokes previo y
+posterior, `node --check` y Jest pasaron; la validación manual 3.4 quedó
+aprobada. El usuario confirmó preview, metadata, reapertura, descargas desde
+card y preview, reutilización del objeto y ausencia de GET duplicados o errores
+relacionados con `anexosGet`.
+
+La Sesión `3.5 — Auditoría puntual de APIs de listas de cotejo` quedó completada
+como auditoría documental. Confirmó tres APIs, tres wrappers service, cuatro
+helpers API y el delete ya consolidado en Biblioteca. El detalle es activo para
+preview/descarga; el listado por unidad pertenece al explorador legacy. Las dos
+lecturas comparten mecánica GET, pero los wrappers conservan normalizaciones
+distintas. Generación por `planeacion_ids`, pending, métricas y la rama backend
+por unidad quedan en Fase 4.
+
+La Sesión `3.6 — Consolidación interna de lecturas de listas de cotejo` quedó
+completada y validada manualmente.
+`apiListasCoTejoByUnidad` y `apiListaCoTejoById` conservan firmas, globals,
+paths, encoding, contenedores y fallbacks, y delegan solo URL base, GET
+implícito, Bearer sin `Content-Type`, ausencia de body y `cache:"no-store"` al
+helper léxico privado `listasCotejoGet`. `requestListaCoTejoJson`, sus helpers
+de parsing/error, generación, services, delete y consumidores quedaron
+intactos. Los smokes previo/posterior, sintaxis y Jest pasaron. El usuario
+aprobó preview, reapertura, descargas desde card/preview, reutilización del
+objeto, Biblioteca/tabs y regresión de deletes con persistencia verificada,
+`deletedBatch:true` y cero errores relacionados.
+
+La Sesión `3.7 — Auditoría puntual de APIs de exámenes` quedó completada como
+auditoría documental. Confirmó cuatro APIs, cuatro wrappers service, cuatro
+helpers HTTP y el delete ya consolidado en Biblioteca. El detalle es activo
+para preview/descarga y post-generación; el listado por unidad pertenece al
+explorador legacy. Biblioteca usa generación/polling directos y el Dashboard
+legacy usa services, con payloads y bucles distintos. Generación, jobs, worker,
+retries, deduplicación, prompts, métricas y polling quedan en Fase 4.
+
+La Sesión `3.8 — Consolidación interna de lecturas de exámenes` quedó
+completada y validada manualmente. `apiExamenesListByUnidad` y `apiExamenById` conservan
+firmas, globals, paths, encoding, contenedores y fallbacks, y delegan solo URL
+base, GET implícito, Bearer sin `Content-Type`/`Accept`, ausencia de body y
+`cache:"no-store"` al helper léxico privado `examResourceGet`.
+`requestExamJson`, sus helpers de parsing/error, generación, polling, services,
+delete y consumidores quedaron intactos. Los smokes previo/posterior, sintaxis
+y Jest pasaron. El usuario aprobó preview, reapertura, contenido, ambas
+descargas, reutilización del objeto, Biblioteca/tabs y ausencia de GET
+duplicados o errores relacionados. La regresión adicional de generación
+confirmó sin cambios los payloads protegidos, selección, polling,
+deduplicación, reintentos, fallbacks, guardado y métricas.
+
+La Sesión `3.9 — Auditoría de cierre de capa API frontend` verificó el
+inventario global, los commits 3.0–3.8, consumidores, helpers, globals,
+wrappers, orden de scripts, contratos backend y validaciones manuales. No
+quedan consumidores desconocidos ni una extracción pequeña imprescindible
+propia de Fase 3. Planeaciones, jerarquía, autenticación común, parsing
+transversal, generación, polling, Archivados, legacy y retiro de wrappers
+tienen fase futura explícita.
+
+**Fase cerrada: 3 — Capa API frontend.** Sesiones 3.0–3.9 completadas y
+validación manual acumulativa aprobada. La Fase 4 permanece pendiente, no fue
+iniciada y debe comenzar en una nueva conversación.
 
 ### Dependencias
 
@@ -301,7 +447,32 @@ Separar por dominio el inicio, feedback, progreso, polling, finalización, error
 
 ### Estado
 
-**Pendiente.**
+**Completada.**
+
+La Sesión 4.0 — Auditoría documental de apertura quedó aprobada. Las Sesiones
+4.1 — Extracción literal de generación de anexos desde Biblioteca y 4.2 —
+Extracción literal de generación seleccionada de listas de cotejo desde
+Biblioteca quedaron implementadas y validadas manualmente. La Sesión 4.3 —
+Extracción literal del inicio y progreso de generación de planeaciones desde
+Biblioteca preservó el service y parser SSE compartidos con quick create y quedó
+validada manualmente. La Sesión 4.4 — Auditoría específica y extracción literal
+de generación y polling de exámenes desde Biblioteca separó únicamente el
+coordinador vigente en `ExamGeneration.generateFromBiblioteca()`; conserva
+separados el service, estado, render y polling legacy. Su implementación,
+validaciones estáticas y validación manual están aprobadas. La Sesión 4.5 —
+Auditoría formal de cierre de generación y polling confirmó las cuatro
+extracciones, consumidores, contratos, orden de scripts, evidencia acumulada y
+ausencia de regresiones introducidas. Sus validaciones estáticas y documentales
+quedaron aprobadas. La decisión formal es **A. Cerrar Fase 4** y el commit de
+cierre es `8dcba86`. Fase 5 permanece **Pendiente** y no iniciada.
+
+Evidencia acumulada de salida: anexos individuales/secuenciales; listas con
+request único, `created:1` y `skipped:0`; planeaciones SSE para Gravedad y
+Movimiento con `success_count:2`, cero errores/skipped; y examen contextual de
+19 preguntas solicitadas/guardadas, cero fallidas y cero retries. Failed y
+timeout de examen no se forzaron por falta de un mecanismo seguro y no bloquean
+el cierre. El fallo legacy de schema cache de `public.ia_metrics` es preexistente
+y no fue causado por Fase 4; `[aiMetrics] job:finished` sigue confirmado.
 
 ### Dependencias
 
@@ -358,7 +529,123 @@ Crear un estado identificable de Biblioteca y reducir su dependencia de `window.
 
 ### Estado
 
-**Pendiente.**
+**Completada.**
+
+La Sesión 5.0 — Auditoría documental de apertura superó la puerta de entrada
+desde `e1991de`: Fase 4 y su Sesión 4.5 constan completadas, la validación
+documental está aprobada y ambos repositorios estaban limpios en sus ramas
+esperadas. La auditoría abrió documentalmente la fase sin modificar código.
+
+El inventario confirmó un `bibliotecaState` léxico y vigente, una fachada
+`window.biblioteca` consumida por quick create y un `window.explorerState`
+mixto: mantiene Quick Create y previews activos además de estado de
+compatibilidad y del explorador visual legacy. Los pending, selección, tabs y
+modales son efímeros; los recursos terminados se reconstruyen mediante refetch,
+pero el progreso, selección, tab, búsqueda, modal y observación de jobs no se
+rehidratan. Archivados conserva un `archivedState` separado y un registro
+jerárquico propio en `localStorage`; no se incorpora al estado de Biblioteca.
+
+**Decisión de apertura: A. Abrir Fase 5.** La Sesión 5.0, sus validaciones
+estáticas y su validación documental quedaron aprobadas explícitamente por el
+usuario y commiteadas en `525a21a`. El primer corte funcional fue formalizado
+como **Sesión 5.1 — Extracción literal del estado de selección de bloque de
+Biblioteca**. La sesión encapsuló el acceso sobre la única fuente física
+`bibliotecaState.selectedConjuntoId` con la superficie léxica
+`BibliotecaSelection`; todas las lecturas y escrituras directas conocidas
+delegan sin normalizar ni reinterpretar valores. No se agregó global, archivo o
+script, y se preservaron el fallback crudo de delete, Quick Create, load,
+refetch y reconciliación. No incluye tabs, pending, modales, render, Quick
+Create ni `explorerState`. La implementación, las validaciones estáticas y la
+validación manual quedaron aprobadas explícitamente por el usuario; la sesión
+está commiteada en `1b4c620`. Fase 5 continúa **En progreso**.
+
+La **Sesión 5.2 — Extracción literal del ownership de `activeTab` en
+Biblioteca** encapsuló acceso y transiciones mediante `BibliotecaTabs`, sobre la
+única fuente física `bibliotecaState.activeTab`. No agregó archivo, global o
+script; no normaliza claves, valida valores ni aplica fallback. Selección,
+generación, delete, render, eventos, Quick Create y pending conservan sus
+contratos. La implementación, las validaciones estáticas y la validación manual
+están aprobadas; la sesión quedó commiteada en `f5bbfdd`. Fase 5 continúa **En
+progreso**.
+
+La **Sesión 5.3 — Extracción literal del estado del modal de generación de
+anexos de Biblioteca** encapsuló el único objeto físico
+`bibliotecaState.anexoModal` mediante la superficie léxica
+`BibliotecaAnexoModalState`. Preservó shape, reemplazo de apertura, cierre
+parcial, selección, depuración desde render, `submitting`, error, validaciones y
+delegación a `AnexoGeneration`; no modificó generación, pending, render visual,
+eventos, selección, tabs, otros modales, Quick Create ni backend. La
+implementación, las validaciones estáticas y la validación manual están
+**Aprobadas**; la sesión quedó commiteada en `f05e730`. Fase 5 continúa **En
+progreso**.
+
+La **Sesión 5.4 — Extracción literal del estado del modal de generación de
+listas de cotejo** encapsuló el único objeto físico
+`bibliotecaState.listaModal` mediante `BibliotecaListaModalState`. Preservó el
+shape, reemplazo de apertura, cierre parcial, selección, depuración desde
+render, `submitting`, error, validación y snapshot hacia
+`ListaCotejoGeneration`; no modificó generación, payload,
+`pendingListaByBatchId`, cleanup, refetch, render, eventos, selección, tabs,
+otros modales, Quick Create ni backend. Implementación y validaciones estáticas
+**Aprobadas**; la validación manual también quedó **Aprobada** y la sesión fue
+commiteada en `948d627`. Fase 5 continúa **En progreso**.
+
+La **Sesión 5.5 — Extracción literal del estado del modal de generación de
+exámenes** encapsuló el único objeto físico `bibliotecaState.examModal`
+mediante `BibliotecaExamModalState`. Preservó shape, reemplazo de apertura,
+cierre parcial, bloque, unidad, planeaciones, selección, tipos, cantidades,
+`submitting`, error, validaciones y payload hacia `ExamGeneration`; no modificó
+creación de job, `pendingExamenByBatchId`, polling, refetch, render, eventos,
+selección, tabs, otros modales, Quick Create ni backend. Implementación y
+validaciones estáticas **Aprobadas**; validación manual **Aprobada**. La sesión
+quedó **Aprobada y commiteada en `3842f20`**. El contrato de exámenes permanece:
+Biblioteca envía `unidad_id`, `batch_id`, `planeacion_ids`,
+`tipos_pregunta` y `cantidades_pregunta`, no envía `tema_ids`, y backend
+resuelve los temas desde `planeacion_ids`. Fase 5 continúa **En progreso**.
+
+La **Sesión 5.6 — Estado del modal de Planeaciones + auditoría de cierre de
+estados modales** encapsuló el único objeto físico
+`bibliotecaState.agregarModal` mediante `BibliotecaPlaneacionModalState`.
+Preservó el shape real —sin `submitting`—, reemplazo de apertura, cierre
+parcial, temas, actividades por momento, error, validación y snapshot hacia
+`PlaneacionGeneration`; no modificó `batch_id`, SSE,
+`pendingPlaneacionesByBatchId`, `duplicate_tema`, conteos, refetch, render,
+eventos ni Quick Create. Implementación y validaciones estáticas **Aprobadas**;
+validación manual **Aprobada**; sesión commiteada en `d45a493`. Fase 5 continúa
+**En progreso**.
+
+La auditoría acumulativa confirmó ownership específico y una fuente física por
+modal para Planeaciones, Anexos, Listas y Exámenes. No existen fuentes
+duplicadas, store/modal universal, persistencia nueva o absorción de Quick
+Create/`explorerState`; generación, pending y render/eventos conservan sus
+fronteras. El subdominio de modales quedó aprobado.
+
+La **Sesión 5.7 — Ownership consolidado de pending states de Biblioteca**
+aprobó los cuatro sub-gates y encapsuló las fuentes físicas originales mediante
+`BibliotecaPlaneacionesPending`, `BibliotecaAnexosPending`,
+`BibliotecaListaPending` y `BibliotecaExamPending`. Cada superficie mantiene su
+shape y sus operaciones específicas; no existe store universal. Se preservaron
+escritores y lectores de Biblioteca/Quick Create, SSE, requests secuenciales,
+delay de listas de 1500 ms, polling de examen de 3000 ms y 60 consultas,
+errores, cleanup asimétrico, delete de bloque y pérdida tras reload. La
+implementación, validaciones estáticas y validación manual están **Aprobadas**;
+la sesión quedó commiteada en `9b3c23d`.
+
+La **Sesión 5.8 — Auditoría formal de cierre de Fase 5** reconcilió 5.7 y auditó
+acumulativamente las sesiones 5.0–5.7, sus superficies, fuentes físicas,
+consumidores, historial, contratos y regresiones. Confirmó ownership
+identificable para selección, tabs, cuatro modales y cuatro pending; ausencia de
+copias divergentes, stores universales y persistencia nueva; y preservación de
+Quick Create, `window.explorerState`, `window.biblioteca`, generación, SSE,
+polling, delete, render/eventos, Archivados, legacy y backend. `conjuntos`,
+`loading`, `error` y `searchQuery` quedan delimitados para carga/render en Fases
+6–7; `pendingBatchId` y `pendingConjunto`, para Quick Create en Fase 7;
+`expandedIds`, como deuda sin consumidor confirmado. No existe bloqueo
+funcional real.
+
+**Decisión formal: A. Fase 5 puede cerrarse.** La Sesión 5.8 y la auditoría de
+cierre están **Completadas y Aprobadas**. Fase 6 permanece **Pendiente** y no
+iniciada.
 
 ### Dependencias
 
