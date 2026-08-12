@@ -713,10 +713,11 @@ listeners permanentes/recreados, las mutaciones durante render, los cruces con
 Quick Create/Dashboard y los límites con Fase 7. El detalle está en
 [`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
 
-La reconciliación de 6.1 confirmó que 6.0 fue commiteada en `e27cb0a`. La
-Sesión 6.1 está **implementada con validación manual pendiente**: el render no
-modal completo reside en `js/features/biblioteca/biblioteca-render.js`, mientras
-`biblioteca.page.js` conserva coordinación, estado, loader, eventos y modales.
+La reconciliación de 6.2 confirmó que 6.1 fue validada manualmente y commiteada
+en `cef834e`. La Sesión 6.2 está **implementada con validación manual
+pendiente**: el DOM/render de cuatro modales, confirmación e inyección reside en
+`js/features/biblioteca/biblioteca-modal-render.js`; la página conserva estado,
+loader, open/close/submit, eventos generales y compatibilidad.
 
 Métricas de apertura: `biblioteca.page.js` tiene 2770 líneas, 80 declaraciones
 de función, 22 declaraciones `render*`, 30 `addEventListener`, una asignación
@@ -802,11 +803,11 @@ desalinear acciones, IDs y renders posteriores.
 - **Pruebas:** suite, matriz manual de Fase 6, consola/red, orden de scripts,
   globals y búsqueda de consumidores.
 
-La Sesión 6.1 queda **implementada, con validación manual pendiente**. Se fijó
-`biblioteca-render.js` como owner no modal; los nombres de los owners de modales
-y eventos no son contratos todavía. La comparación literal, el smoke técnico,
-los checks de sintaxis y Jest pasan. La siguiente recomendación, sin abrirla,
-es **6.2 — DOM y render consolidado de modales de Biblioteca**.
+La Sesión 6.1 queda **aprobada y commiteada en `cef834e`**. Se fijó
+`biblioteca-render.js` como owner no modal. La Sesión 6.2 queda implementada,
+con validación manual pendiente; `biblioteca-modal-render.js` es el owner de
+DOM/render y wiring local de overlays. La siguiente recomendación, sin abrirla,
+es **6.3 — Ownership consolidado de eventos de Biblioteca**.
 
 #### Resultado técnico de 6.1
 
@@ -820,6 +821,20 @@ es **6.2 — DOM y render consolidado de modales de Biblioteca**.
 - Se preservan 20 acciones emitidas, 23 ramas, 30 listeners y un `oninput`.
 - No se tocaron modales/eventos, loader/reconciliación, Quick Create, estado,
   pending ownership, features, API, backend, CSS ni `wordExport.js`.
+
+#### Resultado técnico de 6.2
+
+- Los cinco sub-gates pasaron y se movieron literalmente cuatro renders,
+  `showBibConfirm`, `injectBibliotecaModals` y `BIB_EXAM_TIPOS`.
+- 29 listeners locales se movieron con su DOM; el único listener general y
+  `onBibliotecaClick` permanecen en la página para 6.3.
+- Open/close, cuatro submit coordinators y generación quedan intactos en la
+  página. Anexos/Listas conservan cleanup; Planeaciones conserva mutación de
+  actividades y bindings de Dashboard; confirmación conserva su deuda `{once}`.
+- Orden: `biblioteca.page.js → biblioteca-render.js →
+  biblioteca-modal-render.js → main.js`.
+- Comparación literal, smoke JSDOM, checks de sintaxis y Jest pasan. Manual 6.2
+  pendiente; 6.3 no iniciada.
 
 ### Resultado esperado
 

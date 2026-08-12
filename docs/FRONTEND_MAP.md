@@ -2036,7 +2036,7 @@ render, luego los modales y finalmente el ownership de eventos.
 - La auditoría 6.0 está completada y commiteada en `e27cb0a`; se corrigió la
   referencia documental que aún decía “commit pendiente”.
 - Decisión: **A. Extracción consolidada implementada.** La validación manual de
-  6.1 permanece pendiente; no se abre 6.2.
+  6.1 fue aprobada y el corte quedó commiteado en `cef834e`.
 - Owner nuevo: `js/features/biblioteca/biblioteca-render.js`, script clásico
   cargado entre `biblioteca.page.js` y `main.js`.
 
@@ -2100,7 +2100,76 @@ generación, polling/SSE, API, payloads, previews, downloads, deletes,
   selección, cuatro tabs empty/con recursos/con pending, feedback de Quick
   Create y tres patches: PASS.
 - `node --check` de ambos JS, Jest (1 suite/2 tests) y conservación de acciones:
-  PASS. La prueba manual de navegador queda pendiente.
+  PASS. La prueba manual confirmó carga, navegación, cuatro generaciones,
+  delete de bloque y ausencia de errores nuevos visibles o de consola.
 - Riesgos preservados: dependencia por orden clásico, `oninput` recreado por
   full render, globals de patches, lectura de `explorerState.progress` y falta
   de cobertura DOM persistente. No se corrigieron en esta extracción.
+
+## Fase 6 — Sesión 6.2: DOM y render consolidado de modales
+
+### Gate, sub-gates y owner
+
+- Gate: `refactor-front` limpio en `cef834e`; backend de solo lectura limpio en
+  `refactor-back`/`e08d6e4`.
+- Manual 6.1: aprobada según el recorrido acumulativo informado por el usuario.
+- Sub-gates: Planeaciones **PASS** (Muy alto), Anexos **PASS** (Alto), Listas
+  **PASS** (Alto), Exámenes **PASS** (Alto), Confirmación **PASS** (Alto).
+- Decisión: **A. Extracción consolidada implementada.** Manual 6.2 pendiente;
+  6.3 no está iniciada.
+
+Owner: `js/features/biblioteca/biblioteca-modal-render.js`, script clásico
+cargado después de los dos scripts de Biblioteca y antes de `main.js`:
+
+```text
+dashboard.page.js → biblioteca.page.js → biblioteca-render.js
+→ biblioteca-modal-render.js → main.js
+```
+
+### Auditoría por superficie
+
+| Superficie | DOM y mutación | Wiring local | Dependencias preservadas | Riesgo/resultado |
+| --- | --- | --- | --- | --- |
+| Planeaciones | card, temas/form/selects/error; closures mutan `actividades_momentos` y remove escribe temas | close/cancel/add/Enter/submit, remove y activity change | PlaneacionModalState, helpers escape/find y cuatro bindings Dashboard | Muy alto / PASS literal |
+| Anexos | card/checkboxes/badges/empty/error; render depura IDs no disponibles | close/cancel/submit y change con re-render | AnexoModalState, AnexosPending, conjunto/normalización | Alto / PASS literal |
+| Listas | card/checkboxes/badges/note/empty/error; render depura IDs no disponibles | close/cancel/submit y change con re-render | ListaModalState, listas persistidas, conjunto/normalización | Alto / PASS literal |
+| Exámenes | siete tipos, counts 1–30, planeaciones, counter/error/disabled | close/cancel/submit, type/count/plan changes | ExamModalState, `BIB_EXAM_TIPOS`, escape | Alto / PASS literal |
+| Confirmación | Promise, card, scroll lock y resultado | cancel/ok/backdrop con `{ once:true }` | cinco deletes consumidores | Alto / PASS literal |
+| Inyección | seis roots, cards y backdrops; incluye root compatible de preview Anexo | cinco backdrop listeners al crear roots | callbacks close retenidos en page | Alto / PASS literal |
+
+### Ownership y contratos
+
+Se movieron seis funciones (`renderBibliotecaAgregarModal`,
+`renderBibliotecaAnexoCreateModal`, `renderBibliotecaListaModal`,
+`renderBibliotecaExamModal`, `showBibConfirm`, `injectBibliotecaModals`) y la
+constante íntima `BIB_EXAM_TIPOS`. Sus nombres globales siguen resolviendo para
+open/close/submit, features de delete e `initBiblioteca`; no se amplió
+`window.biblioteca`.
+
+Permanecen en `biblioteca.page.js` todas las funciones open/close, cuatro
+submit coordinators, `addBibliotecaAgregarTema`, previews, generación/
+regeneración compatible, loader, estado y `onBibliotecaClick`. No se alteraron
+ModalState, Pending, coordinadores, requests, payloads, SSE/polling, delays,
+Quick Create, Dashboard, render 6.1, CSS, API ni backend.
+
+DOM y listeners se compararon por función contra `HEAD`: mismos IDs, clases,
+jerarquía, textos, `data-*`, labels, placeholders, tipos/min/max, checked,
+disabled, spinner/error/empty, targets, orden, closures y timing. El hallazgo de
+listeners de backdrop `{ once:true }` potencialmente acumulables se preserva
+sin corrección.
+
+### Métricas y evidencia
+
+| Indicador | Antes de 6.2 | Después |
+| --- | ---: | ---: |
+| Líneas `biblioteca.page.js` | 2125 | 1465 |
+| Líneas owner modal | — | 683 |
+| Funciones movidas / helper íntimo | — | 6 / 1 constante |
+| Listeners generales / modales | 1 / 29 en page | 1 en page / 29 en owner |
+| Operaciones DOM page / owner modal | 165 en page | 61 / 104 |
+| Scripts nuevos en 6.2 | — | 1 |
+
+Comparación literal de cinco superficies, tipos e inyección: PASS. Smoke JSDOM
+sin red de los cuatro modales, confirm/cancel/backdrop e inyección: PASS.
+`node --check`, Jest (1 suite/2 tests) y `git diff --check`: PASS. La validación
+manual de 6.2 queda pendiente.

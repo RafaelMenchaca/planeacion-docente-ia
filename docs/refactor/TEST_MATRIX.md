@@ -1373,8 +1373,8 @@ render/eventos no tengan ownership claro o existan eventos perdidos/duplicados.
 
 ## Fase 6 — Sesión 6.1: render no modal consolidado
 
-6.0 fue reconciliada como completada y commiteada en `e27cb0a`. 6.1 modifica
-render no modal y por ello requiere validación manual; 6.2 no está iniciada.
+6.0 fue reconciliada como completada y commiteada en `e27cb0a`. 6.1 fue
+validada manualmente y commiteada en `cef834e`.
 
 ### Evidencia automatizada y estática
 
@@ -1388,7 +1388,7 @@ render no modal y por ello requiere validación manual; 6.2 no está iniciada.
 | Jest | PASS: 1 suite, 2 tests; no cubre Biblioteca |
 | Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
 
-### Checklist manual pendiente de 6.1
+### Checklist manual aprobado de 6.1
 
 | Área | Comprobación compacta |
 | --- | --- |
@@ -1400,7 +1400,35 @@ render no modal y por ello requiere validación manual; 6.2 no está iniciada.
 | Quick Create | flujo mínimo o integración vigente; render posterior sin error |
 | Consola/red | sin error nuevo, listener visible duplicado ni request duplicada |
 
-Evidencia solicitada al usuario: confirmación del checklist y errores si los
-hubiera; capturas/logs solo cuando ayuden. No se requieren UUIDs, tokens, IDs de
-usuario ni datos personales. Estados de error/generación no deben forzarse si
-no aparecen de forma natural.
+Evidencia recibida: carga, bloques/planeaciones, navegación, Anexos, Listas,
+Exámenes y delete de bloque correctos; sin errores nuevos visibles o de consola.
+No se recibieron ni solicitaron UUIDs, tokens o datos personales.
+
+## Fase 6 — Sesión 6.2: DOM/render de modales
+
+### Evidencia automatizada y estática
+
+| Revisión | Resultado |
+| --- | --- |
+| Cinco sub-gates | PASS: Planeaciones, Anexos, Listas, Exámenes y Confirmación |
+| Comparación literal | PASS por función; también `BIB_EXAM_TIPOS` e inyección |
+| Sintaxis | PASS: page, render no modal y owner modal |
+| Listeners | 1 general en page + 29 locales en owner; targets/once/closures preservados |
+| Smoke JSDOM sin red | PASS en cuatro modales, confirmación e inyección |
+| Jest | PASS: 1 suite/2 tests; sigue sin cubrir Biblioteca persistente |
+| Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
+
+### Checklist manual pendiente de 6.2
+
+| Área | Comprobación |
+| --- | --- |
+| Planeaciones | abrir; agregar/eliminar temas; actividades por momento; cerrar/reabrir; generar |
+| Anexos | abrir; seleccionar; cerrar/reabrir; generar uno y varios si hay datos |
+| Listas | abrir; seleccionar; cerrar/reabrir; generar |
+| Exámenes | abrir; planeaciones; siete tipos/cantidades; cerrar/reabrir; generar pequeño |
+| Confirmación | delete→cancelar; delete→confirmar; backdrop si aplica |
+| Regresión | render 6.1, tabs, search, Quick Create, preview, download y consola |
+
+No forzar errores backend. Reportar solo qué pruebas pasaron, errores observados
+y logs naturales de generación/delete si existen; no compartir credenciales ni
+identificadores personales.

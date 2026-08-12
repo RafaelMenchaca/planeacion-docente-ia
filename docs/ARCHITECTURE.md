@@ -7,8 +7,9 @@ Este documento describe la arquitectura frontend observada en el código actual.
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
 Las Fases 0–5 están completadas. La Fase 6 está **En progreso**. La Sesión 6.0
-quedó completada y commiteada en `e27cb0a`; la Sesión 6.1 extrajo el render no
-modal y queda implementada con validación manual pendiente. El inventario
+quedó completada y commiteada en `e27cb0a`; la Sesión 6.1 quedó validada
+manualmente y commiteada en `cef834e`. La Sesión 6.2 extrajo el DOM/render de
+overlays y queda implementada con validación manual pendiente. El inventario
 ejecutable de render, DOM y eventos se conserva en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
@@ -282,13 +283,15 @@ corte de modales, uno de ownership de eventos y una auditoría formal de cierre.
 `js/features/biblioteca/biblioteca-render.js` es el propietario identificable
 del render no modal. Contiene literalmente loading/error, shell, sidebar,
 búsqueda visual, detalle, tabs, cards/pending de los cuatro dominios y los tres
-patches parciales. `biblioteca.page.js` conserva estado, fachadas, loader,
-reconciliación, eventos, modales, features y `initBiblioteca`.
+patches parciales. Después de 6.2, `biblioteca.page.js` conserva estado,
+fachadas, loader, reconciliación, coordinación open/close/submit, delegación,
+features y `initBiblioteca`.
 
 ```text
 dashboard.page.js
-→ biblioteca.page.js             estado + coordinación + eventos/modales
+→ biblioteca.page.js             estado + coordinación + delegación
 → biblioteca-render.js           render no modal + patches visuales
+→ biblioteca-modal-render.js     roots, render/wiring local y confirmación
 → main.js                         arranque por DOMContentLoaded
 ```
 
@@ -300,6 +303,22 @@ apuntando a la misma función para Dashboard/Quick Create. Los nombres globales
 de los patches permanecen disponibles para features y coordinación. No se
 modificaron `window.biblioteca`, `window.explorerState`, modales, delegación,
 generación, preview/download/delete ni loader.
+
+### Resultado arquitectónico de la Sesión 6.2
+
+`js/features/biblioteca/biblioteca-modal-render.js` posee literalmente los
+renders de Planeaciones, Anexos, Listas y Exámenes, `showBibConfirm`, los seis
+roots/backdrops inyectados y `BIB_EXAM_TIPOS`. Conserva 29 ocurrencias de
+listeners locales: controles recreados, checkboxes, cantidades, actividades,
+backdrops y tres listeners `{ once: true }` de confirmación.
+
+Open/close y submit permanecen como coordinadores en `biblioteca.page.js`:
+siguen escribiendo ModalState, controlando `overflow-hidden` y llamando a los
+coordinadores de generación sin cambiar validación, snapshot, payload o timing.
+Anexos/Listas conservan el cleanup de selección durante render; Planeaciones
+conserva los bindings léxicos de actividades declarados por Dashboard. La
+delegación `onBibliotecaClick`, search y el listener documental único quedan
+para 6.3. No se modificó `biblioteca-render.js`.
 
 ## Páginas
 
