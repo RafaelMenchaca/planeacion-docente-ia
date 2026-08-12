@@ -6,6 +6,11 @@ Este documento describe la arquitectura frontend observada en el código actual.
 
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
+Las Fases 0–5 están completadas. La Fase 6 está **En progreso** desde la
+Sesión 6.0, cuya auditoría de apertura quedó completada sin implementación
+funcional. El inventario ejecutable de render, DOM y eventos se conserva en
+[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+
 ## Regla arquitectónica central
 
 Solo existe un flujo visual principal vigente: **Biblioteca**.
@@ -201,6 +206,75 @@ Como `biblioteca.page.js` ya publicó `window.initBiblioteca`, `initDashboardPag
 Biblioteca controla el render principal: carga conjuntos, renderiza sidebar y detalle, conserva el tab por conjunto y coordina planeaciones, anexos, listas y exámenes. Toda funcionalidad visual nueva debe incorporarse a este flujo.
 
 `dashboard.page.js` todavía contiene utilidades, creación rápida, estado y previews consumidos por Biblioteca. Es deuda técnica de compatibilidad, no un segundo modo de uso. El objetivo del refactor es separar las dependencias activas y retirar gradualmente el código visual obsoleto; nunca mover lógica de Biblioteca hacia el explorador antiguo.
+
+## Fase 6: render, DOM y eventos de Biblioteca
+
+El objetivo canónico confirmado es dividir gradualmente render y eventos para
+que `biblioteca.page.js` actúe como coordinador. La extracción debe conservar
+literalmente JavaScript vanilla, scripts clásicos, Bootstrap/Tailwind vigentes,
+markup observable, selectores, clases, IDs, `data-*`, mensajes, orden de
+ejecución y comportamiento.
+
+La arquitectura real de render no es todavía un árbol modular. Es esta:
+
+```text
+initDashboardPage
+ ├─ injectComponent(layout.html) + bindDashboardEvents
+ └─ initBiblioteca
+     ├─ injectBibliotecaModals
+     ├─ document.click -> onBibliotecaClick
+     └─ loadAndRenderBiblioteca
+         └─ renderBibliotecaContent
+             ├─ loading / error
+             └─ shell
+                 ├─ renderBibliotecaSidebar
+                 │   └─ renderConjuntoSidebarItem
+                 └─ renderBibliotecaDetail
+                     ├─ renderBibliotecaTabs
+                     └─ renderBibliotecaTabContent
+                         ├─ renderPlaneacionesTab
+                         ├─ renderAnexosTab
+                         ├─ renderListasCotejoTab
+                         └─ renderExamenesTab
+```
+
+El shell y las cards producen strings HTML y responden mediante una delegación
+en `document`. Las actualizaciones parciales reemplazan el panel derecho con
+`outerHTML`, la lista lateral con `innerHTML` o solo alternan `is-active`. El
+buscador se enlaza con `oninput` después de cada render completo. En contraste,
+los cuatro modales de creación reemplazan `.biblioteca-modal-card` y vuelven a
+registrar listeners directos sobre sus nodos recreados. Los modales de Anexos y
+Listas también depuran `selectedPlaneacionIds` durante render; por ello no son
+render puro.
+
+La frontera con Dashboard permanece activa y contractual:
+
+- `components/layout.html` aporta `#explorer-content`, Quick Create y los DOM
+  estables de preview de Exámenes/Listas.
+- `dashboard.page.js` enlaza el shell antes de `initBiblioteca`, conserva Quick
+  Create, `window.explorerState`, previews y wrappers, y despacha
+  `renderExplorerContent()` hacia `window.renderBibliotecaContent` cuando
+  `BIBLIOTECA_MODE` está activo.
+- Biblioteca consume los bindings léxicos compartidos
+  `MOMENTOS_ACTIVIDADES_DIDACTICAS`, `buildActividadDidacticaOptions`,
+  `isActividadDidacticaValida`, `normalizeActividadesMomentos`,
+  `renderProgressPill` y `statusLabelFromTone`. Esta dependencia por orden de
+  scripts corresponde principalmente a Fase 7, no debe absorberse en Fase 6.
+- Quick Create consume `window.biblioteca` y puede provocar renders/refetch de
+  Biblioteca. Su estado, staging, SSE y reconciliación permanecen protegidos.
+
+La Fase 6 incluye el render de loading/error, pero no traslada el loader ni la
+navegación: `loadAndRenderBiblioteca()` continúa siendo el coordinador que
+escribe `loading`, `error`, `conjuntos`, selección y reconciliación. Tampoco
+absorbe generación, polling, preview, download, delete, block delete, API,
+payloads ni `wordExport.js`.
+
+El corte recomendado para 6.1 es extraer de forma literal el árbol no modal
+completo —helpers de presentación, pending visual, cuatro tabs de recursos,
+shell, sidebar, detalle y renders parciales— a un propietario de render de
+Biblioteca. Eventos, modales, carga, estado, features y Quick Create deben
+permanecer en sus propietarios durante ese primer corte. Después se propone un
+corte de modales, uno de ownership de eventos y una auditoría formal de cierre.
 
 ## Páginas
 

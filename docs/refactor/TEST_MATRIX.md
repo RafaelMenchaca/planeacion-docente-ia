@@ -1282,3 +1282,91 @@ introducida ni bloqueo funcional real.
 **Decisión: A. Fase 5 puede cerrarse.** Fase 5 y la Sesión 5.8 quedan
 completadas; la auditoría de cierre queda aprobada. Fase 6 permanece pendiente y
 no iniciada.
+
+## Fase 6 — Sesión 6.0: auditoría técnica/documental de apertura
+
+Sesión estática sin implementación funcional. La validación manual adicional no
+es requerida. La suite existente se ejecuta como control de integridad, no como
+prueba de render de Biblioteca.
+
+### Cobertura automatizada real
+
+| Recurso | Cobertura | Limitación |
+| --- | --- | --- |
+| `tests/planeacion.test.js` | 2 pruebas JSDOM de `validateForm` en `js/planeacion.js` | No carga dashboard/Biblioteca, cards, modales, eventos, features ni script order |
+| Jest | runner disponible, environment `node`, JSDOM creado por el test | No existe harness de `pages/dashboard.html` |
+| Smokes históricos | scripts ad hoc documentados en sesiones previas | No forman una suite persistente del repositorio |
+| `node --check`/búsquedas/diff | confiables para sintaxis, referencias y alcance | No prueban comportamiento DOM ni listeners duplicados |
+| `git diff --check` | confiable para whitespace/conflictos | No prueba runtime |
+
+No hay tests DOM automatizados de Biblioteca, smoke persistente del dashboard,
+Playwright/Cypress ni cobertura automatizada de full/partial render. Por ello,
+las sesiones funcionales 6.1–6.3 requerirán prueba manual aunque Jest pase.
+
+### Evidencia estática de 6.0
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate frontend/backend | ramas esperadas y ambos trees limpios al abrir |
+| Historia post-merge | `refactor-front`/`main` en `1254561`; fases 0–5 incluidas |
+| Inventario render/DOM/eventos | completado en `FRONTEND_MAP.md` |
+| Script order y bindings léxicos | documentados; sin reordenamiento |
+| JavaScript/HTML/CSS/backend | no modificados |
+| Validación manual | no requerida para auditoría estática |
+| `npm test -- --runInBand` | aprobado: 1 suite, 2 pruebas |
+| `git diff --check` | aprobado |
+
+### Matriz preparada para 6.1 — render no modal
+
+| Área | Prueba manual futura | Evidencia esperada |
+| --- | --- | --- |
+| Carga | abrir dashboard y recargar | loading → shell; sin árbol legacy ni error consola |
+| Error/retry | solo si ocurre naturalmente | mismo mensaje/CTA; un retry/una request |
+| Empty | usuario/búsqueda sin resultados | textos y CTA iguales |
+| Sidebar | seleccionar varios bloques | active, detalle y scroll preservados |
+| Search | escribir, borrar y mantener foco | filtro, badge, empty y selección sin cambio inesperado |
+| Tabs | recorrer cuatro tabs y volver | tab por bloque, conteos y DOM equivalentes |
+| Planeaciones | cards reales y pending natural | Ver/Descargar/Delete y progreso iguales |
+| Anexos | reales/pending/error natural | acciones y orden iguales |
+| Listas | reales/pending/error natural | acciones y feedback iguales |
+| Exámenes | reales/polling/error natural | acciones, metadata y feedback iguales |
+| Partial render | cambiar bloque/tab y delete natural | sidebar/list/detail no pierden eventos |
+| Quick Create smoke | abrir/cancelar y, si se autoriza, crear | fachada y pending/render intactos |
+| Contrato DOM | comparar IDs, clases y `data-*` | sin diferencias intencionales |
+| Red/consola | observar requests y errores | sin request duplicado ni error nuevo |
+
+### Matriz preparada para 6.2 — modales
+
+| Modal | Pruebas futuras obligatorias |
+| --- | --- |
+| Planeaciones | abrir/cerrar/backdrop/cancelar; agregar/quitar tema; Enter; actividades; error; reopen; submit único |
+| Anexos | disponibles/bloqueadas; check/uncheck; cleanup; cancel/reopen; submit único |
+| Listas | disponibles/generadas; check/uncheck; cleanup; cancel/reopen; submit único |
+| Exámenes | tipos, cantidades, planeaciones, contador, errores, cancel/reopen y submit único |
+| Confirm delete | cinco recursos: cancelar, backdrop y confirmar; una resolución/una request |
+| Re-render | cada control responde después de recrear `.biblioteca-modal-card` |
+| Scroll lock | body se bloquea/libera igual; convivencia con previews/Quick Create |
+
+No se deben forzar fallos IA/backend ni cambiar datos solo para producir estados
+de error. Los estados naturales no observados se registran como no ejecutados.
+
+### Matriz preparada para 6.3 — eventos
+
+| Evento | Prueba futura | Resultado esperado |
+| --- | --- | --- |
+| Delegación | cada uno de los 20 valores emitidos | una rama y una acción |
+| Compatibilidad | búsqueda de 3 ramas sin emisor | permanecen definidas, sin inventar UI |
+| Full/partial render | repetir clicks después de cada tipo de render | listeners sobreviven/no se duplican |
+| Search | input tras varios full renders | una actualización por evento |
+| Modales | múltiples re-renders/reopens | controles actuales funcionan una vez |
+| Document/window | Escape, private chrome, pageshow y click Dashboard | sin interferencia nueva con Biblioteca |
+| Features | preview/download/delete/generation smoke | wrappers y coordinadores preservados |
+| Red | observar acciones destructivas/generación autorizadas | una request por acción; polling/SSE intactos |
+
+### Cierre futuro de Fase 6
+
+La auditoría 6.4 deberá ejecutar regresión acumulativa: Login, carga, sidebar,
+search, selección, tabs, cuatro dominios, pending, cuatro modales, previews,
+downloads, deletes, block delete, Quick Create, recarga, consola/red, globals y
+orden de scripts. Archivados se prueba separado. No se abre Fase 7 mientras
+render/eventos no tengan ownership claro o existan eventos perdidos/duplicados.

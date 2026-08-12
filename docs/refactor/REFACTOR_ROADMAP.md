@@ -29,7 +29,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
 | 4 | Generación y polling | Separar procesos largos | Alto | Completada |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Completada |
-| 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
+| 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | En progreso |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Pendiente |
 | 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Pendiente |
@@ -702,7 +702,22 @@ Dividir gradualmente render y eventos para que `biblioteca.page.js` actúe como 
 
 ### Estado
 
-**Pendiente.**
+**En progreso.**
+
+La **Sesión 6.0 — Auditoría técnica/documental de apertura** quedó completada
+sin implementación funcional. El gate post-merge confirmó `refactor-front` en
+`1254561`, igual a `main`/`origin/main`, frontend limpio y backend de solo
+lectura limpio en `refactor-back`/`e08d6e4`. La auditoría levantó el árbol real
+de render, 20 acciones emitidas y 23 ramas delegadas, las superficies DOM, los
+listeners permanentes/recreados, las mutaciones durante render, los cruces con
+Quick Create/Dashboard y los límites con Fase 7. El detalle está en
+[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+
+Métricas de apertura: `biblioteca.page.js` tiene 2770 líneas, 80 declaraciones
+de función, 22 declaraciones `render*`, 30 `addEventListener`, una asignación
+`oninput`, 20 valores `data-bib-action` emitidos y aproximadamente 221
+ocurrencias de primitivas DOM auditadas. Son indicadores, no criterio único de
+extracción.
 
 ### Dependencias
 
@@ -723,6 +738,69 @@ Renderers y handlers de `biblioteca.page.js`, selectores de `dashboard.html`, co
 ### Procedimiento recomendado
 
 Separar render puro de coordinación, extraer un área visible por sesión, preservar markup/selectores/atributos, registrar listeners una vez y verificar tras recargas parciales.
+
+El orden respaldado por la auditoría es: estabilizar primero el render no modal
+completo, después extraer el DOM/render de modales conservando literalmente sus
+cleanup y listeners, y finalmente delimitar el ownership de eventos. Extraer la
+delegación antes del árbol que produce sus `data-*` aumentaría el riesgo de
+desalinear acciones, IDs y renders posteriores.
+
+### Sesiones propuestas
+
+#### 6.1 — Render no modal completo de Biblioteca
+
+- **Alcance:** helpers visuales, pending feedback, cards de Planeaciones,
+  Anexos, Listas y Exámenes, shell, sidebar, search visible, detalle, tabs,
+  loading/error visual y renders parciales.
+- **Archivos candidatos:** `js/pages/biblioteca.page.js`, un owner real bajo
+  `js/features/biblioteca/` y `pages/dashboard.html` solo para insertar el
+  script en el orden comprobado.
+- **Riesgo:** Alto por la firma global `renderBibliotecaContent`, Quick Create,
+  features y refetch que invocan esos renders.
+- **Límites:** no mover estado, loader, eventos, modales, generación, Quick
+  Create, previews, downloads, deletes ni API.
+- **Pruebas:** carga/empty/error, búsqueda y clear, selección, scroll lateral,
+  cuatro tabs/cards/pending, full/partial render, retry smoke, Quick Create
+  smoke y atributos/markup equivalentes.
+
+#### 6.2 — DOM y render de modales de Biblioteca
+
+- **Alcance:** inyección, apertura visual y render/wiring literal de los cuatro
+  modales de generación y confirmación de delete.
+- **Archivos candidatos:** `biblioteca.page.js` y un owner de modal bajo
+  `js/features/biblioteca/`.
+- **Riesgo:** Muy alto: Anexos/Listas depuran selección durante render;
+  Planeaciones consume bindings léxicos de Dashboard; todos recrean listeners.
+- **Límites:** no purificar, corregir listeners, cambiar ModalState ni absorber
+  generación/delete.
+- **Pruebas:** abrir/cerrar/cancelar/backdrop, checkboxes, tipos/cantidades,
+  temas/actividades, re-render/reopen y las cinco confirmaciones.
+
+#### 6.3 — Ownership de eventos de Biblioteca
+
+- **Alcance:** delegación `data-bib-action`, búsqueda y bindings de modal ya
+  estabilizados; conservar las tres ramas sin emisor como compatibilidad.
+- **Archivos candidatos:** `biblioteca.page.js` y un owner de eventos bajo
+  `js/features/biblioteca/`.
+- **Riesgo:** Alto por 23 ramas, DOM dinámico, features protegidos y listeners
+  Dashboard ya activos sobre `#explorer-content`/`document`.
+- **Límites:** no cambiar comportamiento ni corregir deuda histórica en la
+  misma extracción.
+- **Pruebas:** un click produce una acción, eventos sobreviven full/partial
+  render, modales re-renderizados funcionan y no aparecen requests/listeners
+  duplicados.
+
+#### 6.4 — Auditoría formal de cierre
+
+- **Alcance:** documentación y evidencia acumulativa; sin cambio funcional.
+- **Riesgo:** Alto acumulativo.
+- **Pruebas:** suite, matriz manual de Fase 6, consola/red, orden de scripts,
+  globals y búsqueda de consumidores.
+
+La Sesión 6.1 queda **recomendada, no iniciada**. Los nombres tentativos
+`biblioteca-render.js`, `biblioteca-modal-render.js` y
+`biblioteca-events.js` no son contratos; se fijarán solo al implementar el
+corte correspondiente.
 
 ### Resultado esperado
 

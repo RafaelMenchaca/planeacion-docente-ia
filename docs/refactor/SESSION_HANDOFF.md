@@ -13,7 +13,7 @@
 
 - **Última fase cerrada:** 5 — Estado de Biblioteca.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** ninguna; Fase 6 permanece pendiente y no iniciada.
+- **Fase actual:** 6 — Render y eventos, En progreso por la auditoría de apertura 6.0.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -60,7 +60,8 @@
 - **Decisión 2.6:** la eliminación de bloque puede extraerse literalmente.
 - **Validación manual 2.7:** aprobada.
 - **Validación manual acumulativa de Fase 2:** aprobada.
-- **Continuación:** Fase 6 permanece pendiente y no iniciada; debe abrirse únicamente mediante una sesión posterior autorizada.
+- **Sesión 6.0:** auditoría técnica/documental de apertura completada; sin implementación funcional ni validación manual requerida.
+- **Continuación:** Sesión 6.1 recomendada pero no iniciada; requiere autorización posterior.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -75,8 +76,9 @@ commiteada en `f05e730`. La Sesión 5.4 quedó aprobada y commiteada en
 aprobadas; su validación manual también quedó aprobada y la sesión fue
 commiteada en `3842f20`. La Sesión 5.6 quedó aprobada y commiteada en
 `d45a493`. La Sesión 5.7 quedó aprobada y commiteada en `9b3c23d`. La Sesión
-5.8 completó y aprobó la auditoría formal; Fase 5 está completada y Fase 6
-permanece pendiente y no iniciada.
+5.8 completó y aprobó la auditoría formal; Fase 5 está completada. La Sesión
+6.0 abrió documentalmente Fase 6, completó el mapa técnico y dejó 6.1
+recomendada pero no iniciada.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3811,3 +3813,134 @@ justifican una extracción adicional en Fase 5.
 **A. Fase 5 puede cerrarse.** Fase 5 y la Sesión 5.8 quedan completadas; la
 auditoría de cierre queda aprobada. No se requieren pruebas manuales adicionales.
 Fase 6 permanece pendiente y no iniciada.
+
+## Fase 6 — Sesión 6.0: Auditoría técnica/documental de apertura
+
+### Gate post-merge
+
+- Frontend: rama `refactor-front`, `HEAD 1254561` (`Merge
+  refactor(frontend): complete phases 0–5`), igual a `main` y `origin/main`.
+- `origin/refactor-front` permanece en `b5348dd`; la rama local sí contiene el
+  merge/pull de Fases 0–5. No se hizo merge, rebase, reset ni checkout.
+- Working tree frontend: limpio al abrir.
+- Backend solo lectura: `refactor-back`, `HEAD e08d6e4`, limpio.
+- Fase 5: Completada. Fase 6: Pendiente antes de la sesión y abierta de forma
+  compatible por 6.0. Fases 7–10: Pendientes.
+- Puerta: **PASS**.
+
+### Resultado documental
+
+La Fase 6 queda **En progreso**. La Sesión 6.0 queda **Auditoría de apertura
+completada**. No se modificó JavaScript, HTML, CSS, backend ni contratos; no se
+hizo commit o push. La validación manual no es requerida para esta auditoría
+estática.
+
+Objetivo canónico: dividir gradualmente render y eventos para que
+`biblioteca.page.js` actúe como coordinador. Se preservan vanilla JS, scripts
+clásicos, Bootstrap/Tailwind vigentes, UX, DOM observable, `data-*`, mensajes,
+eventos, orden de scripts y contratos de Fases 1–5.
+
+### Inventario resumido
+
+- `biblioteca.page.js`: 2770 líneas, 80 declaraciones de función, 22
+  `render*`, 30 `addEventListener`, un `oninput`, 20 acciones emitidas/23 ramas
+  delegadas y ≈221 ocurrencias de primitivas DOM auditadas.
+- Render no modal: factories de pending, cuatro tabs de recursos, shell,
+  sidebar, search, detalle, tabs, loading/error y tres patches (active, detail,
+  lista).
+- Modales: cuatro renderers de generación reemplazan la card y recrean
+  listeners. Anexos y Listas depuran `selectedPlaneacionIds` durante render;
+  Exámenes y Planeaciones enlazan closures que escriben ModalState.
+- DOM factory: `injectBibliotecaModals` crea seis roots. Confirmación reemplaza
+  card y registra listeners `{once}` por apertura.
+- Eventos: una delegación permanente en `document`, search por propiedad
+  `oninput`, listeners directos de modales recreados, y listeners Dashboard
+  estables sobre `#explorer-content`, `document` y `window`.
+- Acciones sin emisor actual: `toggle-expand`, `generar-anexo` y
+  `regenerar-anexo`. Helpers sin consumidor: `getFilteredConjuntos`,
+  `isBibliotecaTechnicalUnidad` y `renderPendingSpinnerCard`. Permanecen sin
+  tocar por ambigüedad/compatibilidad.
+
+El inventario completo, matrices de render/eventos/DOM, líneas, estado,
+features y clasificación de riesgo están en
+[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+
+### Arquitectura y límites
+
+```text
+initDashboardPage
+→ layout + bindDashboardEvents
+→ initBiblioteca
+→ inject modals + document delegation + loadAndRenderBiblioteca
+→ renderBibliotecaContent
+→ sidebar + detail → tabs → Planeaciones/Anexos/Listas/Exámenes
+```
+
+Fase 6 posee presentación, DOM patches, modales, search y eventos de Biblioteca.
+Fase 7 conserva loader/reconciliación, Quick Create, `pendingBatchId`,
+`pendingConjunto`, `explorerState`, bindings compartidos y desacoplamiento de
+Dashboard. Previews, downloads, deletes, block delete, API, generación, SSE,
+polling, delays/timeouts, payloads y backend permanecen protegidos.
+
+Cruces activos preservados:
+
+- `components/layout.html` aporta el shell, Quick Create y preview DOM.
+- `dashboard.page.js` enlaza eventos antes de Biblioteca y conserva
+  `renderExplorerContent()` como fachada hacia
+  `window.renderBibliotecaContent`.
+- Modal Planeaciones consume helpers léxicos de actividades declarados por
+  Dashboard.
+- render Planeaciones lee `window.explorerState.progress` durante Quick Create.
+- Quick Create consume `window.biblioteca` y llama render/finish/refetch.
+
+### Hallazgos no corregidos
+
+- Render de Anexos/Listas mezcla cleanup de selección con presentación.
+- `innerHTML`/`outerHTML` exige delegación o re-binding correcto.
+- `showBibConfirm` y el modal compartido de nombre pueden conservar listeners
+  de backdrop `{once}` no disparados cuando se cierra por otro control.
+- `initBiblioteca` no posee guard propio para su listener documental; la ruta
+  vigente lo invoca una vez.
+- Queries DOM y event delegation están mezcladas con coordinación.
+- Tres ramas y tres helpers no tienen consumidor/emisor confirmado; no son
+  `unused` probado.
+- El Escape de Dashboard no incluye los cuatro modales dinámicos de Biblioteca;
+  se preserva como comportamiento actual.
+
+### Roadmap aprobado para ejecución posterior
+
+| Sesión | Alcance | Riesgo | Estado |
+| --- | --- | --- | --- |
+| 6.1 | render no modal completo: helpers/pending/cards/shell/sidebar/search/detail/tabs/loading-error/patches | Alto | Recomendada, no iniciada |
+| 6.2 | DOM y render/wiring literal de cuatro modales + confirmación | Muy alto | Pendiente |
+| 6.3 | ownership de delegación, search y eventos modales estabilizados | Alto | Pendiente |
+| 6.4 | auditoría formal de cierre | Alto acumulativo | Pendiente |
+
+### Primera sesión recomendada
+
+**6.1 — Render no modal completo de Biblioteca.** Es el mejor primer corte
+porque extrae como una unidad coherente el árbol que hoy produce el DOM
+observable y reduce sustancialmente `biblioteca.page.js`, sin mover estado,
+loader, eventos, modales, Quick Create, generación ni features protegidos. Es
+literal, reversible y puede validarse comparando markup/`data-*` más carga,
+búsqueda, selección, tabs, cuatro dominios, pending y renders parciales.
+
+Archivos candidatos: `js/pages/biblioteca.page.js`, un único owner real bajo
+`js/features/biblioteca/` y `pages/dashboard.html` solo para el script order.
+El nombre definitivo no está fijado. Riesgo: Alto.
+
+### Próximo paso
+
+No iniciar 6.1 automáticamente. En una sesión autorizada, repetir gate limpio,
+confirmar el punto exacto de carga del nuevo script clásico, hacer extracción
+literal del render no modal y ejecutar la matriz 6.1 documentada.
+
+### Validaciones de 6.0
+
+- `npm test -- --runInBand`: aprobado; 1 suite y 2 pruebas.
+- `git diff --check`: aprobado.
+- `git diff --name-only`: únicamente los cinco documentos autorizados.
+- Frontend funcional: intacto; no hay JS/HTML/CSS modificado.
+- Backend: `refactor-back`, `e08d6e4`, limpio e intacto.
+- Validación manual adicional: no requerida para la auditoría estática.
+- Commit y push: no realizados.
