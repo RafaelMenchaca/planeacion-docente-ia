@@ -1370,3 +1370,37 @@ search, selección, tabs, cuatro dominios, pending, cuatro modales, previews,
 downloads, deletes, block delete, Quick Create, recarga, consola/red, globals y
 orden de scripts. Archivados se prueba separado. No se abre Fase 7 mientras
 render/eventos no tengan ownership claro o existan eventos perdidos/duplicados.
+
+## Fase 6 — Sesión 6.1: render no modal consolidado
+
+6.0 fue reconciliada como completada y commiteada en `e27cb0a`. 6.1 modifica
+render no modal y por ello requiere validación manual; 6.2 no está iniciada.
+
+### Evidencia automatizada y estática
+
+| Revisión | Resultado |
+| --- | --- |
+| Comparación literal contra `HEAD` | PASS: bloque movido idéntico antes de añadir la superficie léxica de ownership |
+| Sintaxis | PASS: `node --check js/pages/biblioteca.page.js` y `node --check js/features/biblioteca/biblioteca-render.js` |
+| Smoke técnico aislado sin red | PASS: loading/error/empty/sidebar-search/selection/tabs/cards/pending/Quick Create visual/partial renders/actions |
+| Acciones | PASS: 20 valores emitidos, 23 ramas; ninguna renombrada o retirada |
+| Listeners | 30 `addEventListener` + un `oninput`; no se reorganizaron |
+| Jest | PASS: 1 suite, 2 tests; no cubre Biblioteca |
+| Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
+
+### Checklist manual pendiente de 6.1
+
+| Área | Comprobación compacta |
+| --- | --- |
+| Carga | Biblioteca normal; loading; sin bloques y con bloques; error solo si ocurre naturalmente |
+| Sidebar/search | buscar y limpiar; seleccionar/cambiar bloques; selección y scroll visibles |
+| Tabs | Planeaciones, Anexos, Listas y Exámenes; active/tab por bloque correcto |
+| Cards | datos/botones; empty y pending correctos en los cuatro dominios |
+| Acciones | preview, download, delete cancelando confirmación y apertura de cada modal de generación |
+| Quick Create | flujo mínimo o integración vigente; render posterior sin error |
+| Consola/red | sin error nuevo, listener visible duplicado ni request duplicada |
+
+Evidencia solicitada al usuario: confirmación del checklist y errores si los
+hubiera; capturas/logs solo cuando ayuden. No se requieren UUIDs, tokens, IDs de
+usuario ni datos personales. Estados de error/generación no deben forzarse si
+no aparecen de forma natural.

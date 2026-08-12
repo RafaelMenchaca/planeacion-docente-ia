@@ -713,6 +713,11 @@ listeners permanentes/recreados, las mutaciones durante render, los cruces con
 Quick Create/Dashboard y los límites con Fase 7. El detalle está en
 [`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
 
+La reconciliación de 6.1 confirmó que 6.0 fue commiteada en `e27cb0a`. La
+Sesión 6.1 está **implementada con validación manual pendiente**: el render no
+modal completo reside en `js/features/biblioteca/biblioteca-render.js`, mientras
+`biblioteca.page.js` conserva coordinación, estado, loader, eventos y modales.
+
 Métricas de apertura: `biblioteca.page.js` tiene 2770 líneas, 80 declaraciones
 de función, 22 declaraciones `render*`, 30 `addEventListener`, una asignación
 `oninput`, 20 valores `data-bib-action` emitidos y aproximadamente 221
@@ -797,10 +802,24 @@ desalinear acciones, IDs y renders posteriores.
 - **Pruebas:** suite, matriz manual de Fase 6, consola/red, orden de scripts,
   globals y búsqueda de consumidores.
 
-La Sesión 6.1 queda **recomendada, no iniciada**. Los nombres tentativos
-`biblioteca-render.js`, `biblioteca-modal-render.js` y
-`biblioteca-events.js` no son contratos; se fijarán solo al implementar el
-corte correspondiente.
+La Sesión 6.1 queda **implementada, con validación manual pendiente**. Se fijó
+`biblioteca-render.js` como owner no modal; los nombres de los owners de modales
+y eventos no son contratos todavía. La comparación literal, el smoke técnico,
+los checks de sintaxis y Jest pasan. La siguiente recomendación, sin abrirla,
+es **6.2 — DOM y render consolidado de modales de Biblioteca**.
+
+#### Resultado técnico de 6.1
+
+- 20 funciones no modales se movieron literalmente; shell, sidebar/search,
+  detalle, tabs, cuatro dominios, pending, empty/loading/error y patches quedan
+  bajo un único owner.
+- `window.renderBibliotecaContent`, su firma/timing y los globals de patches
+  siguen compatibles con Dashboard, Quick Create, features y loader.
+- `dashboard.html` añade el owner después de `biblioteca.page.js` y antes de
+  `main.js`; no cambia ninguna otra posición de scripts.
+- Se preservan 20 acciones emitidas, 23 ramas, 30 listeners y un `oninput`.
+- No se tocaron modales/eventos, loader/reconciliación, Quick Create, estado,
+  pending ownership, features, API, backend, CSS ni `wordExport.js`.
 
 ### Resultado esperado
 

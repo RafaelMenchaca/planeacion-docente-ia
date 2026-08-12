@@ -6,9 +6,10 @@ Este documento describe la arquitectura frontend observada en el código actual.
 
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
-Las Fases 0–5 están completadas. La Fase 6 está **En progreso** desde la
-Sesión 6.0, cuya auditoría de apertura quedó completada sin implementación
-funcional. El inventario ejecutable de render, DOM y eventos se conserva en
+Las Fases 0–5 están completadas. La Fase 6 está **En progreso**. La Sesión 6.0
+quedó completada y commiteada en `e27cb0a`; la Sesión 6.1 extrajo el render no
+modal y queda implementada con validación manual pendiente. El inventario
+ejecutable de render, DOM y eventos se conserva en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -269,12 +270,36 @@ escribe `loading`, `error`, `conjuntos`, selección y reconciliación. Tampoco
 absorbe generación, polling, preview, download, delete, block delete, API,
 payloads ni `wordExport.js`.
 
-El corte recomendado para 6.1 es extraer de forma literal el árbol no modal
+El corte ejecutado en 6.1 extrajo de forma literal el árbol no modal
 completo —helpers de presentación, pending visual, cuatro tabs de recursos,
 shell, sidebar, detalle y renders parciales— a un propietario de render de
 Biblioteca. Eventos, modales, carga, estado, features y Quick Create deben
 permanecer en sus propietarios durante ese primer corte. Después se propone un
 corte de modales, uno de ownership de eventos y una auditoría formal de cierre.
+
+### Resultado arquitectónico de la Sesión 6.1
+
+`js/features/biblioteca/biblioteca-render.js` es el propietario identificable
+del render no modal. Contiene literalmente loading/error, shell, sidebar,
+búsqueda visual, detalle, tabs, cards/pending de los cuatro dominios y los tres
+patches parciales. `biblioteca.page.js` conserva estado, fachadas, loader,
+reconciliación, eventos, modales, features y `initBiblioteca`.
+
+```text
+dashboard.page.js
+→ biblioteca.page.js             estado + coordinación + eventos/modales
+→ biblioteca-render.js           render no modal + patches visuales
+→ main.js                         arranque por DOMContentLoaded
+```
+
+El nuevo owner es un script clásico cargado después de `biblioteca.page.js`.
+Consume sus bindings léxicos y las superficies protegidas de Fase 5, sin store
+ni API propios. `renderBibliotecaContent()` conserva firma sin parámetros,
+retorno implícito y efectos DOM; `window.renderBibliotecaContent` sigue
+apuntando a la misma función para Dashboard/Quick Create. Los nombres globales
+de los patches permanecen disponibles para features y coordinación. No se
+modificaron `window.biblioteca`, `window.explorerState`, modales, delegación,
+generación, preview/download/delete ni loader.
 
 ## Páginas
 

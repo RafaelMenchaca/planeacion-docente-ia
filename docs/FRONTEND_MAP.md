@@ -2028,3 +2028,79 @@ reemplaza como unidad y evita introducir callbacks artificiales entre shell y
 cards. No mueve estado, carga, eventos, modales, Quick Create, generación,
 features ni backend. La estrategia recomendada es estabilizar primero el
 render, luego los modales y finalmente el ownership de eventos.
+
+## Fase 6 — Sesión 6.1: extracción consolidada del render no modal
+
+### Reconciliación y decisión
+
+- La auditoría 6.0 está completada y commiteada en `e27cb0a`; se corrigió la
+  referencia documental que aún decía “commit pendiente”.
+- Decisión: **A. Extracción consolidada implementada.** La validación manual de
+  6.1 permanece pendiente; no se abre 6.2.
+- Owner nuevo: `js/features/biblioteca/biblioteca-render.js`, script clásico
+  cargado entre `biblioteca.page.js` y `main.js`.
+
+### Inventario movido y retenido
+
+| Clasificación | Funciones/superficie | Owner después de 6.1 |
+| --- | --- | --- |
+| A — movida | `renderBibliotecaProgressCard`, `renderProgressItemHtml`, `renderPendingSpinnerCard`, `renderBibliotecaSectionHeader` | `biblioteca-render.js` |
+| A — movida | `getBibliotecaExamTypeLabel`, `getBibliotecaExamTopics`; cuatro renders de tabs de recursos | `biblioteca-render.js` |
+| A — movida | tabs, tab activo, item/lista de sidebar, detalle/empty y `renderBibliotecaContent` | `biblioteca-render.js` |
+| A — movida | `updateBibliotecaSidebarActive`, `renderBibliotecaDetailInPlace`, `renderBibliotecaSidebarListInPlace` | `biblioteca-render.js` |
+| B — retenida | helpers compartidos, `getAllConjuntosForSidebar`, selección, optimismo, finish, `loadAndRenderBiblioteca`, `initBiblioteca` | `biblioteca.page.js` |
+| C — retenida | cuatro renderers modales, injection y `showBibConfirm` | `biblioteca.page.js`; candidato 6.2 |
+| D — retenida | `onBibliotecaClick`, `onBibliotecaSearch` y listeners directos/documentales | `biblioteca.page.js`; candidato 6.3 |
+| E/F — retenida | Quick Create/loader, `window.explorerState`, compatibilidad y ramas sin emisor | propietarios actuales; Fase 7/compatibilidad |
+
+Se movieron 20 declaraciones de función como un bloque literal. Los helpers de
+fecha/escape y derivación que también consumen loader o modales permanecen en
+la página para no convertir el owner visual en propietario de coordinación ni
+adelantar 6.2.
+
+### Contrato y consumidores
+
+| Superficie | Firma/retorno | Efectos y consumidores | Compatibilidad |
+| --- | --- | --- | --- |
+| `renderBibliotecaContent()` | sin parámetros; retorno implícito | reemplaza `#explorer-content`, alterna workspace/onboarding, enlaza el mismo `oninput`, restaura scroll; loader, generación y block delete | mismo nombre global |
+| `window.renderBibliotecaContent` | alias de la función anterior | `dashboard.page.js`/Quick Create y compatibilidad | exposición y timing conservados antes de `DOMContentLoaded` |
+| `renderBibliotecaDetailInPlace()` | sin parámetros | reemplaza `#biblioteca-detail-panel`; deletes/generación de recursos y eventos | mismo global implícito |
+| sidebar partial/active | sin parámetros | búsqueda, selección y fachada `window.biblioteca` | nombres y timing conservados |
+
+El DOM generado mantiene literalmente strings, condiciones, loops, fallbacks,
+orden, IDs, clases, roles, `aria-*`, atributos disabled/hidden, textos y 20
+valores emitidos de `data-bib-action`. `onBibliotecaClick` conserva sus 23
+ramas, incluidas `toggle-expand`, `generar-anexo` y `regenerar-anexo` sin emisor
+confirmado. El render sigue leyendo pending mediante las cuatro superficies de
+Fase 5 y `window.explorerState.progress.items` solo para el feedback compatible
+de Quick Create.
+
+### Métricas y límites
+
+| Indicador | Antes | Después |
+| --- | ---: | ---: |
+| Líneas `biblioteca.page.js` | 2770 | 2125 |
+| Líneas owner nuevo | — | 657 |
+| Funciones movidas / retenidas | — | 20 / 59 |
+| Render/update retenidos en page | 25 superficies totales auditadas | 5 declaraciones modales/compat; injection/confirm permanecen |
+| Operaciones DOM en page / owner | ≈221 en page | 165 / 24 ocurrencias con el patrón de medición 6.1 |
+| Listeners / `oninput` | 30 / 1 | 30 / 1, sin reorganizar |
+| Acciones emitidas / ramas | 20 / 23 | 20 / 23 |
+
+Loading/error solo cambió de propietario visual: el loader y los escritores de
+estado siguen en la página. Search solo movió markup/filtro visual: el handler y
+la escritura de `searchQuery` siguen en la página. Quick Create, reconciliación,
+generación, polling/SSE, API, payloads, previews, downloads, deletes,
+`wordExport.js` y backend quedaron intactos.
+
+### Evidencia de 6.1
+
+- Comparación literal del bloque movido contra `HEAD`: PASS.
+- Smoke técnico aislado: loading, error, sin bloques, search match/no match,
+  selección, cuatro tabs empty/con recursos/con pending, feedback de Quick
+  Create y tres patches: PASS.
+- `node --check` de ambos JS, Jest (1 suite/2 tests) y conservación de acciones:
+  PASS. La prueba manual de navegador queda pendiente.
+- Riesgos preservados: dependencia por orden clásico, `oninput` recreado por
+  full render, globals de patches, lectura de `explorerState.progress` y falta
+  de cobertura DOM persistente. No se corrigieron en esta extracción.
