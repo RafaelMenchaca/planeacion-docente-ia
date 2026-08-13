@@ -1418,7 +1418,7 @@ No se recibieron ni solicitaron UUIDs, tokens o datos personales.
 | Jest | PASS: 1 suite/2 tests; sigue sin cubrir Biblioteca persistente |
 | Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
 
-### Checklist manual pendiente de 6.2
+### Checklist manual aprobado de 6.2
 
 | Área | Comprobación |
 | --- | --- |
@@ -1429,6 +1429,36 @@ No se recibieron ni solicitaron UUIDs, tokens o datos personales.
 | Confirmación | delete→cancelar; delete→confirmar; backdrop si aplica |
 | Regresión | render 6.1, tabs, search, Quick Create, preview, download y consola |
 
-No forzar errores backend. Reportar solo qué pruebas pasaron, errores observados
-y logs naturales de generación/delete si existen; no compartir credenciales ni
-identificadores personales.
+Resultado recibido: carga, recursos, cuatro modales y generaciones, delete
+individual/de bloque y consola correctos; sin regresiones visibles ni errores
+nuevos reportados. Commit `ef3364f`.
+
+## Fase 6 — Sesión 6.3: ownership de eventos
+
+### Evidencia automatizada y estática
+
+| Revisión | Resultado |
+| --- | --- |
+| Comparación literal | PASS: dos handlers, orden de 23 ramas y líneas efectivas de binding |
+| Acciones | PASS: 20 valores emitidos y 23 ramas, incluidas tres sin emisor |
+| Sintaxis | PASS: page, render no modal, modal render y event owner |
+| Conteo efectivo | 1 listener documental, 1 `oninput`, 29 listeners modales; sin cambio |
+| Coexistencia Dashboard | PASS: listener de `#explorer-content` antes de `document`, bubbling sin prevent/stop |
+| Smoke JSDOM sin red | PASS: selección/tabs/search, cuatro opens, bridge, retry, preview/download, generación, deletes, legacy y desconocida |
+| Dispatch duplicado | PASS técnico: una llamada por click; delete se disparó una vez por cada escenario cancel/confirm simulado |
+| Jest | PASS: 1 suite/2 tests; no sustituye prueba manual de red/consola |
+| Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
+
+### Checklist manual pendiente de 6.3
+
+| Área | Comprobación |
+| --- | --- |
+| Biblioteca | carga; seleccionar/cambiar bloques; tabs; search y clear |
+| Acciones | abrir cuatro modales; preview; download; delete cancelar y confirmar |
+| Generación | una generación representativa; una sola request/dispatch |
+| Quick Create | smoke mínimo, render posterior y sin doble evento |
+| Consola/red | sin error nuevo, acción duplicada ni request duplicada |
+
+Reportar solo pruebas aprobadas, cualquier error y un log natural de
+acción/generación/delete si ocurrió. No forzar fallos ni compartir credenciales
+o identificadores personales.

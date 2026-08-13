@@ -13,7 +13,7 @@
 
 - **Última fase cerrada:** 5 — Estado de Biblioteca.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 6 — Render y eventos, En progreso; 6.2 implementada con validación manual pendiente.
+- **Fase actual:** 6 — Render y eventos, En progreso; 6.3 implementada con validación manual pendiente.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -62,8 +62,9 @@
 - **Validación manual acumulativa de Fase 2:** aprobada.
 - **Sesión 6.0:** auditoría técnica/documental completada y commiteada en `e27cb0a`; sin implementación funcional ni validación manual requerida.
 - **Sesión 6.1:** render no modal extraído, validado manualmente y commiteado en `cef834e`.
-- **Sesión 6.2:** cuatro renders modales, confirmación e inyección extraídos; estáticas/smoke aprobados, manual pendiente.
-- **Continuación:** completar checklist manual de 6.2; después se recomienda 6.3, todavía no iniciada.
+- **Sesión 6.2:** renders modales/confirmación extraídos, manual aprobada y commit `ef3364f`.
+- **Sesión 6.3:** handlers, delegación y search wiring extraídos; estáticas/smoke aprobados, manual pendiente.
+- **Continuación:** completar checklist manual de 6.3; después se recomienda 6.4, todavía no iniciada.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -81,8 +82,8 @@ commiteada en `3842f20`. La Sesión 5.6 quedó aprobada y commiteada en
 5.8 completó y aprobó la auditoría formal; Fase 5 está completada. La Sesión
 6.0 abrió documentalmente Fase 6 y quedó commiteada en `e27cb0a`. 6.1 extrajo
 el render no modal, fue validada manualmente y quedó commiteada en `cef834e`.
-6.2 extrajo DOM/render y wiring local de overlays; está implementada con manual
-pendiente.
+6.2 extrajo DOM/render y wiring local de overlays, fue validada manualmente y
+commiteada en `ef3364f`. 6.3 extrajo el wiring estructural; manual pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3916,8 +3917,8 @@ Cruces activos preservados:
 | Sesión | Alcance | Riesgo | Estado |
 | --- | --- | --- | --- |
 | 6.1 | render no modal completo: helpers/pending/cards/shell/sidebar/search/detail/tabs/loading-error/patches | Alto | Aprobada; commit `cef834e` |
-| 6.2 | DOM y render/wiring literal de cuatro modales + confirmación | Muy alto | Implementada; manual pendiente |
-| 6.3 | ownership de delegación, search y eventos modales estabilizados | Alto | Pendiente |
+| 6.2 | DOM y render/wiring literal de cuatro modales + confirmación | Muy alto | Aprobada; commit `ef3364f` |
+| 6.3 | ownership de delegación y search; modales estabilizados | Alto | Implementada; manual pendiente |
 | 6.4 | auditoría formal de cierre | Alto acumulativo | Pendiente |
 
 ### Primera sesión recomendada
@@ -3935,8 +3936,9 @@ El nombre definitivo no está fijado. Riesgo: Alto.
 
 ### Próximo paso reconciliado
 
-6.1 fue autorizada, validada y commiteada en `cef834e`. 6.2 fue implementada en
-la sesión posterior; su checklist manual queda pendiente y 6.3 no está iniciada.
+6.1 y 6.2 fueron autorizadas, validadas y commiteadas en `cef834e` y `ef3364f`.
+6.3 fue implementada después; su checklist manual queda pendiente y 6.4 no está
+iniciada.
 
 ### Validaciones de 6.0
 
@@ -4028,8 +4030,8 @@ como dependencia de compatibilidad/Fase 7.
 - 6.1: manual aprobada y commit real `cef834e`.
 - Backend: `refactor-back`/`e08d6e4`, limpio y solo lectura.
 - Sub-gates: Planeaciones, Anexos, Listas, Exámenes y Confirmación: **PASS**.
-- Decisión: **A. Extracción consolidada implementada.** Manual pendiente;
-  commit/push no realizados.
+- Decisión: **A. Extracción consolidada implementada.** La manual se aprobó
+  después y el usuario commiteó el corte en `ef3364f`.
 
 ### Resultado y límites
 
@@ -4059,6 +4061,52 @@ funciones y una constante íntima movidas; DOM ops page/owner 61/104; listeners
 general/modal 1/29, sin cambio efectivo.
 
 Comparación literal individual, inyección/tipos, smoke JSDOM sin red,
-`node --check` y Jest pasan. Manual 6.2 pendiente. Después de su aprobación se
-recomienda **6.3 — Ownership consolidado de eventos de Biblioteca**; no está
-iniciada.
+`node --check` y Jest pasaron. La manual posterior aprobó carga, recursos,
+modales, generaciones y deletes sin regresiones; commit `ef3364f`.
+
+## Fase 6 — Sesión 6.3: Ownership consolidado de eventos
+
+### Gate y decisión
+
+- Frontend: `refactor-front`, `HEAD ef3364f`, limpio al abrir.
+- 6.2: manual aprobada y commit real `ef3364f`.
+- Backend: `refactor-back`/`e08d6e4`, limpio y solo lectura.
+- Decisión: **A. Ownership consolidado implementado.** Manual pendiente;
+  commit/push no realizados.
+
+### Resultado
+
+`js/features/biblioteca/biblioteca-events.js` contiene literalmente
+`onBibliotecaClick` y `onBibliotecaSearch`, además de `bind()` y
+`bindSearch(input)`. El primero registra el mismo `document.click` sin options
+ni guard; el segundo asigna el mismo `oninput`. `initBiblioteca` y
+`renderBibliotecaContent` delegan en los mismos puntos de timing.
+
+```text
+dashboard.page.js
+→ biblioteca.page.js
+→ biblioteca-render.js
+→ biblioteca-modal-render.js
+→ biblioteca-events.js
+→ main.js
+```
+
+Se preservan 20 acciones emitidas/23 ramas, orden, `closest`, datasets, calls,
+returns y bubbling. No había prevent/stop ni awaits/catches en el handler. Las
+ramas sin emisor `toggle-expand`, `generar-anexo` y `regenerar-anexo` siguen
+presentes. Dashboard continúa escuchando antes en `#explorer-content`; la
+delegación documental recibe después el mismo click una vez.
+
+Compatibilidad intacta: `window.biblioteca`, `window.renderBibliotecaContent`,
+Dashboard, Quick Create, wrappers, features y legacy. `BibliotecaEvents` es
+léxico, no una API pública. Los 29 listeners de modales y ambos owners visuales
+se conservan; `biblioteca-render.js` solo contiene la delegación mecánica del
+binding de search.
+
+Métricas: page 1465→1317 líneas; event owner 163; dos handlers movidos; un
+listener estructural y un `oninput`; 29 listeners modales retenidos; DOM ops
+page/event owner 52/9; acciones/ramas 20/23.
+
+Comparación literal de handlers/bindings, smoke JSDOM sin red, `node --check`,
+Jest y diff check pasan. Manual 6.3 pendiente. Después de aprobarla se
+recomienda **6.4 — Auditoría formal de cierre de Fase 6**; no está iniciada.

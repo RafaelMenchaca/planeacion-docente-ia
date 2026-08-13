@@ -2115,8 +2115,8 @@ generación, polling/SSE, API, payloads, previews, downloads, deletes,
 - Manual 6.1: aprobada según el recorrido acumulativo informado por el usuario.
 - Sub-gates: Planeaciones **PASS** (Muy alto), Anexos **PASS** (Alto), Listas
   **PASS** (Alto), Exámenes **PASS** (Alto), Confirmación **PASS** (Alto).
-- Decisión: **A. Extracción consolidada implementada.** Manual 6.2 pendiente;
-  6.3 no está iniciada.
+- Decisión: **A. Extracción consolidada implementada.** Reconciliación 6.3:
+  manual aprobada y commit `ef3364f`.
 
 Owner: `js/features/biblioteca/biblioteca-modal-render.js`, script clásico
 cargado después de los dos scripts de Biblioteca y antes de `main.js`:
@@ -2172,4 +2172,80 @@ sin corrección.
 Comparación literal de cinco superficies, tipos e inyección: PASS. Smoke JSDOM
 sin red de los cuatro modales, confirm/cancel/backdrop e inyección: PASS.
 `node --check`, Jest (1 suite/2 tests) y `git diff --check`: PASS. La validación
-manual de 6.2 queda pendiente.
+manual posterior aprobó carga, recursos, cuatro modales/generaciones, deletes
+individual/de bloque y ausencia de regresiones; commit real `ef3364f`.
+
+## Fase 6 — Sesión 6.3: ownership consolidado de eventos
+
+### Gate y clasificación
+
+- Gate: `refactor-front` limpio en `ef3364f`; backend limpio y de solo lectura
+  en `refactor-back`/`e08d6e4`.
+- 6.2: validación manual aprobada y commit real `ef3364f`.
+- Decisión: **A. Ownership consolidado implementado.** Manual 6.3 pendiente;
+  Fase 6 sigue En progreso y 6.4 no está iniciada.
+
+| Listener/superficie | Clasificación | Owner después de 6.3 | Contrato |
+| --- | --- | --- | --- |
+| `document.click → onBibliotecaClick` | A Biblioteca estructural | `biblioteca-events.js` | bubble, sin options/guard, mismo momento dentro de `initBiblioteca` |
+| `searchInput.oninput → onBibliotecaSearch` | A Biblioteca estructural | `biblioteca-events.js`; invocado desde render | misma propiedad/timing, escritura literal de `event.target.value` y partial render |
+| 29 listeners de cards/inputs/backdrops de overlays | B modal local | `biblioteca-modal-render.js` | intactos desde 6.2 |
+| llamadas preview/download/delete/generation | C features protegidos | features/coordinadores actuales | event owner solo despacha mismas funciones |
+| click/change/keydown/pageshow de Dashboard | D/E Dashboard/Quick Create | `dashboard.page.js` | no modificados |
+| ramas `toggle-expand`, `generar-anexo`, `regenerar-anexo` | F/G legacy/compatibilidad | `biblioteca-events.js` | conservadas sin inventar emisores |
+
+### Matriz compacta de `data-bib-action`
+
+| Grupo | Acciones | Dispatch preservado |
+| --- | --- | --- |
+| Selección/tabs | `select-conjunto`, `toggle-expand`, `switch-tab` | selección, active sidebar y detail partial |
+| Apertura/bridge/carga | `agregar-planeacion`, `abrir-modal-anexos`, `generar-lista`, `generar-examen`, `crear-planeaciones`, `retry` | cuatro open coordinators, Quick Create bridge y loader |
+| Preview | `ver-examen`, `ver-lista`, `ver-anexo` | wrappers protegidos |
+| Download | `descargar-planeacion`, `descargar-examen`, `descargar-lista`, `descargar-anexo` | mismos wrappers/features |
+| Generación compatible | `generar-anexo`, `regenerar-anexo` | coordinadores históricos conservados |
+| Delete | `eliminar-bloque`, `eliminar-planeacion`, `eliminar-examen`, `eliminar-lista`, `eliminar-anexo` | mismos coordinadores/confirm/refetch |
+
+El baseline y resultado son 20 valores emitidos y 23 ramas en el mismo orden.
+El matching continúa en `event.target.closest("[data-bib-action]")`, con early
+return si no existe y lectura anticipada de los mismos siete campos dataset.
+No hay awaits, catches, `preventDefault` ni `stopPropagation` que trasladar.
+
+### Owner, integración y coexistencia
+
+`js/features/biblioteca/biblioteca-events.js` contiene exclusivamente dos
+handlers y dos operaciones de binding. Consume Selection/Tabs mediante los
+coordinadores existentes, renders parciales, cuatro open coordinators,
+loader/Quick Create bridge y wrappers de features; no contiene render, HTML,
+store, API, generación ni loader.
+
+Orden clásico resultante:
+
+```text
+dashboard.page.js → biblioteca.page.js → biblioteca-render.js
+→ biblioteca-modal-render.js → biblioteca-events.js → main.js
+```
+
+Dashboard registra primero su listener sobre `#explorer-content`; un click de
+Biblioteca lo atraviesa, `handleContentClick` no encuentra
+`data-content-action`, y luego llega al listener documental de Biblioteca. No
+se cambió captura, bubbling ni orden. `window.biblioteca`,
+`window.renderBibliotecaContent`, Quick Create, aliases, wrappers y ramas legacy
+quedaron intactos; `BibliotecaEvents` es léxico y no amplía la API pública.
+
+### Métricas y evidencia
+
+| Indicador | Antes de 6.3 | Después |
+| --- | ---: | ---: |
+| Líneas `biblioteca.page.js` | 1465 | 1317 |
+| Líneas event owner | — | 163 |
+| Handlers movidos | — | 2 |
+| Listener estructural / `oninput` | 1 / 1 en owners previos | 1 / 1 en event owner |
+| Listeners modales retenidos | 29 | 29 |
+| DOM ops page / event owner | 61 / — | 52 / 9 |
+| Acciones emitidas / ramas | 20 / 23 | 20 / 23 |
+
+Comparación literal de handlers y líneas de binding: PASS. Smoke JSDOM sin red
+de selección, tabs, search/clear, cuatro modales, Quick Create, retry,
+preview/download, generación, deletes, compatibilidad, acción desconocida y
+bubbling: PASS, una llamada por acción. Owners de render/modal intactos salvo la
+delegación mecánica de search en el primero. Sintaxis, Jest y diff check: PASS.

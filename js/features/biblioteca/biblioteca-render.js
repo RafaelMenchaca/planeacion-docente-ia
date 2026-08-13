@@ -634,7 +634,7 @@ function renderBibliotecaContent() {
   const searchInput = document.getElementById("biblioteca-search");
   if (searchInput) {
     searchInput.value = bibliotecaState.searchQuery;
-    searchInput.oninput = onBibliotecaSearch;
+    BibliotecaEvents.bindSearch(searchInput);
   }
 
   if (prevSidebarScroll > 0) {
@@ -654,4 +654,3 @@ const BibliotecaRender = Object.freeze({
   renderSidebarListInPlace: renderBibliotecaSidebarListInPlace,
   updateSidebarActive: updateBibliotecaSidebarActive
 });
-

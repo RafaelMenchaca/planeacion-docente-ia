@@ -7,9 +7,9 @@ Este documento describe la arquitectura frontend observada en el código actual.
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
 Las Fases 0–5 están completadas. La Fase 6 está **En progreso**. La Sesión 6.0
-quedó completada y commiteada en `e27cb0a`; la Sesión 6.1 quedó validada
-manualmente y commiteada en `cef834e`. La Sesión 6.2 extrajo el DOM/render de
-overlays y queda implementada con validación manual pendiente. El inventario
+quedó completada y commiteada en `e27cb0a`; 6.1 quedó aprobada en `cef834e` y
+6.2 quedó aprobada en `ef3364f`. La Sesión 6.3 extrajo el wiring estructural de
+Biblioteca y queda implementada con validación manual pendiente. El inventario
 ejecutable de render, DOM y eventos se conserva en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
@@ -289,9 +289,10 @@ features y `initBiblioteca`.
 
 ```text
 dashboard.page.js
-→ biblioteca.page.js             estado + coordinación + delegación
+→ biblioteca.page.js             estado + loader + coordinación
 → biblioteca-render.js           render no modal + patches visuales
 → biblioteca-modal-render.js     roots, render/wiring local y confirmación
+→ biblioteca-events.js           delegación documental + search
 → main.js                         arranque por DOMContentLoaded
 ```
 
@@ -319,6 +320,26 @@ Anexos/Listas conservan el cleanup de selección durante render; Planeaciones
 conserva los bindings léxicos de actividades declarados por Dashboard. La
 delegación `onBibliotecaClick`, search y el listener documental único quedan
 para 6.3. No se modificó `biblioteca-render.js`.
+
+### Resultado arquitectónico de la Sesión 6.3
+
+`js/features/biblioteca/biblioteca-events.js` posee los handlers literales
+`onBibliotecaClick` y `onBibliotecaSearch`, el registro de `document.click` y
+la asignación de `searchInput.oninput`. Su superficie léxica mínima ofrece
+`bind()` y `bindSearch(input)`; no publica nuevas APIs en `window`.
+
+`initBiblioteca()` sigue coordinando inyección, binding y carga en el mismo
+orden, pero delega el registro a `BibliotecaEvents.bind()`. El render no modal
+solo sustituye la asignación mecánica por `BibliotecaEvents.bindSearch()` en el
+mismo punto, después de restaurar el valor del input. No existe guard nuevo:
+la duplicabilidad histórica se conserva.
+
+Las 23 ramas, 20 acciones emitidas, lecturas de dataset, early return y
+bubbling permanecen idénticos. El handler no tenía ni incorpora
+`preventDefault`/`stopPropagation`. El listener previo de Dashboard sobre
+`#explorer-content` continúa ejecutándose antes que la delegación documental y
+solo intenta despachar `data-content-action`. Los 29 listeners locales de
+modales permanecen intactos en su owner de 6.2.
 
 ## Páginas
 

@@ -713,11 +713,11 @@ listeners permanentes/recreados, las mutaciones durante render, los cruces con
 Quick Create/Dashboard y los límites con Fase 7. El detalle está en
 [`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
 
-La reconciliación de 6.2 confirmó que 6.1 fue validada manualmente y commiteada
-en `cef834e`. La Sesión 6.2 está **implementada con validación manual
-pendiente**: el DOM/render de cuatro modales, confirmación e inyección reside en
-`js/features/biblioteca/biblioteca-modal-render.js`; la página conserva estado,
-loader, open/close/submit, eventos generales y compatibilidad.
+La reconciliación de 6.3 confirmó que 6.2 fue validada manualmente y commiteada
+en `ef3364f`. La Sesión 6.3 está **implementada con validación manual
+pendiente**: delegación documental, handler de 23 ramas y search wiring residen
+en `js/features/biblioteca/biblioteca-events.js`; la página conserva estado,
+loader, coordinación y compatibilidad.
 
 Métricas de apertura: `biblioteca.page.js` tiene 2770 líneas, 80 declaraciones
 de función, 22 declaraciones `render*`, 30 `addEventListener`, una asignación
@@ -803,11 +803,10 @@ desalinear acciones, IDs y renders posteriores.
 - **Pruebas:** suite, matriz manual de Fase 6, consola/red, orden de scripts,
   globals y búsqueda de consumidores.
 
-La Sesión 6.1 queda **aprobada y commiteada en `cef834e`**. Se fijó
-`biblioteca-render.js` como owner no modal. La Sesión 6.2 queda implementada,
-con validación manual pendiente; `biblioteca-modal-render.js` es el owner de
-DOM/render y wiring local de overlays. La siguiente recomendación, sin abrirla,
-es **6.3 — Ownership consolidado de eventos de Biblioteca**.
+Las Sesiones 6.1 y 6.2 están aprobadas y commiteadas en `cef834e` y `ef3364f`.
+La Sesión 6.3 queda implementada con validación manual pendiente;
+`biblioteca-events.js` es el owner del wiring estructural. La siguiente
+recomendación, sin iniciarla, es **6.4 — Auditoría formal de cierre de Fase 6**.
 
 #### Resultado técnico de 6.1
 
@@ -833,8 +832,22 @@ es **6.3 — Ownership consolidado de eventos de Biblioteca**.
   actividades y bindings de Dashboard; confirmación conserva su deuda `{once}`.
 - Orden: `biblioteca.page.js → biblioteca-render.js →
   biblioteca-modal-render.js → main.js`.
-- Comparación literal, smoke JSDOM, checks de sintaxis y Jest pasan. Manual 6.2
-  pendiente; 6.3 no iniciada.
+- Comparación literal, smoke JSDOM, checks de sintaxis y Jest pasaron. La manual
+  posterior aprobó 6.2 y el corte quedó commiteado en `ef3364f`.
+
+#### Resultado técnico de 6.3
+
+- `onBibliotecaClick` y `onBibliotecaSearch` se movieron literalmente al owner
+  de eventos; `bind()` conserva el registro documental y `bindSearch()` la
+  asignación de propiedad en sus mismos puntos de ejecución.
+- Se preservan 20 acciones emitidas, 23 ramas, el matching por `closest`, siete
+  lecturas dataset, early return, orden y ausencia de prevent/stop.
+- Dashboard/Quick Create, los 29 listeners modales, renders, estado, pending,
+  loader, coordinadores y features permanecen intactos.
+- Orden: `biblioteca.page.js → biblioteca-render.js →
+  biblioteca-modal-render.js → biblioteca-events.js → main.js`.
+- Comparación literal, smoke JSDOM, sintaxis y Jest pasan. Manual 6.3 pendiente;
+  Fase 6 no se cierra y 6.4 no se inicia en esta sesión.
 
 ### Resultado esperado
 
