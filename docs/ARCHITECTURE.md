@@ -6,11 +6,11 @@ Este documento describe la arquitectura frontend observada en el código actual.
 
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
-Las Fases 0–5 están completadas. La Fase 6 está **En progreso**. La Sesión 6.0
-quedó completada y commiteada en `e27cb0a`; 6.1 quedó aprobada en `cef834e` y
-6.2 quedó aprobada en `ef3364f`. La Sesión 6.3 extrajo el wiring estructural de
-Biblioteca y queda implementada con validación manual pendiente. El inventario
-ejecutable de render, DOM y eventos se conserva en
+Las Fases 0–6 están completadas. La Sesión 6.0 quedó completada y commiteada en
+`e27cb0a`; 6.1 fue aprobada en `cef834e`, 6.2 en `ef3364f` y 6.3 en `4306903`.
+La Sesión 6.4 aprobó la auditoría formal de cierre sin implementación funcional
+ni prueba manual adicional. La Fase 7 permanece pendiente y no iniciada. El
+inventario ejecutable de render, DOM y eventos se conserva en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -340,6 +340,26 @@ bubbling permanecen idénticos. El handler no tenía ni incorpora
 `#explorer-content` continúa ejecutándose antes que la delegación documental y
 solo intenta despachar `data-content-action`. Los 29 listeners locales de
 modales permanecen intactos en su owner de 6.2.
+
+### Cierre arquitectónico de la Fase 6 — Sesión 6.4
+
+La auditoría acumulativa aprobó la separación final: `biblioteca-render.js`
+posee la presentación no modal; `biblioteca-modal-render.js`, el DOM de los
+cuatro modales, confirmación y wiring local inseparable; y
+`biblioteca-events.js`, la delegación estructural y búsqueda.
+`biblioteca.page.js` queda como coordinador razonable de estado, carga,
+reconciliación, open/close/submit, features y compatibilidad.
+
+La comparación normalizada contra `1254561` confirmó equivalencia literal de
+los renders y eventos trasladados. Se preservan 20 acciones emitidas, 23 ramas,
+un listener documental, un `oninput` y 29 listeners modales. Las superficies de
+estado/pending de Fase 5 mantienen una única fuente física; generación, API,
+payload de Exámenes, delete, preview/download y `wordExport.js` no cambiaron.
+
+La Fase 7 conserva expresamente Quick Create, `window.explorerState`, loaders,
+navegación, reconciliación y bindings activos de Dashboard. Los wrappers
+`window.biblioteca` y `window.renderBibliotecaContent` siguen siendo
+compatibilidad activa, no un bloqueo para cerrar Fase 6.
 
 ## Páginas
 

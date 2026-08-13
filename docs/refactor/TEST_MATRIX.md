@@ -1449,7 +1449,7 @@ nuevos reportados. Commit `ef3364f`.
 | Jest | PASS: 1 suite/2 tests; no sustituye prueba manual de red/consola |
 | Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
 
-### Checklist manual pendiente de 6.3
+### Checklist manual aprobado de 6.3
 
 | Área | Comprobación |
 | --- | --- |
@@ -1459,6 +1459,33 @@ nuevos reportados. Commit `ef3364f`.
 | Quick Create | smoke mínimo, render posterior y sin doble evento |
 | Consola/red | sin error nuevo, acción duplicada ni request duplicada |
 
-Reportar solo pruebas aprobadas, cualquier error y un log natural de
-acción/generación/delete si ocurrió. No forzar fallos ni compartir credenciales
-o identificadores personales.
+Resultado recibido: Biblioteca, selección/cambio de bloques, tabs, search/clear,
+cuatro modales, preview/download, delete cancel/confirm, generación y Quick
+Create correctos; sin doble dispatch, requests duplicados ni errores nuevos.
+Logs naturales aprobados: delete de Biblioteca/Planeaciones/Exámenes y generate
+de Planeaciones/Anexos/Listas/Exámenes. El examen completó 11/11 preguntas, 17
+retries anti-duplicados y cero fallos finales. Commit `4306903`.
+
+## Fase 6 — Sesión 6.4: auditoría formal de cierre
+
+| Revisión acumulativa | Resultado |
+| --- | --- |
+| Gate e historia | PASS: frontend `refactor-front`/`4306903`; 6.0–6.3 presentes; backend `refactor-back`/`e08d6e4`, ambos limpios al abrir |
+| Owners | PASS: una implementación canónica para render no modal, modales y eventos |
+| Comparación literal | PASS normalizado contra `1254561`: render no modal, cuatro modales, confirmación, inyección y eventos |
+| State/Pending | PASS: diez superficies protegidas y una sola fuente física |
+| DOM/eventos | PASS: 20 acciones, 23 ramas, 1 listener documental, 1 `oninput`, 29 listeners modales; markup/selectores/data sin cambio |
+| Features/API | PASS: generation, delete, preview/download, `js/api`, `js/services` y `wordExport.js` sin cambios de Fase 6 |
+| Exámenes | PASS: payload conserva `unidad_id`, `batch_id`, `planeacion_ids`, `tipos_pregunta`, `cantidades_pregunta`; no envía `tema_ids` |
+| Compatibilidad | PASS: `window.biblioteca`, `window.renderBibliotecaContent`, Dashboard/Quick Create y ramas sin emisor conservados |
+| Scripts/protegidos | PASS: scripts clásicos en orden; Dashboard, Archivados, CSS, packages y backend intactos |
+| Evidencia manual | PASS acumulativo 6.1–6.3; no requiere repetición en 6.4 |
+
+No hay contradicciones bloqueantes. Deuda no bloqueante: init sin guard,
+listeners confirm acumulables, re-binding tras `innerHTML` y mutaciones
+históricas de render. Quick Create/loaders/Dashboard pertenecen a Fase 7.
+`public.ia_metrics` es externo y preexistente.
+
+**Decisión: A. Fase 6 puede cerrarse.** Fase 6 y Sesión 6.4 completadas;
+auditoría aprobada. Fase 7 pendiente/no iniciada. Prueba manual adicional no
+requerida.

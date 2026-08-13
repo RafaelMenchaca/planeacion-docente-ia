@@ -702,7 +702,8 @@ Dividir gradualmente render y eventos para que `biblioteca.page.js` actúe como 
 
 ### Estado
 
-**En progreso.**
+**Completada.** La auditoría formal 6.4 aprobó el cierre. Fase 7 permanece
+pendiente y no iniciada.
 
 La **Sesión 6.0 — Auditoría técnica/documental de apertura** quedó completada
 sin implementación funcional. El gate post-merge confirmó `refactor-front` en
@@ -713,11 +714,11 @@ listeners permanentes/recreados, las mutaciones durante render, los cruces con
 Quick Create/Dashboard y los límites con Fase 7. El detalle está en
 [`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
 
-La reconciliación de 6.3 confirmó que 6.2 fue validada manualmente y commiteada
-en `ef3364f`. La Sesión 6.3 está **implementada con validación manual
-pendiente**: delegación documental, handler de 23 ramas y search wiring residen
+La reconciliación de 6.4 confirmó que 6.3 fue validada manualmente y commiteada
+en `4306903`: delegación documental, handler de 23 ramas y search wiring residen
 en `js/features/biblioteca/biblioteca-events.js`; la página conserva estado,
-loader, coordinación y compatibilidad.
+loader, coordinación y compatibilidad. Las sesiones funcionales 6.1–6.3 y la
+auditoría acumulativa 6.4 están aprobadas.
 
 Métricas de apertura: `biblioteca.page.js` tiene 2770 líneas, 80 declaraciones
 de función, 22 declaraciones `render*`, 30 `addEventListener`, una asignación
@@ -803,10 +804,10 @@ desalinear acciones, IDs y renders posteriores.
 - **Pruebas:** suite, matriz manual de Fase 6, consola/red, orden de scripts,
   globals y búsqueda de consumidores.
 
-Las Sesiones 6.1 y 6.2 están aprobadas y commiteadas en `cef834e` y `ef3364f`.
-La Sesión 6.3 queda implementada con validación manual pendiente;
-`biblioteca-events.js` es el owner del wiring estructural. La siguiente
-recomendación, sin iniciarla, es **6.4 — Auditoría formal de cierre de Fase 6**.
+Las Sesiones 6.1, 6.2 y 6.3 están aprobadas y commiteadas en `cef834e`,
+`ef3364f` y `4306903`. `biblioteca-events.js` es el owner del wiring
+estructural. La Sesión 6.4 completó y aprobó la auditoría formal; no se crea una
+6.5 y Fase 7 queda pendiente/no iniciada.
 
 #### Resultado técnico de 6.1
 
@@ -846,8 +847,22 @@ recomendación, sin iniciarla, es **6.4 — Auditoría formal de cierre de Fase 
   loader, coordinadores y features permanecen intactos.
 - Orden: `biblioteca.page.js → biblioteca-render.js →
   biblioteca-modal-render.js → biblioteca-events.js → main.js`.
-- Comparación literal, smoke JSDOM, sintaxis y Jest pasan. Manual 6.3 pendiente;
-  Fase 6 no se cierra y 6.4 no se inicia en esta sesión.
+- Comparación literal, smoke JSDOM, sintaxis y Jest pasan. La manual 6.3 aprobó
+  Biblioteca, search, modales, acciones, generación, Quick Create y ausencia de
+  dispatch/requests duplicados; commit `4306903`.
+
+#### Resultado de cierre de 6.4
+
+- Owners canónicos: render no modal, render modal y eventos, sin segunda fuente
+  ni implementación divergente.
+- `biblioteca.page.js` queda en 1317 líneas, 51 funciones nombradas, un wrapper
+  `render*` de preview compatible, cero listeners y 52 operaciones DOM según el
+  patrón de medición de apertura.
+- Las superficies State/Pending, coordinadores de generación, API, contrato de
+  Exámenes, deletes, previews/downloads y DOM observable permanecen intactos.
+- Quick Create, `explorerState`, loader/navegación/reconciliación y Dashboard
+  shell quedan reservados para Fase 7.
+- Decisión: **A. Cerrar Fase 6.** Manual adicional no requerida.
 
 ### Resultado esperado
 

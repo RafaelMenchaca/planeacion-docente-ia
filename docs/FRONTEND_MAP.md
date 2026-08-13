@@ -2182,8 +2182,8 @@ individual/de bloque y ausencia de regresiones; commit real `ef3364f`.
 - Gate: `refactor-front` limpio en `ef3364f`; backend limpio y de solo lectura
   en `refactor-back`/`e08d6e4`.
 - 6.2: validación manual aprobada y commit real `ef3364f`.
-- Decisión: **A. Ownership consolidado implementado.** Manual 6.3 pendiente;
-  Fase 6 sigue En progreso y 6.4 no está iniciada.
+- Decisión: **A. Ownership consolidado implementado.** La manual 6.3 fue
+  aprobada y el corte quedó commiteado en `4306903`.
 
 | Listener/superficie | Clasificación | Owner después de 6.3 | Contrato |
 | --- | --- | --- | --- |
@@ -2249,3 +2249,56 @@ de selección, tabs, search/clear, cuatro modales, Quick Create, retry,
 preview/download, generación, deletes, compatibilidad, acción desconocida y
 bubbling: PASS, una llamada por acción. Owners de render/modal intactos salvo la
 delegación mecánica de search en el primero. Sintaxis, Jest y diff check: PASS.
+
+## Fase 6 — Sesión 6.4: auditoría formal de cierre
+
+### Ownership final
+
+| Dominio | Owner canónico | Segunda fuente | Estado |
+| --- | --- | --- | --- |
+| Render no modal | `js/features/biblioteca/biblioteca-render.js` | No | loading/error visual, shell, sidebar/search, detalle/tabs, cuatro dominios, pending/empty y patches |
+| Render modal | `js/features/biblioteca/biblioteca-modal-render.js` | No | cuatro modales, confirmación, inyección y 29 listeners locales |
+| Eventos | `js/features/biblioteca/biblioteca-events.js` | No | click documental, 23 ramas, search y bindings estructurales |
+| Estado y pending | superficies de Fase 5 en `biblioteca.page.js` | No | una fuente física; owners visuales solo consumen |
+| Loader/coordinación | `biblioteca.page.js` | No | fetch, writes de loading/error, reconcile, open/close/submit y wrappers |
+| Quick Create/Dashboard | `dashboard.page.js` + fachada vigente | No absorbido | reservado para Fase 7 |
+
+El archivo coordinador mide 1317 líneas, 51 funciones nombradas, cero
+`addEventListener`, cero `oninput` y 52 operaciones DOM con el patrón de 6.0.
+Conserva un único `render*`: `renderBibliotecaAnexoModal`, wrapper activo de
+`window.AnexoPreview.render`, no una copia del modal de generación.
+
+La búsqueda global confirmó una implementación por owner. Search queda dividido
+sin duplicación: markup/filtro en render, wiring en eventos y `searchQuery` en
+estado. Loading/error visual vive en render y sus writes/fetch siguen en el
+loader. `window.renderBibliotecaContent` conserva firma, timing y consumidores
+activos de Dashboard, features y coordinación; `window.biblioteca` sigue siendo
+la fachada de Quick Create sin convertirse en store.
+
+### Contratos y cierre
+
+La comparación literal normalizada contra `1254561` pasó para render no modal,
+cuatro modales, confirmación, inyección y eventos. Se mantienen IDs, clases,
+roles, `aria-*`, `data-*`, textos, jerarquía, estados disabled/checked/hidden,
+20 acciones emitidas, 23 ramas, un click documental, un `oninput` y 29
+listeners modales. `toggle-expand`, `generar-anexo` y `regenerar-anexo` quedan
+como compatibilidad/ambigüedad sin emisor confirmado.
+
+Los cuatro State de modal, Selection/Tabs y cuatro Pending mantienen su fuente
+única. Los directorios API/services/generation, Dashboard/Archivados,
+`wordExport.js`, CSS y packages son idénticos al baseline previo a Fase 6. El
+payload de Exámenes conserva `unidad_id`, `batch_id`, `planeacion_ids`,
+`tipos_pregunta` y `cantidades_pregunta`, sin `tema_ids`.
+
+No hay contradicciones bloqueantes. Riesgos no bloqueantes preservados:
+inicialización sin guard, listeners `{ once:true }` potencialmente acumulables,
+mutación histórica durante render modal, re-binding tras `innerHTML`, scripts
+clásicos y estado efímero/requests no cancelables. Quick Create,
+`explorerState`, loader/navegación y globals quedan para fases futuras;
+`public.ia_metrics` es externo y preexistente. Los 17 retries del examen que
+produjo 11/11 preguntas y cero fallos son comportamiento esperado del filtro
+anti-duplicados.
+
+**Decisión: A. Fase 6 puede cerrarse.** Fase 6 y la Sesión 6.4 quedan
+completadas, auditoría aprobada y sin implementación funcional. Fase 7 permanece
+pendiente/no iniciada; no se requiere prueba manual adicional.

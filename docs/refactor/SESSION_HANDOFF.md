@@ -11,9 +11,9 @@
 
 ## Estado del roadmap
 
-- **Última fase cerrada:** 5 — Estado de Biblioteca.
+- **Última fase cerrada:** 6 — Render, DOM y eventos de Biblioteca.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 6 — Render y eventos, En progreso; 6.3 implementada con validación manual pendiente.
+- **Fase actual:** ninguna abierta; Fase 7 está pendiente y no iniciada.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -63,8 +63,8 @@
 - **Sesión 6.0:** auditoría técnica/documental completada y commiteada en `e27cb0a`; sin implementación funcional ni validación manual requerida.
 - **Sesión 6.1:** render no modal extraído, validado manualmente y commiteado en `cef834e`.
 - **Sesión 6.2:** renders modales/confirmación extraídos, manual aprobada y commit `ef3364f`.
-- **Sesión 6.3:** handlers, delegación y search wiring extraídos; estáticas/smoke aprobados, manual pendiente.
-- **Continuación:** completar checklist manual de 6.3; después se recomienda 6.4, todavía no iniciada.
+- **Sesión 6.3:** handlers, delegación y search wiring extraídos; manual aprobada y commit `4306903`.
+- **Sesión 6.4:** auditoría formal aprobada; Fase 6 completada, sin implementación funcional ni manual adicional.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -83,7 +83,8 @@ commiteada en `3842f20`. La Sesión 5.6 quedó aprobada y commiteada en
 6.0 abrió documentalmente Fase 6 y quedó commiteada en `e27cb0a`. 6.1 extrajo
 el render no modal, fue validada manualmente y quedó commiteada en `cef834e`.
 6.2 extrajo DOM/render y wiring local de overlays, fue validada manualmente y
-commiteada en `ef3364f`. 6.3 extrajo el wiring estructural; manual pendiente.
+commiteada en `ef3364f`. 6.3 extrajo el wiring estructural, fue validada y quedó
+commiteada en `4306903`. 6.4 aprobó el cierre formal; Fase 7 sigue pendiente.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3918,8 +3919,8 @@ Cruces activos preservados:
 | --- | --- | --- | --- |
 | 6.1 | render no modal completo: helpers/pending/cards/shell/sidebar/search/detail/tabs/loading-error/patches | Alto | Aprobada; commit `cef834e` |
 | 6.2 | DOM y render/wiring literal de cuatro modales + confirmación | Muy alto | Aprobada; commit `ef3364f` |
-| 6.3 | ownership de delegación y search; modales estabilizados | Alto | Implementada; manual pendiente |
-| 6.4 | auditoría formal de cierre | Alto acumulativo | Pendiente |
+| 6.3 | ownership de delegación y search; modales estabilizados | Alto | Aprobada; commit `4306903` |
+| 6.4 | auditoría formal de cierre | Alto acumulativo | Completada; cierre aprobado |
 
 ### Primera sesión recomendada
 
@@ -3937,8 +3938,8 @@ El nombre definitivo no está fijado. Riesgo: Alto.
 ### Próximo paso reconciliado
 
 6.1 y 6.2 fueron autorizadas, validadas y commiteadas en `cef834e` y `ef3364f`.
-6.3 fue implementada después; su checklist manual queda pendiente y 6.4 no está
-iniciada.
+6.3 fue validada manualmente y commiteada en `4306903`. La auditoría 6.4 cerró
+Fase 6; Fase 7 permanece pendiente y no iniciada.
 
 ### Validaciones de 6.0
 
@@ -4071,8 +4072,8 @@ modales, generaciones y deletes sin regresiones; commit `ef3364f`.
 - Frontend: `refactor-front`, `HEAD ef3364f`, limpio al abrir.
 - 6.2: manual aprobada y commit real `ef3364f`.
 - Backend: `refactor-back`/`e08d6e4`, limpio y solo lectura.
-- Decisión: **A. Ownership consolidado implementado.** Manual pendiente;
-  commit/push no realizados.
+- Decisión: **A. Ownership consolidado implementado.** La manual posterior fue
+  aprobada y el usuario commiteó el corte en `4306903`.
 
 ### Resultado
 
@@ -4108,5 +4109,46 @@ listener estructural y un `oninput`; 29 listeners modales retenidos; DOM ops
 page/event owner 52/9; acciones/ramas 20/23.
 
 Comparación literal de handlers/bindings, smoke JSDOM sin red, `node --check`,
-Jest y diff check pasan. Manual 6.3 pendiente. Después de aprobarla se
-recomienda **6.4 — Auditoría formal de cierre de Fase 6**; no está iniciada.
+Jest y diff check pasan. La manual confirmó carga, selección, tabs, search,
+modales, acciones, generación, Quick Create y ausencia de dispatch/requests
+duplicados.
+
+## Fase 6 — Sesión 6.4: Auditoría formal de cierre
+
+### Gate y reconciliación
+
+- Frontend: `refactor-front`, `HEAD 4306903`, limpio al abrir.
+- Backend: `refactor-back`, `HEAD e08d6e4`, limpio y solo lectura.
+- 6.0 `e27cb0a`; 6.1 `cef834e`; 6.2 `ef3364f`; 6.3 `4306903`.
+- Manual 6.3 aprobada con Biblioteca, cuatro modales, acciones, deletes,
+  generaciones, Quick Create y consola/red sin duplicación ni regresión.
+
+### Resultado acumulativo
+
+Los owners canónicos son `biblioteca-render.js` para render no modal,
+`biblioteca-modal-render.js` para overlays y wiring local, y
+`biblioteca-events.js` para delegación/search. `biblioteca.page.js` queda como
+coordinador de estado, loader/reconcile, open/close/submit, features y
+compatibilidad. No se hallaron copias divergentes ni segunda fuente de State o
+Pending.
+
+Métricas finales de la página: 1317 líneas, 51 funciones nombradas, un wrapper
+`render*` de preview compatible, cero listeners, cero `oninput` y 52 operaciones
+DOM según el patrón de apertura. Conteos efectivos: 20 acciones emitidas, 23
+ramas, un listener documental, un `oninput` y 29 listeners modales.
+
+Los contratos de generación, API, Exámenes, delete, preview/download,
+`window.renderBibliotecaContent`, `window.biblioteca`, DOM y script order están
+intactos. Quick Create, `explorerState`, pending de creación rápida,
+loader/navegación/reconciliación y Dashboard shell quedan reservados para Fase
+7; Archivados/legacy y wrappers conservan sus fases posteriores.
+
+Riesgos no bloqueantes: scripts clásicos/bindings léxicos, `initBiblioteca` sin
+guard, confirmaciones `{ once:true }` potencialmente acumulables, mutaciones de
+estado históricas durante render, estado efímero y requests no cancelables.
+`public.ia_metrics` es externo/preexistente; 17 retries con examen 11/11 y cero
+fallos corresponden al mecanismo anti-duplicados.
+
+**Decisión: A. Fase 6 puede cerrarse.** Sesión 6.4 completada, auditoría
+aprobada, sin implementación funcional ni prueba manual adicional. Fase 7:
+pendiente/no iniciada. Commit y push de 6.4: no realizados.
