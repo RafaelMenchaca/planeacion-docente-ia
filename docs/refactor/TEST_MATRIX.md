@@ -1489,3 +1489,77 @@ históricas de render. Quick Create/loaders/Dashboard pertenecen a Fase 7.
 **Decisión: A. Fase 6 puede cerrarse.** Fase 6 y Sesión 6.4 completadas;
 auditoría aprobada. Fase 7 pendiente/no iniciada. Prueba manual adicional no
 requerida.
+
+## Fase 7 — Sesión 7.0: auditoría técnica/documental de apertura
+
+| Revisión de apertura | Resultado esperado / evidencia 7.0 |
+| --- | --- |
+| Gate frontend | PASS: `refactor-front`, `295d7ed`, limpio y alineado con origin al abrir |
+| Gate backend | PASS: `refactor-back`, `e08d6e4`, limpio y solo lectura |
+| Fases | PASS: 0–6 completadas; 7 abierta; 8–10 pendientes |
+| Código protegido | PASS: JS/HTML/CSS/API/services/backend intactos en 7.0 |
+| Quick Create | Mapeado trigger→jerarquía→staging→SSE→pending→batch real→refetch→render |
+| Batch | Confirmado `force_new_batch` para nuevo y `batch_id` para existente |
+| Estado | Shapes/writers/readers de `explorerState`, pending y Selection/Tabs documentados |
+| Loaders | Init, componentes, auth, jerarquía, previews, Detalle y Biblioteca clasificados |
+| Globals | `window.explorerState`, `window.biblioteca`, wrapper render y feature globals inventariados |
+| Eventos | Dashboard content antes de document Biblioteca; acciones distintas, sin doble dispatch actual |
+| Reload/delete | Estado efímero, SSE no resumible, requests no cancelables y race de delete documentados |
+| Roadmap | 7.1 Quick Create; 7.2 loader/reconcile; 7.3 bootstrap/bindings; 7.4 cierre |
+| Jest | PASS: 1 suite, 2 tests, `npm test -- --runInBand` |
+| Diff | PASS: `git diff --check`; únicamente cinco documentos autorizados |
+
+La Sesión 7.0 no requiere prueba manual porque no cambia comportamiento. Las
+siguientes matrices quedan preparadas, no ejecutadas.
+
+### Matriz preparada para 7.1 — Quick Create completo
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Carga | Dashboard muestra Biblioteca, navbar/footer y CTA sin error de consola |
+| Abrir/cerrar | Hero y CTA vacío abren; X, Cancelar, backdrop y Escape cierran una vez |
+| Validación | Sin temas/nivel/materia muestra el mismo mensaje y conserva panel/datos |
+| Bloque nuevo | Crea/resuelve jerarquía técnica, una request SSE, card temporal y batch real sin duplicado |
+| Bloque existente | Envía batch explícito, no `force_new_batch`, muestra pending en el bloque seleccionado |
+| Actividades | Tres momentos conservan selecciones y payload |
+| Progreso | pending/generating/ready/skipped/error y conteos se actualizan sin doble render visible |
+| Partial success | Recursos exitosos aparecen; fallos/skipped conservan mensaje y pending esperado |
+| Error red/SSE/auth | UI/cleanup equivalentes; sin request repetida ni excepción nueva no controlada |
+| Selección/tab | Cambio durante generación conserva navegación; finish selecciona Planeaciones del batch generado |
+| Reload posterior | Biblioteca reconstruye lo persistido; no promete reanudar SSE |
+| Red/contrato | Mismo endpoint, headers, `unidad_id`, `batch_id`, `force_new_batch`, parser y fallback |
+
+### Matriz preparada para 7.2 — loader y reconciliación
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Carga inicial | loading→conjuntos→selección inicial→render, una sola GET |
+| Retry | error visible y botón retry recuperan sin listeners/requests duplicados |
+| Silent refresh | no reemplaza por loader visual; conserva bloque/tab objetivo |
+| Temporal→real | desaparece tempId, aparece un solo batch real y se conserva Planeaciones |
+| Target explícito | `targetBatchId` gana y selecciona el batch solicitado |
+| Fallback | selección eliminada cae al bloque correcto sin tab huérfano |
+| Generaciones | Planeaciones, Anexos, Listas y Exámenes refetchean en su tab |
+| Deletes | cinco deletes y bloque actualizan optimista y luego estado real |
+| Partial/error | pending y error no se borran antes del comportamiento histórico |
+| Reload | reconstrucción backend sin restaurar estado efímero inventado |
+
+### Matriz preparada para 7.3 — Dashboard bootstrap y bindings
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Arranque | `main.js` invoca una vez Dashboard y Biblioteca |
+| Componentes | layout, navbar y footer cargan; bindings no se duplican |
+| Navegación | navbar, Detalle por URL, back-forward y redirects auth conservados |
+| Biblioteca | selección, tabs, search, modales y acciones completas |
+| Preview/download | Examen y Lista conservan DOM, Escape y descarga |
+| Bubbling | cada `data-bib-action` ejecuta una vez; Dashboard ignora sin error |
+| Script order | ningún `ReferenceError` de actividades, progreso, State/Pending o features |
+| Legacy | árbol/breadcrumbs no aparecen en ruta vigente; no se eliminan todavía |
+
+### Matriz preparada para 7.4 — cierre formal
+
+Suite Jest, `node --check` de scripts movidos, búsquedas globales, comparación
+de payload/SSE, orden de scripts, owners únicos, matriz manual acumulativa
+7.1–7.3, consola/red sin duplicados y repos frontend/backend limpios antes de
+aprobar Fase 7. La auditoría de cierre no abre Fase 8.

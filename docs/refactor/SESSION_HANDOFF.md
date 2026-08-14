@@ -13,7 +13,7 @@
 
 - **Última fase cerrada:** 6 — Render, DOM y eventos de Biblioteca.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** ninguna abierta; Fase 7 está pendiente y no iniciada.
+- **Fase actual:** 7 — Desacoplar Biblioteca de Dashboard; en progreso.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -65,6 +65,7 @@
 - **Sesión 6.2:** renders modales/confirmación extraídos, manual aprobada y commit `ef3364f`.
 - **Sesión 6.3:** handlers, delegación y search wiring extraídos; manual aprobada y commit `4306903`.
 - **Sesión 6.4:** auditoría formal aprobada; Fase 6 completada, sin implementación funcional ni manual adicional.
+- **Sesión 7.0:** auditoría técnica/documental de apertura completada; sin implementación funcional ni manual requerida.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -84,7 +85,8 @@ commiteada en `3842f20`. La Sesión 5.6 quedó aprobada y commiteada en
 el render no modal, fue validada manualmente y quedó commiteada en `cef834e`.
 6.2 extrajo DOM/render y wiring local de overlays, fue validada manualmente y
 commiteada en `ef3364f`. 6.3 extrajo el wiring estructural, fue validada y quedó
-commiteada en `4306903`. 6.4 aprobó el cierre formal; Fase 7 sigue pendiente.
+commiteada en `4306903`. 6.4 aprobó el cierre formal y el commit acumulativo de
+Fase 6 es `295d7ed`. La Sesión 7.0 abrió Fase 7 solo en documentación.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -4152,3 +4154,105 @@ fallos corresponden al mecanismo anti-duplicados.
 **Decisión: A. Fase 6 puede cerrarse.** Sesión 6.4 completada, auditoría
 aprobada, sin implementación funcional ni prueba manual adicional. Fase 7:
 pendiente/no iniciada. Commit y push de 6.4: no realizados.
+
+## Fase 7 — Sesión 7.0: Auditoría técnica/documental de apertura
+
+### Gate e identidad
+
+- Frontend: `refactor-front`, `HEAD 295d7ed`, limpio y alineado con
+  `origin/refactor-front` al abrir.
+- Backend: `refactor-back`, `HEAD e08d6e4`, limpio y solo lectura.
+- El historial confirma cierre de Fase 6 en `295d7ed` y cierre documental en
+  `8ad0b0d`.
+- Fases 0–6 completadas; Fase 7 en progreso por 7.0; Fases 8–10 pendientes.
+- La sesión no modificó JS, HTML, CSS, APIs, services, packages ni backend; no
+  hizo commit ni push.
+
+### Pregunta central resuelta
+
+`dashboard.page.js` conserva mezcla activa de bootstrap, Quick Create,
+jerarquía técnica, preview/compatibilidad y código visual legacy.
+`biblioteca.page.js` conserva estado, fachada, loader y dos niveles de
+reconciliación. Quick Create cruza ambos owners mediante `explorerState`,
+`window.biblioteca` y `window.renderBibliotecaContent`.
+
+La separación segura no empieza retirando globals: primero debe moverse Quick
+Create como unidad funcional, preservando la fachada. Después puede separarse
+loader/reconcile con sus consumidores ya delimitados, y por último reducirse
+Dashboard a bootstrap/navegación/bindings activos. El aislamiento visual legacy
+continúa reservado para Fase 8 y el retiro final de wrappers para Fase 10.
+
+### Flujo y contratos confirmados
+
+- Quick Create usa título existente/nuevo, nivel, materia y temas; resuelve o
+  crea plantel/grado/materia/unidad técnica y genera por
+  `/api/unidades/:unidadId/generar?stream=1`.
+- Bloque nuevo: no envía `batch_id`; conserva `force_new_batch:true`,
+  `mode:"create"` y `titulo_conjunto`. Bloque existente: usa
+  `pendingBatchId` como `batch_id`.
+- El modal normal de Planeaciones usa el mismo service/SSE, pero siempre envía
+  batch explícito y escribe `BibliotecaPlaneacionesPending`; no se unifica.
+- El feedback activo de Quick Create se muestra en la card temporal/pendiente de
+  Biblioteca. Las secciones generating/result del panel no tienen invocador
+  confirmado y no se eliminan.
+- `pendingConjunto` tiene shape temporal completo de conjunto y se mapea al
+  `batch_id` real optimista/refetch. Selection/Tabs/Pending protegidos conservan
+  una sola fuente.
+- `loadAndRenderBiblioteca` controla carga normal/silenciosa, sesión, GET,
+  reconciliación, fallback de selección/tab, error/loading y render. Tiene 15
+  call sites en init/retry/generations/deletes/Quick.
+
+### Riesgos conservados
+
+- Pending, SSE, progreso, selección y tab no persisten. Reload no reanuda y
+  puede reconstruir solo lo ya guardado por backend.
+- No hay AbortController ni timeout cliente para planeaciones. Navegar, logout
+  o delete no cancelan generación.
+- Delete de bloque existente durante Quick limpia Pending pero no
+  `pendingBatchId` ni la request; finish/delete/refetch pueden competir.
+- Si falla jerarquía después de que el panel cerró, el error queda solo en
+  consola. Error de generación sí actualiza progress/card.
+- El mapping sin `targetBatchId` infiere el batch nuevo por diferencia de IDs;
+  hay riesgo de selección/tab/card incorrectos bajo carreras.
+- Scripts clásicos sostienen bindings léxicos de actividades/progreso entre
+  Dashboard y Biblioteca. Reordenarlos prematuramente rompe resolución.
+- El listener de Dashboard en `#explorer-content` y el documental de Biblioteca
+  coexisten sin doble dispatch porque usan `data-content-action` y
+  `data-bib-action` distintos; no alterar esta frontera sin prueba.
+
+### Roadmap aprobado para ejecución posterior
+
+1. **7.1 — Quick Create completo.** Owner específico con estado/DOM/listeners,
+   jerarquía técnica, staging/progreso y coordinación, conservando fachada,
+   payload, SSE, parser, timing y wrappers.
+2. **7.2 — Loader + reconciliación de Biblioteca.** Separar fetch/reconcile sin
+   mover State/Pending ni cambiar cargas silenciosas, callbacks o renders.
+3. **7.3 — Bootstrap/navegación y bindings activos.** Reducir Dashboard después
+   de los dos cortes anteriores; conservar bridges con consumidores y no aislar
+   legacy todavía.
+4. **7.4 — Auditoría formal de cierre.** Evidencia acumulativa; sin abrir Fase 8.
+
+### Siguiente sesión recomendada
+
+**7.1 — extracción consolidada de Quick Create.** Va primero porque concentra
+el único flujo vigente que escribe simultáneamente `explorerState`, fachada y
+estado pending de Biblioteca. Es reversible y manualizable; permite mantener
+los wrappers y deja una frontera clara para extraer reconciliación después.
+
+No debe mover `PlaneacionGeneration`, State/Pending protegidos, API/service SSE,
+payloads, previews/downloads/delete, Archivados, árbol visual ni wrappers
+finales. Manual futura: carga, abrir/cancelar/validar, bloque nuevo/existente,
+success/partial/error, progreso, reconcile, selección/tab, reload y una sola
+request.
+
+### Estado de salida
+
+- Fase 6: Completada.
+- Fase 7: En progreso.
+- Sesión 7.0: Auditoría de apertura completada.
+- Implementación funcional: No realizada.
+- Manual: No requerida.
+- `npm test -- --runInBand`: PASS, 1 suite y 2 tests.
+- `git diff --check`: PASS; solo documentación autorizada modificada.
+- Backend final: limpio y sin cambios.
+- Commit/push: No realizados.

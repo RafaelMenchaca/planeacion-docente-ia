@@ -29,8 +29,8 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
 | 4 | Generación y polling | Separar procesos largos | Alto | Completada |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Completada |
-| 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | En progreso |
-| 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
+| 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Completada |
+| 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | En progreso |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Pendiente |
 | 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Pendiente |
 | 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
@@ -899,7 +899,8 @@ Quitar dependencias activas de `dashboard.page.js` que pertenecen a Biblioteca s
 
 ### Estado
 
-**Pendiente.**
+**En progreso.** La Sesión 7.0 completó la auditoría técnica/documental de
+apertura sin implementación funcional. La ejecución de 7.1 no ha comenzado.
 
 ### Dependencias
 
@@ -920,6 +921,60 @@ Previews, descargas, creación/progreso de planeaciones, confirmaciones, helpers
 ### Procedimiento recomendado
 
 Crear inventario bidireccional Dashboard↔Biblioteca, resolver una dependencia por sesión, preservar wrapper en el propietario anterior y validar inicialización/orden.
+
+### Sesiones propuestas después de la auditoría 7.0
+
+#### 7.1 — Extraer el coordinador completo de Quick Create
+
+- Mover como unidad el estado propio, comboboxes, DOM, validación, resolución de
+  jerarquía técnica, staging, progreso y coordinación SSE actualmente vigentes
+  en `dashboard.page.js`.
+- Conservar sin cambios `generarPlaneacionesUnidadConProgreso`, endpoint,
+  payload, parser, fallback HTTP, `force_new_batch`, `batch_id`, `unidad_id`,
+  mensajes, orden, tiempos y fachada `window.biblioteca`.
+- Mantener wrappers léxicos o globales donde `biblioteca-events.js`, el shell o
+  previews todavía consuman firmas de Dashboard.
+- No absorber el modal normal de Planeaciones ni `PlaneacionGeneration`: ambos
+  comparten transporte, pero sus pending, parser de eventos y contrato de batch
+  siguen siendo distintos.
+
+Pruebas: carga Dashboard/Biblioteca, abrir/cancelar/validar Quick Create, bloque
+nuevo y existente, progreso y resultado total/parcial/error, selección/tab,
+reload posterior, consola y una sola petición de generación.
+
+#### 7.2 — Separar loader y reconciliación de Biblioteca
+
+- Dar owner identificable a `loadAndRenderBiblioteca()` y a la reconciliación
+  `tempId -> batch_id` sin crear un gestor genérico ni otra fuente de estado.
+- Conservar `BibliotecaSelection`, `BibliotecaTabs`, los cuatro Pending y la
+  mutación física en `bibliotecaState`.
+- Mantener iguales carga normal/silenciosa, fallback de selección, tab objetivo,
+  error/loading, renders, refetches de generación/delete y fachada `refresh`.
+
+Pruebas: carga inicial/retry, bloque temporal a real, generación normal y Quick
+Create, success parcial, cambios de selección/tab durante refetch, deletes,
+reload y ausencia de cards/batches duplicados.
+
+#### 7.3 — Reducir Dashboard a bootstrap/navegación y bindings activos
+
+- Delimitar `initDashboardPage`, inyección de layout/chrome, binding único del
+  shell y navegación vigente; mover únicamente helpers compartidos que sigan
+  bloqueando Biblioteca tras 7.1–7.2.
+- Mantener el bridge `renderExplorerContent -> window.renderBibliotecaContent`
+  mientras tenga consumidor y no aislar ni eliminar todavía el explorador
+  visual legacy.
+- Clasificar los bindings de actividades y preview como owner Biblioteca,
+  compartido activo o wrapper; el retiro final de globals queda en Fase 10.
+
+Pruebas: arranque directo/refresh/back-forward, navbar/sidebar/footer, Quick
+Create, Biblioteca, Detalle, previews/downloads, Escape, bubbling sin doble
+dispatch y revisión de orden de scripts.
+
+#### 7.4 — Auditoría formal de cierre
+
+Auditar ownership, fuentes únicas, búsquedas globales, orden de scripts,
+wrappers conservados y matriz acumulativa. No incluir nuevas extracciones ni
+abrir Fase 8 dentro de esta sesión.
 
 ### Resultado esperado
 

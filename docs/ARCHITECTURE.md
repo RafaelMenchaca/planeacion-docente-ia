@@ -361,6 +361,104 @@ navegación, reconciliación y bindings activos de Dashboard. Los wrappers
 `window.biblioteca` y `window.renderBibliotecaContent` siguen siendo
 compatibilidad activa, no un bloqueo para cerrar Fase 6.
 
+## Fase 7: frontera real Dashboard / Quick Create / Biblioteca
+
+La auditoría de apertura 7.0 confirmó que el arranque vigente no ejecuta la
+hidratación del explorador visual, pero sí carga `dashboard.page.js` completo
+porque conserva tres responsabilidades activas: bootstrap del shell, Quick
+Create y bindings/previews compartidos. La arquitectura ejecutable es:
+
+```text
+main.js / DOMContentLoaded
+  -> initDashboardPage
+     -> injectComponent(components/layout.html)
+     -> initPrivateChrome (navbar + footer + sesión visual)
+     -> bindDashboardEvents
+     -> initBiblioteca
+        -> injectBibliotecaModals
+        -> BibliotecaEvents.bind
+        -> loadAndRenderBiblioteca
+           -> GET /api/biblioteca/conjuntos
+           -> selection/tabs/reconcile
+           -> renderBibliotecaContent
+```
+
+`hydrateExplorerData()` queda detrás del retorno de Biblioteca y no se ejecuta
+en `pages/dashboard.html`. Sin embargo, los loaders jerárquicos
+`loadPlanteles`/`ensureGrados`/`ensureMaterias`/`ensureUnidades` sí son activos
+cuando se abre Quick Create: resuelven o crean IDs técnicos antes del POST de
+planeaciones. Por ello la jerarquía técnica no es legacy aunque el árbol y los
+breadcrumbs sí sean visuales legacy en esta ruta.
+
+### Quick Create vigente
+
+```text
+#btn-hero-quick-create o data-bib-action="crear-planeaciones"
+  -> openQuickCreatePanel
+  -> carga jerarquía técnica y bloques de window.biblioteca
+  -> valida título/nivel/materia/temas
+  -> resuelve o crea plantel/grado/materia/unidad técnica
+  -> copia quickCreate.temas a stagingTemas
+  -> bloque existente: pendingBatchId + PlaneacionesPending
+     bloque nuevo: pendingConjunto(tempId)
+  -> generarPlaneacionesUnidadConProgreso
+     POST /api/unidades/:unidadId/generar?stream=1
+  -> explorerState.progress recibe SSE
+  -> finishPlaneacionesGeneration
+  -> optimista tempId/batch real + refetch silencioso
+  -> render de Biblioteca
+```
+
+El panel se cierra antes de iniciar la resolución asíncrona. Sus secciones DOM
+`quick-create-generating` y `quick-create-result` y las funciones que las
+actualizarían no tienen consumidor confirmado; el feedback activo aparece en
+Biblioteca. Esta evidencia solo clasifica deuda: no autoriza borrado.
+
+Quick Create y el modal normal de Planeaciones comparten el service/API SSE,
+pero no son el mismo coordinador. Quick Create puede enviar
+`force_new_batch:true`, `mode:"create"` y `titulo_conjunto`, usa
+`explorerState.progress`, `pendingConjunto` y la fachada. El modal normal envía
+siempre el `batch_id` explícito, escribe `BibliotecaPlaneacionesPending` y
+procesa directamente los tipos de evento. Unificarlos modificaría pending,
+reconciliación y manejo parcial; queda prohibido en 7.0.
+
+### Frontera de loader y reconciliación
+
+`loadAndRenderBiblioteca(options)` sigue siendo coordinador legítimo, aunque
+mezcla fetch y reconciliación. Captura selección/tab/temporal previos, controla
+loading/error, requiere sesión, obtiene conjuntos, intenta mapear `tempId` al
+batch nuevo —preferentemente con `targetBatchId`, de otro modo por diferencia
+de IDs—, restaura selección/tab, reemplaza `conjuntos` y renderiza. Sus 15 call
+sites incluyen init, retry, Quick Create, las cuatro generaciones y deletes.
+
+La reconciliación optimista también se reparte entre
+`finishBibliotecaPlaneacionesGeneration`,
+`applyOptimisticPlaneacionesToConjunto`, `mergePlaneaciones` y el propio
+loader. No hay persistencia frontend de pending, selección, tab o progreso.
+Reload reconstruye solo recursos ya persistidos por backend; no reanuda SSE ni
+recupera el batch temporal.
+
+### Bridges activos
+
+- `window.biblioteca` es una fachada estrecha de comunicación con Quick Create:
+  expone `pendingBatchId`, lectura de conjuntos, selección, alta de pending,
+  finish y refresh. No es la fuente física de estado, pero sí un puente activo.
+- `window.renderBibliotecaContent` es usado por el bridge de Dashboard y por el
+  alta temporal de Quick Create; features de Biblioteca llaman además al
+  binding léxico del mismo nombre. Su retiro corresponde a Fase 10.
+- `window.explorerState` sigue siendo un store accidental mixto. Quick Create
+  usa `quickCreate`, `current`, staging, `progress`, `generating` y caches
+  jerárquicos; los previews de Exámenes/Listas consumen otros campos. No puede
+  eliminarse como bloque.
+- Los bindings léxicos de actividades didácticas y los wrappers
+  `renderProgressPill`/`statusLabelFromTone` nacen en Dashboard y son leídos por
+  Biblioteca debido al orden de scripts clásicos.
+
+El objetivo de Fase 7 es terminar con owners identificables para Quick Create,
+loader/reconcile de Biblioteca y bootstrap/navegación de Dashboard, conservando
+los bridges mientras tengan consumidores. Archivados/aislamiento legacy siguen
+en Fase 8 y el retiro final de wrappers/globals en Fase 10.
+
 ## Páginas
 
 | Página | Clasificación |

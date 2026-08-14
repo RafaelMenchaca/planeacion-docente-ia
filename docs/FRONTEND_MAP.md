@@ -2302,3 +2302,339 @@ anti-duplicados.
 **Decisión: A. Fase 6 puede cerrarse.** Fase 6 y la Sesión 6.4 quedan
 completadas, auditoría aprobada y sin implementación funcional. Fase 7 permanece
 pendiente/no iniciada; no se requiere prueba manual adicional.
+
+## Fase 7 — Sesión 7.0: auditoría técnica/documental de apertura
+
+### Gate, alcance y métricas
+
+- Frontend: `refactor-front`, `HEAD 295d7ed`, alineado con
+  `origin/refactor-front` y limpio al abrir. El commit de cierre de Fase 6 es
+  `295d7ed`; `8ad0b0d` contiene su cierre documental.
+- Backend: `refactor-back`, `HEAD e08d6e4`, limpio y solo lectura.
+- Fases 0–6: completadas. Fase 7: en progreso por esta auditoría. Fases 8–10:
+  pendientes y fuera de alcance.
+- No se modificó código, HTML, CSS, API, services ni backend.
+
+| Métrica estática | Resultado |
+| --- | ---: |
+| `dashboard.page.js` | 5690 líneas |
+| `biblioteca.page.js` | 1317 líneas |
+| Declaraciones `function` nombradas en Dashboard, incluidas locales | 216 |
+| Call sites sintácticos `addEventListener` en Dashboard | 44 |
+| Exportaciones `window.*` escritas al final de Dashboard | 7 |
+| Tokens `explorerState` en Dashboard | 603 |
+| Ocurrencias `window.explorerState` en todo `js/` | 20 |
+| Funciones del conjunto funcional Quick Create | 37 |
+| Funciones/coordinadores de carga relevantes | 15 |
+| Funciones/bloques de reconciliación de Biblioteca | 6 |
+| Líneas consumidoras de `window.biblioteca` en JS | 19 |
+| Líneas consumidoras/definidoras de `window.renderBibliotecaContent` | 5 |
+
+Los 44 call sites no equivalen a 44 listeners efectivos: cinco instancias de
+`createQuickCombobox()` vuelven a ejecutar sus listeners locales/documentales y
+varios call sites están dentro de bucles de IDs. `isDashboardBound` evita una
+segunda ejecución de `bindDashboardEvents`, pero no existe cleanup.
+
+### Inventario funcional de `dashboard.page.js`
+
+Cada función nombrada cae dentro de uno de estos bloques contiguos; las
+excepciones activas se enumeran expresamente. La clasificación usa A–J del
+prompt de apertura.
+
+| Líneas / funciones | Clasificación | Evidencia de consumidor |
+| --- | --- | --- |
+| 147 `createExamModalState` | H legacy visual | Modal de examen jerárquico; no lo usa Biblioteca |
+| 161–216 storage/location | D navegación + H legacy | `restorePersistedExplorerLocation`, `pageshow`; Biblioteca retorna antes de hydrate |
+| 218–358 helpers `Actividad*` | I compartido activo | Quick Create, staging legacy y modal Planeaciones de Biblioteca |
+| 369–391 imagen/momento | I compartido activo | Normaliza payload de Quick Create/staging; UI de imágenes está pausada |
+| 427 `syncBodyScrollLock` | A Dashboard + B Quick Create | Panel y overlays compartidos |
+| 437 `injectComponent` | A Dashboard vigente + C loader | Inyecta `components/layout.html` |
+| 447–478 sort/order/error/archive filter | I compartido | Quick Create y jerarquía técnica/legacy |
+| 487–591 getters/hierarchy metadata | F jerarquía técnica + H legacy | Quick Create consume getters/caches; archive/árbol son legacy |
+| 596 `setCurrentLevel` | D/H, con estado compartido | Navegación legacy; Quick Create escribe `current` directamente |
+| 620–644 progreso/duplicado | B/E/I activos | SSE de Quick Create y staging legacy |
+| 647–813 `loadPlanteles`, `ensure*`, hydrate por tema | C/F loaders | Quick Create usa plantel/grado/materia/unidad; temas/exámenes/listas sirven árbol legacy |
+| 815–844 formato/notice | I compartido | Renders/previews legacy y acciones de descarga |
+| 846–969 `select*`, restore/refresh | D/H navegación legacy | Árbol, breadcrumbs y `pageshow`; no init vigente |
+| 970–1294 shell/tree/header/delete modal render | H legacy visual | Inalcanzable por init Biblioteca salvo DOM estable compartido |
+| 1295–2137 examen/lista legacy y polling | H + G compatibilidad | Biblioteca usa features separadas; previews aún comparten `explorerState`/DOM |
+| 2138–2716 delete/archive jerárquico | F/H y cruce Archivados | No mover: registry/Archivados y árbol consumen partes distintas |
+| 2717–3459 comboboxes, formulario y panel Quick | B vigente | Hero y `data-bib-action="crear-planeaciones"` |
+| 3460–3817 render de árbol por niveles | H legacy visual | Sin ejecución en ruta vigente |
+| 3818 `renderProgressPill` | I/G compartido | Biblioteca render y progreso legacy/Quick |
+| 3823–3890 progreso/examen render | H legacy, con helper I | Solo árbol; progreso también alimenta card pending de Biblioteca |
+| 3896–3924 wrappers preview/download | G compatibilidad activa | Biblioteca, previews, Escape y legacy; retiro Fase 10/8–9 según consumidor |
+| 3927–4153 unidad/examen/staging render | H legacy visual | Sin ejecución principal |
+| 4154 `renderExplorerContent` | G bridge activo | Despacha a `window.renderBibliotecaContent` en modo Biblioteca |
+| 4176 `renderAll` | H coordinador legacy | No corre tras init Biblioteca; sí puede ser llamado por `pageshow` |
+| 4192–4318 staging DOM | H legacy + I compartido | Quick Create reutiliza shape, no estos inputs |
+| 4319–4454 parser/progreso/result | B/E/I vigente | Quick Create usa exactamente estas funciones para SSE y partial success |
+| 4455–4560 generación desde staging | B vigente + G bridge | Quick Create la invoca; también soporta ruta legacy |
+| 4562–4757 `submitQuickCreateForm` | B/C/E/F vigente | Resuelve jerarquía, crea pending, genera y reconcilia |
+| 4759–5180 modal/entity/tree handlers | F/H legacy | Creación/edición/navegación jerárquica; no ruta principal |
+| 5181 `ensureDefaultPlantel`, 5173/5177 grados | B/C/F vigente | Jerarquía técnica oculta de Quick Create |
+| 5189 `initQuickComboboxes` | B vigente | Binding único de Dashboard |
+| 5321 `bindDashboardEvents` | A/B/G + H | Mezcla shell/Quick/previews con listeners legacy |
+| 5619 `hydrateExplorerData` | H legacy visual | Rama solo sin `initBiblioteca` |
+| 5643 `initDashboardPage` | A/C vigente | Bootstrap canónico; retorna tras `initBiblioteca` |
+
+Funciones sin consumidor confirmado después de buscar JS, HTML, `data-*`,
+handlers y aliases: `renderActividadCierreStatus`,
+`showQuickCreateGeneratingSection` y `showQuickCreateResultSection`. Las dos
+últimas corresponden a DOM todavía presente. Se clasifican J, no se eliminan.
+`renderActividadCierreControl` tampoco tiene emisor confirmado, pero comparte el
+contrato de actividades y queda I/J hasta Fase 7.3. Las funciones comentadas de
+imágenes automáticas no son declaraciones ejecutables.
+
+### Shape y ownership real de `window.explorerState`
+
+| Propiedad | Shape real | Writers | Readers / ruta | Persistencia | Clasificación |
+| --- | --- | --- | --- | --- | --- |
+| `planteles` | `[]` | `loadPlanteles` | Quick Create, árbol, default plantel | API reconstruible | F técnica activa + H |
+| `gradosByPlantel` | `{[plantelId]:[]}` | `ensureGrados` | Quick Create y árbol | API reconstruible | F técnica activa + H |
+| `materiasByGrado` | `{[gradoId]:[]}` | `ensureMaterias` | Quick Create y árbol | API reconstruible | F técnica activa + H |
+| `unidadesByMateria` | `{[materiaId]:[]}` | `ensureUnidades` | Quick Create y árbol | API reconstruible | F técnica activa + H |
+| `temasByUnidad` | `{[unidadId]:[]}` | `ensureTemas` | árbol/generación legacy | API reconstruible | H/compatibilidad |
+| `examenesByUnidad` | mapa de arrays | `ensureExamenes` | examen legacy | API reconstruible | H |
+| `examenDetalleById` | cache por ID | `ExamPreview` | preview activo y legacy | refetchable | G compartido activo |
+| `planeacionByTema` | cache por tema | hydrate | árbol/detalle legacy | refetchable | H/F |
+| `listasCotejoByUnidad` | cache por unidad | loader/list preview | lista legacy y preview | refetchable | G/H |
+| `loading`, `errors` | objetos por dominio | loaders jerárquicos | Quick selectors y renders legacy | no | C/F/H mixto |
+| `expandedPlanteles/Grados/Materias` | `Set` | navegación | árbol | no | H legacy |
+| `current` | `{level,plantelId,gradoId,materiaId,unidadId}` | navegación; Quick asigna objeto | contexto técnico, legacy, preview lista | sessionStorage solo vía navegación legacy | B/F/H mixto |
+| `stagingTemas` | array tema `{localId,titulo,duracion,actividades_momentos,actividad_cierre,generar_imagenes_en}` | Quick copia; staging legacy | generador común | no | B vigente + H |
+| `stagingTituloConjunto` | string | Quick | payload `titulo_conjunto` | no | B vigente |
+| `stagingContext` | objeto/null | Quick/legacy | `buildLegacyContext` | no | B vigente + compatibilidad |
+| `stagingPanelOpen` | boolean | staging legacy | render legacy | no | H |
+| `progress` | `{total,completed,items,finalMessage,finalTone}` | SSE/result/error | card pending Biblioteca y render legacy | no | B/E bridge activo |
+| `quickCreate` | `{open,temas,requestVersion:{grado,materia,unidad},selectedConjunto}` | panel/selects | Quick DOM/submit/Escape | no | B vigente |
+| `searchQuery` | string | tree search | árbol | no | H |
+| `generating` | boolean | generador `try/finally` | guard, payload UI y renders | no | B vigente + H |
+| `examGeneration`, `examModal`, `listaCotejoModal`, `listaCotejoGeneration` | objetos legacy | coordinadores legacy | modales/renders legacy | no | H |
+| `examPreview`, `listaCotejoPreview` | objetos de modal/cache | features de preview | DOM activo, Escape, Biblioteca/legacy | no | G compartido activo |
+| `modal`, `confirmDelete` | objetos de UI jerárquica | Dashboard | DOM/Escape legacy | no | H |
+
+`window.explorerState` se escribe una vez como alias del objeto léxico al final
+de Dashboard. Los features de preview escriben propiedades internas del mismo
+objeto; no existe copia. Solo `current` tiene helper de `sessionStorage`, pero
+Quick Create asigna `current` sin llamar `persistExplorerLocation`.
+
+### Flujo completo de Quick Create
+
+```text
+hero / Biblioteca empty CTA
+  -> openQuickCreatePanel
+  -> loadPlanteles + ensureAllGrados
+  -> initQuickCreateForm
+  -> título existente/nuevo + nivel + materia + temas/actividades
+  -> submitQuickCreateForm
+  -> validación síncrona (panel permanece si falla)
+  -> panel se cierra
+  -> ensureDefaultPlantel
+  -> resolve/create grado -> materia -> unidad "Bloque de planeacion"
+  -> current + stagingTemas + stagingContext
+  -> existing: pendingBatchId + startPlaneacionesGeneration
+     new: pendingConjunto(tempId) + renderBibliotecaContent
+  -> generatePlaneacionesFromStaging
+  -> body + POST SSE
+  -> updateProgressFromEvent -> render bridge -> Biblioteca
+  -> applyGenerateResult
+  -> finishBibliotecaPlaneacionesGeneration
+  -> temp/real optimistic mapping + selected batch/tab
+  -> silent refetch/reconcile -> render
+  -> finally clears generating and pendingBatchId
+```
+
+| Paso | Owner actual | Lee | Escribe | API/DOM/callback | Siguiente / riesgo |
+| --- | --- | --- | --- | --- | --- |
+| Trigger | Dashboard + BibliotecaEvents | hero / `data-bib-action` | `quickCreate.open` | panel/backdrop | Dos emisores, una función léxica |
+| Preparación | Dashboard | Biblioteca facade + caches | temas/requestVersion/selection | loads jerárquicos | Requiere Dashboard aunque árbol no se use |
+| Inputs | Quick DOM | comboboxes/select/tema | `quickCreate.*` | 5 comboboxes y listeners | Listeners documentales sin cleanup |
+| Validación | `submitQuickCreateForm` | temas/nivel/materia/título | error DOM | sin API | Solo esta fase mantiene panel abierto |
+| Jerarquía | mismo coordinador | caches y selección | plantel/grado/materia/unidad | APIs jerárquicas | Error posterior queda solo en consola porque panel cerró |
+| Staging | mismo | quick temas | current/staging/context | memoria | Segunda representación intencional temporal |
+| Pending existente | facade Biblioteca | conjunto seleccionado | `pendingBatchId`, Selection/Tab/Pending | render Biblioteca | ID real reutilizado |
+| Pending nuevo | facade Biblioteca | título/meta | `pendingConjunto(tempId)`, Selection/Tab | render Biblioteca | Temporal no persistido |
+| Generación | Dashboard/service/API | staging/context/pendingBatchId | `generating`, `progress` | POST SSE; callback evento | Sin AbortController/timeout cliente |
+| SSE parser | `jerarquia.api` + Dashboard | chunks | progress items | ignora JSON malformado; error SSE lanza | HTTP >=500 cae a POST no stream |
+| Resultado | Dashboard | resultados/results/items/temas/planeaciones | progress final | total/parcial/skipped/error | `duplicate_tema` se presenta como skipped |
+| Finish | Biblioteca coordinator | result + progress | pending/optimista/selection/tab | render + refetch | Mapping depende de batch real |
+| Reconcile | loader | prev temp/list + nueva lista | conjuntos/selection/tab | GET Biblioteca | Sin target, usa diferencia de IDs |
+| Cleanup | Dashboard `finally` | flags/facade | `generating=false`, pendingBatchId null | render | `pendingConjunto` lo limpia finish/load, no finally |
+
+### Quick Create frente a generación normal de Planeaciones
+
+| Contrato | Quick Create | `PlaneacionGeneration` normal |
+| --- | --- | --- |
+| Endpoint | `/api/unidades/:unidadId/generar?stream=1` | el mismo |
+| Service/parser base | `generarPlaneacionesUnidadConProgreso` + parser SSE de jerarquía | el mismo |
+| Unidad | resuelta/creada por jerarquía técnica | `conjunto.unidad_id` ya conocido |
+| Batch nuevo | sin `batch_id`; `force_new_batch:true`, `mode:"create"` | nunca |
+| Batch existente | `pendingBatchId` -> `batch_id` | `batch_id: conjuntoId` directo |
+| Payload adicional | `titulo_conjunto`, contexto materia/nivel, actividades | materia/nivel, temas snapshot |
+| Progreso | parser flexible `mapEventToProgress` en `explorerState.progress` | tipos SSE directos sobre `BibliotecaPlaneacionesPending` |
+| Pending | `pendingConjunto` o pending mediante facade | Pending protegido por batch real |
+| Reconcile | finish optimista + refetch | optimista + refetch al mismo batch |
+| Partial/error | aplica múltiples shapes; conserva pending si `error_count>0` | conserva `pending.error`; catch no limpia |
+| Render | bridge `renderExplorerContent` / wrapper global | binding léxico `renderBibliotecaContent` |
+
+Puede compartirse ownership del transporte/service existente, normalización de
+actividades y presentación base. Deben permanecer separados la resolución de
+jerarquía, creación de batch, pending temporal, parsers de progreso y cleanup.
+
+### Estado mixto de reconciliación
+
+| Estado | Fuente física | Writers | Readers | Persistencia | Clasificación / fase |
+| --- | --- | --- | --- | --- | --- |
+| `pendingBatchId` | `bibliotecaState` | setter facade desde Quick; finally/fallback | payload Quick | no | bridge B–Biblioteca; F7 |
+| `pendingConjunto` | `bibliotecaState` | facade, optimista, loader | sidebar/detail/render/reconcile | no | staging optimista + loader state; F7 |
+| `quickCreate` | `explorerState` | panel/select/listeners | panel/submit/Escape | no | Quick vigente; F7 |
+| `progress` | `explorerState` | SSE/result/error | pending card y legacy progress | no | bridge real; F7 |
+| `generating` | `explorerState` | generador | guard/render/cleanup | no | Quick + legacy; F7 |
+| `current`/staging/context/title | `explorerState` | Quick/navegación | generador/contexto | `current` parcial solo por ruta legacy | técnico/Quick/legacy; F7–8 |
+| `conjuntos` | `bibliotecaState` | loader/optimista/deletes | render, Quick facade/features | backend refetch | Biblioteca vigente |
+| Selection/Tabs | superficies protegidas | Quick, loader, events, deletes | render/features | no | Biblioteca vigente protegida |
+
+El mapping temporal→real tiene dos caminos: el finish usa el `batch_id` de la
+respuesta y convierte el objeto pending; el refetch usa `targetBatchId` o, sin
+él, el primer ID nuevo respecto a `prevConjuntos`. `mergePlaneaciones` deduplica
+solo por ID. Riesgos: doble card si el backend devuelve shape/ID inesperado,
+card huérfana si no hay batch, selección/tab perdidos por fallback, pending
+huérfano en error y race entre optimista/refetch.
+
+### Loaders, refresh y reconciliación
+
+| Función | Trigger/owner | Fetch | Writes/render | Quick/Biblioteca | Riesgo |
+| --- | --- | --- | --- | --- | --- |
+| `protegerRuta` | `main.js` no awaited | Supabase session | redirect/currentUser | ambos | init puede avanzar mientras auth resuelve |
+| `requireSession` | APIs/loaders | Supabase session | redirect/null | ambos | early return puede dejar UI transitoria |
+| `injectComponent` | init Dashboard | `components/layout.html` | root DOM | shell | fallo detiene init |
+| `initPrivateChrome/loadPrivateComponent` | DOMContentLoaded e init | navbar/footer HTML + user | DOM/listeners | Dashboard | doble invocación protegida por contenido/data flags |
+| `loadPlanteles` | Quick/legacy | jerarquía planteles | cache/loading/error | Quick activo | reload completo y default por primer item |
+| `ensureGrados/Materias/Unidades` | Quick/legacy | jerarquía | caches por ID | Quick activo | cache salvo `force`; requestVersion solo protege UI |
+| `ensureTemas` + hydrate | legacy/generador finish | temas + planeación por tema | caches/render indirecto | Quick lo fuerza después de generar aunque Biblioteca no lo renderiza | requests N+1 |
+| `ensureExamenes/ensureListasCotejo` | selección legacy | APIs por unidad | caches | no ruta principal | F8, no mover con Quick |
+| `hydrateExplorerData` | rama sin Biblioteca | jerarquía completa | árbol/render | no vigente | H legacy |
+| `loadAndRenderBiblioteca` | init/retry/refresh/generation/delete | GET conjuntos | loading/error/list/selection/tab/pending + render | ambos | mezcla loader/reconcile |
+| `finishBibliotecaPlaneacionesGeneration` | Quick callback | llama refetch silencioso | optimista/pending/selection/tab | Quick→Biblioteca | batch ausente/partial |
+| previews Examen/Lista | card actions | detalle por ID | cache/modal DOM | Biblioteca + legacy | dependen de `explorerState` |
+| `cargarDetallePlaneacion` / bloque detalle | `detalle.html` | planeación/batch | DOM/estado Detalle | navegación auxiliar | owner separado, no F7 salvo contrato de URL |
+
+Los 15 call sites del loader de Biblioteca cubren init, retry, Quick finish,
+generación normal de los cuatro recursos, generación/regeneración directa de
+anexo, cinco deletes y delete de bloque. Todos siguen el mapa
+`acción -> API -> mutación optimista/pending -> load/reconcile -> render`; no hay
+`location.reload()` en este flujo.
+
+### Globals y fachada
+
+| Global | Definición / writers | Readers | Contrato actual | Fase candidata |
+| --- | --- | --- | --- | --- |
+| `window.explorerState` | Dashboard; features mutan preview/cache | Dashboard, render Biblioteca, Exam/Lista Preview | store mixto accidental pero activo | separar props F7; legacy F8; retiro F10 |
+| `window.biblioteca` | `biblioteca.page.js`; setter de batch y métodos | Quick Create | fachada legítima temporal, no fuente física | conservar F7; revisar retiro F10 |
+| `window.renderBibliotecaContent` | render owner | bridge Dashboard y alta pending Quick | wrapper activo; bindings léxicos usan implementación | conservar F7; retiro F10 |
+| `window.BIBLIOTECA_MODE` | init Dashboard | Dashboard/Quick/render | flag de ruta vigente | bootstrap F7.3 |
+| `window.initDashboardPage` | Dashboard | `main.js` | entry point público | Dashboard estable |
+| `window.initBiblioteca` | Biblioteca | Dashboard | entry point cargado antes de init | F7.3, conservar contrato |
+| wrappers Exam/Lista/Download de Dashboard | Dashboard | previews, Escape, legacy y/o Biblioteca | compatibilidad activa | F8–10 según consumidor |
+| feature globals (`PlaneacionGeneration`, `ExamPreview`, etc.) | IIFE por dominio | Biblioteca/Dashboard | bridge de scripts clásicos | F10, no ampliar |
+| `window.AppUI`, API/service globals, `requireSession` | core/ui/api/services | ambos coordinadores | contratos compartidos activos | fuera de extracción Quick salvo consumo |
+
+La fachada `window.biblioteca` expone exactamente: getter/setter
+`pendingBatchId`, `getConjuntos`, `selectConjunto`,
+`startPlaneacionesGeneration`, `setPendingConjunto`, `refresh` y
+`finishPlaneacionesGeneration`. Quick Create es su único consumidor externo
+confirmado; Biblioteca escribe el objeto y sus métodos escriben el state léxico.
+
+### Navegación, shell, script order y bubbling
+
+Navegación vigente: `main.js -> initDashboardPage`, links del navbar privado,
+cards hacia `detalle.html?id=...`, redirects auth/logout y `pageshow` por
+back-forward. Selección de bloque y tabs son navegación interna de Biblioteca,
+sin URL/history. Árbol, breadcrumbs y `selectRoot/Plantel/Grado/Materia/Unidad`
+son legacy visual en la ruta vigente; los IDs/caches/loaders que Quick usa son
+jerarquía técnica activa. Archivados cruza solo registry/helpers y queda Fase 8.
+
+Orden real de scripts:
+
+```text
+config + Supabase + auth + utils
+-> API/services planeaciones, jerarquía, exámenes, listas
+-> features listas/exámenes y wordExport
+-> components.private + shared.ui
+-> API Biblioteca/anexos
+-> features anexos/planeaciones/block delete
+-> dashboard.page.js
+-> biblioteca.page.js
+-> biblioteca-render.js
+-> biblioteca-modal-render.js
+-> biblioteca-events.js
+-> main.js
+```
+
+Bindings que dependen del orden clásico: Biblioteca consume desde Dashboard
+`MOMENTOS_ACTIVIDADES_DIDACTICAS`, `buildActividadDidacticaOptions`,
+`isActividadDidacticaValida`, `normalizeActividadesMomentos`,
+`renderProgressPill` y `statusLabelFromTone`. Los features cargados antes de
+`biblioteca.page.js` cierran sobre nombres léxicos que solo se resuelven al
+ejecutar callbacks después de que Biblioteca ya los declaró. Reordenar no está
+autorizado en 7.0.
+
+En bubbling, el listener de `#explorer-content` registrado por Dashboard se
+ejecuta antes del `document.click` de Biblioteca. Solo busca
+`data-content-action`; las cards vigentes emiten `data-bib-action`, por lo que
+Dashboard retorna y Biblioteca despacha una vez. No hay `preventDefault` ni
+`stopPropagation` en el handler de Biblioteca. Quick tiene listeners directos
+fuera de `#explorer-content`; los modales Biblioteca conservan sus listeners
+locales propios.
+
+### Reload, delete y errores durante Quick Create
+
+- Reload pierde `quickCreate`, staging, `progress`, `generating`,
+  `pendingBatchId`, `pendingConjunto`, Selection/Tabs y la conexión SSE. El
+  backend puede haber persistido parte o todo el batch; la carga inicial lo
+  reconstruye si ya aparece en `/api/biblioteca/conjuntos`, pero no reanuda ni
+  correlaciona el proceso. Reenviar puede duplicar un batch nuevo.
+- Un pending nuevo no muestra botón delete. Un bloque existente sí puede
+  eliminarse mientras genera: delete limpia cuatro Pending por batch pero no
+  cancela request/SSE ni limpia `pendingBatchId`; el finish posterior puede
+  volver a seleccionar/insertar/refetchear el batch según la carrera backend.
+- Cambiar de bloque/tab es posible; el finish vuelve a seleccionar el batch
+  generado y tab Planeaciones. Navegar/logout tampoco cancela explícitamente.
+- Success completo limpia pending; partial success conserva pending/error y
+  refetchea; `duplicate_tema` se traduce a skipped/warning; SSE `error` lanza;
+  JSON malformado se ignora; HTTP 5xx intenta POST no-stream; error de red/auth
+  termina en el catch de generación. No hay timeout ni retry cliente para
+  planeaciones, ni AbortController.
+- Si falla la resolución jerárquica después de cerrar el panel, el catch externo
+  solo registra consola. Si falla la generación, la card/progress muestra el
+  mensaje; `finally` limpia generating/batch, pero un `pendingConjunto` sin batch
+  real puede quedar hasta la siguiente carga no silenciosa.
+
+### Dependencias, ciclos y cortes seguros
+
+```text
+Dashboard shell
+  -> Quick Create
+     -> explorerState + jerarquía services
+     -> window.biblioteca
+        -> bibliotecaState / Selection / Tabs / Pending
+        -> renderBibliotecaContent
+        -> loadAndRenderBiblioteca
+           -> API -> reconcile -> render
+
+BibliotecaEvents -> openQuickCreatePanel (binding léxico de Dashboard)
+Biblioteca render -> window.explorerState.progress
+Dashboard render bridge -> window.renderBibliotecaContent
+```
+
+El ciclo activo impide empezar por retirar el bridge (opción D): Quick y
+Biblioteca se llaman en ambas direcciones. Empezar por loader/reconcile (B)
+mantendría demasiados writers de Quick sin owner. Bootstrap/navegación (C)
+depende de conocer qué queda después. El corte seguro es A: Quick Create
+completo, preservando facade y wrappers; después B y finalmente C.
+
+Candidatos futuros, no creados: un owner específico de Quick Create; un owner
+de loader/reconcile de Biblioteca; y un owner pequeño de bootstrap/navegación
+Dashboard. No se justifican `LoaderManager`, `NavigationManager`, store global o
+engine genérico.
