@@ -1765,7 +1765,7 @@ config → Supabase SDK/client → auth → utils
 → components.private → shared.ui
 → APIs de Biblioteca/Anexos
 → features de Anexos → features de Planeaciones → block delete
-→ dashboard.page.js → biblioteca.page.js → main.js
+→ dashboard.page.js → quick-create.js → biblioteca.page.js → main.js
 ```
 
 Los scripts son clásicos. Biblioteca consume al invocarse globals explícitos y
@@ -2482,6 +2482,51 @@ Puede compartirse ownership del transporte/service existente, normalización de
 actividades y presentación base. Deben permanecer separados la resolución de
 jerarquía, creación de batch, pending temporal, parsers de progreso y cleanup.
 
+## Fase 7 — Sesión 7.1: extracción consolidada de Quick Create
+
+La implementación activa salió de `dashboard.page.js` hacia
+`js/features/dashboard/quick-create.js` sin cambiar el flujo observable. El
+owner nuevo sigue usando `window.explorerState` como única fuente física y la
+fachada `window.biblioteca` como frontera de pending/reconciliación.
+
+| Grupo | Funciones/contratos movidos al owner Quick Create |
+| --- | --- |
+| Panel y feedback | combobox base, error, visibilidad, reset, generating/result y `open/closeQuickCreatePanel` |
+| Formulario | inicialización y binding, toggle de grado, render/agregar/quitar/actualizar temas |
+| Validación | lectura de nivel base, validadores de combobox/grado/listas e IDs |
+| Datos Biblioteca | normalización, conjuntos, títulos, materias y grados disponibles |
+| Jerarquía técnica | fill de selects, búsqueda de grado, carga plana/default y resolución/creación de IDs |
+| Staging | contexto legacy, copia de temas, `pendingBatchId`/`pendingConjunto` y preparación del batch |
+| SSE/progreso | init, mapping de eventos, actualización de counters/items y aplicación de result/error |
+| Coordinación | `generatePlaneacionesFromStaging` y `submitQuickCreateForm` con payload y cleanup históricos |
+
+Dashboard retiene `syncQuickSelectVisualState` y `requireNivelBaseValue` porque
+también los usa el modal de entidades; los loaders `loadPlanteles`,
+`ensureGrados`, `ensureMaterias` y `ensureUnidades`; helpers de actividades;
+helpers de progreso/legacy; y wrappers finos de open/close/visibility/generate
+para consumidores léxicos y legacy. Biblioteca conserva State/Pending,
+`loadAndRenderBiblioteca`, finish, merge y reconciliación: son alcance 7.2, no
+parte de esta extracción.
+
+| Evidencia | Antes | Después 7.1 |
+| --- | ---: | ---: |
+| Líneas `dashboard.page.js` | 5690 | 4323 |
+| Líneas owner Quick Create | 0 | 1414 |
+| Listeners sintácticos | 44 Dashboard | 27 Dashboard + 17 owner |
+| `window.biblioteca` en Dashboard/owner | 19 / 0 | 0 / 19 |
+| Calls directos a loader/reconcile desde owner | — | 0; solo fachada vigente |
+
+Se compararon literalmente, normalizando finales de línea, los bloques UI,
+generación, jerarquía técnica y bindings: PASS. El nuevo global
+`window.QuickCreate` es un namespace de owner, no un store. Los globals
+preexistentes `window.explorerState`, `window.biblioteca`,
+`window.renderBibliotecaContent` y `window.BIBLIOTECA_MODE` no cambian.
+
+Orden ejecutable: `dashboard.page.js` define estado/helpers/wrappers;
+`quick-create.js` define el owner; después cargan la página y owners de
+Biblioteca. Así `BibliotecaEvents` sigue resolviendo el wrapper léxico y los
+callbacks de Quick encuentran la fachada cuando se ejecutan.
+
 ### Estado mixto de reconciliación
 
 | Estado | Fuente física | Writers | Readers | Persistencia | Clasificación / fase |
@@ -2565,6 +2610,7 @@ config + Supabase + auth + utils
 -> API Biblioteca/anexos
 -> features anexos/planeaciones/block delete
 -> dashboard.page.js
+-> quick-create.js
 -> biblioteca.page.js
 -> biblioteca-render.js
 -> biblioteca-modal-render.js

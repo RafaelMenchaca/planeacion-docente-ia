@@ -1529,6 +1529,41 @@ siguientes matrices quedan preparadas, no ejecutadas.
 | Reload posterior | Biblioteca reconstruye lo persistido; no promete reanudar SSE |
 | Red/contrato | Mismo endpoint, headers, `unidad_id`, `batch_id`, `force_new_batch`, parser y fallback |
 
+## Fase 7 — Sesión 7.1: Quick Create consolidado
+
+### Evidencia automática ejecutada
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend `refactor-front`/`7c75738` y backend `refactor-back`/`e08d6e4`, limpios al abrir |
+| Owner | PASS: implementación en `quick-create.js`; Dashboard conserva wrappers/helpers compartidos |
+| Comparación literal | PASS normalizado: tres bloques UI, generación, jerarquía técnica y bindings |
+| Sintaxis | PASS: Dashboard y owner nuevo mediante `node --check` |
+| Listeners | PASS: 44 call sites preservados; 27 en Dashboard y 17 en el owner |
+| Contratos | PASS estático: endpoint/service, payload, `force_new_batch`, `batch_id`, SSE y fachada preservados |
+| Smoke sin red | PASS: 3 casos JSDOM; open/close/validación, temp→real sin duplicado, parcial/error/cleanup |
+| Jest acumulativo | PASS: 2 suites, 5 tests con `npm test -- --runInBand` |
+| Loader/reconcile | PASS de alcance: cero llamadas directas nuevas; se conserva la fachada de Biblioteca |
+| Backend | PASS: limpio y sin cambios; no se ejecutaron migraciones ni llamadas reales |
+
+### Checklist manual pendiente de 7.1
+
+| Área | Comprobación solicitada |
+| --- | --- |
+| Carga/UI | Biblioteca, navbar/footer y CTA; abrir, cerrar, backdrop/Escape, reabrir y validar tema único/múltiple |
+| Bloque nuevo | Generar 1–2 temas; una request SSE; card temporal→batch real, sin duplicado; selección y tab Planeaciones |
+| Parcial/error | Si se puede reproducir naturalmente, conservar resultados/mensajes/pending y cleanup histórico |
+| Biblioteca | Cambiar bloque/tabs/search; reload muestra lo persistido y no promete reanudar SSE |
+| Recursos | Planeaciones, Anexos, Listas y Exámenes siguen accesibles desde sus tabs |
+| Regresión normal | “Agregar Tema” en bloque existente reutiliza batch explícito y no envía `force_new_batch:true` |
+| Consola/red | Sin errores nuevos, doble handler, doble card ni request duplicada |
+
+Logs naturales útiles, sin tokens, UUIDs completos ni datos personales: para
+Quick Create nuevo, `batchIdRecibido:null`, `forceNewBatch:true` y creación de
+batch; para el modal normal, batch explícito, `forceNewBatch:false` y
+reutilización. Esta matriz permanece **Pendiente** hasta evidencia manual del
+usuario; 7.2 no está abierta.
+
 ### Matriz preparada para 7.2 — loader y reconciliación
 
 | Caso | Verificación manual futura |

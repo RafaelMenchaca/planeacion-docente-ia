@@ -459,6 +459,39 @@ loader/reconcile de Biblioteca y bootstrap/navegación de Dashboard, conservando
 los bridges mientras tengan consumidores. Archivados/aislamiento legacy siguen
 en Fase 8 y el retiro final de wrappers/globals en Fase 10.
 
+### Resultado implementado en 7.1: owner de Quick Create
+
+`js/features/dashboard/quick-create.js` es ahora el owner único de la
+implementación activa de Quick Create: panel y comboboxes, validación, carga y
+resolución de jerarquía técnica, staging, payload, progreso SSE, resultado/error
+y coordinación con Biblioteca. Publica una superficie pequeña
+`window.QuickCreate` (`open`, `close`, `bind`, `setPanelVisibility` y
+`generateFromStaging`); no introduce un store ni duplica estado.
+
+```text
+dashboard.page.js (estado físico y helpers compartidos)
+  -> quick-create.js (owner funcional)
+     -> services/jerarquía + generarPlaneacionesUnidadConProgreso
+     -> window.biblioteca (pending, finish, refresh, selection)
+  -> biblioteca.page.js + render/modal/events (owner Biblioteca)
+```
+
+`window.explorerState` continúa como fuente física para `quickCreate`, staging,
+`progress`, `generating`, `current` y caches jerárquicos. La fachada
+`window.biblioteca`, `window.renderBibliotecaContent` y los bindings léxicos
+compartidos conservan sus firmas y timing. Dashboard retiene wrappers finos
+para `BibliotecaEvents`, Escape, `renderAll` y la acción legacy de generación;
+también retiene los helpers de actividades, jerarquía y progreso con
+consumidores fuera de Quick Create.
+
+El orden clásico requerido en `dashboard.html` es ahora
+`dashboard.page.js -> quick-create.js -> biblioteca.page.js -> render -> modal
+render -> events -> main.js`. No se movieron el estado ni Pending de
+Biblioteca, `loadAndRenderBiblioteca`, la reconciliación temporal→real,
+`PlaneacionGeneration`, API/services, previews, downloads, deletes o legacy.
+La extracción tiene validación automática aprobada; su prueba manual permanece
+pendiente antes de comenzar 7.2.
+
 ## Páginas
 
 | Página | Clasificación |

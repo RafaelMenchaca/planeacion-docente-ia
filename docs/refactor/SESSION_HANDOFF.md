@@ -66,6 +66,8 @@
 - **Sesión 6.3:** handlers, delegación y search wiring extraídos; manual aprobada y commit `4306903`.
 - **Sesión 6.4:** auditoría formal aprobada; Fase 6 completada, sin implementación funcional ni manual adicional.
 - **Sesión 7.0:** auditoría técnica/documental de apertura completada; sin implementación funcional ni manual requerida.
+- **Commit real de 7.0:** `7c75738`.
+- **Sesión 7.1:** extracción consolidada de Quick Create implementada y validada automáticamente; validación manual pendiente, sin commit ni push.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -4256,3 +4258,63 @@ request.
 - `git diff --check`: PASS; solo documentación autorizada modificada.
 - Backend final: limpio y sin cambios.
 - Commit/push: No realizados.
+
+## Fase 7 — Sesión 7.1: extracción consolidada de Quick Create
+
+### Gate y alcance
+
+- 7.0 quedó realmente commiteada en `7c75738`; este fue el HEAD limpio de
+  `refactor-front` al abrir 7.1. `origin/refactor-front` permanecía en
+  `295d7ed`.
+- Backend: `refactor-back`/`e08d6e4`, limpio, solo lectura y sin cambios.
+- Solo se modificaron el owner Dashboard, el orden de script necesario, un
+  owner nuevo, un smoke nuevo y los cinco documentos obligatorios. No se
+  tocaron API/services, CSS, packages, backend, loader/reconcile ni features.
+
+### Resultado técnico
+
+`js/features/dashboard/quick-create.js` concentra panel, comboboxes,
+validación, datos de Biblioteca, resolución/creación de jerarquía técnica,
+staging, payload, progreso SSE, result/error y coordinación. Publica
+`window.QuickCreate` con `open`, `close`, `bind`, `setPanelVisibility` y
+`generateFromStaging`; este namespace no contiene una segunda fuente de estado.
+
+`dashboard.page.js` conserva `window.explorerState`, helpers con consumidores
+compartidos y cuatro wrappers finos. `BibliotecaEvents` sigue abriendo Quick
+Create por el binding léxico de Dashboard; Escape/render legacy conservan sus
+llamadas; la acción legacy de generar conserva la firma. El owner nuevo usa las
+19 referencias a `window.biblioteca` que antes estaban en Dashboard y no llama
+directamente `loadAndRenderBiblioteca`.
+
+Métricas: Dashboard 5690→4323 líneas; owner nuevo 1414; 44 listeners
+preservados como 27+17. La comparación literal normalizada de UI, bindings,
+generación y jerarquía pasó. El smoke JSDOM sin red pasó 3 casos: ciclo y
+validación local; batch temporal→real con selección/tab y sin duplicado;
+success parcial y error con cleanup histórico.
+La suite acumulativa pasó 2 suites y 5 tests.
+
+### Contratos y riesgos preservados
+
+- `window.explorerState` sigue siendo la fuente física de Quick Create,
+  staging, `progress`, `generating`, contexto y caches; no se creó store nuevo.
+- `window.biblioteca`, `window.renderBibliotecaContent` y
+  `window.BIBLIOTECA_MODE` conservan contrato. State/Pending, selección/tabs y
+  reconciliación permanecen en Biblioteca.
+- Payload, `force_new_batch`, batch explícito, endpoint, service, parser SSE,
+  fallback, orden y cleanup se copiaron sin rediseño.
+- El script carga `dashboard.page.js -> quick-create.js -> biblioteca.page.js`;
+  se mantienen scripts clásicos y resolución tardía de bindings.
+- Siguen vigentes los riesgos ya documentados: pending efímero, SSE no
+  resumible, requests no cancelables, carreras de delete/refetch y fallback de
+  mapping cuando falta target real.
+
+### Estado de salida
+
+- Fase 7: En progreso.
+- Sesión 7.0: Completada y commiteada en `7c75738`.
+- Sesión 7.1: Implementada; validaciones automáticas aprobadas; manual pendiente.
+- Sesión 7.2: No abierta.
+- Commit/push de 7.1: No realizados.
+
+La siguiente acción es ejecutar el checklist manual de 7.1. Solo después de su
+aprobación debe registrarse 7.1 como completada y prepararse 7.2.

@@ -900,7 +900,8 @@ Quitar dependencias activas de `dashboard.page.js` que pertenecen a Biblioteca s
 ### Estado
 
 **En progreso.** La Sesión 7.0 completó la auditoría técnica/documental de
-apertura sin implementación funcional. La ejecución de 7.1 no ha comenzado.
+apertura y quedó commiteada en `7c75738`. La Sesión 7.1 tiene implementación y
+validaciones automáticas aprobadas; su validación manual permanece pendiente.
 
 ### Dependencias
 
@@ -925,6 +926,19 @@ Crear inventario bidireccional Dashboard↔Biblioteca, resolver una dependencia 
 ### Sesiones propuestas después de la auditoría 7.0
 
 #### 7.1 — Extraer el coordinador completo de Quick Create
+
+**Estado: implementada; validación manual pendiente.** Se creó
+`js/features/dashboard/quick-create.js` como owner único de panel, comboboxes,
+validación, jerarquía técnica, staging, progreso SSE y coordinación con la
+fachada de Biblioteca. `dashboard.page.js` conserva solo wrappers para sus
+consumidores activos y helpers realmente compartidos. El script nuevo carga
+después de Dashboard y antes de Biblioteca; no se movieron State/Pending,
+loader/reconcile, API/service ni `PlaneacionGeneration`.
+
+Evidencia automática: comparación literal normalizada de seis bloques, 44
+listeners totales preservados (27 Dashboard + 17 Quick Create), smoke JSDOM de
+3 casos sin red real, sintaxis y suite Jest. No se abre 7.2 hasta recibir y
+registrar la validación manual de 7.1.
 
 - Mover como unidad el estado propio, comboboxes, DOM, validación, resolución de
   jerarquía técnica, staging, progreso y coordinación SSE actualmente vigentes
