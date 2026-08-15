@@ -1583,24 +1583,37 @@ exámenes quedaron correctos. Commit `97b798c`.
 | Protegidos | PASS estático: generadores, deletes, API, render, State/Pending y Quick Create sin cambio funcional |
 | Backend | PASS: limpio, solo lectura y sin llamadas reales |
 
-### Checklist manual pendiente de 7.2
+### Checklist manual aprobado de 7.2
 
-| Caso | Verificación manual futura |
+| Caso | Resultado confirmado |
 | --- | --- |
-| Carga inicial | loading→conjuntos→selección inicial→render, una sola GET |
-| Retry | error visible y botón retry recuperan sin listeners/requests duplicados |
-| Silent refresh | no reemplaza por loader visual; conserva bloque/tab objetivo |
-| Temporal→real | desaparece tempId, aparece un solo batch real y se conserva Planeaciones |
-| Target explícito | `targetBatchId` gana y selecciona el batch solicitado |
-| Fallback | selección eliminada cae al bloque correcto sin tab huérfano |
-| Generaciones | Planeaciones, Anexos, Listas y Exámenes refetchean en su tab |
-| Deletes | cinco deletes y bloque actualizan optimista y luego estado real |
-| Partial/error | pending y error no se borran antes del comportamiento histórico |
-| Reload | reconstrucción backend sin restaurar estado efímero inventado |
+| Quick Create | batch nuevo con `batchIdRecibido:null`, `forceNewBatch:true` y creación confirmada |
+| Flujo normal | batch existente, `forceNewBatch:false` y reutilización explícita |
+| Delete | éxito confirmado con `[biblioteca] delete:success` |
+| Reconciliación | temporal→real sin duplicado visible; Biblioteca posterior correcta |
+| Consola/red | sin errores, doble GET, doble render ni doble card reportados |
 
-### Matriz preparada para 7.3 — Dashboard bootstrap y bindings
+La aprobación manual quedó reconciliada con el commit real `a6840a4`.
 
-| Caso | Verificación manual futura |
+## Fase 7 — Sesión 7.3: Dashboard bootstrap y bindings
+
+### Evidencia automática ejecutada
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend `refactor-front`/`a6840a4`; backend `refactor-back`/`e08d6e4`; limpios al abrir |
+| Owner | PASS: layout/init/binding en `dashboard-bootstrap.js`; navegación/jerarquía/legacy retenidos |
+| Comparación literal | PASS: `injectComponent`, `bindDashboardEvents` e `initDashboardPage` |
+| Listeners | PASS: 27 totales preservados como 25 en owner + 2 locales legacy |
+| Orden/bubbling | PASS estático: Dashboard registra primero y sigue ignorando `data-bib-action` |
+| Smoke Dashboard | PASS: 3 casos sin red para init, bridge, branch legacy y error de layout |
+| Protegidos | PASS: smokes Quick Create y Biblioteca loader sin cambios funcionales |
+| Jest acumulativo | PASS: 4 suites, 12 tests con `npm test -- --runInBand` |
+| Backend | PASS: limpio, solo lectura y sin llamadas reales |
+
+### Checklist manual pendiente de 7.3
+
+| Caso | Verificación manual requerida |
 | --- | --- |
 | Arranque | `main.js` invoca una vez Dashboard y Biblioteca |
 | Componentes | layout, navbar y footer cargan; bindings no se duplican |

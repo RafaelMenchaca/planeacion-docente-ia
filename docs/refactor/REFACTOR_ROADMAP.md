@@ -899,10 +899,11 @@ Quitar dependencias activas de `dashboard.page.js` que pertenecen a Biblioteca s
 
 ### Estado
 
-**En progreso.** La Sesión 7.0 quedó commiteada en `7c75738`. La Sesión 7.1 fue
-validada manualmente y commiteada en `97b798c`. La Sesión 7.2 tiene
-implementación y validaciones automáticas aprobadas; su manual permanece
-pendiente. La Sesión 7.3 no está abierta.
+**En progreso.** La Sesión 7.0 quedó commiteada en `7c75738`; la Sesión 7.1 fue
+validada manualmente y commiteada en `97b798c`; y la Sesión 7.2 fue validada
+manualmente y commiteada en `a6840a4`. La Sesión 7.3 está implementada y
+validada automáticamente; su manual permanece pendiente. La Sesión 7.4 no está
+abierta.
 
 ### Dependencias
 
@@ -960,7 +961,7 @@ reload posterior, consola y una sola petición de generación.
 
 #### 7.2 — Separar loader y reconciliación de Biblioteca
 
-**Estado: implementada; validación manual pendiente.** El owner
+**Estado: completada, validada manualmente y commiteada en `a6840a4`.** El owner
 `js/features/biblioteca/biblioteca-loader.js` contiene literalmente loader,
 refetch, reconciliación temporal→real, merge optimista y finish. La fuente de
 State/Pending permanece en `biblioteca.page.js`; cinco wrappers conservan los
@@ -969,8 +970,9 @@ modificaron funcionalmente.
 
 Evidencia automática: seis funciones con comparación literal PASS; smoke JSDOM
 de loader/reconcile con 4 casos; smoke Quick Create; sintaxis, suite Jest de 3
-suites/9 tests y diff check. No abrir 7.3 hasta aprobar y registrar la manual
-de 7.2.
+suites/9 tests y diff check. La manual confirmó Quick Create con batch nuevo,
+flujo normal reutilizando el batch explícito y delete con
+`[biblioteca] delete:success`; no hubo doble GET/render/card reportado.
 
 - Dar owner identificable a `loadAndRenderBiblioteca()` y a la reconciliación
   `tempId -> batch_id` sin crear un gestor genérico ni otra fuente de estado.
@@ -984,6 +986,25 @@ Create, success parcial, cambios de selección/tab durante refetch, deletes,
 reload y ausencia de cards/batches duplicados.
 
 #### 7.3 — Reducir Dashboard a bootstrap/navegación y bindings activos
+
+**Estado: implementada; validación manual pendiente.** Se creó
+`js/features/dashboard/dashboard-bootstrap.js` como owner de inyección del
+layout, coordinación de `initDashboardPage` y registro único de los bindings
+estructurales del Dashboard. Las tres funciones se movieron literalmente, con
+el guard privado y 25 sitios de listener; `window.initDashboardPage` conserva
+firma y `window.BIBLIOTECA_MODE` conserva timing. Dos listeners locales a
+renders legacy permanecen en `dashboard.page.js`.
+
+La navegación se retuvo de forma deliberada: árbol, breadcrumbs,
+`selectRoot/Plantel/Grado/Materia/Unidad`, detalle, previews, jerarquía técnica,
+deletes y Archivados todavía comparten estado y branches. Los helpers de
+actividades, nivel/grado, select visual y progreso/status tienen consumidores
+de dos o más dominios y permanecen como bridge compartido, sin duplicación.
+
+Evidencia automática: comparación literal PASS de las tres funciones; smoke
+Dashboard sin red de 3 casos; smokes protegidos de Quick Create y loader; suite
+acumulativa de 4 suites/12 tests, sintaxis y diff check. No abrir 7.4 hasta
+aprobar y registrar la manual de 7.3.
 
 - Delimitar `initDashboardPage`, inyección de layout/chrome, binding único del
   shell y navegación vigente; mover únicamente helpers compartidos que sigan

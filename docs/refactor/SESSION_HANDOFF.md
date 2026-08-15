@@ -68,7 +68,8 @@
 - **Sesión 7.0:** auditoría técnica/documental de apertura completada; sin implementación funcional ni manual requerida.
 - **Commit real de 7.0:** `7c75738`.
 - **Sesión 7.1:** extracción consolidada de Quick Create validada manualmente y commiteada en `97b798c`.
-- **Sesión 7.2:** ownership de loader/reconcile implementado y validado automáticamente; manual pendiente, sin commit ni push.
+- **Sesión 7.2:** ownership de loader/reconcile validado manualmente y commiteado en `a6840a4`.
+- **Sesión 7.3:** bootstrap y bindings Dashboard extraídos y validados automáticamente; manual pendiente, sin commit ni push.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -4314,8 +4315,9 @@ La suite acumulativa pasó 2 suites y 5 tests.
 - Fase 7: En progreso.
 - Sesión 7.0: Completada y commiteada en `7c75738`.
 - Sesión 7.1: Validada manualmente y commiteada en `97b798c`.
-- Sesión 7.2: Implementada; validaciones automáticas aprobadas; manual pendiente.
-- Commit/push de 7.2: No realizados.
+- Sesión 7.2: Validada manualmente y commiteada en `a6840a4`.
+- Sesión 7.3: Implementada; validaciones automáticas aprobadas; manual pendiente.
+- Commit/push de 7.3: No realizados.
 
 La manual de 7.1 confirmó Quick Create, reconciliación sin duplicados,
 Biblioteca posterior y el flujo normal con batch existente,
@@ -4371,10 +4373,70 @@ refresh, finish, cuatro generaciones, dos anexos directos, cinco deletes.
 - Suite acumulativa: PASS, 3 suites y 9 tests.
 - `biblioteca.page.js`: 1317→1118 líneas; owner 233; cinco wrappers.
 - Script order: page → loader → render → modal render → events.
-- Sesión 7.2: Implementada; manual pendiente.
-- Sesión 7.3: No abierta.
+- Sesión 7.2: Validada manualmente y commiteada en `a6840a4`.
+- Sesión 7.3: Implementada; manual pendiente.
+- Commit/push de 7.3: No realizados.
+
+La manual de 7.2 confirmó Quick Create con `batchIdRecibido:null`,
+`forceNewBatch:true` y batch creado; el flujo normal con batch existente,
+`forceNewBatch:false` y reutilización explícita; y delete con
+`[biblioteca] delete:success`.
+
+## Fase 7 — Sesión 7.3: Dashboard bootstrap y bindings compartidos
+
+### Gate y decisión técnica
+
+- Frontend: `refactor-front`, `HEAD a6840a4`, limpio al abrir; commit real de
+  7.2 `refactor(frontend): extract Biblioteca loader and reconciliation`.
+- Backend: `refactor-back`/`e08d6e4`, limpio, solo lectura y sin cambios.
+- Decisión: extraer literalmente layout, bootstrap y binding estructural;
+  retener navegación porque sus branches todavía comparten jerarquía técnica,
+  explorer legacy, previews, deletes y Archivados.
+
+### Owner y fronteras
+
+`js/features/dashboard/dashboard-bootstrap.js` contiene `injectComponent`,
+`bindDashboardEvents` e `initDashboardPage`, además del guard privado de
+binding. Publica únicamente `window.initDashboardPage`; no crea Router, Store,
+EventBus ni namespace nuevo. El script carga después de `dashboard.page.js` y
+antes de Quick Create/Biblioteca para consumir bindings léxicos ya definidos y
+registrar callbacks antes de que `main.js` ejecute el entry point.
+
+El owner conserva 25 sitios `addEventListener`, incluyendo el listener
+Dashboard de `#explorer-content`. Este continúa registrándose antes del
+listener `document.click` de Biblioteca e ignora `data-bib-action`; no se añadió
+`stopPropagation`. Los dos listeners restantes en Dashboard son locales a
+checkboxes creados por renders legacy.
+
+### Semántica y límites preservados
+
+- Init conserva detección de Biblioteca, escritura de `BIBLIOTECA_MODE`,
+  layout, sidebar condicional, navbar/footer, error DOM, binding y luego init de
+  Biblioteca o hidratación legacy, con el mismo orden/await/catch.
+- Navegación (`selectRoot/Plantel/Grado/Materia/Unidad`, árbol, breadcrumbs,
+  Detalle y back-forward) permanece en Dashboard.
+- Helpers de actividades, labels, select visual, nivel/grado,
+  progreso/status, jerarquía técnica y preview conservan definición y
+  consumidores. `explorerState` no se mueve ni duplica.
+- Quick Create, loader/reconcile, Biblioteca, State/Pending, generadores,
+  API/payload, SSE/polling, CSS, Archivados y legacy no cambian funcionalmente.
+
+### Evidencia y estado
+
+- Comparación literal normalizada: PASS en las tres funciones movidas.
+- Smoke Dashboard sin red: PASS en 3 casos de init/bind/Biblioteca, bridge de
+  preview/legacy y error de layout.
+- Smokes Quick Create y Biblioteca loader: PASS.
+- Suite acumulativa: PASS, 4 suites y 12 tests.
+- `dashboard.page.js`: 4323→4049 líneas; owner nuevo 286 líneas.
+- Funciones 177→174 + 3; listeners 27→2 + 25; DOM ops 198→171 + 27.
+- `explorerState`: 506 referencias intactas en el perímetro Dashboard/bootstrap
+  (488 + 18); globals publicados: 7.
+- Sesión 7.3: Implementada; manual pendiente.
+- Sesión 7.4: No abierta.
 - Commit/push: No realizados.
 
-Siguiente acción: checklist manual de carga, navegación, Quick Create,
-generación normal, delete y consola/red. Solo después de su aprobación puede
-marcarse 7.2 completada y prepararse 7.3.
+Siguiente acción: ejecutar el checklist manual compacto de Dashboard,
+Biblioteca, Quick Create, batch existente, preview/navegación y consola/red.
+Solo después de su aprobación corresponde abrir 7.4 para la auditoría formal
+de cierre; Fase 8 permanece fuera de alcance.

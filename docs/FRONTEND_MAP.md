@@ -1765,7 +1765,7 @@ config → Supabase SDK/client → auth → utils
 → components.private → shared.ui
 → APIs de Biblioteca/Anexos
 → features de Anexos → features de Planeaciones → block delete
-→ dashboard.page.js → quick-create.js → biblioteca.page.js
+→ dashboard.page.js → dashboard-bootstrap.js → quick-create.js → biblioteca.page.js
 → biblioteca-loader.js → render → modal render → events → main.js
 ```
 
@@ -2594,6 +2594,58 @@ page/owner 1→0/1; renders del bloque movido 0/4; métodos de fachada relaciona
 siguen siendo `refresh` y `finishPlaneacionesGeneration`. Comparación literal de
 las seis funciones: PASS.
 
+## Fase 7 — Sesión 7.3: Dashboard bootstrap y bindings
+
+La reconciliación de apertura confirmó la validación manual y el commit real de
+7.2: `a6840a4` (`refactor(frontend): extract Biblioteca loader and
+reconciliation`). El corte 7.3 no reabre Quick Create, loader/reconcile ni los
+owners de Biblioteca.
+
+La pregunta central se resolvió así: inyección del layout, coordinación de
+arranque y registro único de bindings forman un owner activo y coherente; la
+navegación residual no puede separarse literalmente porque sigue mezclada con
+árbol/breadcrumbs, jerarquía técnica, previews, deletes, Archivados y ramas
+legacy. Se extrajo el primer bloque y se retuvo el segundo.
+
+| Responsabilidad | Funciones/bindings | Clasificación | Resultado 7.3 |
+| --- | --- | --- | --- |
+| Layout y shell | `injectComponent` | A/B | movida literalmente a `dashboard-bootstrap.js` |
+| Coordinación de arranque | `initDashboardPage` | A/H | movida con orden, awaits, catch y side effects intactos |
+| Binding estructural | `bindDashboardEvents` + guard privado | A/D/H/I | movido; conserva 25 sitios `addEventListener` |
+| Entry point | `window.initDashboardPage` | H | misma firma; publicado por el owner nuevo |
+| Modo Biblioteca | writer de `window.BIBLIOTECA_MODE` | H | mismo momento dentro de init; readers intactos |
+| Navegación visual | `selectRoot/Plantel/Grado/Materia/Unidad`, tree, breadcrumbs | C/E/F | retenida en Dashboard por acoplamiento real |
+| Detalle y previews | cards, URL, Examen/Lista/descarga | C/H/I | retenidos; contratos globales intactos |
+| Jerarquía técnica | loaders/ensure/cache de planteles a temas | E/J | retenida; Quick y legacy comparten consumidores |
+| Helpers compartidos | actividades, nivel/grado, select visual, progreso/status | D/J | retenidos; no se duplican ni apropian por feature |
+| Render/modales legacy | explorer por niveles y compatibilidad | F/H/K | retenidos para auditoría de Fase 8 |
+| Archivados | registry/helpers y cruces del explorer | G/H | fuera de alcance e intacto |
+
+`initDashboardPage` conserva la secuencia observable: detecta la ruta
+Biblioteca, escribe el flag, inyecta layout, carga sidebar solo fuera de esa
+ruta, inicializa navbar/footer en paralelo, muestra el mismo error si falla,
+registra bindings una vez y después llama `initBiblioteca`; la rama no
+Biblioteca conserva `hydrateExplorerData`. No cambian errores, DOM, logs ni
+timing contractual.
+
+El listener Dashboard de `#explorer-content` continúa registrándose antes del
+listener delegado de Biblioteca en `document`. Sigue ignorando acciones que
+solo tienen `data-bib-action`, sin `stopPropagation`. Los dos listeners que
+permanecen en `dashboard.page.js` son locales a checkboxes creados por renders
+legacy; se conservaron para no cambiar su ciclo de vida.
+
+`explorerState` conserva una única fuente física y 506 referencias dentro del
+perímetro movido: 488 permanecen en Dashboard y 18 pasan al owner bootstrap.
+Los siete globals
+publicados relacionados conservan contrato: seis permanecen en Dashboard
+(`explorerState` y wrappers de preview/descarga) y `initDashboardPage` pasa al
+owner nuevo. No se añadió namespace, store, router ni wrapper.
+
+Métricas: `dashboard.page.js` 4323→4049 líneas y 177→174 funciones nombradas;
+owner nuevo 286 líneas/3 funciones; listeners 27→2 + 25; operaciones DOM
+198→171 + 27; wrappers nuevos 0. Comparación literal normalizada de
+`injectComponent`, `bindDashboardEvents` e `initDashboardPage`: PASS.
+
 ### Estado mixto de reconciliación
 
 | Estado | Fuente física | Writers | Readers | Persistencia | Clasificación / fase |
@@ -2647,8 +2699,8 @@ anexo, cinco deletes y delete de bloque. Todos siguen el mapa
 | `window.renderBibliotecaContent` | render owner | bridge Dashboard y alta pending Quick | wrapper activo; bindings léxicos usan implementación | conservar F7; retiro F10 |
 | `window.QuickCreate` | owner Quick 7.1 | Dashboard/Biblioteca events | namespace funcional, no store | conservar; revisar wrappers en F10 |
 | `window.BibliotecaLoader` | owner loader 7.2 | cinco wrappers de `biblioteca.page.js` | namespace funcional, no store; merge privado | conservar hasta migrar consumidores clásicos |
-| `window.BIBLIOTECA_MODE` | init Dashboard | Dashboard/Quick/render | flag de ruta vigente | bootstrap F7.3 |
-| `window.initDashboardPage` | Dashboard | `main.js` | entry point público | Dashboard estable |
+| `window.BIBLIOTECA_MODE` | init del owner bootstrap | Dashboard/Quick/render | flag de ruta vigente; timing intacto | conservar |
+| `window.initDashboardPage` | `dashboard-bootstrap.js` | `main.js` | entry point público; owner estable en 7.3 | conservar |
 | `window.initBiblioteca` | Biblioteca | Dashboard | entry point cargado antes de init | F7.3, conservar contrato |
 | wrappers Exam/Lista/Download de Dashboard | Dashboard | previews, Escape, legacy y/o Biblioteca | compatibilidad activa | F8–10 según consumidor |
 | feature globals (`PlaneacionGeneration`, `ExamPreview`, etc.) | IIFE por dominio | Biblioteca/Dashboard | bridge de scripts clásicos | F10, no ampliar |
@@ -2679,6 +2731,7 @@ config + Supabase + auth + utils
 -> API Biblioteca/anexos
 -> features anexos/planeaciones/block delete
 -> dashboard.page.js
+-> dashboard-bootstrap.js
 -> quick-create.js
 -> biblioteca.page.js
 -> biblioteca-loader.js

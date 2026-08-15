@@ -521,8 +521,47 @@ El orden contractual queda `biblioteca.page.js -> biblioteca-loader.js ->
 biblioteca-render.js -> biblioteca-modal-render.js -> biblioteca-events.js`.
 Los 15 caminos de carga mantienen sus firmas mediante wrappers. Quick Create,
 generadores y deletes no cambiaron funcionalmente; State/Pending, Selection y
-Tabs conservan fuente única. La validación automática de 7.2 está aprobada y la
-manual permanece pendiente; 7.3 no está abierta.
+Tabs conservan fuente única. La validación manual aprobó 7.2 y la sesión quedó
+commiteada en `a6840a4`.
+
+### Resultado implementado en 7.3: bootstrap y bindings de Dashboard
+
+`js/features/dashboard/dashboard-bootstrap.js` posee ahora la inyección del
+layout/sidebar, `initDashboardPage` y el registro único de bindings de
+Dashboard. El owner se carga después de `dashboard.page.js`, porque sus
+callbacks dependen de bindings léxicos allí definidos, y antes de Quick Create
+y Biblioteca. Publica la misma entrada `window.initDashboardPage`; no crea
+store, router ni segunda API pública.
+
+```text
+main.js
+  -> window.initDashboardPage (dashboard-bootstrap.js)
+     -> layout
+     -> chrome/navbar/footer
+     -> bind Dashboard (una vez)
+     -> ruta vigente: window.initBiblioteca
+        ruta sin Biblioteca: hydrateExplorerData legacy retenido
+```
+
+Se movieron literalmente 25 call sites estructurales de listeners. Dos
+listeners locales creados dentro de renders legacy permanecen en Dashboard. El
+listener de `#explorer-content` continúa registrándose antes del listener
+documental de Biblioteca, no usa `stopPropagation` y sigue ignorando
+`data-bib-action`.
+
+Navegación no se extrajo: `selectRoot/Plantel/Grado/Materia/Unidad`, persistencia
+de ubicación, árbol, breadcrumbs, `data-content-action`, Detalle, previews,
+archive/delete y pageshow están entrelazados con jerarquía y legacy. Dashboard
+queda como compatibility hub temporal para esos handlers, jerarquía técnica,
+previews y helpers compartidos. Su aislamiento corresponde a Fases 8–10, no a
+7.3.
+
+El orden contractual es `dashboard.page.js -> dashboard-bootstrap.js ->
+quick-create.js -> biblioteca.page.js -> biblioteca-loader.js -> render ->
+modal render -> events -> main.js`. Quick Create, loader/reconcile,
+State/Pending, API, generación, CSS, Archivados y backend permanecen intactos.
+La validación automática de 7.3 está aprobada y la manual queda pendiente; 7.4
+no está abierta.
 
 ## Páginas
 
