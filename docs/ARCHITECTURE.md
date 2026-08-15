@@ -6,11 +6,10 @@ Este documento describe la arquitectura frontend observada en el código actual.
 
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
-Las Fases 0–6 están completadas. La Sesión 6.0 quedó completada y commiteada en
-`e27cb0a`; 6.1 fue aprobada en `cef834e`, 6.2 en `ef3364f` y 6.3 en `4306903`.
-La Sesión 6.4 aprobó la auditoría formal de cierre sin implementación funcional
-ni prueba manual adicional. La Fase 7 permanece pendiente y no iniciada. El
-inventario ejecutable de render, DOM y eventos se conserva en
+Las Fases 0–7 están completadas. Fase 6 cerró mediante la auditoría 6.4 y Fase
+7 mediante la auditoría 7.4. Los commits funcionales de Fase 7 son `97b798c`,
+`a6840a4` y `bcd361e`; su manual acumulada está aprobada. Fase 8 permanece
+pendiente y no iniciada. El inventario ejecutable se conserva en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -560,8 +559,41 @@ El orden contractual es `dashboard.page.js -> dashboard-bootstrap.js ->
 quick-create.js -> biblioteca.page.js -> biblioteca-loader.js -> render ->
 modal render -> events -> main.js`. Quick Create, loader/reconcile,
 State/Pending, API, generación, CSS, Archivados y backend permanecen intactos.
-La validación automática de 7.3 está aprobada y la manual queda pendiente; 7.4
-no está abierta.
+La validación manual de 7.3 aprobó Dashboard, layout/navbar/footer, Biblioteca,
+Quick Create con batch nuevo, delete y generación de examen; la sesión quedó
+commiteada en `bcd361e`.
+
+### Cierre formal de Fase 7
+
+La auditoría 7.4 aprueba el objetivo canónico: Quick Create, carga/reconciliación
+de Biblioteca y bootstrap/bindings de Dashboard tienen owners identificables y
+sin segunda fuente de estado. `dashboard.page.js` pasó de 5690 a 4049 líneas,
+pero el criterio de cierre es ownership y no LOC: conserva legítimamente
+`explorerState`, navegación, jerarquía técnica, previews, legacy, Archivados,
+helpers compartidos y compatibilidad con consumidores reales.
+
+```text
+dashboard.page.js
+  ├─ explorerState + navegación + jerarquía técnica
+  ├─ previews/download bridges
+  ├─ explorer visual legacy + Archivados
+  └─ helpers/wrappers compartidos
+dashboard-bootstrap.js -> layout + bindings + initDashboardPage
+quick-create.js         -> Quick Create completo
+biblioteca.page.js      -> State/Pending + coordinación + wrappers
+biblioteca-loader.js    -> load/refetch/reconcile
+biblioteca-render.js -> biblioteca-modal-render.js -> biblioteca-events.js
+```
+
+Los residuos no bloquean el cierre: Fase 8 recibe el aislamiento de Archivados,
+explorer visual, navegación jerárquica y previews ligados a `explorerState`;
+Fase 10 recibe cleanup de `window.*`, wrappers, bridges y superficies finales de
+compatibilidad. Scripts clásicos, bindings léxicos, requests no cancelables,
+SSE no resumible y races de refetch permanecen como riesgos conocidos. El fallo
+externo/preexistente de `public.ia_metrics` es no bloqueante.
+
+**Decisión: A. Fase 7 puede cerrarse.** Fase 7 y la Sesión 7.4 quedan
+completadas; auditoría aprobada. Fase 8 permanece pendiente y no iniciada.
 
 ## Páginas
 

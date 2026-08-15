@@ -1,9 +1,9 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta su cierre en la
-Sesión 3.9.
-Este documento inventaría la arquitectura HTTP real y registra las
-consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
+Estado observado en `refactor-front` hasta el cierre formal de Fase 7 en la
+Sesión 7.4. Este documento conserva inventarios históricos y registra la
+arquitectura ejecutable y las consolidaciones internas sin cambiar contratos
+públicos.
 
 ## Configuración y carga
 
@@ -2645,6 +2645,56 @@ Métricas: `dashboard.page.js` 4323→4049 líneas y 177→174 funciones nombrad
 owner nuevo 286 líneas/3 funciones; listeners 27→2 + 25; operaciones DOM
 198→171 + 27; wrappers nuevos 0. Comparación literal normalizada de
 `injectComponent`, `bindDashboardEvents` e `initDashboardPage`: PASS.
+
+## Fase 7 — Sesión 7.4: auditoría formal de cierre
+
+La apertura confirmó frontend limpio en `refactor-front`/`bcd361e`, commit real
+de 7.3 `refactor(frontend): extract Dashboard bootstrap ownership`, y backend
+limpio/solo lectura en `refactor-back`/`e08d6e4`. La manual de 7.3 aprobó
+Dashboard, layout/navbar/footer, Biblioteca, Quick Create con batch nuevo,
+delete y examen de 5/5 preguntas con cero retries y `generate:success`.
+
+| Dominio | Owner real | Segunda fuente | Estado de cierre |
+| --- | --- | --- | --- |
+| Quick Create | `quick-create.js` | no; usa `explorerState` físico | cerrado en 7.1 |
+| Loader/reconcile | `biblioteca-loader.js` | no; opera sobre `bibliotecaState` | cerrado en 7.2 |
+| Bootstrap Dashboard | `dashboard-bootstrap.js` | no | cerrado en 7.3 |
+| State/Pending Biblioteca | `biblioteca.page.js` | no | protegido/intacto |
+| Navegación | `dashboard.page.js` | no | clasificada para Fase 8 |
+| Jerarquía técnica | Dashboard + service/API existentes | no | activa y protegida |
+| Legacy visual | `dashboard.page.js` | no | aislamiento Fase 8 |
+| Archivados | flujo separado + bridges existentes | no | Fase 8, no absorbido |
+
+La búsqueda global confirma 15 call paths del loader (14 externos más el
+refetch interno de finish), cinco wrappers lógicos hacia `BibliotecaLoader`, 17
+listeners Quick Create, 25 estructurales de bootstrap, dos locales legacy, un
+listener delegado de Biblioteca y listeners locales de modales. No existe
+`stopPropagation` en la coexistencia Dashboard/Biblioteca ni segundo store.
+
+`dashboard.page.js` termina en 4049 líneas, 174 funciones nombradas, dos sitios
+de listener, 488 referencias a `explorerState` y seis publicaciones globales.
+El owner bootstrap añade tres funciones, 25 sitios de listener, 18 referencias
+al mismo `explorerState` y las escrituras compatibles de `BIBLIOTECA_MODE` e
+`initDashboardPage`. Navegación, jerarquía, previews, legacy, Archivados,
+helpers y compatibilidad son responsabilidades residuales clasificadas, no un
+bloqueo ni una razón para crear 7.5.
+
+Contratos protegidos: Quick Create omite `batch_id` explícito y usa
+`force_new_batch:true`; el flujo normal conserva batch explícito y no activa
+ese flag. Exámenes envían `planeacion_ids`, `unidad_id`, `batch_id`, tipos y
+cantidades; no sustituyen `tema_ids`. Los generadores, polling, SSE, deletes,
+Selection/Tabs, cuatro ModalState, cuatro Pending, render/modal/events, APIs y
+payloads no cambiaron en Fase 7.
+
+Handoff: Fase 8 recibe explorer visual, navegación jerárquica, Archivados,
+previews ligados a `explorerState` y clasificación legacy/compatibilidad. Fase
+10 recibe retiro de wrappers, globals y bridges `window.*` cuando sus
+consumidores hayan migrado. Requests no cancelables, SSE no resumible, delete
+con generation concurrente y races de refetch son deuda no bloqueante; el error
+externo/preexistente de `public.ia_metrics` no pertenece al frontend.
+
+**Decisión: A. Fase 7 puede cerrarse.** Sesión 7.4 completada y auditoría
+aprobada; Fase 8 pendiente/no iniciada; manual adicional no requerida.
 
 ### Estado mixto de reconciliación
 

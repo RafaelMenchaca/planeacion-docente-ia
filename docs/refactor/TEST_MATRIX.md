@@ -1611,22 +1611,41 @@ La aprobación manual quedó reconciliada con el commit real `a6840a4`.
 | Jest acumulativo | PASS: 4 suites, 12 tests con `npm test -- --runInBand` |
 | Backend | PASS: limpio, solo lectura y sin llamadas reales |
 
-### Checklist manual pendiente de 7.3
+### Checklist manual aprobado de 7.3
 
-| Caso | Verificación manual requerida |
+| Caso | Resultado confirmado |
 | --- | --- |
-| Arranque | `main.js` invoca una vez Dashboard y Biblioteca |
-| Componentes | layout, navbar y footer cargan; bindings no se duplican |
-| Navegación | navbar, Detalle por URL, back-forward y redirects auth conservados |
-| Biblioteca | selección, tabs, search, modales y acciones completas |
-| Preview/download | Examen y Lista conservan DOM, Escape y descarga |
-| Bubbling | cada `data-bib-action` ejecuta una vez; Dashboard ignora sin error |
-| Script order | ningún `ReferenceError` de actividades, progreso, State/Pending o features |
-| Legacy | árbol/breadcrumbs no aparecen en ruta vigente; no se eliminan todavía |
+| Arranque/componentes | Dashboard, layout, navbar y footer correctos |
+| Biblioteca | carga y operación correctas, sin errores visibles nuevos |
+| Quick Create | batch nuevo con `batchIdRecibido:null`, `forceNewBatch:true` y creación confirmada |
+| Delete | `[biblioteca] delete:success` confirmado |
+| Examen | tema correcto, 5/5 preguntas, cero retries y `generate:success` |
 
-### Matriz preparada para 7.4 — cierre formal
+## Fase 7 — Sesión 7.4: auditoría formal de cierre
 
-Suite Jest, `node --check` de scripts movidos, búsquedas globales, comparación
-de payload/SSE, orden de scripts, owners únicos, matriz manual acumulativa
-7.1–7.3, consola/red sin duplicados y repos frontend/backend limpios antes de
-aprobar Fase 7. La auditoría de cierre no abre Fase 8.
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend limpio `refactor-front`/`bcd361e`; backend limpio `refactor-back`/`e08d6e4` |
+| Historial | PASS: 7.0 `7c75738`, 7.1 `97b798c`, 7.2 `a6840a4`, 7.3 `bcd361e` |
+| Owners | PASS: Quick Create, loader/reconcile y bootstrap tienen owner único |
+| State | PASS: `bibliotecaState`, Selection/Tabs, cuatro ModalState y cuatro Pending conservan fuente física |
+| Loader | PASS: 14 caminos externos + refetch interno de finish = 15 |
+| Quick batch | PASS: batch nuevo sin ID explícito + `force_new_batch:true`; batch normal explícito sin flag |
+| Examen | PASS: `planeacion_ids`, unidad, batch, tipos y cantidades; `tema_ids` no reinterpretado |
+| Deletes | PASS: cleanup local, pending/Selection/Tabs de bloque y refetch silencioso |
+| Protegidos | PASS: cuatro generadores, render/modal/events, API/services, payloads y previews sin cambios de Fase 7 |
+| Eventos | PASS: 25 bootstrap + 17 Quick + 2 locales legacy + delegación Biblioteca; sin `stopPropagation` |
+| Scripts | PASS: orden clásico íntegro; sin ESM, `defer` o `async` |
+| Búsquedas | PASS: owners, globals, state, Pending, wrappers y `data-bib-action` clasificados |
+| Jest | PASS: 4 suites, 12 tests con `npm test -- --runInBand` |
+| Manual acumulada | PASS: 7.1, 7.2 y 7.3 aprobadas; no repetir |
+| Contradicciones | Ninguna |
+
+Riesgos no bloqueantes: scripts clásicos/bindings léxicos, estado mixto
+`explorerState`, requests/SSE no cancelables o resumibles y races de refetch.
+Fase 8 recibe legacy visual, Archivados, navegación jerárquica y previews
+residuales; Fase 10, wrappers/globals/bridges. `public.ia_metrics` es un error
+externo/preexistente no bloqueante.
+
+**Decisión: A. Fase 7 puede cerrarse.** Sesión 7.4 completada, auditoría
+aprobada, manual adicional no requerida y Fase 8 pendiente/no iniciada.

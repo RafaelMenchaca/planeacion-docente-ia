@@ -806,8 +806,9 @@ desalinear acciones, IDs y renders posteriores.
 
 Las Sesiones 6.1, 6.2 y 6.3 están aprobadas y commiteadas en `cef834e`,
 `ef3364f` y `4306903`. `biblioteca-events.js` es el owner del wiring
-estructural. La Sesión 6.4 completó y aprobó la auditoría formal; no se crea una
-6.5 y Fase 7 queda pendiente/no iniciada.
+estructural. La Sesión 6.4 completó y aprobó la auditoría formal; no se creó una
+6.5. En ese cierre histórico Fase 7 quedó pendiente/no iniciada y posteriormente
+cerró en la auditoría 7.4.
 
 #### Resultado técnico de 6.1
 
@@ -899,11 +900,10 @@ Quitar dependencias activas de `dashboard.page.js` que pertenecen a Biblioteca s
 
 ### Estado
 
-**En progreso.** La Sesión 7.0 quedó commiteada en `7c75738`; la Sesión 7.1 fue
-validada manualmente y commiteada en `97b798c`; y la Sesión 7.2 fue validada
-manualmente y commiteada en `a6840a4`. La Sesión 7.3 está implementada y
-validada automáticamente; su manual permanece pendiente. La Sesión 7.4 no está
-abierta.
+**Completada.** La auditoría formal 7.4 aprobó el cierre. La Sesión 7.0 quedó
+commiteada en `7c75738`; 7.1, validada manualmente en `97b798c`; 7.2, validada
+manualmente en `a6840a4`; y 7.3, validada manualmente y commiteada en
+`bcd361e`. Fase 8 permanece pendiente y no iniciada.
 
 ### Dependencias
 
@@ -987,7 +987,7 @@ reload y ausencia de cards/batches duplicados.
 
 #### 7.3 — Reducir Dashboard a bootstrap/navegación y bindings activos
 
-**Estado: implementada; validación manual pendiente.** Se creó
+**Estado: completada, validada manualmente y commiteada en `bcd361e`.** Se creó
 `js/features/dashboard/dashboard-bootstrap.js` como owner de inyección del
 layout, coordinación de `initDashboardPage` y registro único de los bindings
 estructurales del Dashboard. Las tres funciones se movieron literalmente, con
@@ -1003,8 +1003,9 @@ de dos o más dominios y permanecen como bridge compartido, sin duplicación.
 
 Evidencia automática: comparación literal PASS de las tres funciones; smoke
 Dashboard sin red de 3 casos; smokes protegidos de Quick Create y loader; suite
-acumulativa de 4 suites/12 tests, sintaxis y diff check. No abrir 7.4 hasta
-aprobar y registrar la manual de 7.3.
+acumulativa de 4 suites/12 tests, sintaxis y diff check. La manual confirmó
+Dashboard y chrome, Biblioteca, Quick Create con batch nuevo, delete y examen
+completo de 5/5 preguntas sin retries ni errores visibles nuevos.
 
 - Delimitar `initDashboardPage`, inyección de layout/chrome, binding único del
   shell y navegación vigente; mover únicamente helpers compartidos que sigan
@@ -1021,9 +1022,26 @@ dispatch y revisión de orden de scripts.
 
 #### 7.4 — Auditoría formal de cierre
 
-Auditar ownership, fuentes únicas, búsquedas globales, orden de scripts,
-wrappers conservados y matriz acumulativa. No incluir nuevas extracciones ni
-abrir Fase 8 dentro de esta sesión.
+**Estado: completada; auditoría aprobada; manual adicional no requerida.** Gate
+en `refactor-front`/`bcd361e` y backend solo lectura
+`refactor-back`/`e08d6e4`. La búsqueda global confirma owners únicos para Quick
+Create, loader/reconcile y bootstrap; fuente única para State/Pending; 15
+caminos equivalentes del loader; scripts clásicos y orden intactos; y
+navegación, jerarquía, legacy, Archivados, wrappers y globals clasificados.
+
+La suite acumulativa pasa 4 suites/12 tests. Generadores, Selection/Tabs,
+ModalState/Pending, render/modal/events, API/payload, examen, delete, previews,
+SSE/polling y backend permanecen protegidos. No hay contradicciones ni deuda
+que justifique 7.5.
+
+**Decisión: A. Fase 7 puede cerrarse.** Fase 8 queda pendiente/no iniciada con
+handoff de explorer visual, navegación jerárquica, Archivados, previews ligados
+a `explorerState` y bindings compartidos. Fase 10 conserva cleanup de
+`window.*`, wrappers, bridges y compatibilidad final.
+
+La auditoría cubrió ownership, fuentes únicas, búsquedas globales, orden de
+scripts, wrappers conservados y matriz acumulativa. No incluyó nuevas
+extracciones ni abrió Fase 8.
 
 ### Resultado esperado
 
@@ -1051,6 +1069,10 @@ Inventario de dependencias, resolución elegida, búsqueda global, orden de scri
 ### Condición para avanzar
 
 Biblioteca debe poder operar sin depender del código visual del explorador antiguo; las dependencias desconocidas bloquean el aislamiento.
+
+Condición cumplida para las responsabilidades propias de Biblioteca: los
+cruces restantes son helpers compartidos, preview o compatibilidad con
+consumidor identificado, no dependencias desconocidas del explorer visual.
 
 ## Fase 8 — Aislar legacy visual
 

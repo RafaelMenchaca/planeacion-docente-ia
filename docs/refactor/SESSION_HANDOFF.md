@@ -11,9 +11,9 @@
 
 ## Estado del roadmap
 
-- **Última fase cerrada:** 6 — Render, DOM y eventos de Biblioteca.
+- **Última fase cerrada:** 7 — Dashboard, Quick Create, loaders, navegación y reconciliación.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 7 — Desacoplar Biblioteca de Dashboard; en progreso.
+- **Siguiente fase:** 8 — Aislar legacy visual; pendiente y no iniciada.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -69,7 +69,8 @@
 - **Commit real de 7.0:** `7c75738`.
 - **Sesión 7.1:** extracción consolidada de Quick Create validada manualmente y commiteada en `97b798c`.
 - **Sesión 7.2:** ownership de loader/reconcile validado manualmente y commiteado en `a6840a4`.
-- **Sesión 7.3:** bootstrap y bindings Dashboard extraídos y validados automáticamente; manual pendiente, sin commit ni push.
+- **Sesión 7.3:** bootstrap y bindings Dashboard validados manualmente y commiteados en `bcd361e`.
+- **Sesión 7.4:** auditoría formal aprobada; Fase 7 completada, sin implementación funcional ni manual adicional.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -90,7 +91,9 @@ el render no modal, fue validada manualmente y quedó commiteada en `cef834e`.
 6.2 extrajo DOM/render y wiring local de overlays, fue validada manualmente y
 commiteada en `ef3364f`. 6.3 extrajo el wiring estructural, fue validada y quedó
 commiteada en `4306903`. 6.4 aprobó el cierre formal y el commit acumulativo de
-Fase 6 es `295d7ed`. La Sesión 7.0 abrió Fase 7 solo en documentación.
+Fase 6 es `295d7ed`. Fase 7 abrió con 7.0, completó sus tres cortes en
+`97b798c`, `a6840a4` y `bcd361e`, y cerró mediante la auditoría 7.4. Fase 8
+permanece pendiente/no iniciada.
 
 ## Sesión 1.1 — Preview y descarga de examen
 
@@ -3945,7 +3948,8 @@ El nombre definitivo no está fijado. Riesgo: Alto.
 
 6.1 y 6.2 fueron autorizadas, validadas y commiteadas en `cef834e` y `ef3364f`.
 6.3 fue validada manualmente y commiteada en `4306903`. La auditoría 6.4 cerró
-Fase 6; Fase 7 permanece pendiente y no iniciada.
+Fase 6; en ese corte histórico Fase 7 quedó pendiente y posteriormente cerró
+mediante la auditoría 7.4.
 
 ### Validaciones de 6.0
 
@@ -4252,7 +4256,7 @@ request.
 ### Estado de salida
 
 - Fase 6: Completada.
-- Fase 7: En progreso.
+- Estado histórico al salir de 7.0: Fase 7 en progreso; cerrada posteriormente por 7.4.
 - Sesión 7.0: Auditoría de apertura completada.
 - Implementación funcional: No realizada.
 - Manual: No requerida.
@@ -4312,12 +4316,12 @@ La suite acumulativa pasó 2 suites y 5 tests.
 
 ### Estado de salida
 
-- Fase 7: En progreso.
+- Fase 7: Completada por auditoría 7.4.
 - Sesión 7.0: Completada y commiteada en `7c75738`.
 - Sesión 7.1: Validada manualmente y commiteada en `97b798c`.
 - Sesión 7.2: Validada manualmente y commiteada en `a6840a4`.
-- Sesión 7.3: Implementada; validaciones automáticas aprobadas; manual pendiente.
-- Commit/push de 7.3: No realizados.
+- Sesión 7.3: Validada manualmente y commiteada en `bcd361e`.
+- Sesión 7.4: Auditoría aprobada; manual adicional no requerida.
 
 La manual de 7.1 confirmó Quick Create, reconciliación sin duplicados,
 Biblioteca posterior y el flujo normal con batch existente,
@@ -4374,8 +4378,8 @@ refresh, finish, cuatro generaciones, dos anexos directos, cinco deletes.
 - `biblioteca.page.js`: 1317→1118 líneas; owner 233; cinco wrappers.
 - Script order: page → loader → render → modal render → events.
 - Sesión 7.2: Validada manualmente y commiteada en `a6840a4`.
-- Sesión 7.3: Implementada; manual pendiente.
-- Commit/push de 7.3: No realizados.
+- Sesión 7.3: Validada manualmente y commiteada en `bcd361e`.
+- Sesión 7.4: Auditoría aprobada; manual adicional no requerida.
 
 La manual de 7.2 confirmó Quick Create con `batchIdRecibido:null`,
 `forceNewBatch:true` y batch creado; el flujo normal con batch existente,
@@ -4432,11 +4436,87 @@ checkboxes creados por renders legacy.
 - Funciones 177→174 + 3; listeners 27→2 + 25; DOM ops 198→171 + 27.
 - `explorerState`: 506 referencias intactas en el perímetro Dashboard/bootstrap
   (488 + 18); globals publicados: 7.
-- Sesión 7.3: Implementada; manual pendiente.
-- Sesión 7.4: No abierta.
-- Commit/push: No realizados.
+- Sesión 7.3: Validada manualmente y commiteada en `bcd361e`.
+- Sesión 7.4: Auditoría aprobada; Fase 7 completada.
+- Commit/push de 7.4: No realizados.
 
-Siguiente acción: ejecutar el checklist manual compacto de Dashboard,
-Biblioteca, Quick Create, batch existente, preview/navegación y consola/red.
-Solo después de su aprobación corresponde abrir 7.4 para la auditoría formal
-de cierre; Fase 8 permanece fuera de alcance.
+La manual de 7.3 confirmó Dashboard, layout/navbar/footer y Biblioteca
+correctos; Quick Create con `batchIdRecibido:null`, `forceNewBatch:true` y batch
+creado; delete con `[biblioteca] delete:success`; y examen del tema Fracciones
+con 5/5 preguntas, cero retries y `generate:success`, sin errores visibles
+nuevos.
+
+## Fase 7 — Sesión 7.4: auditoría formal de cierre
+
+### Gate y sesiones reconciliadas
+
+- Frontend: `refactor-front`, `HEAD bcd361e`, limpio al abrir; commit real de
+  7.3 `refactor(frontend): extract Dashboard bootstrap ownership`.
+- Backend: `refactor-back`/`e08d6e4`, limpio, solo lectura y sin cambios.
+- 7.0: apertura documental, `7c75738`; manual no requerida.
+- 7.1: Quick Create, manual aprobada, `97b798c`.
+- 7.2: loader/reconcile, manual aprobada, `a6840a4`.
+- 7.3: bootstrap/bindings, manual aprobada, `bcd361e`.
+
+| Sesión | Objetivo / archivos principales | Owner resultante | Manual / commit | Riesgo | Estado |
+| --- | --- | --- | --- | --- | --- |
+| 7.0 | auditoría de apertura; cinco documentos | mapa y corte propuesto | no requerida / `7c75738` | clasificación incorrecta | completada |
+| 7.1 | `quick-create.js`, Dashboard, HTML, smoke y docs | `window.QuickCreate` | aprobada / `97b798c` | SSE, staging y batch | completada |
+| 7.2 | `biblioteca-loader.js`, Biblioteca page, HTML, smoke y docs | `window.BibliotecaLoader` | aprobada / `a6840a4` | temporal→real/refetch | completada |
+| 7.3 | `dashboard-bootstrap.js`, Dashboard, HTML, smoke y docs | `window.initDashboardPage` | aprobada / `bcd361e` | orden y doble binding | completada |
+
+### Ownership y fuentes únicas
+
+| Dominio | Owner | Estado |
+| --- | --- | --- |
+| Quick Create | `quick-create.js` | UI, binding, validación, staging, SSE/progreso y bridge completos |
+| Loader/reconcile | `biblioteca-loader.js` | load/refetch, loading/error, temporal→real, optimistic/partial y finish |
+| Bootstrap Dashboard | `dashboard-bootstrap.js` | layout, binding con guard e init público |
+| Biblioteca State/Pending | `biblioteca.page.js` | fuente física única; Selection/Tabs, cuatro ModalState y cuatro Pending intactos |
+| Navegación/jerarquía/legacy/Archivados | `dashboard.page.js` + owners existentes | clasificados para Fase 8; no son segunda fuente de los dominios extraídos |
+
+`dashboard.page.js` queda en 4049 líneas, 174 funciones, dos sitios de listener,
+488 referencias a `explorerState` y seis globals publicados. Bootstrap aporta
+286 líneas, tres funciones, 25 sitios de listener y 18 referencias al mismo
+estado. Quick Create tiene 1414 líneas/44 funciones/17 listeners; loader,
+233 líneas/6 funciones. Los 15 caminos de load permanecen equivalentes y los
+cinco wrappers hacia `BibliotecaLoader` conservan consumidores clásicos.
+
+### Contratos y compatibilidad
+
+- Quick Create usa batch nuevo sin `batch_id` explícito y
+  `force_new_batch:true`; el flujo normal conserva batch explícito y false por
+  ausencia del flag.
+- Exámenes Biblioteca envían `planeacion_ids`, `unidad_id`, `batch_id`, tipos y
+  cantidades; `tema_ids` no recibe IDs de planeación. El backend conserva la
+  resolución de contexto y batch.
+- Deletes individuales y de bloque conservan cleanup optimista, pending,
+  Selection/Tabs y un refetch silencioso.
+- Planeacion/Anexo/Lista/Exam Generation, polling/SSE, render/modal/events,
+  previews/downloads, API/services y payloads no cambiaron en Fase 7.
+- Orden clásico confirmado: Dashboard page → bootstrap → Quick → Biblioteca
+  page → loader → render → modal render → events → main. No ESM/defer/async,
+  `stopPropagation` nuevo ni doble binding detectado.
+
+### Riesgos y handoff
+
+- **No bloqueantes:** scripts clásicos, bindings léxicos, `explorerState`
+  mixto, SSE no resumible, falta de AbortController y races delete/refetch.
+- **Fase 8:** Archivados, explorer visual, árbol/breadcrumbs, navegación
+  jerárquica, previews ligados a `explorerState` y clasificación residual.
+- **Fase 10:** globals, wrappers, bridges y superficies de compatibilidad.
+- **Externo:** error preexistente de `public.ia_metrics`; no bloquea el flujo
+  principal ni pertenece al cierre frontend.
+- **Bloqueantes:** ninguno.
+
+### Evidencia y decisión
+
+- Búsquedas obligatorias de owners/state/globals/Pending/actions: PASS.
+- Suite acumulativa: PASS, 4 suites y 12 tests.
+- Manual acumulada 7.1–7.3: aprobada; no se solicita repetición.
+- Backend final: limpio y solo lectura.
+- Contradicciones: ninguna.
+
+**Decisión: A. Fase 7 puede cerrarse.** Fase 7 y Sesión 7.4 completadas;
+auditoría aprobada. Fase 8 queda pendiente/no iniciada. No se crea 7.5.
+Commit/push de 7.4: no realizados.
