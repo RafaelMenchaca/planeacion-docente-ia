@@ -1282,3 +1282,370 @@ introducida ni bloqueo funcional real.
 **Decisión: A. Fase 5 puede cerrarse.** Fase 5 y la Sesión 5.8 quedan
 completadas; la auditoría de cierre queda aprobada. Fase 6 permanece pendiente y
 no iniciada.
+
+## Fase 6 — Sesión 6.0: auditoría técnica/documental de apertura
+
+Sesión estática sin implementación funcional. La validación manual adicional no
+es requerida. La suite existente se ejecuta como control de integridad, no como
+prueba de render de Biblioteca.
+
+### Cobertura automatizada real
+
+| Recurso | Cobertura | Limitación |
+| --- | --- | --- |
+| `tests/planeacion.test.js` | 2 pruebas JSDOM de `validateForm` en `js/planeacion.js` | No carga dashboard/Biblioteca, cards, modales, eventos, features ni script order |
+| Jest | runner disponible, environment `node`, JSDOM creado por el test | No existe harness de `pages/dashboard.html` |
+| Smokes históricos | scripts ad hoc documentados en sesiones previas | No forman una suite persistente del repositorio |
+| `node --check`/búsquedas/diff | confiables para sintaxis, referencias y alcance | No prueban comportamiento DOM ni listeners duplicados |
+| `git diff --check` | confiable para whitespace/conflictos | No prueba runtime |
+
+No hay tests DOM automatizados de Biblioteca, smoke persistente del dashboard,
+Playwright/Cypress ni cobertura automatizada de full/partial render. Por ello,
+las sesiones funcionales 6.1–6.3 requerirán prueba manual aunque Jest pase.
+
+### Evidencia estática de 6.0
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate frontend/backend | ramas esperadas y ambos trees limpios al abrir |
+| Historia post-merge | `refactor-front`/`main` en `1254561`; fases 0–5 incluidas |
+| Inventario render/DOM/eventos | completado en `FRONTEND_MAP.md` |
+| Script order y bindings léxicos | documentados; sin reordenamiento |
+| JavaScript/HTML/CSS/backend | no modificados |
+| Validación manual | no requerida para auditoría estática |
+| `npm test -- --runInBand` | aprobado: 1 suite, 2 pruebas |
+| `git diff --check` | aprobado |
+
+### Matriz preparada para 6.1 — render no modal
+
+| Área | Prueba manual futura | Evidencia esperada |
+| --- | --- | --- |
+| Carga | abrir dashboard y recargar | loading → shell; sin árbol legacy ni error consola |
+| Error/retry | solo si ocurre naturalmente | mismo mensaje/CTA; un retry/una request |
+| Empty | usuario/búsqueda sin resultados | textos y CTA iguales |
+| Sidebar | seleccionar varios bloques | active, detalle y scroll preservados |
+| Search | escribir, borrar y mantener foco | filtro, badge, empty y selección sin cambio inesperado |
+| Tabs | recorrer cuatro tabs y volver | tab por bloque, conteos y DOM equivalentes |
+| Planeaciones | cards reales y pending natural | Ver/Descargar/Delete y progreso iguales |
+| Anexos | reales/pending/error natural | acciones y orden iguales |
+| Listas | reales/pending/error natural | acciones y feedback iguales |
+| Exámenes | reales/polling/error natural | acciones, metadata y feedback iguales |
+| Partial render | cambiar bloque/tab y delete natural | sidebar/list/detail no pierden eventos |
+| Quick Create smoke | abrir/cancelar y, si se autoriza, crear | fachada y pending/render intactos |
+| Contrato DOM | comparar IDs, clases y `data-*` | sin diferencias intencionales |
+| Red/consola | observar requests y errores | sin request duplicado ni error nuevo |
+
+### Matriz preparada para 6.2 — modales
+
+| Modal | Pruebas futuras obligatorias |
+| --- | --- |
+| Planeaciones | abrir/cerrar/backdrop/cancelar; agregar/quitar tema; Enter; actividades; error; reopen; submit único |
+| Anexos | disponibles/bloqueadas; check/uncheck; cleanup; cancel/reopen; submit único |
+| Listas | disponibles/generadas; check/uncheck; cleanup; cancel/reopen; submit único |
+| Exámenes | tipos, cantidades, planeaciones, contador, errores, cancel/reopen y submit único |
+| Confirm delete | cinco recursos: cancelar, backdrop y confirmar; una resolución/una request |
+| Re-render | cada control responde después de recrear `.biblioteca-modal-card` |
+| Scroll lock | body se bloquea/libera igual; convivencia con previews/Quick Create |
+
+No se deben forzar fallos IA/backend ni cambiar datos solo para producir estados
+de error. Los estados naturales no observados se registran como no ejecutados.
+
+### Matriz preparada para 6.3 — eventos
+
+| Evento | Prueba futura | Resultado esperado |
+| --- | --- | --- |
+| Delegación | cada uno de los 20 valores emitidos | una rama y una acción |
+| Compatibilidad | búsqueda de 3 ramas sin emisor | permanecen definidas, sin inventar UI |
+| Full/partial render | repetir clicks después de cada tipo de render | listeners sobreviven/no se duplican |
+| Search | input tras varios full renders | una actualización por evento |
+| Modales | múltiples re-renders/reopens | controles actuales funcionan una vez |
+| Document/window | Escape, private chrome, pageshow y click Dashboard | sin interferencia nueva con Biblioteca |
+| Features | preview/download/delete/generation smoke | wrappers y coordinadores preservados |
+| Red | observar acciones destructivas/generación autorizadas | una request por acción; polling/SSE intactos |
+
+### Cierre futuro de Fase 6
+
+La auditoría 6.4 deberá ejecutar regresión acumulativa: Login, carga, sidebar,
+search, selección, tabs, cuatro dominios, pending, cuatro modales, previews,
+downloads, deletes, block delete, Quick Create, recarga, consola/red, globals y
+orden de scripts. Archivados se prueba separado. No se abre Fase 7 mientras
+render/eventos no tengan ownership claro o existan eventos perdidos/duplicados.
+
+## Fase 6 — Sesión 6.1: render no modal consolidado
+
+6.0 fue reconciliada como completada y commiteada en `e27cb0a`. 6.1 fue
+validada manualmente y commiteada en `cef834e`.
+
+### Evidencia automatizada y estática
+
+| Revisión | Resultado |
+| --- | --- |
+| Comparación literal contra `HEAD` | PASS: bloque movido idéntico antes de añadir la superficie léxica de ownership |
+| Sintaxis | PASS: `node --check js/pages/biblioteca.page.js` y `node --check js/features/biblioteca/biblioteca-render.js` |
+| Smoke técnico aislado sin red | PASS: loading/error/empty/sidebar-search/selection/tabs/cards/pending/Quick Create visual/partial renders/actions |
+| Acciones | PASS: 20 valores emitidos, 23 ramas; ninguna renombrada o retirada |
+| Listeners | 30 `addEventListener` + un `oninput`; no se reorganizaron |
+| Jest | PASS: 1 suite, 2 tests; no cubre Biblioteca |
+| Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
+
+### Checklist manual aprobado de 6.1
+
+| Área | Comprobación compacta |
+| --- | --- |
+| Carga | Biblioteca normal; loading; sin bloques y con bloques; error solo si ocurre naturalmente |
+| Sidebar/search | buscar y limpiar; seleccionar/cambiar bloques; selección y scroll visibles |
+| Tabs | Planeaciones, Anexos, Listas y Exámenes; active/tab por bloque correcto |
+| Cards | datos/botones; empty y pending correctos en los cuatro dominios |
+| Acciones | preview, download, delete cancelando confirmación y apertura de cada modal de generación |
+| Quick Create | flujo mínimo o integración vigente; render posterior sin error |
+| Consola/red | sin error nuevo, listener visible duplicado ni request duplicada |
+
+Evidencia recibida: carga, bloques/planeaciones, navegación, Anexos, Listas,
+Exámenes y delete de bloque correctos; sin errores nuevos visibles o de consola.
+No se recibieron ni solicitaron UUIDs, tokens o datos personales.
+
+## Fase 6 — Sesión 6.2: DOM/render de modales
+
+### Evidencia automatizada y estática
+
+| Revisión | Resultado |
+| --- | --- |
+| Cinco sub-gates | PASS: Planeaciones, Anexos, Listas, Exámenes y Confirmación |
+| Comparación literal | PASS por función; también `BIB_EXAM_TIPOS` e inyección |
+| Sintaxis | PASS: page, render no modal y owner modal |
+| Listeners | 1 general en page + 29 locales en owner; targets/once/closures preservados |
+| Smoke JSDOM sin red | PASS en cuatro modales, confirmación e inyección |
+| Jest | PASS: 1 suite/2 tests; sigue sin cubrir Biblioteca persistente |
+| Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
+
+### Checklist manual aprobado de 6.2
+
+| Área | Comprobación |
+| --- | --- |
+| Planeaciones | abrir; agregar/eliminar temas; actividades por momento; cerrar/reabrir; generar |
+| Anexos | abrir; seleccionar; cerrar/reabrir; generar uno y varios si hay datos |
+| Listas | abrir; seleccionar; cerrar/reabrir; generar |
+| Exámenes | abrir; planeaciones; siete tipos/cantidades; cerrar/reabrir; generar pequeño |
+| Confirmación | delete→cancelar; delete→confirmar; backdrop si aplica |
+| Regresión | render 6.1, tabs, search, Quick Create, preview, download y consola |
+
+Resultado recibido: carga, recursos, cuatro modales y generaciones, delete
+individual/de bloque y consola correctos; sin regresiones visibles ni errores
+nuevos reportados. Commit `ef3364f`.
+
+## Fase 6 — Sesión 6.3: ownership de eventos
+
+### Evidencia automatizada y estática
+
+| Revisión | Resultado |
+| --- | --- |
+| Comparación literal | PASS: dos handlers, orden de 23 ramas y líneas efectivas de binding |
+| Acciones | PASS: 20 valores emitidos y 23 ramas, incluidas tres sin emisor |
+| Sintaxis | PASS: page, render no modal, modal render y event owner |
+| Conteo efectivo | 1 listener documental, 1 `oninput`, 29 listeners modales; sin cambio |
+| Coexistencia Dashboard | PASS: listener de `#explorer-content` antes de `document`, bubbling sin prevent/stop |
+| Smoke JSDOM sin red | PASS: selección/tabs/search, cuatro opens, bridge, retry, preview/download, generación, deletes, legacy y desconocida |
+| Dispatch duplicado | PASS técnico: una llamada por click; delete se disparó una vez por cada escenario cancel/confirm simulado |
+| Jest | PASS: 1 suite/2 tests; no sustituye prueba manual de red/consola |
+| Backend | `refactor-back`/`e08d6e4`, limpio y solo lectura |
+
+### Checklist manual aprobado de 6.3
+
+| Área | Comprobación |
+| --- | --- |
+| Biblioteca | carga; seleccionar/cambiar bloques; tabs; search y clear |
+| Acciones | abrir cuatro modales; preview; download; delete cancelar y confirmar |
+| Generación | una generación representativa; una sola request/dispatch |
+| Quick Create | smoke mínimo, render posterior y sin doble evento |
+| Consola/red | sin error nuevo, acción duplicada ni request duplicada |
+
+Resultado recibido: Biblioteca, selección/cambio de bloques, tabs, search/clear,
+cuatro modales, preview/download, delete cancel/confirm, generación y Quick
+Create correctos; sin doble dispatch, requests duplicados ni errores nuevos.
+Logs naturales aprobados: delete de Biblioteca/Planeaciones/Exámenes y generate
+de Planeaciones/Anexos/Listas/Exámenes. El examen completó 11/11 preguntas, 17
+retries anti-duplicados y cero fallos finales. Commit `4306903`.
+
+## Fase 6 — Sesión 6.4: auditoría formal de cierre
+
+| Revisión acumulativa | Resultado |
+| --- | --- |
+| Gate e historia | PASS: frontend `refactor-front`/`4306903`; 6.0–6.3 presentes; backend `refactor-back`/`e08d6e4`, ambos limpios al abrir |
+| Owners | PASS: una implementación canónica para render no modal, modales y eventos |
+| Comparación literal | PASS normalizado contra `1254561`: render no modal, cuatro modales, confirmación, inyección y eventos |
+| State/Pending | PASS: diez superficies protegidas y una sola fuente física |
+| DOM/eventos | PASS: 20 acciones, 23 ramas, 1 listener documental, 1 `oninput`, 29 listeners modales; markup/selectores/data sin cambio |
+| Features/API | PASS: generation, delete, preview/download, `js/api`, `js/services` y `wordExport.js` sin cambios de Fase 6 |
+| Exámenes | PASS: payload conserva `unidad_id`, `batch_id`, `planeacion_ids`, `tipos_pregunta`, `cantidades_pregunta`; no envía `tema_ids` |
+| Compatibilidad | PASS: `window.biblioteca`, `window.renderBibliotecaContent`, Dashboard/Quick Create y ramas sin emisor conservados |
+| Scripts/protegidos | PASS: scripts clásicos en orden; Dashboard, Archivados, CSS, packages y backend intactos |
+| Evidencia manual | PASS acumulativo 6.1–6.3; no requiere repetición en 6.4 |
+
+No hay contradicciones bloqueantes. Deuda no bloqueante: init sin guard,
+listeners confirm acumulables, re-binding tras `innerHTML` y mutaciones
+históricas de render. Quick Create/loaders/Dashboard pertenecen a Fase 7.
+`public.ia_metrics` es externo y preexistente.
+
+**Decisión: A. Fase 6 puede cerrarse.** Fase 6 y Sesión 6.4 completadas;
+auditoría aprobada. Fase 7 pendiente/no iniciada. Prueba manual adicional no
+requerida.
+
+## Fase 7 — Sesión 7.0: auditoría técnica/documental de apertura
+
+| Revisión de apertura | Resultado esperado / evidencia 7.0 |
+| --- | --- |
+| Gate frontend | PASS: `refactor-front`, `295d7ed`, limpio y alineado con origin al abrir |
+| Gate backend | PASS: `refactor-back`, `e08d6e4`, limpio y solo lectura |
+| Fases | PASS: 0–6 completadas; 7 abierta; 8–10 pendientes |
+| Código protegido | PASS: JS/HTML/CSS/API/services/backend intactos en 7.0 |
+| Quick Create | Mapeado trigger→jerarquía→staging→SSE→pending→batch real→refetch→render |
+| Batch | Confirmado `force_new_batch` para nuevo y `batch_id` para existente |
+| Estado | Shapes/writers/readers de `explorerState`, pending y Selection/Tabs documentados |
+| Loaders | Init, componentes, auth, jerarquía, previews, Detalle y Biblioteca clasificados |
+| Globals | `window.explorerState`, `window.biblioteca`, wrapper render y feature globals inventariados |
+| Eventos | Dashboard content antes de document Biblioteca; acciones distintas, sin doble dispatch actual |
+| Reload/delete | Estado efímero, SSE no resumible, requests no cancelables y race de delete documentados |
+| Roadmap | 7.1 Quick Create; 7.2 loader/reconcile; 7.3 bootstrap/bindings; 7.4 cierre |
+| Jest | PASS: 1 suite, 2 tests, `npm test -- --runInBand` |
+| Diff | PASS: `git diff --check`; únicamente cinco documentos autorizados |
+
+La Sesión 7.0 no requiere prueba manual porque no cambia comportamiento. Las
+siguientes matrices quedan preparadas, no ejecutadas.
+
+### Matriz preparada para 7.1 — Quick Create completo
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Carga | Dashboard muestra Biblioteca, navbar/footer y CTA sin error de consola |
+| Abrir/cerrar | Hero y CTA vacío abren; X, Cancelar, backdrop y Escape cierran una vez |
+| Validación | Sin temas/nivel/materia muestra el mismo mensaje y conserva panel/datos |
+| Bloque nuevo | Crea/resuelve jerarquía técnica, una request SSE, card temporal y batch real sin duplicado |
+| Bloque existente | Envía batch explícito, no `force_new_batch`, muestra pending en el bloque seleccionado |
+| Actividades | Tres momentos conservan selecciones y payload |
+| Progreso | pending/generating/ready/skipped/error y conteos se actualizan sin doble render visible |
+| Partial success | Recursos exitosos aparecen; fallos/skipped conservan mensaje y pending esperado |
+| Error red/SSE/auth | UI/cleanup equivalentes; sin request repetida ni excepción nueva no controlada |
+| Selección/tab | Cambio durante generación conserva navegación; finish selecciona Planeaciones del batch generado |
+| Reload posterior | Biblioteca reconstruye lo persistido; no promete reanudar SSE |
+| Red/contrato | Mismo endpoint, headers, `unidad_id`, `batch_id`, `force_new_batch`, parser y fallback |
+
+## Fase 7 — Sesión 7.1: Quick Create consolidado
+
+### Evidencia automática ejecutada
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend `refactor-front`/`7c75738` y backend `refactor-back`/`e08d6e4`, limpios al abrir |
+| Owner | PASS: implementación en `quick-create.js`; Dashboard conserva wrappers/helpers compartidos |
+| Comparación literal | PASS normalizado: tres bloques UI, generación, jerarquía técnica y bindings |
+| Sintaxis | PASS: Dashboard y owner nuevo mediante `node --check` |
+| Listeners | PASS: 44 call sites preservados; 27 en Dashboard y 17 en el owner |
+| Contratos | PASS estático: endpoint/service, payload, `force_new_batch`, `batch_id`, SSE y fachada preservados |
+| Smoke sin red | PASS: 3 casos JSDOM; open/close/validación, temp→real sin duplicado, parcial/error/cleanup |
+| Jest acumulativo | PASS: 2 suites, 5 tests con `npm test -- --runInBand` |
+| Loader/reconcile | PASS de alcance: cero llamadas directas nuevas; se conserva la fachada de Biblioteca |
+| Backend | PASS: limpio y sin cambios; no se ejecutaron migraciones ni llamadas reales |
+
+### Checklist manual aprobado de 7.1
+
+| Área | Comprobación solicitada |
+| --- | --- |
+| Carga/UI | Biblioteca, navbar/footer y CTA; abrir, cerrar, backdrop/Escape, reabrir y validar tema único/múltiple |
+| Bloque nuevo | Generar 1–2 temas; una request SSE; card temporal→batch real, sin duplicado; selección y tab Planeaciones |
+| Parcial/error | Si se puede reproducir naturalmente, conservar resultados/mensajes/pending y cleanup histórico |
+| Biblioteca | Cambiar bloque/tabs/search; reload muestra lo persistido y no promete reanudar SSE |
+| Recursos | Planeaciones, Anexos, Listas y Exámenes siguen accesibles desde sus tabs |
+| Regresión normal | “Agregar Tema” en bloque existente reutiliza batch explícito y no envía `force_new_batch:true` |
+| Consola/red | Sin errores nuevos, doble handler, doble card ni request duplicada |
+
+Logs naturales útiles, sin tokens, UUIDs completos ni datos personales: para
+Quick Create nuevo, `batchIdRecibido:null`, `forceNewBatch:true` y creación de
+batch; para el modal normal, batch explícito, `forceNewBatch:false` y
+reutilización. El usuario confirmó el checklist sin errores ni duplicación
+nuevos; el flujo normal conservó batch explícito y `forceNewBatch:false`.
+Quick Create, Biblioteca posterior y generaciones de planeaciones, anexos y
+exámenes quedaron correctos. Commit `97b798c`.
+
+## Fase 7 — Sesión 7.2: loader y reconciliación
+
+### Evidencia automática ejecutada
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend `refactor-front`/`97b798c`; backend `refactor-back`/`e08d6e4`; limpios al abrir |
+| Owner | PASS: loader/reconcile en `biblioteca-loader.js`; State/Pending conservados en page |
+| Comparación literal | PASS: seis funciones, incluidos loader, finish, merge y optimistic apply |
+| Call sites | PASS: 14 externos + refetch interno de finish = 15; firmas/opciones intactas |
+| Requests/renders | PASS: una GET máxima por load; normal 2 renders, silent 1, finish 2 totales |
+| Smoke loader | PASS: 4 casos; success/empty/error, fallbacks, target/inferencia, partial/optimistic/finish |
+| Smoke Quick Create | PASS: 3 casos existentes, incluida temporal→real sin duplicado |
+| Jest acumulativo | PASS: 3 suites, 9 tests con `npm test -- --runInBand` |
+| Protegidos | PASS estático: generadores, deletes, API, render, State/Pending y Quick Create sin cambio funcional |
+| Backend | PASS: limpio, solo lectura y sin llamadas reales |
+
+### Checklist manual aprobado de 7.2
+
+| Caso | Resultado confirmado |
+| --- | --- |
+| Quick Create | batch nuevo con `batchIdRecibido:null`, `forceNewBatch:true` y creación confirmada |
+| Flujo normal | batch existente, `forceNewBatch:false` y reutilización explícita |
+| Delete | éxito confirmado con `[biblioteca] delete:success` |
+| Reconciliación | temporal→real sin duplicado visible; Biblioteca posterior correcta |
+| Consola/red | sin errores, doble GET, doble render ni doble card reportados |
+
+La aprobación manual quedó reconciliada con el commit real `a6840a4`.
+
+## Fase 7 — Sesión 7.3: Dashboard bootstrap y bindings
+
+### Evidencia automática ejecutada
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend `refactor-front`/`a6840a4`; backend `refactor-back`/`e08d6e4`; limpios al abrir |
+| Owner | PASS: layout/init/binding en `dashboard-bootstrap.js`; navegación/jerarquía/legacy retenidos |
+| Comparación literal | PASS: `injectComponent`, `bindDashboardEvents` e `initDashboardPage` |
+| Listeners | PASS: 27 totales preservados como 25 en owner + 2 locales legacy |
+| Orden/bubbling | PASS estático: Dashboard registra primero y sigue ignorando `data-bib-action` |
+| Smoke Dashboard | PASS: 3 casos sin red para init, bridge, branch legacy y error de layout |
+| Protegidos | PASS: smokes Quick Create y Biblioteca loader sin cambios funcionales |
+| Jest acumulativo | PASS: 4 suites, 12 tests con `npm test -- --runInBand` |
+| Backend | PASS: limpio, solo lectura y sin llamadas reales |
+
+### Checklist manual aprobado de 7.3
+
+| Caso | Resultado confirmado |
+| --- | --- |
+| Arranque/componentes | Dashboard, layout, navbar y footer correctos |
+| Biblioteca | carga y operación correctas, sin errores visibles nuevos |
+| Quick Create | batch nuevo con `batchIdRecibido:null`, `forceNewBatch:true` y creación confirmada |
+| Delete | `[biblioteca] delete:success` confirmado |
+| Examen | tema correcto, 5/5 preguntas, cero retries y `generate:success` |
+
+## Fase 7 — Sesión 7.4: auditoría formal de cierre
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend limpio `refactor-front`/`bcd361e`; backend limpio `refactor-back`/`e08d6e4` |
+| Historial | PASS: 7.0 `7c75738`, 7.1 `97b798c`, 7.2 `a6840a4`, 7.3 `bcd361e` |
+| Owners | PASS: Quick Create, loader/reconcile y bootstrap tienen owner único |
+| State | PASS: `bibliotecaState`, Selection/Tabs, cuatro ModalState y cuatro Pending conservan fuente física |
+| Loader | PASS: 14 caminos externos + refetch interno de finish = 15 |
+| Quick batch | PASS: batch nuevo sin ID explícito + `force_new_batch:true`; batch normal explícito sin flag |
+| Examen | PASS: `planeacion_ids`, unidad, batch, tipos y cantidades; `tema_ids` no reinterpretado |
+| Deletes | PASS: cleanup local, pending/Selection/Tabs de bloque y refetch silencioso |
+| Protegidos | PASS: cuatro generadores, render/modal/events, API/services, payloads y previews sin cambios de Fase 7 |
+| Eventos | PASS: 25 bootstrap + 17 Quick + 2 locales legacy + delegación Biblioteca; sin `stopPropagation` |
+| Scripts | PASS: orden clásico íntegro; sin ESM, `defer` o `async` |
+| Búsquedas | PASS: owners, globals, state, Pending, wrappers y `data-bib-action` clasificados |
+| Jest | PASS: 4 suites, 12 tests con `npm test -- --runInBand` |
+| Manual acumulada | PASS: 7.1, 7.2 y 7.3 aprobadas; no repetir |
+| Contradicciones | Ninguna |
+
+Riesgos no bloqueantes: scripts clásicos/bindings léxicos, estado mixto
+`explorerState`, requests/SSE no cancelables o resumibles y races de refetch.
+Fase 8 recibe legacy visual, Archivados, navegación jerárquica y previews
+residuales; Fase 10, wrappers/globals/bridges. `public.ia_metrics` es un error
+externo/preexistente no bloqueante.
+
+**Decisión: A. Fase 7 puede cerrarse.** Sesión 7.4 completada, auditoría
+aprobada, manual adicional no requerida y Fase 8 pendiente/no iniciada.

@@ -15,7 +15,7 @@ Frontend estático de Educativo IA para crear, consultar y descargar planeacione
 
 El antiguo explorador visual `plantel → grado → materia → unidad → tema` permanece parcialmente en código como legado y compatibilidad. No es una experiencia paralela soportada ni debe recibir funciones nuevas. Las tablas, IDs y endpoints jerárquicos pueden seguir activos como soporte técnico, persistencia o dependencia de Archivados.
 
-## Stack
+## Stack 
 
 - HTML y JavaScript Vanilla mediante scripts clásicos.
 - CSS propio, Tailwind CSS y Bootstrap donde el código actual los carga.
@@ -66,7 +66,7 @@ No existe `pages/biblioteca.html`: Biblioteca se inicializa desde `js/pages/bibl
 
 No copiar claves, tokens ni valores privados a la documentación. La configuración pública de Supabase no autoriza exponer service role.
 
-## Desarrollo local
+## Desarrollo local.
 
 ```bash
 npm install

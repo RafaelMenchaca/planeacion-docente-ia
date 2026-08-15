@@ -29,8 +29,8 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 3 | Capa API frontend | Centralizar llamadas HTTP | Medio | Completada |
 | 4 | Generación y polling | Separar procesos largos | Alto | Completada |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Completada |
-| 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Pendiente |
-| 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Pendiente |
+| 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Completada |
+| 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | En progreso |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Pendiente |
 | 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Pendiente |
 | 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
@@ -702,7 +702,29 @@ Dividir gradualmente render y eventos para que `biblioteca.page.js` actúe como 
 
 ### Estado
 
-**Pendiente.**
+**Completada.** La auditoría formal 6.4 aprobó el cierre. Fase 7 permanece
+pendiente y no iniciada.
+
+La **Sesión 6.0 — Auditoría técnica/documental de apertura** quedó completada
+sin implementación funcional. El gate post-merge confirmó `refactor-front` en
+`1254561`, igual a `main`/`origin/main`, frontend limpio y backend de solo
+lectura limpio en `refactor-back`/`e08d6e4`. La auditoría levantó el árbol real
+de render, 20 acciones emitidas y 23 ramas delegadas, las superficies DOM, los
+listeners permanentes/recreados, las mutaciones durante render, los cruces con
+Quick Create/Dashboard y los límites con Fase 7. El detalle está en
+[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+
+La reconciliación de 6.4 confirmó que 6.3 fue validada manualmente y commiteada
+en `4306903`: delegación documental, handler de 23 ramas y search wiring residen
+en `js/features/biblioteca/biblioteca-events.js`; la página conserva estado,
+loader, coordinación y compatibilidad. Las sesiones funcionales 6.1–6.3 y la
+auditoría acumulativa 6.4 están aprobadas.
+
+Métricas de apertura: `biblioteca.page.js` tiene 2770 líneas, 80 declaraciones
+de función, 22 declaraciones `render*`, 30 `addEventListener`, una asignación
+`oninput`, 20 valores `data-bib-action` emitidos y aproximadamente 221
+ocurrencias de primitivas DOM auditadas. Son indicadores, no criterio único de
+extracción.
 
 ### Dependencias
 
@@ -723,6 +745,125 @@ Renderers y handlers de `biblioteca.page.js`, selectores de `dashboard.html`, co
 ### Procedimiento recomendado
 
 Separar render puro de coordinación, extraer un área visible por sesión, preservar markup/selectores/atributos, registrar listeners una vez y verificar tras recargas parciales.
+
+El orden respaldado por la auditoría es: estabilizar primero el render no modal
+completo, después extraer el DOM/render de modales conservando literalmente sus
+cleanup y listeners, y finalmente delimitar el ownership de eventos. Extraer la
+delegación antes del árbol que produce sus `data-*` aumentaría el riesgo de
+desalinear acciones, IDs y renders posteriores.
+
+### Sesiones propuestas
+
+#### 6.1 — Render no modal completo de Biblioteca
+
+- **Alcance:** helpers visuales, pending feedback, cards de Planeaciones,
+  Anexos, Listas y Exámenes, shell, sidebar, search visible, detalle, tabs,
+  loading/error visual y renders parciales.
+- **Archivos candidatos:** `js/pages/biblioteca.page.js`, un owner real bajo
+  `js/features/biblioteca/` y `pages/dashboard.html` solo para insertar el
+  script en el orden comprobado.
+- **Riesgo:** Alto por la firma global `renderBibliotecaContent`, Quick Create,
+  features y refetch que invocan esos renders.
+- **Límites:** no mover estado, loader, eventos, modales, generación, Quick
+  Create, previews, downloads, deletes ni API.
+- **Pruebas:** carga/empty/error, búsqueda y clear, selección, scroll lateral,
+  cuatro tabs/cards/pending, full/partial render, retry smoke, Quick Create
+  smoke y atributos/markup equivalentes.
+
+#### 6.2 — DOM y render de modales de Biblioteca
+
+- **Alcance:** inyección, apertura visual y render/wiring literal de los cuatro
+  modales de generación y confirmación de delete.
+- **Archivos candidatos:** `biblioteca.page.js` y un owner de modal bajo
+  `js/features/biblioteca/`.
+- **Riesgo:** Muy alto: Anexos/Listas depuran selección durante render;
+  Planeaciones consume bindings léxicos de Dashboard; todos recrean listeners.
+- **Límites:** no purificar, corregir listeners, cambiar ModalState ni absorber
+  generación/delete.
+- **Pruebas:** abrir/cerrar/cancelar/backdrop, checkboxes, tipos/cantidades,
+  temas/actividades, re-render/reopen y las cinco confirmaciones.
+
+#### 6.3 — Ownership de eventos de Biblioteca
+
+- **Alcance:** delegación `data-bib-action`, búsqueda y bindings de modal ya
+  estabilizados; conservar las tres ramas sin emisor como compatibilidad.
+- **Archivos candidatos:** `biblioteca.page.js` y un owner de eventos bajo
+  `js/features/biblioteca/`.
+- **Riesgo:** Alto por 23 ramas, DOM dinámico, features protegidos y listeners
+  Dashboard ya activos sobre `#explorer-content`/`document`.
+- **Límites:** no cambiar comportamiento ni corregir deuda histórica en la
+  misma extracción.
+- **Pruebas:** un click produce una acción, eventos sobreviven full/partial
+  render, modales re-renderizados funcionan y no aparecen requests/listeners
+  duplicados.
+
+#### 6.4 — Auditoría formal de cierre
+
+- **Alcance:** documentación y evidencia acumulativa; sin cambio funcional.
+- **Riesgo:** Alto acumulativo.
+- **Pruebas:** suite, matriz manual de Fase 6, consola/red, orden de scripts,
+  globals y búsqueda de consumidores.
+
+Las Sesiones 6.1, 6.2 y 6.3 están aprobadas y commiteadas en `cef834e`,
+`ef3364f` y `4306903`. `biblioteca-events.js` es el owner del wiring
+estructural. La Sesión 6.4 completó y aprobó la auditoría formal; no se creó una
+6.5. En ese cierre histórico Fase 7 quedó pendiente/no iniciada y posteriormente
+cerró en la auditoría 7.4.
+
+#### Resultado técnico de 6.1
+
+- 20 funciones no modales se movieron literalmente; shell, sidebar/search,
+  detalle, tabs, cuatro dominios, pending, empty/loading/error y patches quedan
+  bajo un único owner.
+- `window.renderBibliotecaContent`, su firma/timing y los globals de patches
+  siguen compatibles con Dashboard, Quick Create, features y loader.
+- `dashboard.html` añade el owner después de `biblioteca.page.js` y antes de
+  `main.js`; no cambia ninguna otra posición de scripts.
+- Se preservan 20 acciones emitidas, 23 ramas, 30 listeners y un `oninput`.
+- No se tocaron modales/eventos, loader/reconciliación, Quick Create, estado,
+  pending ownership, features, API, backend, CSS ni `wordExport.js`.
+
+#### Resultado técnico de 6.2
+
+- Los cinco sub-gates pasaron y se movieron literalmente cuatro renders,
+  `showBibConfirm`, `injectBibliotecaModals` y `BIB_EXAM_TIPOS`.
+- 29 listeners locales se movieron con su DOM; el único listener general y
+  `onBibliotecaClick` permanecen en la página para 6.3.
+- Open/close, cuatro submit coordinators y generación quedan intactos en la
+  página. Anexos/Listas conservan cleanup; Planeaciones conserva mutación de
+  actividades y bindings de Dashboard; confirmación conserva su deuda `{once}`.
+- Orden: `biblioteca.page.js → biblioteca-render.js →
+  biblioteca-modal-render.js → main.js`.
+- Comparación literal, smoke JSDOM, checks de sintaxis y Jest pasaron. La manual
+  posterior aprobó 6.2 y el corte quedó commiteado en `ef3364f`.
+
+#### Resultado técnico de 6.3
+
+- `onBibliotecaClick` y `onBibliotecaSearch` se movieron literalmente al owner
+  de eventos; `bind()` conserva el registro documental y `bindSearch()` la
+  asignación de propiedad en sus mismos puntos de ejecución.
+- Se preservan 20 acciones emitidas, 23 ramas, el matching por `closest`, siete
+  lecturas dataset, early return, orden y ausencia de prevent/stop.
+- Dashboard/Quick Create, los 29 listeners modales, renders, estado, pending,
+  loader, coordinadores y features permanecen intactos.
+- Orden: `biblioteca.page.js → biblioteca-render.js →
+  biblioteca-modal-render.js → biblioteca-events.js → main.js`.
+- Comparación literal, smoke JSDOM, sintaxis y Jest pasan. La manual 6.3 aprobó
+  Biblioteca, search, modales, acciones, generación, Quick Create y ausencia de
+  dispatch/requests duplicados; commit `4306903`.
+
+#### Resultado de cierre de 6.4
+
+- Owners canónicos: render no modal, render modal y eventos, sin segunda fuente
+  ni implementación divergente.
+- `biblioteca.page.js` queda en 1317 líneas, 51 funciones nombradas, un wrapper
+  `render*` de preview compatible, cero listeners y 52 operaciones DOM según el
+  patrón de medición de apertura.
+- Las superficies State/Pending, coordinadores de generación, API, contrato de
+  Exámenes, deletes, previews/downloads y DOM observable permanecen intactos.
+- Quick Create, `explorerState`, loader/navegación/reconciliación y Dashboard
+  shell quedan reservados para Fase 7.
+- Decisión: **A. Cerrar Fase 6.** Manual adicional no requerida.
 
 ### Resultado esperado
 
@@ -759,7 +900,10 @@ Quitar dependencias activas de `dashboard.page.js` que pertenecen a Biblioteca s
 
 ### Estado
 
-**Pendiente.**
+**Completada.** La auditoría formal 7.4 aprobó el cierre. La Sesión 7.0 quedó
+commiteada en `7c75738`; 7.1, validada manualmente en `97b798c`; 7.2, validada
+manualmente en `a6840a4`; y 7.3, validada manualmente y commiteada en
+`bcd361e`. Fase 8 permanece pendiente y no iniciada.
 
 ### Dependencias
 
@@ -780,6 +924,124 @@ Previews, descargas, creación/progreso de planeaciones, confirmaciones, helpers
 ### Procedimiento recomendado
 
 Crear inventario bidireccional Dashboard↔Biblioteca, resolver una dependencia por sesión, preservar wrapper en el propietario anterior y validar inicialización/orden.
+
+### Sesiones propuestas después de la auditoría 7.0
+
+#### 7.1 — Extraer el coordinador completo de Quick Create
+
+**Estado: completada, validada manualmente y commiteada en `97b798c`.** Se creó
+`js/features/dashboard/quick-create.js` como owner único de panel, comboboxes,
+validación, jerarquía técnica, staging, progreso SSE y coordinación con la
+fachada de Biblioteca. `dashboard.page.js` conserva solo wrappers para sus
+consumidores activos y helpers realmente compartidos. El script nuevo carga
+después de Dashboard y antes de Biblioteca; no se movieron State/Pending,
+loader/reconcile, API/service ni `PlaneacionGeneration`.
+
+Evidencia automática: comparación literal normalizada de seis bloques, 44
+listeners totales preservados (27 Dashboard + 17 Quick Create), smoke JSDOM de
+3 casos sin red real, sintaxis y suite Jest. La manual confirmó Quick Create,
+reconciliación, Biblioteca posterior, generación normal con batch explícito y
+sin errores/duplicación nuevos.
+
+- Mover como unidad el estado propio, comboboxes, DOM, validación, resolución de
+  jerarquía técnica, staging, progreso y coordinación SSE actualmente vigentes
+  en `dashboard.page.js`.
+- Conservar sin cambios `generarPlaneacionesUnidadConProgreso`, endpoint,
+  payload, parser, fallback HTTP, `force_new_batch`, `batch_id`, `unidad_id`,
+  mensajes, orden, tiempos y fachada `window.biblioteca`.
+- Mantener wrappers léxicos o globales donde `biblioteca-events.js`, el shell o
+  previews todavía consuman firmas de Dashboard.
+- No absorber el modal normal de Planeaciones ni `PlaneacionGeneration`: ambos
+  comparten transporte, pero sus pending, parser de eventos y contrato de batch
+  siguen siendo distintos.
+
+Pruebas: carga Dashboard/Biblioteca, abrir/cancelar/validar Quick Create, bloque
+nuevo y existente, progreso y resultado total/parcial/error, selección/tab,
+reload posterior, consola y una sola petición de generación.
+
+#### 7.2 — Separar loader y reconciliación de Biblioteca
+
+**Estado: completada, validada manualmente y commiteada en `a6840a4`.** El owner
+`js/features/biblioteca/biblioteca-loader.js` contiene literalmente loader,
+refetch, reconciliación temporal→real, merge optimista y finish. La fuente de
+State/Pending permanece en `biblioteca.page.js`; cinco wrappers conservan los
+15 caminos y la fachada. Quick Create, generadores, deletes, API y render no se
+modificaron funcionalmente.
+
+Evidencia automática: seis funciones con comparación literal PASS; smoke JSDOM
+de loader/reconcile con 4 casos; smoke Quick Create; sintaxis, suite Jest de 3
+suites/9 tests y diff check. La manual confirmó Quick Create con batch nuevo,
+flujo normal reutilizando el batch explícito y delete con
+`[biblioteca] delete:success`; no hubo doble GET/render/card reportado.
+
+- Dar owner identificable a `loadAndRenderBiblioteca()` y a la reconciliación
+  `tempId -> batch_id` sin crear un gestor genérico ni otra fuente de estado.
+- Conservar `BibliotecaSelection`, `BibliotecaTabs`, los cuatro Pending y la
+  mutación física en `bibliotecaState`.
+- Mantener iguales carga normal/silenciosa, fallback de selección, tab objetivo,
+  error/loading, renders, refetches de generación/delete y fachada `refresh`.
+
+Pruebas: carga inicial/retry, bloque temporal a real, generación normal y Quick
+Create, success parcial, cambios de selección/tab durante refetch, deletes,
+reload y ausencia de cards/batches duplicados.
+
+#### 7.3 — Reducir Dashboard a bootstrap/navegación y bindings activos
+
+**Estado: completada, validada manualmente y commiteada en `bcd361e`.** Se creó
+`js/features/dashboard/dashboard-bootstrap.js` como owner de inyección del
+layout, coordinación de `initDashboardPage` y registro único de los bindings
+estructurales del Dashboard. Las tres funciones se movieron literalmente, con
+el guard privado y 25 sitios de listener; `window.initDashboardPage` conserva
+firma y `window.BIBLIOTECA_MODE` conserva timing. Dos listeners locales a
+renders legacy permanecen en `dashboard.page.js`.
+
+La navegación se retuvo de forma deliberada: árbol, breadcrumbs,
+`selectRoot/Plantel/Grado/Materia/Unidad`, detalle, previews, jerarquía técnica,
+deletes y Archivados todavía comparten estado y branches. Los helpers de
+actividades, nivel/grado, select visual y progreso/status tienen consumidores
+de dos o más dominios y permanecen como bridge compartido, sin duplicación.
+
+Evidencia automática: comparación literal PASS de las tres funciones; smoke
+Dashboard sin red de 3 casos; smokes protegidos de Quick Create y loader; suite
+acumulativa de 4 suites/12 tests, sintaxis y diff check. La manual confirmó
+Dashboard y chrome, Biblioteca, Quick Create con batch nuevo, delete y examen
+completo de 5/5 preguntas sin retries ni errores visibles nuevos.
+
+- Delimitar `initDashboardPage`, inyección de layout/chrome, binding único del
+  shell y navegación vigente; mover únicamente helpers compartidos que sigan
+  bloqueando Biblioteca tras 7.1–7.2.
+- Mantener el bridge `renderExplorerContent -> window.renderBibliotecaContent`
+  mientras tenga consumidor y no aislar ni eliminar todavía el explorador
+  visual legacy.
+- Clasificar los bindings de actividades y preview como owner Biblioteca,
+  compartido activo o wrapper; el retiro final de globals queda en Fase 10.
+
+Pruebas: arranque directo/refresh/back-forward, navbar/sidebar/footer, Quick
+Create, Biblioteca, Detalle, previews/downloads, Escape, bubbling sin doble
+dispatch y revisión de orden de scripts.
+
+#### 7.4 — Auditoría formal de cierre
+
+**Estado: completada; auditoría aprobada; manual adicional no requerida.** Gate
+en `refactor-front`/`bcd361e` y backend solo lectura
+`refactor-back`/`e08d6e4`. La búsqueda global confirma owners únicos para Quick
+Create, loader/reconcile y bootstrap; fuente única para State/Pending; 15
+caminos equivalentes del loader; scripts clásicos y orden intactos; y
+navegación, jerarquía, legacy, Archivados, wrappers y globals clasificados.
+
+La suite acumulativa pasa 4 suites/12 tests. Generadores, Selection/Tabs,
+ModalState/Pending, render/modal/events, API/payload, examen, delete, previews,
+SSE/polling y backend permanecen protegidos. No hay contradicciones ni deuda
+que justifique 7.5.
+
+**Decisión: A. Fase 7 puede cerrarse.** Fase 8 queda pendiente/no iniciada con
+handoff de explorer visual, navegación jerárquica, Archivados, previews ligados
+a `explorerState` y bindings compartidos. Fase 10 conserva cleanup de
+`window.*`, wrappers, bridges y compatibilidad final.
+
+La auditoría cubrió ownership, fuentes únicas, búsquedas globales, orden de
+scripts, wrappers conservados y matriz acumulativa. No incluyó nuevas
+extracciones ni abrió Fase 8.
 
 ### Resultado esperado
 
@@ -807,6 +1069,10 @@ Inventario de dependencias, resolución elegida, búsqueda global, orden de scri
 ### Condición para avanzar
 
 Biblioteca debe poder operar sin depender del código visual del explorador antiguo; las dependencias desconocidas bloquean el aislamiento.
+
+Condición cumplida para las responsabilidades propias de Biblioteca: los
+cruces restantes son helpers compartidos, preview o compatibilidad con
+consumidor identificado, no dependencias desconocidas del explorer visual.
 
 ## Fase 8 — Aislar legacy visual
 

@@ -1,9 +1,9 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` durante la Fase 3, hasta su cierre en la
-Sesión 3.9.
-Este documento inventaría la arquitectura HTTP real y registra las
-consolidaciones internas ya ejecutadas sin cambiar contratos públicos.
+Estado observado en `refactor-front` hasta el cierre formal de Fase 7 en la
+Sesión 7.4. Este documento conserva inventarios históricos y registra la
+arquitectura ejecutable y las consolidaciones internas sin cambiar contratos
+públicos.
 
 ## Configuración y carga
 
@@ -1711,3 +1711,1149 @@ y la Sesión 5.8 quedan completadas; la auditoría de cierre queda aprobada. Fas
 9. Export Excel conserva un endpoint frontend sin ruta backend actual.
 10. API legacy tiene consumidores indirectos mediante services y no puede
     eliminarse por ausencia de uso en Biblioteca.
+
+## Fase 6 — Sesión 6.0: auditoría técnica/documental de apertura
+
+### Gate post-merge e identidad
+
+- Frontend: `refactor-front`, `HEAD 1254561` (`Merge refactor(frontend):
+  complete phases 0–5`), igual a `main` y `origin/main`; working tree limpio al
+  abrir la sesión. `origin/refactor-front` conserva `b5348dd`, el commit
+  pre-merge; no es una incoherencia local.
+- Backend solo lectura: `refactor-back`, `HEAD e08d6e4`, working tree limpio.
+- Fases 0–5: Completadas. Fase 6: En progreso por apertura 6.0. Fases 7–10:
+  Pendientes.
+- Tipo: auditoría de apertura; implementación funcional no realizada.
+
+Objetivo canónico: **dividir gradualmente render y eventos para que
+`biblioteca.page.js` actúe como coordinador**, preservando markup, selectores,
+`data-*`, listeners, UX y los contratos ya extraídos.
+
+### Métricas de la superficie principal
+
+Medidas sobre `js/pages/biblioteca.page.js` antes de modificar documentación:
+
+| Indicador | Resultado | Método |
+| --- | ---: | --- |
+| Líneas | 2770 | conteo físico |
+| Declaraciones `function`/`async function` | 80 | declaraciones nombradas; no incluye métodos shorthand de superficies ni closures |
+| Declaraciones cuyo nombre empieza con `render` | 22 | incluye wrapper de compatibilidad de Anexos |
+| Render/update/inject/show con DOM o HTML | 25 | 22 `render*` + `updateBibliotecaSidebarActive`, `injectBibliotecaModals`, `showBibConfirm` |
+| `addEventListener` | 30 | ocurrencias en el archivo |
+| Handler de propiedad | 1 | `searchInput.oninput` |
+| Valores `data-bib-action` emitidos | 20 | 23 ramas del handler; 3 no tienen emisor vigente |
+| Ocurrencias `data-bib-action` en markup | 23 | cuatro corresponden a `switch-tab`; comentarios excluidos |
+| Operaciones DOM auditadas | ≈221 | ocurrencias de queries, dataset, clases, HTML/text/value/checked/disabled/style, create/append/remove |
+| Queries principales | 53 `getElementById`, 21 `querySelector`, 10 `querySelectorAll`, 1 `closest` | ocurrencias, no nodos únicos |
+| Escrituras HTML | 15 `innerHTML`, 1 `outerHTML` | `insertAdjacentHTML` y `replaceChildren`: 0 |
+| Factories | 6 `createElement` + 6 `appendChild` | seis bases de modal inyectadas |
+
+Responsabilidades principales mezcladas: estado/fachada, helpers, render no
+modal, carga/refetch, delegación general, cuatro modales, confirmación, wrappers
+de preview/download/delete, generación individual/regeneración de Anexos,
+inyección DOM e inicialización.
+
+### Orden real de scripts y bindings léxicos
+
+`pages/dashboard.html` carga en este orden contractual:
+
+```text
+config → Supabase SDK/client → auth → utils
+→ APIs/services de planeaciones, jerarquía, exámenes y listas
+→ ListaCotejoGeneration → wordExport
+→ features de Exámenes → features de Listas
+→ components.private → shared.ui
+→ APIs de Biblioteca/Anexos
+→ features de Anexos → features de Planeaciones → block delete
+→ dashboard.page.js → dashboard-bootstrap.js → quick-create.js → biblioteca.page.js
+→ biblioteca-loader.js → render → modal render → events → main.js
+```
+
+Los scripts son clásicos. Biblioteca consume al invocarse globals explícitos y
+bindings léxicos de archivos anteriores. Los acoplamientos de render más
+sensibles son `escapeHtml`, `renderProgressPill`, `statusLabelFromTone`,
+`MOMENTOS_ACTIVIDADES_DIDACTICAS`, `buildActividadDidacticaOptions`,
+`isActividadDidacticaValida` y `normalizeActividadesMomentos`. Las features de
+generación/delete cargadas antes de `biblioteca.page.js` resuelven al ejecutarse
+`bibliotecaState`, las superficies de Fase 5 y los renders globales. No se debe
+reordenar scripts durante 6.0.
+
+### Inventario de funciones de render y DOM
+
+Las líneas son las observadas en la apertura y pueden desplazarse por esta
+documentación. “Escribe estado” distingue mutación ejecutada por el cuerpo del
+render de la mutación ejecutada por closures que el render enlaza.
+
+| Archivo/líneas | Función | Responsabilidad y HTML | Estado leído / escrito | DOM, `data-*` y listeners | Llamadas/dependencias | Vigencia |
+| --- | --- | --- | --- | --- | --- | --- |
+| biblioteca 644–663 | `renderBibliotecaProgressCard` | factory HTML de card pending/error | no escribe; recibe status | produce `.biblioteca-item-row` | `renderProgressPill`, `escapeHtml` | Biblioteca vigente |
+| 664–671 | `renderProgressItemHtml` | adapta item pending | lee item; no escribe | produce HTML | progress card | Vigente |
+| 672–675 | `renderPendingSpinnerCard` | wrapper de spinner | no escribe | produce HTML | progress card | Sin consumidor confirmado |
+| 676–684 | `renderBibliotecaSectionHeader` | header/acción de sección | no escribe | produce HTML | `escapeHtml` | Vigente |
+| 707–777 | `renderPlaneacionesTab` | cards, pending, vacío y acciones | planeaciones, `explorerState.progress`, `BibliotecaPlaneacionesPending`; no escribe | `agregar/descargar/eliminar-planeacion`, IDs | helpers de pending | Vigente; Quick Create cruza pending |
+| 778–853 | `renderExamenesTab` | cards, pending, vacío, tipos/temas | exámenes, `BibliotecaExamPending`; no escribe | `generar/ver/descargar/eliminar-examen` | helpers de examen/progress | Vigente |
+| 854–944 | `renderAnexosTab` | cards reales/temporales, vacío | anexos, `BibliotecaAnexosPending`; no escribe | `abrir-modal`, `ver/descargar/eliminar-anexo` | progress card | Vigente |
+| 945–1031 | `renderListasCotejoTab` | cards, pending, vacío | listas, `BibliotecaListaPending`; no escribe | `generar/ver/descargar/eliminar-lista` | progress card | Vigente |
+| 1033–1061 | `renderBibliotecaTabs` | cuatro tabs y conteos | `BibliotecaTabs`; no escribe | `switch-tab`, `data-tab`, conjunto | no feature | Vigente |
+| 1062–1073 | `renderBibliotecaTabContent` | selecciona renderer activo | `BibliotecaTabs`; no escribe | produce contenedor | cuatro tab renderers | Vigente |
+| 1074–1105 | `renderConjuntoSidebarItem` | item/badge/meta/conteos | `BibliotecaSelection`, conjunto; no escribe | `select-conjunto`, conjunto | formatters | Vigente |
+| 1106–1135 | `renderBibliotecaSidebar` | sidebar, search y empty filtrado | `searchQuery`, conjuntos/pending; no escribe | `#biblioteca-search`, lista/badge | sidebar item | Vigente |
+| 1136–1149 | `renderBibliotecaDetailEmpty` | empty/CTA | no escribe | `crear-planeaciones` | Quick Create vía evento | Vigente |
+| 1150–1190 | `renderBibliotecaDetail` | header, metadata, delete, tabs/content | conjunto/tabs; no escribe | `eliminar-bloque`, `#biblioteca-detail-panel` | tabs + active tab | Vigente |
+| 1191–1201 | `updateBibliotecaSidebarActive` | patch de clase sin recrear | selección; no escribe estado | lee lista/dataset; `classList.toggle` | selección | Vigente |
+| 1203–1210 | `renderBibliotecaDetailInPlace` | reemplaza panel derecho | selección; no escribe | `outerHTML`; fallback full render | detail/full render | Vigente; llamado por features |
+| 1212–1226 | `renderBibliotecaSidebarListInPlace` | reemplaza lista/badge | query y conjuntos; no escribe | `innerHTML`, `textContent` | sidebar item/full render | Vigente; search |
+| 1228–1280 | `renderBibliotecaContent` | loading/error o shell completo | loading, error, search, selección; no escribe estado | `#explorer-content.innerHTML`, clases; asigna `oninput`; restaura scroll | sidebar/detail | Vigente; global protegido |
+| 1531–1653 | `renderBibliotecaAnexoCreateModal` | modal de selección de Anexos | modal, anexos/pending; **depura selección** | reemplaza card; close/cancel/submit y checkbox change recreados | state surfaces, find conjunto | Vigente; render + cleanup + wiring |
+| 1861–1863 | `renderBibliotecaAnexoModal` | wrapper a `AnexoPreview.render` | no propio | no DOM propio | feature AnexoPreview | Sin consumidor externo confirmado; no eliminar |
+| 1939–2077 | `renderBibliotecaExamModal` | tipos, cantidades y planeaciones | ExamModal; closures escriben tipos/cantidades/selección | reemplaza card; listeners recreados; contador parcial | `BIB_EXAM_TIPOS` | Vigente; render + wiring |
+| 2162–2267 | `renderBibliotecaListaModal` | selección de Listas | modal/listas; **depura selección** | reemplaza card; listeners recreados | state surface | Vigente; render + cleanup + wiring |
+| 2341–2487 | `renderBibliotecaAgregarModal` | temas/actividades Planeaciones | modal; closures mutan temas/actividades | reemplaza card; listeners recreados; `data-local-id/momento` | helpers léxicos de Dashboard | Vigente; render + wiring |
+| 2624–2712 | `injectBibliotecaModals` | crea cinco modales de Biblioteca y confirmación | no escribe state | 6 `createElement`/append; 5 backdrops permanentes | close handlers/features | Vigente; DOM factory |
+| 2714–2752 | `showBibConfirm` | render de confirmación Promise | no state de Biblioteca | reemplaza card; 3 listeners `{once:true}` por apertura | features de delete | Vigente; riesgo de listeners residuales |
+| dashboard 4154–4175 | `renderExplorerContent` | fachada de render | `BIBLIOTECA_MODE`, legacy state | delega a `window.renderBibliotecaContent` o escribe explorer | Biblioteca/legacy | Compatibilidad activa; Fase 7 |
+| dashboard 4176–4190 | `renderAll` | render agregado Dashboard | Quick Create + legacy/previews | múltiples DOM estables | render Biblioteca vía fachada | Compartido/legacy; Fase 7–8 |
+| exam-preview 166–226 | `ExamPreview.render` | preview HTML de Exámenes | `window.explorerState.examPreview`/cache; no escribe | DOM estable de `layout.html` | helpers propios | Preview protegido, no Fase 6 |
+| lista-preview 50–76 | `ListaCotejoPreview.render` | preview HTML de Lista | `window.explorerState.listaCotejoPreview`; no escribe | DOM estable de `layout.html` | helper body | Preview protegido, no Fase 6 |
+| anexo-preview 55–148 | `AnexoPreview.render` + `renderAnexoBlock` | preview dinámico de Anexo | datos de anexo; no state | reemplaza card y recrea close/download | AppUI/AnexoDownload | Preview protegido, no Fase 6 |
+| shared.ui 78–184 | `AppUI.openDownloadNameModal` | modal nombre de descarga | estado local Promise | inyecta/reemplaza DOM y listeners | descargas protegidas | Compartido protegido |
+
+Helpers que producen contenido pero no escriben DOM: formatters de fechas/texto
+(371–424), `getBibliotecaExamTypeLabel` (685),
+`getBibliotecaExamTopics` (702) y los helpers de selección/filtrado. No deben
+clasificarse como “puros” los coordinadores optimistas (528–637): mutan estado,
+renderizan y/o refetchean, aunque alimenten la presentación.
+
+`getFilteredConjuntos`, `isBibliotecaTechnicalUnidad` y
+`renderPendingSpinnerCard` no tienen consumidor ejecutable encontrado.
+`bibGenerarAnexo`, `bibRegenerarAnexo` y sus acciones tampoco tienen emisor
+actual. Son ambigüedad/compatibilidad conservada, no autorización de borrado.
+
+### Matriz de render
+
+| Superficie | Archivo/funciones | DOM | Estado leído | Estado escrito durante render | Eventos/feature | Riesgo | Candidato |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Shell | biblioteca 1228 | `#explorer-content`, workspace/onboarding | loading/error/query/selección | ninguno | search + delegación documental | Alto por global/Quick Create | 6.1 render no modal |
+| Sidebar | 1074–1135, 1191, 1212 | sidebar/list/badge/items | conjuntos, pendingConjunto, Selection, search | ninguno | `select-conjunto` | Medio | 6.1 |
+| Search | 1106, 1212, 1267, 1360 | input/list/badge |/escribe `searchQuery` fuera del render | ninguno en render | `oninput` recreado, partial render | Medio | 6.1 presentación; 6.3 evento |
+| Detalle/header | 1136–1190, 1203 | panel/header/meta | conjunto seleccionado | ninguno | crear Quick Create, block delete | Alto por contratos externos | 6.1 |
+| Tabs | 1033–1073 | tabs/conteos/content | BibliotecaTabs | ninguno | `switch-tab` | Medio | 6.1 |
+| Planeaciones | 644–777 | cards/pending/empty | recursos, pending y `explorerState.progress` | ninguno | PlaneacionGeneration/download/delete/Detalle | Alto por Quick Create | 6.1 solo render |
+| Anexos | 854–944 | cards/pending/empty | recursos/pending | ninguno | modal/preview/download/delete | Medio | 6.1 solo render |
+| Listas | 945–1031 | cards/pending/empty | recursos/pending | ninguno | modal/preview/download/delete | Medio | 6.1 solo render |
+| Exámenes | 778–853 | cards/pending/empty | recursos/pending | ninguno | modal/preview/download/delete | Medio | 6.1 solo render |
+| Pending visual | 644–675 + cuatro tabs | filas/pills/error | cuatro Pending surfaces + progress Quick Create | ninguno | coordinadores protegidos escriben y renderizan | Alto | 6.1 presentación únicamente |
+| Modal Anexos | 1508–1704 | modal/card/checkboxes | ModalState, recursos, pending | cleanup selección | AnexoGeneration | Alto | 6.2 literal; no purificar aún |
+| Modal Listas | 2139–2310 | modal/card/checkboxes | ModalState/listas | cleanup selección | ListaCotejoGeneration | Alto | 6.2 literal |
+| Modal Exámenes | 1913–2137 | modal/card/checks/counts | ModalState | closures escriben state | ExamGeneration | Alto | 6.2 literal |
+| Modal Planeaciones | 2313–2581 | modal/temas/inputs/selects | ModalState + helpers Dashboard | closures mutan temas/actividades | PlaneacionGeneration | Muy alto por script order | 6.2 con pruebas fuertes |
+| Confirmación | 2624–2752 | modal dinámico | local Promise | ninguno | cinco deletes protegidos | Alto | 6.2; preservar semántica |
+| Loading/error | 1228–1252 | reemplaza content | loading/error | ninguno | retry → loader | Medio | view en 6.1; loader queda Fase 7 |
+| Previews/download name | features + shared UI | DOM de layout/dinámico | explorerState/datos | estados en open/close, no render | preview/download protegidos | Alto | Fuera de Fase 6 |
+
+### Superficies DOM principales
+
+| Selector/nodo | Owner/writers | Readers/evento | `data-*` | ¿Se recrea? / supervivencia |
+| --- | --- | --- | --- | --- |
+| `#dashboard-layout-root` | Dashboard `injectComponent` | init | — | layout se inyecta una vez |
+| `#explorer-content` | Biblioteca full render; fachada legacy | click/change/keydown Dashboard + document click Biblioteca | descendientes `data-bib-action` | contenido se recrea; listeners de ancestro sobreviven |
+| `.biblioteca-sidebar-list` | full/partial render | scroll, active patch, delegated click | `select-conjunto`, conjunto | lista se recrea; no listeners directos propios |
+| `#biblioteca-search` | full render | `onBibliotecaSearch` | — | se recrea; `oninput` se reasigna |
+| `#biblioteca-detail-panel` | full render/`outerHTML` | delegated actions | action, IDs, tab | se recrea; delegación sobrevive |
+| `.biblioteca-tabs/.biblioteca-tab-content` | detail render | document click | `switch-tab`, conjunto, tab | se recrean con cada tab/bloque |
+| `.biblioteca-items-list` | render de dominio | document click | action + resource/conjunto IDs | se recrea; delegación sobrevive |
+| cuatro modal roots | `injectBibliotecaModals` | open/close | backdrops por ID | root estable; card interna se recrea |
+| `.biblioteca-modal-card` | cuatro renderers, preview Anexo, confirm | listeners directos | modal-specific | contenido se recrea; listeners deben recrearse |
+| preview Examen/Lista | `components/layout.html` + features | Dashboard listeners estables | IDs | roots estables; body HTML cambia |
+| Quick Create | `components/layout.html` + Dashboard | listeners Dashboard | `data-quick-*` | protegido; cruza render por fachada |
+
+No se usan `replaceChildren` ni `insertAdjacentHTML` en la superficie auditada.
+La mayor parte de la creación usa templates con `innerHTML`; solo las seis
+bases de modal se construyen con `createElement`/`appendChild`.
+
+### Matriz `data-bib-action`
+
+| Acción | Elemento | Handler/estado | Coordinador llamado | Render posterior | Riesgo de extracción |
+| --- | --- | --- | --- | --- | --- |
+| `select-conjunto` | item sidebar | set Selection/Tab default | ninguno | active patch + detail | Medio |
+| `switch-tab` | cuatro botones tab | set Selection/Tabs | ninguno | detail in place | Medio |
+| `agregar-planeacion` | CTA Planeaciones | find conjunto/open ModalState | modal Planeaciones | modal render | Alto |
+| `generar-examen` | CTA Exámenes | find/open ExamModalState | modal Exámenes | modal render | Alto |
+| `generar-lista` | CTA Listas | find/open ListaModalState | modal Listas | modal render | Alto |
+| `abrir-modal-anexos` | CTA Anexos | find/open AnexoModalState | modal Anexos | modal render | Alto |
+| `crear-planeaciones` | empty detail CTA | no state Biblioteca directo | `openQuickCreatePanel` | Dashboard/Quick Create | Muy alto; Fase 7 |
+| `retry` | error CTA | loader | `loadAndRenderBiblioteca` | full render antes/después | Alto; loader frontera 7 |
+| `ver-examen` | card | `explorerState.examPreview` en feature | `ExamPreview` | preview feature | Alto protegido |
+| `ver-lista` | card | `explorerState.listaCotejoPreview` | `ListaCotejoPreview` | preview feature | Alto protegido |
+| `ver-anexo` | card | modal dinámico | `AnexoPreview` | preview feature | Alto protegido |
+| `descargar-planeacion` | card | datos remotos/local modal | `PlaneacionDownload` | modal descarga | Alto protegido |
+| `descargar-examen` | card | conjunto/cache | `ExamDownload` | modal descarga | Alto protegido |
+| `descargar-lista` | card | detalle remoto | `ListaCotejoDownload` | modal descarga | Alto protegido |
+| `descargar-anexo` | card | detalle remoto | `AnexoDownload` | modal descarga | Alto protegido |
+| `eliminar-bloque` | header | conjuntos/Selection/Tabs/4 pending | `BibliotecaBlockDelete` | full + refetch | Muy alto protegido |
+| `eliminar-planeacion` | card | recursos/conteos/Selection | `PlaneacionDelete` | detail + refetch | Alto protegido |
+| `eliminar-examen` | card | recursos/conteos/Selection | `ExamDelete` | detail + refetch | Alto protegido |
+| `eliminar-lista` | card | recursos/conteos/Selection | `ListaCotejoDelete` | detail + refetch | Alto protegido |
+| `eliminar-anexo` | card | recursos/conteos/Selection | `AnexoDelete` | detail + refetch | Alto protegido |
+| `toggle-expand` | sin emisor encontrado | equivale a selección | ninguno | active + detail | Ambiguo; conservar |
+| `generar-anexo` | sin emisor encontrado | pending/optimista | API directa local | detail + refetch | Ambiguo; conservar |
+| `regenerar-anexo` | sin emisor encontrado | pending | API directa local | detail/refetch | Ambiguo; conservar |
+
+Los primeros 20 valores son los emitidos por el markup actual. Las últimas tres
+ramas existen en `onBibliotecaClick` pero no aparecen en JS/HTML ejecutable como
+atributo emisor. No se clasifican como eliminables.
+
+### Matriz de eventos y listeners
+
+| Evento | Elemento/data | Handler | Estado/feature | DOM estable | Permanente / recreado | Riesgo |
+| --- | --- | --- | --- | ---: | --- | --- |
+| click | `document` + `[data-bib-action]` | `onBibliotecaClick` | matriz anterior | Sí | permanente al init; init no tiene guard propio | Alto |
+| input | `#biblioteca-search` | `onBibliotecaSearch` | `searchQuery` + sidebar partial | No | propiedad reasignada por full render; no acumula | Medio |
+| click | 5 backdrops inyectados | close de cada modal | cuatro ModalState/AnexoPreview | Sí | una vez al inyectar | Medio |
+| click/change | card modal Anexos | close/cancel/submit/checkbox | AnexoModalState | No | recreado con `innerHTML` | Alto |
+| click/change/input | card modal Exámenes | close/cancel/submit/type/count/plan | ExamModalState | No | recreado con `innerHTML` | Alto |
+| click/change | card modal Listas | close/cancel/submit/checkbox | ListaModalState | No | recreado con `innerHTML` | Alto |
+| click/keydown/change | card modal Planeaciones | close/cancel/add/submit/remove/actividad | PlaneacionModalState | No | recreado con `innerHTML` | Muy alto |
+| click | confirm buttons/backdrop | closure `close(result)` | Promise de delete | botones no; backdrop sí | tres `{once}` por apertura | Alto; backdrop puede conservar listeners no disparados |
+| click | preview Anexo dynamic | feature close/download | AnexoPreview/Download | No | recreado | Alto protegido |
+| click/change/keydown/submit | Quick Create | Dashboard handlers | `explorerState.quickCreate` | Sí/parcial | permanente, guard `isDashboardBound` | Fuera de Fase 6 |
+| click/change/keydown | `#explorer-content` | Dashboard legacy handlers | no action para `data-bib-action` | ancestro estable | permanente y activo aun en modo Biblioteca | Alto; Fase 7 |
+| keydown | `document` | Dashboard Escape | previews/Quick Create/legacy modals | Sí | permanente | Fase 7; no cierra los cuatro modales Biblioteca |
+| pageshow | `window` | refresh Dashboard | refresh/reconcile | Sí | permanente | Fase 7 |
+| click/keydown | `document` | private chrome | navbar/profile | Sí | permanente con guard | Compartido |
+
+Hallazgo de listener: `showBibConfirm` agrega un listener `{once:true}` al
+backdrop estable en cada apertura. Si el usuario cierra con Cancelar/Eliminar,
+ese listener de backdrop no se dispara ni se retira y puede quedar acumulado
+para una apertura posterior. `AppUI.openDownloadNameModal` tiene el mismo
+patrón entre sus alternativas de cierre. Se documenta; no se corrige en 6.0 ni
+se debe mezclar su corrección con una extracción literal.
+
+### Mutaciones durante render
+
+| Clasificación | Función | Mutación |
+| --- | --- | --- |
+| A. puramente render | factories/tabs/cards/sidebar/detail/loading/error | leen estado y producen HTML/DOM sin escribir estado |
+| D. render + event wiring | `renderBibliotecaContent` | reasigna `oninput` al input recién creado; restaura scroll DOM |
+| C + D. render + cleanup + wiring | `renderBibliotecaAnexoCreateModal` | filtra selección contra planeaciones disponibles y escribe `selectedPlaneacionIds`; luego enlaza listeners |
+| C + D. render + cleanup + wiring | `renderBibliotecaListaModal` | filtra selección contra listas existentes y escribe `selectedPlaneacionIds`; luego enlaza listeners |
+| D. render + wiring | `renderBibliotecaExamModal` | el cuerpo no escribe; closures cambian tipos, counts y selección; type change rerenderiza |
+| D. render + wiring | `renderBibliotecaAgregarModal` | el cuerpo no escribe; closures cambian temas/actividades; remove rerenderiza |
+| D. render + wiring | Anexo preview / confirm / download modal | reemplazan HTML y enlazan acciones locales |
+
+No se encontró API, download, delete o generación ejecutada dentro de los
+renderers de cards/shell. La lógica de negocio está en handlers, submitters o
+features; la excepción crítica es el cleanup de selección en los dos modales.
+
+### Dependencias y ciclos
+
+```text
+render no modal → BibliotecaSelection/BibliotecaTabs/4 Pending
+render Planeaciones → explorerState.progress (Quick Create)
+render modal → ModalState → listener directo → ModalState → render modal
+document click → Selection/Tabs o feature → render parcial/completo
+generation → Pending → render → API/SSE/poll/delay → refetch → conjuntos → render
+delete → confirm DOM → API → mutación optimista → render parcial → refetch → render
+Quick Create → window.biblioteca → pending/selección/render → SSE → finish/refetch → render
+Dashboard renderExplorerContent → window.renderBibliotecaContent
+```
+
+Ciclos relevantes: `render → listener → state → render`,
+`feature → pending → render → refetch → state → render` y
+`Quick Create → fachada Biblioteca → render → finish → refetch → render`.
+
+### Límites y clasificación
+
+- **Fase 6:** presentación no modal, factories HTML, DOM patches, render y
+  wiring de los cuatro modales, búsqueda, delegación `data-bib-action` y
+  visualización de loading/error.
+- **Fase 7:** `loadAndRenderBiblioteca` como loader/navegación/reconciliación,
+  Quick Create, `pendingBatchId`, `pendingConjunto`, `explorerState`, bindings
+  compartidos de Dashboard, `renderExplorerContent`, listeners Dashboard y
+  desacoplamiento bidireccional.
+- **Compatibilidad activa:** `window.biblioteca`,
+  `window.renderBibliotecaContent`, previews Examen/Lista que usan DOM de
+  `layout.html`, wrappers y globals de features.
+- **Legacy visual:** árbol, breadcrumbs y render por nivel. Sus listeners se
+  registran, pero `hydrateExplorerData()` no se ejecuta en la ruta vigente.
+- **Ambigüedad conservada:** tres acciones sin emisor y helpers sin consumidor;
+  no eliminar ni mover como supuesto legacy.
+
+### Contratos protegidos
+
+La Fase 6 no puede romper ni rediseñar:
+
+- `BibliotecaSelection`, `BibliotecaTabs`, cuatro ModalState y cuatro Pending;
+- `window.biblioteca`, `window.explorerState` y Quick Create;
+- `PlaneacionGeneration`, `AnexoGeneration`, `ListaCotejoGeneration` y
+  `ExamGeneration`;
+- preview, download, delete, block delete, capa API y services;
+- payloads, IDs, SSE, polling, delay de 1500 ms, intervalos/timeouts y mensajes;
+- los 20 `data-bib-action` emitidos, demás `data-*`, DOM observable y orden de
+  scripts;
+- `js/ui/wordExport.js` y backend.
+
+### Hallazgos y riesgo de extracción
+
+- **Muy alto:** modal Planeaciones por bindings léxicos de Dashboard; block
+  delete/Quick Create por ciclos; cualquier movimiento de loader o fachada.
+- **Alto:** árbol no modal completo por cantidad de consumidores; modales por
+  cleanup y recreación de listeners; confirmación por listeners alternativos;
+  delegación global por 23 ramas y features protegidos.
+- **Medio:** sidebar/search/tabs de forma aislada, aunque dividirlos en
+  micro-sesiones no aporta una frontera mejor.
+- Queries DOM repetidas y templates `innerHTML` son deuda observada, no tareas
+  automáticas. No se halló `insertAdjacentHTML`/`replaceChildren`.
+- `initBiblioteca` no tiene guard de binding. La ruta confirmada lo llama una
+  vez; no se agrega guard en la auditoría.
+- `renderBibliotecaContent` es llamado por Biblioteca, features y Dashboard/
+  Quick Create; su firma/global es contractual.
+
+### Candidatos agrupados y roadmap técnico
+
+| Sesión | Corte coherente | Archivos candidatos | Riesgo | Validación principal |
+| --- | --- | --- | --- | --- |
+| 6.1 | Render no modal completo: helpers visuales, pending, cards de cuatro dominios, shell/sidebar/search/detail/tabs y patches parciales | nuevo owner en `js/features/biblioteca/`, `biblioteca.page.js`, `dashboard.html` solo para carga | Alto | markup/data exactos; carga, selección, search, tabs, cuatro cards/pending, partial/full render, Quick Create smoke |
+| 6.2 | DOM y render de modales: injection, Planeaciones/Anexos/Listas/Exámenes y confirmación; conservar cleanup y wiring literal | owner de modal de Biblioteca + page/script order | Muy alto | open/close/backdrop/cancel/inputs/checks/re-render de cuatro modales y cinco deletes; no generación real obligatoria si no cambia coordinador |
+| 6.3 | Ownership de eventos: delegación general, search y bindings modales ya estabilizados; preservar ramas sin emisor | owner de eventos + page | Alto | un clic/una acción, listeners tras full/partial render, modales, preview/download/delete/generation smoke, sin requests dobles |
+| 6.4 | Auditoría formal de cierre | solo documentación | Alto acumulativo | búsqueda global, script order, suite, matriz manual acumulativa y decisión de cierre |
+
+No se fija todavía el nombre de archivos. `biblioteca-render.js`,
+`biblioteca-modal-render.js` y `biblioteca-events.js` son nombres plausibles,
+pero el corte debe decidir namespace y posición exacta después de un smoke de
+bindings clásicos.
+
+**Primera sesión recomendada: 6.1 — render no modal completo.** Es un corte
+grande y reversible de presentación, cubre el árbol que actualmente se
+reemplaza como unidad y evita introducir callbacks artificiales entre shell y
+cards. No mueve estado, carga, eventos, modales, Quick Create, generación,
+features ni backend. La estrategia recomendada es estabilizar primero el
+render, luego los modales y finalmente el ownership de eventos.
+
+## Fase 6 — Sesión 6.1: extracción consolidada del render no modal
+
+### Reconciliación y decisión
+
+- La auditoría 6.0 está completada y commiteada en `e27cb0a`; se corrigió la
+  referencia documental que aún decía “commit pendiente”.
+- Decisión: **A. Extracción consolidada implementada.** La validación manual de
+  6.1 fue aprobada y el corte quedó commiteado en `cef834e`.
+- Owner nuevo: `js/features/biblioteca/biblioteca-render.js`, script clásico
+  cargado entre `biblioteca.page.js` y `main.js`.
+
+### Inventario movido y retenido
+
+| Clasificación | Funciones/superficie | Owner después de 6.1 |
+| --- | --- | --- |
+| A — movida | `renderBibliotecaProgressCard`, `renderProgressItemHtml`, `renderPendingSpinnerCard`, `renderBibliotecaSectionHeader` | `biblioteca-render.js` |
+| A — movida | `getBibliotecaExamTypeLabel`, `getBibliotecaExamTopics`; cuatro renders de tabs de recursos | `biblioteca-render.js` |
+| A — movida | tabs, tab activo, item/lista de sidebar, detalle/empty y `renderBibliotecaContent` | `biblioteca-render.js` |
+| A — movida | `updateBibliotecaSidebarActive`, `renderBibliotecaDetailInPlace`, `renderBibliotecaSidebarListInPlace` | `biblioteca-render.js` |
+| B — retenida | helpers compartidos, `getAllConjuntosForSidebar`, selección, optimismo, finish, `loadAndRenderBiblioteca`, `initBiblioteca` | `biblioteca.page.js` |
+| C — retenida | cuatro renderers modales, injection y `showBibConfirm` | `biblioteca.page.js`; candidato 6.2 |
+| D — retenida | `onBibliotecaClick`, `onBibliotecaSearch` y listeners directos/documentales | `biblioteca.page.js`; candidato 6.3 |
+| E/F — retenida | Quick Create/loader, `window.explorerState`, compatibilidad y ramas sin emisor | propietarios actuales; Fase 7/compatibilidad |
+
+Se movieron 20 declaraciones de función como un bloque literal. Los helpers de
+fecha/escape y derivación que también consumen loader o modales permanecen en
+la página para no convertir el owner visual en propietario de coordinación ni
+adelantar 6.2.
+
+### Contrato y consumidores
+
+| Superficie | Firma/retorno | Efectos y consumidores | Compatibilidad |
+| --- | --- | --- | --- |
+| `renderBibliotecaContent()` | sin parámetros; retorno implícito | reemplaza `#explorer-content`, alterna workspace/onboarding, enlaza el mismo `oninput`, restaura scroll; loader, generación y block delete | mismo nombre global |
+| `window.renderBibliotecaContent` | alias de la función anterior | `dashboard.page.js`/Quick Create y compatibilidad | exposición y timing conservados antes de `DOMContentLoaded` |
+| `renderBibliotecaDetailInPlace()` | sin parámetros | reemplaza `#biblioteca-detail-panel`; deletes/generación de recursos y eventos | mismo global implícito |
+| sidebar partial/active | sin parámetros | búsqueda, selección y fachada `window.biblioteca` | nombres y timing conservados |
+
+El DOM generado mantiene literalmente strings, condiciones, loops, fallbacks,
+orden, IDs, clases, roles, `aria-*`, atributos disabled/hidden, textos y 20
+valores emitidos de `data-bib-action`. `onBibliotecaClick` conserva sus 23
+ramas, incluidas `toggle-expand`, `generar-anexo` y `regenerar-anexo` sin emisor
+confirmado. El render sigue leyendo pending mediante las cuatro superficies de
+Fase 5 y `window.explorerState.progress.items` solo para el feedback compatible
+de Quick Create.
+
+### Métricas y límites
+
+| Indicador | Antes | Después |
+| --- | ---: | ---: |
+| Líneas `biblioteca.page.js` | 2770 | 2125 |
+| Líneas owner nuevo | — | 657 |
+| Funciones movidas / retenidas | — | 20 / 59 |
+| Render/update retenidos en page | 25 superficies totales auditadas | 5 declaraciones modales/compat; injection/confirm permanecen |
+| Operaciones DOM en page / owner | ≈221 en page | 165 / 24 ocurrencias con el patrón de medición 6.1 |
+| Listeners / `oninput` | 30 / 1 | 30 / 1, sin reorganizar |
+| Acciones emitidas / ramas | 20 / 23 | 20 / 23 |
+
+Loading/error solo cambió de propietario visual: el loader y los escritores de
+estado siguen en la página. Search solo movió markup/filtro visual: el handler y
+la escritura de `searchQuery` siguen en la página. Quick Create, reconciliación,
+generación, polling/SSE, API, payloads, previews, downloads, deletes,
+`wordExport.js` y backend quedaron intactos.
+
+### Evidencia de 6.1
+
+- Comparación literal del bloque movido contra `HEAD`: PASS.
+- Smoke técnico aislado: loading, error, sin bloques, search match/no match,
+  selección, cuatro tabs empty/con recursos/con pending, feedback de Quick
+  Create y tres patches: PASS.
+- `node --check` de ambos JS, Jest (1 suite/2 tests) y conservación de acciones:
+  PASS. La prueba manual confirmó carga, navegación, cuatro generaciones,
+  delete de bloque y ausencia de errores nuevos visibles o de consola.
+- Riesgos preservados: dependencia por orden clásico, `oninput` recreado por
+  full render, globals de patches, lectura de `explorerState.progress` y falta
+  de cobertura DOM persistente. No se corrigieron en esta extracción.
+
+## Fase 6 — Sesión 6.2: DOM y render consolidado de modales
+
+### Gate, sub-gates y owner
+
+- Gate: `refactor-front` limpio en `cef834e`; backend de solo lectura limpio en
+  `refactor-back`/`e08d6e4`.
+- Manual 6.1: aprobada según el recorrido acumulativo informado por el usuario.
+- Sub-gates: Planeaciones **PASS** (Muy alto), Anexos **PASS** (Alto), Listas
+  **PASS** (Alto), Exámenes **PASS** (Alto), Confirmación **PASS** (Alto).
+- Decisión: **A. Extracción consolidada implementada.** Reconciliación 6.3:
+  manual aprobada y commit `ef3364f`.
+
+Owner: `js/features/biblioteca/biblioteca-modal-render.js`, script clásico
+cargado después de los dos scripts de Biblioteca y antes de `main.js`:
+
+```text
+dashboard.page.js → biblioteca.page.js → biblioteca-render.js
+→ biblioteca-modal-render.js → main.js
+```
+
+### Auditoría por superficie
+
+| Superficie | DOM y mutación | Wiring local | Dependencias preservadas | Riesgo/resultado |
+| --- | --- | --- | --- | --- |
+| Planeaciones | card, temas/form/selects/error; closures mutan `actividades_momentos` y remove escribe temas | close/cancel/add/Enter/submit, remove y activity change | PlaneacionModalState, helpers escape/find y cuatro bindings Dashboard | Muy alto / PASS literal |
+| Anexos | card/checkboxes/badges/empty/error; render depura IDs no disponibles | close/cancel/submit y change con re-render | AnexoModalState, AnexosPending, conjunto/normalización | Alto / PASS literal |
+| Listas | card/checkboxes/badges/note/empty/error; render depura IDs no disponibles | close/cancel/submit y change con re-render | ListaModalState, listas persistidas, conjunto/normalización | Alto / PASS literal |
+| Exámenes | siete tipos, counts 1–30, planeaciones, counter/error/disabled | close/cancel/submit, type/count/plan changes | ExamModalState, `BIB_EXAM_TIPOS`, escape | Alto / PASS literal |
+| Confirmación | Promise, card, scroll lock y resultado | cancel/ok/backdrop con `{ once:true }` | cinco deletes consumidores | Alto / PASS literal |
+| Inyección | seis roots, cards y backdrops; incluye root compatible de preview Anexo | cinco backdrop listeners al crear roots | callbacks close retenidos en page | Alto / PASS literal |
+
+### Ownership y contratos
+
+Se movieron seis funciones (`renderBibliotecaAgregarModal`,
+`renderBibliotecaAnexoCreateModal`, `renderBibliotecaListaModal`,
+`renderBibliotecaExamModal`, `showBibConfirm`, `injectBibliotecaModals`) y la
+constante íntima `BIB_EXAM_TIPOS`. Sus nombres globales siguen resolviendo para
+open/close/submit, features de delete e `initBiblioteca`; no se amplió
+`window.biblioteca`.
+
+Permanecen en `biblioteca.page.js` todas las funciones open/close, cuatro
+submit coordinators, `addBibliotecaAgregarTema`, previews, generación/
+regeneración compatible, loader, estado y `onBibliotecaClick`. No se alteraron
+ModalState, Pending, coordinadores, requests, payloads, SSE/polling, delays,
+Quick Create, Dashboard, render 6.1, CSS, API ni backend.
+
+DOM y listeners se compararon por función contra `HEAD`: mismos IDs, clases,
+jerarquía, textos, `data-*`, labels, placeholders, tipos/min/max, checked,
+disabled, spinner/error/empty, targets, orden, closures y timing. El hallazgo de
+listeners de backdrop `{ once:true }` potencialmente acumulables se preserva
+sin corrección.
+
+### Métricas y evidencia
+
+| Indicador | Antes de 6.2 | Después |
+| --- | ---: | ---: |
+| Líneas `biblioteca.page.js` | 2125 | 1465 |
+| Líneas owner modal | — | 683 |
+| Funciones movidas / helper íntimo | — | 6 / 1 constante |
+| Listeners generales / modales | 1 / 29 en page | 1 en page / 29 en owner |
+| Operaciones DOM page / owner modal | 165 en page | 61 / 104 |
+| Scripts nuevos en 6.2 | — | 1 |
+
+Comparación literal de cinco superficies, tipos e inyección: PASS. Smoke JSDOM
+sin red de los cuatro modales, confirm/cancel/backdrop e inyección: PASS.
+`node --check`, Jest (1 suite/2 tests) y `git diff --check`: PASS. La validación
+manual posterior aprobó carga, recursos, cuatro modales/generaciones, deletes
+individual/de bloque y ausencia de regresiones; commit real `ef3364f`.
+
+## Fase 6 — Sesión 6.3: ownership consolidado de eventos
+
+### Gate y clasificación
+
+- Gate: `refactor-front` limpio en `ef3364f`; backend limpio y de solo lectura
+  en `refactor-back`/`e08d6e4`.
+- 6.2: validación manual aprobada y commit real `ef3364f`.
+- Decisión: **A. Ownership consolidado implementado.** La manual 6.3 fue
+  aprobada y el corte quedó commiteado en `4306903`.
+
+| Listener/superficie | Clasificación | Owner después de 6.3 | Contrato |
+| --- | --- | --- | --- |
+| `document.click → onBibliotecaClick` | A Biblioteca estructural | `biblioteca-events.js` | bubble, sin options/guard, mismo momento dentro de `initBiblioteca` |
+| `searchInput.oninput → onBibliotecaSearch` | A Biblioteca estructural | `biblioteca-events.js`; invocado desde render | misma propiedad/timing, escritura literal de `event.target.value` y partial render |
+| 29 listeners de cards/inputs/backdrops de overlays | B modal local | `biblioteca-modal-render.js` | intactos desde 6.2 |
+| llamadas preview/download/delete/generation | C features protegidos | features/coordinadores actuales | event owner solo despacha mismas funciones |
+| click/change/keydown/pageshow de Dashboard | D/E Dashboard/Quick Create | `dashboard.page.js` | no modificados |
+| ramas `toggle-expand`, `generar-anexo`, `regenerar-anexo` | F/G legacy/compatibilidad | `biblioteca-events.js` | conservadas sin inventar emisores |
+
+### Matriz compacta de `data-bib-action`
+
+| Grupo | Acciones | Dispatch preservado |
+| --- | --- | --- |
+| Selección/tabs | `select-conjunto`, `toggle-expand`, `switch-tab` | selección, active sidebar y detail partial |
+| Apertura/bridge/carga | `agregar-planeacion`, `abrir-modal-anexos`, `generar-lista`, `generar-examen`, `crear-planeaciones`, `retry` | cuatro open coordinators, Quick Create bridge y loader |
+| Preview | `ver-examen`, `ver-lista`, `ver-anexo` | wrappers protegidos |
+| Download | `descargar-planeacion`, `descargar-examen`, `descargar-lista`, `descargar-anexo` | mismos wrappers/features |
+| Generación compatible | `generar-anexo`, `regenerar-anexo` | coordinadores históricos conservados |
+| Delete | `eliminar-bloque`, `eliminar-planeacion`, `eliminar-examen`, `eliminar-lista`, `eliminar-anexo` | mismos coordinadores/confirm/refetch |
+
+El baseline y resultado son 20 valores emitidos y 23 ramas en el mismo orden.
+El matching continúa en `event.target.closest("[data-bib-action]")`, con early
+return si no existe y lectura anticipada de los mismos siete campos dataset.
+No hay awaits, catches, `preventDefault` ni `stopPropagation` que trasladar.
+
+### Owner, integración y coexistencia
+
+`js/features/biblioteca/biblioteca-events.js` contiene exclusivamente dos
+handlers y dos operaciones de binding. Consume Selection/Tabs mediante los
+coordinadores existentes, renders parciales, cuatro open coordinators,
+loader/Quick Create bridge y wrappers de features; no contiene render, HTML,
+store, API, generación ni loader.
+
+Orden clásico resultante:
+
+```text
+dashboard.page.js → biblioteca.page.js → biblioteca-render.js
+→ biblioteca-modal-render.js → biblioteca-events.js → main.js
+```
+
+Dashboard registra primero su listener sobre `#explorer-content`; un click de
+Biblioteca lo atraviesa, `handleContentClick` no encuentra
+`data-content-action`, y luego llega al listener documental de Biblioteca. No
+se cambió captura, bubbling ni orden. `window.biblioteca`,
+`window.renderBibliotecaContent`, Quick Create, aliases, wrappers y ramas legacy
+quedaron intactos; `BibliotecaEvents` es léxico y no amplía la API pública.
+
+### Métricas y evidencia
+
+| Indicador | Antes de 6.3 | Después |
+| --- | ---: | ---: |
+| Líneas `biblioteca.page.js` | 1465 | 1317 |
+| Líneas event owner | — | 163 |
+| Handlers movidos | — | 2 |
+| Listener estructural / `oninput` | 1 / 1 en owners previos | 1 / 1 en event owner |
+| Listeners modales retenidos | 29 | 29 |
+| DOM ops page / event owner | 61 / — | 52 / 9 |
+| Acciones emitidas / ramas | 20 / 23 | 20 / 23 |
+
+Comparación literal de handlers y líneas de binding: PASS. Smoke JSDOM sin red
+de selección, tabs, search/clear, cuatro modales, Quick Create, retry,
+preview/download, generación, deletes, compatibilidad, acción desconocida y
+bubbling: PASS, una llamada por acción. Owners de render/modal intactos salvo la
+delegación mecánica de search en el primero. Sintaxis, Jest y diff check: PASS.
+
+## Fase 6 — Sesión 6.4: auditoría formal de cierre
+
+### Ownership final
+
+| Dominio | Owner canónico | Segunda fuente | Estado |
+| --- | --- | --- | --- |
+| Render no modal | `js/features/biblioteca/biblioteca-render.js` | No | loading/error visual, shell, sidebar/search, detalle/tabs, cuatro dominios, pending/empty y patches |
+| Render modal | `js/features/biblioteca/biblioteca-modal-render.js` | No | cuatro modales, confirmación, inyección y 29 listeners locales |
+| Eventos | `js/features/biblioteca/biblioteca-events.js` | No | click documental, 23 ramas, search y bindings estructurales |
+| Estado y pending | superficies de Fase 5 en `biblioteca.page.js` | No | una fuente física; owners visuales solo consumen |
+| Loader/coordinación | `biblioteca.page.js` | No | fetch, writes de loading/error, reconcile, open/close/submit y wrappers |
+| Quick Create/Dashboard | `dashboard.page.js` + fachada vigente | No absorbido | reservado para Fase 7 |
+
+El archivo coordinador mide 1317 líneas, 51 funciones nombradas, cero
+`addEventListener`, cero `oninput` y 52 operaciones DOM con el patrón de 6.0.
+Conserva un único `render*`: `renderBibliotecaAnexoModal`, wrapper activo de
+`window.AnexoPreview.render`, no una copia del modal de generación.
+
+La búsqueda global confirmó una implementación por owner. Search queda dividido
+sin duplicación: markup/filtro en render, wiring en eventos y `searchQuery` en
+estado. Loading/error visual vive en render y sus writes/fetch siguen en el
+loader. `window.renderBibliotecaContent` conserva firma, timing y consumidores
+activos de Dashboard, features y coordinación; `window.biblioteca` sigue siendo
+la fachada de Quick Create sin convertirse en store.
+
+### Contratos y cierre
+
+La comparación literal normalizada contra `1254561` pasó para render no modal,
+cuatro modales, confirmación, inyección y eventos. Se mantienen IDs, clases,
+roles, `aria-*`, `data-*`, textos, jerarquía, estados disabled/checked/hidden,
+20 acciones emitidas, 23 ramas, un click documental, un `oninput` y 29
+listeners modales. `toggle-expand`, `generar-anexo` y `regenerar-anexo` quedan
+como compatibilidad/ambigüedad sin emisor confirmado.
+
+Los cuatro State de modal, Selection/Tabs y cuatro Pending mantienen su fuente
+única. Los directorios API/services/generation, Dashboard/Archivados,
+`wordExport.js`, CSS y packages son idénticos al baseline previo a Fase 6. El
+payload de Exámenes conserva `unidad_id`, `batch_id`, `planeacion_ids`,
+`tipos_pregunta` y `cantidades_pregunta`, sin `tema_ids`.
+
+No hay contradicciones bloqueantes. Riesgos no bloqueantes preservados:
+inicialización sin guard, listeners `{ once:true }` potencialmente acumulables,
+mutación histórica durante render modal, re-binding tras `innerHTML`, scripts
+clásicos y estado efímero/requests no cancelables. Quick Create,
+`explorerState`, loader/navegación y globals quedan para fases futuras;
+`public.ia_metrics` es externo y preexistente. Los 17 retries del examen que
+produjo 11/11 preguntas y cero fallos son comportamiento esperado del filtro
+anti-duplicados.
+
+**Decisión: A. Fase 6 puede cerrarse.** Fase 6 y la Sesión 6.4 quedan
+completadas, auditoría aprobada y sin implementación funcional. Fase 7 permanece
+pendiente/no iniciada; no se requiere prueba manual adicional.
+
+## Fase 7 — Sesión 7.0: auditoría técnica/documental de apertura
+
+### Gate, alcance y métricas
+
+- Frontend: `refactor-front`, `HEAD 295d7ed`, alineado con
+  `origin/refactor-front` y limpio al abrir. El commit de cierre de Fase 6 es
+  `295d7ed`; `8ad0b0d` contiene su cierre documental.
+- Backend: `refactor-back`, `HEAD e08d6e4`, limpio y solo lectura.
+- Fases 0–6: completadas. Fase 7: en progreso por esta auditoría. Fases 8–10:
+  pendientes y fuera de alcance.
+- No se modificó código, HTML, CSS, API, services ni backend.
+
+| Métrica estática | Resultado |
+| --- | ---: |
+| `dashboard.page.js` | 5690 líneas |
+| `biblioteca.page.js` | 1317 líneas |
+| Declaraciones `function` nombradas en Dashboard, incluidas locales | 216 |
+| Call sites sintácticos `addEventListener` en Dashboard | 44 |
+| Exportaciones `window.*` escritas al final de Dashboard | 7 |
+| Tokens `explorerState` en Dashboard | 603 |
+| Ocurrencias `window.explorerState` en todo `js/` | 20 |
+| Funciones del conjunto funcional Quick Create | 37 |
+| Funciones/coordinadores de carga relevantes | 15 |
+| Funciones/bloques de reconciliación de Biblioteca | 6 |
+| Líneas consumidoras de `window.biblioteca` en JS | 19 |
+| Líneas consumidoras/definidoras de `window.renderBibliotecaContent` | 5 |
+
+Los 44 call sites no equivalen a 44 listeners efectivos: cinco instancias de
+`createQuickCombobox()` vuelven a ejecutar sus listeners locales/documentales y
+varios call sites están dentro de bucles de IDs. `isDashboardBound` evita una
+segunda ejecución de `bindDashboardEvents`, pero no existe cleanup.
+
+### Inventario funcional de `dashboard.page.js`
+
+Cada función nombrada cae dentro de uno de estos bloques contiguos; las
+excepciones activas se enumeran expresamente. La clasificación usa A–J del
+prompt de apertura.
+
+| Líneas / funciones | Clasificación | Evidencia de consumidor |
+| --- | --- | --- |
+| 147 `createExamModalState` | H legacy visual | Modal de examen jerárquico; no lo usa Biblioteca |
+| 161–216 storage/location | D navegación + H legacy | `restorePersistedExplorerLocation`, `pageshow`; Biblioteca retorna antes de hydrate |
+| 218–358 helpers `Actividad*` | I compartido activo | Quick Create, staging legacy y modal Planeaciones de Biblioteca |
+| 369–391 imagen/momento | I compartido activo | Normaliza payload de Quick Create/staging; UI de imágenes está pausada |
+| 427 `syncBodyScrollLock` | A Dashboard + B Quick Create | Panel y overlays compartidos |
+| 437 `injectComponent` | A Dashboard vigente + C loader | Inyecta `components/layout.html` |
+| 447–478 sort/order/error/archive filter | I compartido | Quick Create y jerarquía técnica/legacy |
+| 487–591 getters/hierarchy metadata | F jerarquía técnica + H legacy | Quick Create consume getters/caches; archive/árbol son legacy |
+| 596 `setCurrentLevel` | D/H, con estado compartido | Navegación legacy; Quick Create escribe `current` directamente |
+| 620–644 progreso/duplicado | B/E/I activos | SSE de Quick Create y staging legacy |
+| 647–813 `loadPlanteles`, `ensure*`, hydrate por tema | C/F loaders | Quick Create usa plantel/grado/materia/unidad; temas/exámenes/listas sirven árbol legacy |
+| 815–844 formato/notice | I compartido | Renders/previews legacy y acciones de descarga |
+| 846–969 `select*`, restore/refresh | D/H navegación legacy | Árbol, breadcrumbs y `pageshow`; no init vigente |
+| 970–1294 shell/tree/header/delete modal render | H legacy visual | Inalcanzable por init Biblioteca salvo DOM estable compartido |
+| 1295–2137 examen/lista legacy y polling | H + G compatibilidad | Biblioteca usa features separadas; previews aún comparten `explorerState`/DOM |
+| 2138–2716 delete/archive jerárquico | F/H y cruce Archivados | No mover: registry/Archivados y árbol consumen partes distintas |
+| 2717–3459 comboboxes, formulario y panel Quick | B vigente | Hero y `data-bib-action="crear-planeaciones"` |
+| 3460–3817 render de árbol por niveles | H legacy visual | Sin ejecución en ruta vigente |
+| 3818 `renderProgressPill` | I/G compartido | Biblioteca render y progreso legacy/Quick |
+| 3823–3890 progreso/examen render | H legacy, con helper I | Solo árbol; progreso también alimenta card pending de Biblioteca |
+| 3896–3924 wrappers preview/download | G compatibilidad activa | Biblioteca, previews, Escape y legacy; retiro Fase 10/8–9 según consumidor |
+| 3927–4153 unidad/examen/staging render | H legacy visual | Sin ejecución principal |
+| 4154 `renderExplorerContent` | G bridge activo | Despacha a `window.renderBibliotecaContent` en modo Biblioteca |
+| 4176 `renderAll` | H coordinador legacy | No corre tras init Biblioteca; sí puede ser llamado por `pageshow` |
+| 4192–4318 staging DOM | H legacy + I compartido | Quick Create reutiliza shape, no estos inputs |
+| 4319–4454 parser/progreso/result | B/E/I vigente | Quick Create usa exactamente estas funciones para SSE y partial success |
+| 4455–4560 generación desde staging | B vigente + G bridge | Quick Create la invoca; también soporta ruta legacy |
+| 4562–4757 `submitQuickCreateForm` | B/C/E/F vigente | Resuelve jerarquía, crea pending, genera y reconcilia |
+| 4759–5180 modal/entity/tree handlers | F/H legacy | Creación/edición/navegación jerárquica; no ruta principal |
+| 5181 `ensureDefaultPlantel`, 5173/5177 grados | B/C/F vigente | Jerarquía técnica oculta de Quick Create |
+| 5189 `initQuickComboboxes` | B vigente | Binding único de Dashboard |
+| 5321 `bindDashboardEvents` | A/B/G + H | Mezcla shell/Quick/previews con listeners legacy |
+| 5619 `hydrateExplorerData` | H legacy visual | Rama solo sin `initBiblioteca` |
+| 5643 `initDashboardPage` | A/C vigente | Bootstrap canónico; retorna tras `initBiblioteca` |
+
+Funciones sin consumidor confirmado después de buscar JS, HTML, `data-*`,
+handlers y aliases: `renderActividadCierreStatus`,
+`showQuickCreateGeneratingSection` y `showQuickCreateResultSection`. Las dos
+últimas corresponden a DOM todavía presente. Se clasifican J, no se eliminan.
+`renderActividadCierreControl` tampoco tiene emisor confirmado, pero comparte el
+contrato de actividades y queda I/J hasta Fase 7.3. Las funciones comentadas de
+imágenes automáticas no son declaraciones ejecutables.
+
+### Shape y ownership real de `window.explorerState`
+
+| Propiedad | Shape real | Writers | Readers / ruta | Persistencia | Clasificación |
+| --- | --- | --- | --- | --- | --- |
+| `planteles` | `[]` | `loadPlanteles` | Quick Create, árbol, default plantel | API reconstruible | F técnica activa + H |
+| `gradosByPlantel` | `{[plantelId]:[]}` | `ensureGrados` | Quick Create y árbol | API reconstruible | F técnica activa + H |
+| `materiasByGrado` | `{[gradoId]:[]}` | `ensureMaterias` | Quick Create y árbol | API reconstruible | F técnica activa + H |
+| `unidadesByMateria` | `{[materiaId]:[]}` | `ensureUnidades` | Quick Create y árbol | API reconstruible | F técnica activa + H |
+| `temasByUnidad` | `{[unidadId]:[]}` | `ensureTemas` | árbol/generación legacy | API reconstruible | H/compatibilidad |
+| `examenesByUnidad` | mapa de arrays | `ensureExamenes` | examen legacy | API reconstruible | H |
+| `examenDetalleById` | cache por ID | `ExamPreview` | preview activo y legacy | refetchable | G compartido activo |
+| `planeacionByTema` | cache por tema | hydrate | árbol/detalle legacy | refetchable | H/F |
+| `listasCotejoByUnidad` | cache por unidad | loader/list preview | lista legacy y preview | refetchable | G/H |
+| `loading`, `errors` | objetos por dominio | loaders jerárquicos | Quick selectors y renders legacy | no | C/F/H mixto |
+| `expandedPlanteles/Grados/Materias` | `Set` | navegación | árbol | no | H legacy |
+| `current` | `{level,plantelId,gradoId,materiaId,unidadId}` | navegación; Quick asigna objeto | contexto técnico, legacy, preview lista | sessionStorage solo vía navegación legacy | B/F/H mixto |
+| `stagingTemas` | array tema `{localId,titulo,duracion,actividades_momentos,actividad_cierre,generar_imagenes_en}` | Quick copia; staging legacy | generador común | no | B vigente + H |
+| `stagingTituloConjunto` | string | Quick | payload `titulo_conjunto` | no | B vigente |
+| `stagingContext` | objeto/null | Quick/legacy | `buildLegacyContext` | no | B vigente + compatibilidad |
+| `stagingPanelOpen` | boolean | staging legacy | render legacy | no | H |
+| `progress` | `{total,completed,items,finalMessage,finalTone}` | SSE/result/error | card pending Biblioteca y render legacy | no | B/E bridge activo |
+| `quickCreate` | `{open,temas,requestVersion:{grado,materia,unidad},selectedConjunto}` | panel/selects | Quick DOM/submit/Escape | no | B vigente |
+| `searchQuery` | string | tree search | árbol | no | H |
+| `generating` | boolean | generador `try/finally` | guard, payload UI y renders | no | B vigente + H |
+| `examGeneration`, `examModal`, `listaCotejoModal`, `listaCotejoGeneration` | objetos legacy | coordinadores legacy | modales/renders legacy | no | H |
+| `examPreview`, `listaCotejoPreview` | objetos de modal/cache | features de preview | DOM activo, Escape, Biblioteca/legacy | no | G compartido activo |
+| `modal`, `confirmDelete` | objetos de UI jerárquica | Dashboard | DOM/Escape legacy | no | H |
+
+`window.explorerState` se escribe una vez como alias del objeto léxico al final
+de Dashboard. Los features de preview escriben propiedades internas del mismo
+objeto; no existe copia. Solo `current` tiene helper de `sessionStorage`, pero
+Quick Create asigna `current` sin llamar `persistExplorerLocation`.
+
+### Flujo completo de Quick Create
+
+```text
+hero / Biblioteca empty CTA
+  -> openQuickCreatePanel
+  -> loadPlanteles + ensureAllGrados
+  -> initQuickCreateForm
+  -> título existente/nuevo + nivel + materia + temas/actividades
+  -> submitQuickCreateForm
+  -> validación síncrona (panel permanece si falla)
+  -> panel se cierra
+  -> ensureDefaultPlantel
+  -> resolve/create grado -> materia -> unidad "Bloque de planeacion"
+  -> current + stagingTemas + stagingContext
+  -> existing: pendingBatchId + startPlaneacionesGeneration
+     new: pendingConjunto(tempId) + renderBibliotecaContent
+  -> generatePlaneacionesFromStaging
+  -> body + POST SSE
+  -> updateProgressFromEvent -> render bridge -> Biblioteca
+  -> applyGenerateResult
+  -> finishBibliotecaPlaneacionesGeneration
+  -> temp/real optimistic mapping + selected batch/tab
+  -> silent refetch/reconcile -> render
+  -> finally clears generating and pendingBatchId
+```
+
+| Paso | Owner actual | Lee | Escribe | API/DOM/callback | Siguiente / riesgo |
+| --- | --- | --- | --- | --- | --- |
+| Trigger | Dashboard + BibliotecaEvents | hero / `data-bib-action` | `quickCreate.open` | panel/backdrop | Dos emisores, una función léxica |
+| Preparación | Dashboard | Biblioteca facade + caches | temas/requestVersion/selection | loads jerárquicos | Requiere Dashboard aunque árbol no se use |
+| Inputs | Quick DOM | comboboxes/select/tema | `quickCreate.*` | 5 comboboxes y listeners | Listeners documentales sin cleanup |
+| Validación | `submitQuickCreateForm` | temas/nivel/materia/título | error DOM | sin API | Solo esta fase mantiene panel abierto |
+| Jerarquía | mismo coordinador | caches y selección | plantel/grado/materia/unidad | APIs jerárquicas | Error posterior queda solo en consola porque panel cerró |
+| Staging | mismo | quick temas | current/staging/context | memoria | Segunda representación intencional temporal |
+| Pending existente | facade Biblioteca | conjunto seleccionado | `pendingBatchId`, Selection/Tab/Pending | render Biblioteca | ID real reutilizado |
+| Pending nuevo | facade Biblioteca | título/meta | `pendingConjunto(tempId)`, Selection/Tab | render Biblioteca | Temporal no persistido |
+| Generación | Dashboard/service/API | staging/context/pendingBatchId | `generating`, `progress` | POST SSE; callback evento | Sin AbortController/timeout cliente |
+| SSE parser | `jerarquia.api` + Dashboard | chunks | progress items | ignora JSON malformado; error SSE lanza | HTTP >=500 cae a POST no stream |
+| Resultado | Dashboard | resultados/results/items/temas/planeaciones | progress final | total/parcial/skipped/error | `duplicate_tema` se presenta como skipped |
+| Finish | Biblioteca coordinator | result + progress | pending/optimista/selection/tab | render + refetch | Mapping depende de batch real |
+| Reconcile | loader | prev temp/list + nueva lista | conjuntos/selection/tab | GET Biblioteca | Sin target, usa diferencia de IDs |
+| Cleanup | Dashboard `finally` | flags/facade | `generating=false`, pendingBatchId null | render | `pendingConjunto` lo limpia finish/load, no finally |
+
+### Quick Create frente a generación normal de Planeaciones
+
+| Contrato | Quick Create | `PlaneacionGeneration` normal |
+| --- | --- | --- |
+| Endpoint | `/api/unidades/:unidadId/generar?stream=1` | el mismo |
+| Service/parser base | `generarPlaneacionesUnidadConProgreso` + parser SSE de jerarquía | el mismo |
+| Unidad | resuelta/creada por jerarquía técnica | `conjunto.unidad_id` ya conocido |
+| Batch nuevo | sin `batch_id`; `force_new_batch:true`, `mode:"create"` | nunca |
+| Batch existente | `pendingBatchId` -> `batch_id` | `batch_id: conjuntoId` directo |
+| Payload adicional | `titulo_conjunto`, contexto materia/nivel, actividades | materia/nivel, temas snapshot |
+| Progreso | parser flexible `mapEventToProgress` en `explorerState.progress` | tipos SSE directos sobre `BibliotecaPlaneacionesPending` |
+| Pending | `pendingConjunto` o pending mediante facade | Pending protegido por batch real |
+| Reconcile | finish optimista + refetch | optimista + refetch al mismo batch |
+| Partial/error | aplica múltiples shapes; conserva pending si `error_count>0` | conserva `pending.error`; catch no limpia |
+| Render | bridge `renderExplorerContent` / wrapper global | binding léxico `renderBibliotecaContent` |
+
+Puede compartirse ownership del transporte/service existente, normalización de
+actividades y presentación base. Deben permanecer separados la resolución de
+jerarquía, creación de batch, pending temporal, parsers de progreso y cleanup.
+
+## Fase 7 — Sesión 7.1: extracción consolidada de Quick Create
+
+La implementación activa salió de `dashboard.page.js` hacia
+`js/features/dashboard/quick-create.js` sin cambiar el flujo observable. El
+owner nuevo sigue usando `window.explorerState` como única fuente física y la
+fachada `window.biblioteca` como frontera de pending/reconciliación.
+
+| Grupo | Funciones/contratos movidos al owner Quick Create |
+| --- | --- |
+| Panel y feedback | combobox base, error, visibilidad, reset, generating/result y `open/closeQuickCreatePanel` |
+| Formulario | inicialización y binding, toggle de grado, render/agregar/quitar/actualizar temas |
+| Validación | lectura de nivel base, validadores de combobox/grado/listas e IDs |
+| Datos Biblioteca | normalización, conjuntos, títulos, materias y grados disponibles |
+| Jerarquía técnica | fill de selects, búsqueda de grado, carga plana/default y resolución/creación de IDs |
+| Staging | contexto legacy, copia de temas, `pendingBatchId`/`pendingConjunto` y preparación del batch |
+| SSE/progreso | init, mapping de eventos, actualización de counters/items y aplicación de result/error |
+| Coordinación | `generatePlaneacionesFromStaging` y `submitQuickCreateForm` con payload y cleanup históricos |
+
+Dashboard retiene `syncQuickSelectVisualState` y `requireNivelBaseValue` porque
+también los usa el modal de entidades; los loaders `loadPlanteles`,
+`ensureGrados`, `ensureMaterias` y `ensureUnidades`; helpers de actividades;
+helpers de progreso/legacy; y wrappers finos de open/close/visibility/generate
+para consumidores léxicos y legacy. Biblioteca conserva State/Pending,
+`loadAndRenderBiblioteca`, finish, merge y reconciliación: son alcance 7.2, no
+parte de esta extracción.
+
+| Evidencia | Antes | Después 7.1 |
+| --- | ---: | ---: |
+| Líneas `dashboard.page.js` | 5690 | 4323 |
+| Líneas owner Quick Create | 0 | 1414 |
+| Listeners sintácticos | 44 Dashboard | 27 Dashboard + 17 owner |
+| `window.biblioteca` en Dashboard/owner | 19 / 0 | 0 / 19 |
+| Calls directos a loader/reconcile desde owner | — | 0; solo fachada vigente |
+
+Se compararon literalmente, normalizando finales de línea, los bloques UI,
+generación, jerarquía técnica y bindings: PASS. El nuevo global
+`window.QuickCreate` es un namespace de owner, no un store. Los globals
+preexistentes `window.explorerState`, `window.biblioteca`,
+`window.renderBibliotecaContent` y `window.BIBLIOTECA_MODE` no cambian.
+
+Orden ejecutable: `dashboard.page.js` define estado/helpers/wrappers;
+`quick-create.js` define el owner; después cargan la página y owners de
+Biblioteca. Así `BibliotecaEvents` sigue resolviendo el wrapper léxico y los
+callbacks de Quick encuentran la fachada cuando se ejecutan.
+
+## Fase 7 — Sesión 7.2: ownership de loader y reconciliación
+
+El loader genérico y las piezas íntimas de reconciliación se extrajeron
+literalmente a `js/features/biblioteca/biblioteca-loader.js`. La página conserva
+la fuente física de State/Pending y cinco wrappers léxicos para no modificar
+generadores, deletes, eventos, init ni la fachada de Quick Create.
+
+| Función | Clasificación | Owner 7.2 | Consumidores |
+| --- | --- | --- | --- |
+| `loadAndRenderBiblioteca` | loader/reconcile general | owner nuevo; wrapper en page | 15 caminos totales |
+| `mergePlaneaciones` | helper íntimo de merge por ID | privado en owner | optimistic apply |
+| `applyOptimisticPlaneacionesToConjunto` | reconcile general/generación | owner; wrapper | finish y PlaneacionGeneration |
+| `applyGenerationResultToPendingItems` | generation-specific pending | owner; wrapper | finish y PlaneacionGeneration |
+| `normalizeGeneratedPlaneaciones` | helper generation/reconcile | owner; wrapper | finish y PlaneacionGeneration |
+| `finishBibliotecaPlaneacionesGeneration` | coordinador Quick→reconcile | owner; wrapper/fachada | `window.biblioteca`/Quick Create |
+
+### Call sites conservados
+
+| Origen | Await | Opciones/resultado esperado |
+| --- | --- | --- |
+| `initBiblioteca` | sí | carga normal, selección inicial y render |
+| retry de eventos | no | carga normal y recuperación visual de error |
+| fachada `refresh` | retorna Promise | conserva opciones del caller/Quick fallback |
+| finish Quick Create | sí | silent, target real, tab Planeaciones |
+| PlaneacionGeneration | sí | silent, target real, tab Planeaciones tras optimistic |
+| AnexoGeneration | sí si hubo éxito | silent, mismo batch/tab Anexos; limpia pending después |
+| generar/regenerar anexo directos | sí, dos caminos | silent, mismo batch/tab Anexos |
+| ListaCotejoGeneration | sí | tras grace/pending cleanup, tab Listas |
+| ExamGeneration | sí | tras polling/pending cleanup, tab Exámenes |
+| cuatro deletes individuales | sí | local update/render y refetch al batch/tab del dominio |
+| block delete | sí | local fallback/render y silent refresh sin target |
+
+Son 14 call sites externos más el refetch interno de finish: 15 caminos. Cada
+invocación conserva una sola `requireSession` y como máximo una llamada a
+`apiBibliotecaConjuntos`; no se añadió debounce ni segundo refetch.
+
+### Writes y reconciliación exactos
+
+| Superficie | Comportamiento preservado |
+| --- | --- |
+| `loading` | normal escribe `true` antes del fetch; success/catch escriben `false`; silent no muestra loading |
+| `error` | se vacía antes de sesión/API; catch conserva mensaje y log existentes |
+| `conjuntos` | success reemplaza por array API o `[]`; optimistic puede anteponer el batch real antes del refetch |
+| `pendingConjunto` | carga normal limpia antes del fetch; silent conserva hasta success; optimistic/finish puede convertirlo y limpiar |
+| `pendingBatchId` | el loader no lo escribe ni limpia; Quick Create/fachada conservan ownership |
+| Selection | conserva válida; prioriza target; mapea temporal seleccionado; luego prev ID/primer batch/null |
+| Tabs | limpia tempId; restaura tab temporal, aplica tab target o crea `planeaciones` solo en fallback sin tab |
+| Pending planeaciones | result actualiza items/error; success completo limpia; partial conserva error |
+| `expandedIds` | optimistic elimina únicamente el tempId histórico |
+
+`pendingConjunto` conserva el shape real: `id`, `tempId`, `isPending`,
+`status_ui`, `titulo`, `nivel`, `materia`, `unidad`, `created_at`, tres totales y
+arrays `planeaciones`, `examenes`, `listas_cotejo`. No se añadieron campos.
+
+`mergePlaneaciones` conserva la clave normalizada `id`/`planeacion_id`, el orden
+de primera inserción y la preferencia del item incoming para un ID repetido. El
+loader no hace merge de conjuntos: la lista persistida reemplaza la optimista.
+La inferencia sin target sigue escogiendo el primer ID nuevo contra el snapshot
+previo; es riesgo histórico, no corrección de 7.2.
+
+Métricas: `biblioteca.page.js` 1317→1118 líneas y 51→50 declaraciones
+top-level; owner nuevo 233 líneas/6 funciones; 5 wrappers retenidos; API directa
+page/owner 1→0/1; renders del bloque movido 0/4; métodos de fachada relacionados
+siguen siendo `refresh` y `finishPlaneacionesGeneration`. Comparación literal de
+las seis funciones: PASS.
+
+## Fase 7 — Sesión 7.3: Dashboard bootstrap y bindings
+
+La reconciliación de apertura confirmó la validación manual y el commit real de
+7.2: `a6840a4` (`refactor(frontend): extract Biblioteca loader and
+reconciliation`). El corte 7.3 no reabre Quick Create, loader/reconcile ni los
+owners de Biblioteca.
+
+La pregunta central se resolvió así: inyección del layout, coordinación de
+arranque y registro único de bindings forman un owner activo y coherente; la
+navegación residual no puede separarse literalmente porque sigue mezclada con
+árbol/breadcrumbs, jerarquía técnica, previews, deletes, Archivados y ramas
+legacy. Se extrajo el primer bloque y se retuvo el segundo.
+
+| Responsabilidad | Funciones/bindings | Clasificación | Resultado 7.3 |
+| --- | --- | --- | --- |
+| Layout y shell | `injectComponent` | A/B | movida literalmente a `dashboard-bootstrap.js` |
+| Coordinación de arranque | `initDashboardPage` | A/H | movida con orden, awaits, catch y side effects intactos |
+| Binding estructural | `bindDashboardEvents` + guard privado | A/D/H/I | movido; conserva 25 sitios `addEventListener` |
+| Entry point | `window.initDashboardPage` | H | misma firma; publicado por el owner nuevo |
+| Modo Biblioteca | writer de `window.BIBLIOTECA_MODE` | H | mismo momento dentro de init; readers intactos |
+| Navegación visual | `selectRoot/Plantel/Grado/Materia/Unidad`, tree, breadcrumbs | C/E/F | retenida en Dashboard por acoplamiento real |
+| Detalle y previews | cards, URL, Examen/Lista/descarga | C/H/I | retenidos; contratos globales intactos |
+| Jerarquía técnica | loaders/ensure/cache de planteles a temas | E/J | retenida; Quick y legacy comparten consumidores |
+| Helpers compartidos | actividades, nivel/grado, select visual, progreso/status | D/J | retenidos; no se duplican ni apropian por feature |
+| Render/modales legacy | explorer por niveles y compatibilidad | F/H/K | retenidos para auditoría de Fase 8 |
+| Archivados | registry/helpers y cruces del explorer | G/H | fuera de alcance e intacto |
+
+`initDashboardPage` conserva la secuencia observable: detecta la ruta
+Biblioteca, escribe el flag, inyecta layout, carga sidebar solo fuera de esa
+ruta, inicializa navbar/footer en paralelo, muestra el mismo error si falla,
+registra bindings una vez y después llama `initBiblioteca`; la rama no
+Biblioteca conserva `hydrateExplorerData`. No cambian errores, DOM, logs ni
+timing contractual.
+
+El listener Dashboard de `#explorer-content` continúa registrándose antes del
+listener delegado de Biblioteca en `document`. Sigue ignorando acciones que
+solo tienen `data-bib-action`, sin `stopPropagation`. Los dos listeners que
+permanecen en `dashboard.page.js` son locales a checkboxes creados por renders
+legacy; se conservaron para no cambiar su ciclo de vida.
+
+`explorerState` conserva una única fuente física y 506 referencias dentro del
+perímetro movido: 488 permanecen en Dashboard y 18 pasan al owner bootstrap.
+Los siete globals
+publicados relacionados conservan contrato: seis permanecen en Dashboard
+(`explorerState` y wrappers de preview/descarga) y `initDashboardPage` pasa al
+owner nuevo. No se añadió namespace, store, router ni wrapper.
+
+Métricas: `dashboard.page.js` 4323→4049 líneas y 177→174 funciones nombradas;
+owner nuevo 286 líneas/3 funciones; listeners 27→2 + 25; operaciones DOM
+198→171 + 27; wrappers nuevos 0. Comparación literal normalizada de
+`injectComponent`, `bindDashboardEvents` e `initDashboardPage`: PASS.
+
+## Fase 7 — Sesión 7.4: auditoría formal de cierre
+
+La apertura confirmó frontend limpio en `refactor-front`/`bcd361e`, commit real
+de 7.3 `refactor(frontend): extract Dashboard bootstrap ownership`, y backend
+limpio/solo lectura en `refactor-back`/`e08d6e4`. La manual de 7.3 aprobó
+Dashboard, layout/navbar/footer, Biblioteca, Quick Create con batch nuevo,
+delete y examen de 5/5 preguntas con cero retries y `generate:success`.
+
+| Dominio | Owner real | Segunda fuente | Estado de cierre |
+| --- | --- | --- | --- |
+| Quick Create | `quick-create.js` | no; usa `explorerState` físico | cerrado en 7.1 |
+| Loader/reconcile | `biblioteca-loader.js` | no; opera sobre `bibliotecaState` | cerrado en 7.2 |
+| Bootstrap Dashboard | `dashboard-bootstrap.js` | no | cerrado en 7.3 |
+| State/Pending Biblioteca | `biblioteca.page.js` | no | protegido/intacto |
+| Navegación | `dashboard.page.js` | no | clasificada para Fase 8 |
+| Jerarquía técnica | Dashboard + service/API existentes | no | activa y protegida |
+| Legacy visual | `dashboard.page.js` | no | aislamiento Fase 8 |
+| Archivados | flujo separado + bridges existentes | no | Fase 8, no absorbido |
+
+La búsqueda global confirma 15 call paths del loader (14 externos más el
+refetch interno de finish), cinco wrappers lógicos hacia `BibliotecaLoader`, 17
+listeners Quick Create, 25 estructurales de bootstrap, dos locales legacy, un
+listener delegado de Biblioteca y listeners locales de modales. No existe
+`stopPropagation` en la coexistencia Dashboard/Biblioteca ni segundo store.
+
+`dashboard.page.js` termina en 4049 líneas, 174 funciones nombradas, dos sitios
+de listener, 488 referencias a `explorerState` y seis publicaciones globales.
+El owner bootstrap añade tres funciones, 25 sitios de listener, 18 referencias
+al mismo `explorerState` y las escrituras compatibles de `BIBLIOTECA_MODE` e
+`initDashboardPage`. Navegación, jerarquía, previews, legacy, Archivados,
+helpers y compatibilidad son responsabilidades residuales clasificadas, no un
+bloqueo ni una razón para crear 7.5.
+
+Contratos protegidos: Quick Create omite `batch_id` explícito y usa
+`force_new_batch:true`; el flujo normal conserva batch explícito y no activa
+ese flag. Exámenes envían `planeacion_ids`, `unidad_id`, `batch_id`, tipos y
+cantidades; no sustituyen `tema_ids`. Los generadores, polling, SSE, deletes,
+Selection/Tabs, cuatro ModalState, cuatro Pending, render/modal/events, APIs y
+payloads no cambiaron en Fase 7.
+
+Handoff: Fase 8 recibe explorer visual, navegación jerárquica, Archivados,
+previews ligados a `explorerState` y clasificación legacy/compatibilidad. Fase
+10 recibe retiro de wrappers, globals y bridges `window.*` cuando sus
+consumidores hayan migrado. Requests no cancelables, SSE no resumible, delete
+con generation concurrente y races de refetch son deuda no bloqueante; el error
+externo/preexistente de `public.ia_metrics` no pertenece al frontend.
+
+**Decisión: A. Fase 7 puede cerrarse.** Sesión 7.4 completada y auditoría
+aprobada; Fase 8 pendiente/no iniciada; manual adicional no requerida.
+
+### Estado mixto de reconciliación
+
+| Estado | Fuente física | Writers | Readers | Persistencia | Clasificación / fase |
+| --- | --- | --- | --- | --- | --- |
+| `pendingBatchId` | `bibliotecaState` | setter facade desde Quick; finally/fallback | payload Quick | no | bridge B–Biblioteca; F7 |
+| `pendingConjunto` | `bibliotecaState` | facade, optimista, loader | sidebar/detail/render/reconcile | no | staging optimista + loader state; F7 |
+| `quickCreate` | `explorerState` | panel/select/listeners | panel/submit/Escape | no | Quick vigente; F7 |
+| `progress` | `explorerState` | SSE/result/error | pending card y legacy progress | no | bridge real; F7 |
+| `generating` | `explorerState` | generador | guard/render/cleanup | no | Quick + legacy; F7 |
+| `current`/staging/context/title | `explorerState` | Quick/navegación | generador/contexto | `current` parcial solo por ruta legacy | técnico/Quick/legacy; F7–8 |
+| `conjuntos` | `bibliotecaState` | loader/optimista/deletes | render, Quick facade/features | backend refetch | Biblioteca vigente |
+| Selection/Tabs | superficies protegidas | Quick, loader, events, deletes | render/features | no | Biblioteca vigente protegida |
+
+El mapping temporal→real tiene dos caminos: el finish usa el `batch_id` de la
+respuesta y convierte el objeto pending; el refetch usa `targetBatchId` o, sin
+él, el primer ID nuevo respecto a `prevConjuntos`. `mergePlaneaciones` deduplica
+solo por ID. Riesgos: doble card si el backend devuelve shape/ID inesperado,
+card huérfana si no hay batch, selección/tab perdidos por fallback, pending
+huérfano en error y race entre optimista/refetch.
+
+### Loaders, refresh y reconciliación
+
+| Función | Trigger/owner | Fetch | Writes/render | Quick/Biblioteca | Riesgo |
+| --- | --- | --- | --- | --- | --- |
+| `protegerRuta` | `main.js` no awaited | Supabase session | redirect/currentUser | ambos | init puede avanzar mientras auth resuelve |
+| `requireSession` | APIs/loaders | Supabase session | redirect/null | ambos | early return puede dejar UI transitoria |
+| `injectComponent` | init Dashboard | `components/layout.html` | root DOM | shell | fallo detiene init |
+| `initPrivateChrome/loadPrivateComponent` | DOMContentLoaded e init | navbar/footer HTML + user | DOM/listeners | Dashboard | doble invocación protegida por contenido/data flags |
+| `loadPlanteles` | Quick/legacy | jerarquía planteles | cache/loading/error | Quick activo | reload completo y default por primer item |
+| `ensureGrados/Materias/Unidades` | Quick/legacy | jerarquía | caches por ID | Quick activo | cache salvo `force`; requestVersion solo protege UI |
+| `ensureTemas` + hydrate | legacy/generador finish | temas + planeación por tema | caches/render indirecto | Quick lo fuerza después de generar aunque Biblioteca no lo renderiza | requests N+1 |
+| `ensureExamenes/ensureListasCotejo` | selección legacy | APIs por unidad | caches | no ruta principal | F8, no mover con Quick |
+| `hydrateExplorerData` | rama sin Biblioteca | jerarquía completa | árbol/render | no vigente | H legacy |
+| `loadAndRenderBiblioteca` | init/retry/refresh/generation/delete | GET conjuntos | loading/error/list/selection/tab/pending + render | ambos | mezcla loader/reconcile |
+| `finishBibliotecaPlaneacionesGeneration` | Quick callback | llama refetch silencioso | optimista/pending/selection/tab | Quick→Biblioteca | batch ausente/partial |
+| previews Examen/Lista | card actions | detalle por ID | cache/modal DOM | Biblioteca + legacy | dependen de `explorerState` |
+| `cargarDetallePlaneacion` / bloque detalle | `detalle.html` | planeación/batch | DOM/estado Detalle | navegación auxiliar | owner separado, no F7 salvo contrato de URL |
+
+Los 15 call sites del loader de Biblioteca cubren init, retry, Quick finish,
+generación normal de los cuatro recursos, generación/regeneración directa de
+anexo, cinco deletes y delete de bloque. Todos siguen el mapa
+`acción -> API -> mutación optimista/pending -> load/reconcile -> render`; no hay
+`location.reload()` en este flujo.
+
+### Globals y fachada
+
+| Global | Definición / writers | Readers | Contrato actual | Fase candidata |
+| --- | --- | --- | --- | --- |
+| `window.explorerState` | Dashboard; features mutan preview/cache | Dashboard, render Biblioteca, Exam/Lista Preview | store mixto accidental pero activo | separar props F7; legacy F8; retiro F10 |
+| `window.biblioteca` | `biblioteca.page.js`; setter de batch y métodos | Quick Create | fachada legítima temporal, no fuente física | conservar F7; revisar retiro F10 |
+| `window.renderBibliotecaContent` | render owner | bridge Dashboard y alta pending Quick | wrapper activo; bindings léxicos usan implementación | conservar F7; retiro F10 |
+| `window.QuickCreate` | owner Quick 7.1 | Dashboard/Biblioteca events | namespace funcional, no store | conservar; revisar wrappers en F10 |
+| `window.BibliotecaLoader` | owner loader 7.2 | cinco wrappers de `biblioteca.page.js` | namespace funcional, no store; merge privado | conservar hasta migrar consumidores clásicos |
+| `window.BIBLIOTECA_MODE` | init del owner bootstrap | Dashboard/Quick/render | flag de ruta vigente; timing intacto | conservar |
+| `window.initDashboardPage` | `dashboard-bootstrap.js` | `main.js` | entry point público; owner estable en 7.3 | conservar |
+| `window.initBiblioteca` | Biblioteca | Dashboard | entry point cargado antes de init | F7.3, conservar contrato |
+| wrappers Exam/Lista/Download de Dashboard | Dashboard | previews, Escape, legacy y/o Biblioteca | compatibilidad activa | F8–10 según consumidor |
+| feature globals (`PlaneacionGeneration`, `ExamPreview`, etc.) | IIFE por dominio | Biblioteca/Dashboard | bridge de scripts clásicos | F10, no ampliar |
+| `window.AppUI`, API/service globals, `requireSession` | core/ui/api/services | ambos coordinadores | contratos compartidos activos | fuera de extracción Quick salvo consumo |
+
+La fachada `window.biblioteca` expone exactamente: getter/setter
+`pendingBatchId`, `getConjuntos`, `selectConjunto`,
+`startPlaneacionesGeneration`, `setPendingConjunto`, `refresh` y
+`finishPlaneacionesGeneration`. Quick Create es su único consumidor externo
+confirmado; Biblioteca escribe el objeto y sus métodos escriben el state léxico.
+
+### Navegación, shell, script order y bubbling
+
+Navegación vigente: `main.js -> initDashboardPage`, links del navbar privado,
+cards hacia `detalle.html?id=...`, redirects auth/logout y `pageshow` por
+back-forward. Selección de bloque y tabs son navegación interna de Biblioteca,
+sin URL/history. Árbol, breadcrumbs y `selectRoot/Plantel/Grado/Materia/Unidad`
+son legacy visual en la ruta vigente; los IDs/caches/loaders que Quick usa son
+jerarquía técnica activa. Archivados cruza solo registry/helpers y queda Fase 8.
+
+Orden real de scripts:
+
+```text
+config + Supabase + auth + utils
+-> API/services planeaciones, jerarquía, exámenes, listas
+-> features listas/exámenes y wordExport
+-> components.private + shared.ui
+-> API Biblioteca/anexos
+-> features anexos/planeaciones/block delete
+-> dashboard.page.js
+-> dashboard-bootstrap.js
+-> quick-create.js
+-> biblioteca.page.js
+-> biblioteca-loader.js
+-> biblioteca-render.js
+-> biblioteca-modal-render.js
+-> biblioteca-events.js
+-> main.js
+```
+
+Bindings que dependen del orden clásico: Biblioteca consume desde Dashboard
+`MOMENTOS_ACTIVIDADES_DIDACTICAS`, `buildActividadDidacticaOptions`,
+`isActividadDidacticaValida`, `normalizeActividadesMomentos`,
+`renderProgressPill` y `statusLabelFromTone`. Los features cargados antes de
+`biblioteca.page.js` cierran sobre nombres léxicos que solo se resuelven al
+ejecutar callbacks después de que Biblioteca ya los declaró. Reordenar no está
+autorizado en 7.0.
+
+En bubbling, el listener de `#explorer-content` registrado por Dashboard se
+ejecuta antes del `document.click` de Biblioteca. Solo busca
+`data-content-action`; las cards vigentes emiten `data-bib-action`, por lo que
+Dashboard retorna y Biblioteca despacha una vez. No hay `preventDefault` ni
+`stopPropagation` en el handler de Biblioteca. Quick tiene listeners directos
+fuera de `#explorer-content`; los modales Biblioteca conservan sus listeners
+locales propios.
+
+### Reload, delete y errores durante Quick Create
+
+- Reload pierde `quickCreate`, staging, `progress`, `generating`,
+  `pendingBatchId`, `pendingConjunto`, Selection/Tabs y la conexión SSE. El
+  backend puede haber persistido parte o todo el batch; la carga inicial lo
+  reconstruye si ya aparece en `/api/biblioteca/conjuntos`, pero no reanuda ni
+  correlaciona el proceso. Reenviar puede duplicar un batch nuevo.
+- Un pending nuevo no muestra botón delete. Un bloque existente sí puede
+  eliminarse mientras genera: delete limpia cuatro Pending por batch pero no
+  cancela request/SSE ni limpia `pendingBatchId`; el finish posterior puede
+  volver a seleccionar/insertar/refetchear el batch según la carrera backend.
+- Cambiar de bloque/tab es posible; el finish vuelve a seleccionar el batch
+  generado y tab Planeaciones. Navegar/logout tampoco cancela explícitamente.
+- Success completo limpia pending; partial success conserva pending/error y
+  refetchea; `duplicate_tema` se traduce a skipped/warning; SSE `error` lanza;
+  JSON malformado se ignora; HTTP 5xx intenta POST no-stream; error de red/auth
+  termina en el catch de generación. No hay timeout ni retry cliente para
+  planeaciones, ni AbortController.
+- Si falla la resolución jerárquica después de cerrar el panel, el catch externo
+  solo registra consola. Si falla la generación, la card/progress muestra el
+  mensaje; `finally` limpia generating/batch, pero un `pendingConjunto` sin batch
+  real puede quedar hasta la siguiente carga no silenciosa.
+
+### Dependencias, ciclos y cortes seguros
+
+```text
+Dashboard shell
+  -> Quick Create
+     -> explorerState + jerarquía services
+     -> window.biblioteca
+        -> bibliotecaState / Selection / Tabs / Pending
+        -> renderBibliotecaContent
+        -> loadAndRenderBiblioteca
+           -> API -> reconcile -> render
+
+BibliotecaEvents -> openQuickCreatePanel (binding léxico de Dashboard)
+Biblioteca render -> window.explorerState.progress
+Dashboard render bridge -> window.renderBibliotecaContent
+```
+
+El ciclo activo impide empezar por retirar el bridge (opción D): Quick y
+Biblioteca se llaman en ambas direcciones. Empezar por loader/reconcile (B)
+mantendría demasiados writers de Quick sin owner. Bootstrap/navegación (C)
+depende de conocer qué queda después. El corte seguro es A: Quick Create
+completo, preservando facade y wrappers; después B y finalmente C.
+
+Candidatos futuros, no creados: un owner específico de Quick Create; un owner
+de loader/reconcile de Biblioteca; y un owner pequeño de bootstrap/navegación
+Dashboard. No se justifican `LoaderManager`, `NavigationManager`, store global o
+engine genérico.
