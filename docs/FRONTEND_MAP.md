@@ -1765,7 +1765,8 @@ config → Supabase SDK/client → auth → utils
 → components.private → shared.ui
 → APIs de Biblioteca/Anexos
 → features de Anexos → features de Planeaciones → block delete
-→ dashboard.page.js → quick-create.js → biblioteca.page.js → main.js
+→ dashboard.page.js → quick-create.js → biblioteca.page.js
+→ biblioteca-loader.js → render → modal render → events → main.js
 ```
 
 Los scripts son clásicos. Biblioteca consume al invocarse globals explícitos y
@@ -2527,6 +2528,72 @@ Orden ejecutable: `dashboard.page.js` define estado/helpers/wrappers;
 Biblioteca. Así `BibliotecaEvents` sigue resolviendo el wrapper léxico y los
 callbacks de Quick encuentran la fachada cuando se ejecutan.
 
+## Fase 7 — Sesión 7.2: ownership de loader y reconciliación
+
+El loader genérico y las piezas íntimas de reconciliación se extrajeron
+literalmente a `js/features/biblioteca/biblioteca-loader.js`. La página conserva
+la fuente física de State/Pending y cinco wrappers léxicos para no modificar
+generadores, deletes, eventos, init ni la fachada de Quick Create.
+
+| Función | Clasificación | Owner 7.2 | Consumidores |
+| --- | --- | --- | --- |
+| `loadAndRenderBiblioteca` | loader/reconcile general | owner nuevo; wrapper en page | 15 caminos totales |
+| `mergePlaneaciones` | helper íntimo de merge por ID | privado en owner | optimistic apply |
+| `applyOptimisticPlaneacionesToConjunto` | reconcile general/generación | owner; wrapper | finish y PlaneacionGeneration |
+| `applyGenerationResultToPendingItems` | generation-specific pending | owner; wrapper | finish y PlaneacionGeneration |
+| `normalizeGeneratedPlaneaciones` | helper generation/reconcile | owner; wrapper | finish y PlaneacionGeneration |
+| `finishBibliotecaPlaneacionesGeneration` | coordinador Quick→reconcile | owner; wrapper/fachada | `window.biblioteca`/Quick Create |
+
+### Call sites conservados
+
+| Origen | Await | Opciones/resultado esperado |
+| --- | --- | --- |
+| `initBiblioteca` | sí | carga normal, selección inicial y render |
+| retry de eventos | no | carga normal y recuperación visual de error |
+| fachada `refresh` | retorna Promise | conserva opciones del caller/Quick fallback |
+| finish Quick Create | sí | silent, target real, tab Planeaciones |
+| PlaneacionGeneration | sí | silent, target real, tab Planeaciones tras optimistic |
+| AnexoGeneration | sí si hubo éxito | silent, mismo batch/tab Anexos; limpia pending después |
+| generar/regenerar anexo directos | sí, dos caminos | silent, mismo batch/tab Anexos |
+| ListaCotejoGeneration | sí | tras grace/pending cleanup, tab Listas |
+| ExamGeneration | sí | tras polling/pending cleanup, tab Exámenes |
+| cuatro deletes individuales | sí | local update/render y refetch al batch/tab del dominio |
+| block delete | sí | local fallback/render y silent refresh sin target |
+
+Son 14 call sites externos más el refetch interno de finish: 15 caminos. Cada
+invocación conserva una sola `requireSession` y como máximo una llamada a
+`apiBibliotecaConjuntos`; no se añadió debounce ni segundo refetch.
+
+### Writes y reconciliación exactos
+
+| Superficie | Comportamiento preservado |
+| --- | --- |
+| `loading` | normal escribe `true` antes del fetch; success/catch escriben `false`; silent no muestra loading |
+| `error` | se vacía antes de sesión/API; catch conserva mensaje y log existentes |
+| `conjuntos` | success reemplaza por array API o `[]`; optimistic puede anteponer el batch real antes del refetch |
+| `pendingConjunto` | carga normal limpia antes del fetch; silent conserva hasta success; optimistic/finish puede convertirlo y limpiar |
+| `pendingBatchId` | el loader no lo escribe ni limpia; Quick Create/fachada conservan ownership |
+| Selection | conserva válida; prioriza target; mapea temporal seleccionado; luego prev ID/primer batch/null |
+| Tabs | limpia tempId; restaura tab temporal, aplica tab target o crea `planeaciones` solo en fallback sin tab |
+| Pending planeaciones | result actualiza items/error; success completo limpia; partial conserva error |
+| `expandedIds` | optimistic elimina únicamente el tempId histórico |
+
+`pendingConjunto` conserva el shape real: `id`, `tempId`, `isPending`,
+`status_ui`, `titulo`, `nivel`, `materia`, `unidad`, `created_at`, tres totales y
+arrays `planeaciones`, `examenes`, `listas_cotejo`. No se añadieron campos.
+
+`mergePlaneaciones` conserva la clave normalizada `id`/`planeacion_id`, el orden
+de primera inserción y la preferencia del item incoming para un ID repetido. El
+loader no hace merge de conjuntos: la lista persistida reemplaza la optimista.
+La inferencia sin target sigue escogiendo el primer ID nuevo contra el snapshot
+previo; es riesgo histórico, no corrección de 7.2.
+
+Métricas: `biblioteca.page.js` 1317→1118 líneas y 51→50 declaraciones
+top-level; owner nuevo 233 líneas/6 funciones; 5 wrappers retenidos; API directa
+page/owner 1→0/1; renders del bloque movido 0/4; métodos de fachada relacionados
+siguen siendo `refresh` y `finishPlaneacionesGeneration`. Comparación literal de
+las seis funciones: PASS.
+
 ### Estado mixto de reconciliación
 
 | Estado | Fuente física | Writers | Readers | Persistencia | Clasificación / fase |
@@ -2578,6 +2645,8 @@ anexo, cinco deletes y delete de bloque. Todos siguen el mapa
 | `window.explorerState` | Dashboard; features mutan preview/cache | Dashboard, render Biblioteca, Exam/Lista Preview | store mixto accidental pero activo | separar props F7; legacy F8; retiro F10 |
 | `window.biblioteca` | `biblioteca.page.js`; setter de batch y métodos | Quick Create | fachada legítima temporal, no fuente física | conservar F7; revisar retiro F10 |
 | `window.renderBibliotecaContent` | render owner | bridge Dashboard y alta pending Quick | wrapper activo; bindings léxicos usan implementación | conservar F7; retiro F10 |
+| `window.QuickCreate` | owner Quick 7.1 | Dashboard/Biblioteca events | namespace funcional, no store | conservar; revisar wrappers en F10 |
+| `window.BibliotecaLoader` | owner loader 7.2 | cinco wrappers de `biblioteca.page.js` | namespace funcional, no store; merge privado | conservar hasta migrar consumidores clásicos |
 | `window.BIBLIOTECA_MODE` | init Dashboard | Dashboard/Quick/render | flag de ruta vigente | bootstrap F7.3 |
 | `window.initDashboardPage` | Dashboard | `main.js` | entry point público | Dashboard estable |
 | `window.initBiblioteca` | Biblioteca | Dashboard | entry point cargado antes de init | F7.3, conservar contrato |
@@ -2612,6 +2681,7 @@ config + Supabase + auth + utils
 -> dashboard.page.js
 -> quick-create.js
 -> biblioteca.page.js
+-> biblioteca-loader.js
 -> biblioteca-render.js
 -> biblioteca-modal-render.js
 -> biblioteca-events.js

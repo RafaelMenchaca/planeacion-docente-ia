@@ -67,7 +67,8 @@
 - **Sesión 6.4:** auditoría formal aprobada; Fase 6 completada, sin implementación funcional ni manual adicional.
 - **Sesión 7.0:** auditoría técnica/documental de apertura completada; sin implementación funcional ni manual requerida.
 - **Commit real de 7.0:** `7c75738`.
-- **Sesión 7.1:** extracción consolidada de Quick Create implementada y validada automáticamente; validación manual pendiente, sin commit ni push.
+- **Sesión 7.1:** extracción consolidada de Quick Create validada manualmente y commiteada en `97b798c`.
+- **Sesión 7.2:** ownership de loader/reconcile implementado y validado automáticamente; manual pendiente, sin commit ni push.
 
 Las Fases 0, 1, 2, 3 y 4 están completadas. Las validaciones manuales 3.1, 3.2,
 3.4, 3.6 y 3.8 están aprobadas. En Fase 4, anexos, listas, planeaciones y
@@ -4312,9 +4313,68 @@ La suite acumulativa pasó 2 suites y 5 tests.
 
 - Fase 7: En progreso.
 - Sesión 7.0: Completada y commiteada en `7c75738`.
-- Sesión 7.1: Implementada; validaciones automáticas aprobadas; manual pendiente.
-- Sesión 7.2: No abierta.
-- Commit/push de 7.1: No realizados.
+- Sesión 7.1: Validada manualmente y commiteada en `97b798c`.
+- Sesión 7.2: Implementada; validaciones automáticas aprobadas; manual pendiente.
+- Commit/push de 7.2: No realizados.
 
-La siguiente acción es ejecutar el checklist manual de 7.1. Solo después de su
-aprobación debe registrarse 7.1 como completada y prepararse 7.2.
+La manual de 7.1 confirmó Quick Create, reconciliación sin duplicados,
+Biblioteca posterior y el flujo normal con batch existente,
+`forceNewBatch:false` y reutilización explícita. También confirmó success de
+planeaciones, anexos y exámenes.
+
+## Fase 7 — Sesión 7.2: ownership de loader y reconciliación
+
+### Gate y decisión técnica
+
+- Frontend: `refactor-front`, `HEAD 97b798c`, limpio al abrir; commit real de
+  7.1 `refactor(frontend): extract Dashboard Quick Create`.
+- Backend: `refactor-back`/`e08d6e4`, limpio, solo lectura y sin cambios.
+- Decisión: mover loader y reconciliación íntima como una unidad literal; dejar
+  State/Pending y coordinación restante en page; conservar wrappers para los
+  consumidores clásicos.
+
+### Owner y fronteras
+
+`js/features/biblioteca/biblioteca-loader.js` contiene seis funciones:
+normalización de planeaciones generadas, merge por ID, aplicación optimista,
+aplicación de result a pending, finish Quick→Biblioteca y load/refetch. Publica
+cinco operaciones en `window.BibliotecaLoader`; `mergePlaneaciones` permanece
+privada. No es un store ni una capa API nueva.
+
+`biblioteca.page.js` conserva `bibliotecaState`, Selection, Tabs, cuatro
+ModalState, cuatro Pending, `pendingBatchId`, `pendingConjunto`, modales,
+submits, compatibilidad e init. Cinco wrappers conservan firmas para features,
+eventos, deletes, fachada e init. Los 15 caminos siguen siendo init, retry,
+refresh, finish, cuatro generaciones, dos anexos directos, cinco deletes.
+
+### Semántica preservada
+
+- Normal: limpia pending temporal, activa loading, limpia error, renderiza,
+  exige sesión, hace una GET, reconcilia y renderiza resultado/error.
+- Silent: conserva la ausencia de render/loading inicial; hace una GET y un
+  render final. Finish mantiene render optimista + un refetch silent.
+- Target explícito gana; sin target se conserva inferencia por primer ID nuevo.
+  Luego selección conserva ID previo o cae al primer conjunto/null.
+- Tabs limpian tempId y conservan/restauran el tab histórico. No se agregó
+  limpieza general de claves huérfanas.
+- `pendingBatchId` no es writer del loader. `pendingConjunto` conserva shape,
+  timing y cleanup. Merge incoming sigue ganando por ID; refetch reemplaza la
+  lista optimista por backend.
+- Quick Create, generación, SSE/polling, delays, deletes, API, render, Dashboard,
+  navegación, jerarquía, Archivados y legacy permanecen funcionalmente intactos.
+
+### Evidencia y estado
+
+- Comparación literal normalizada: PASS en seis funciones.
+- Smoke loader/reconcile sin red: PASS en cuatro casos amplios.
+- Smoke Quick Create: PASS; integración temporal→real intacta.
+- Suite acumulativa: PASS, 3 suites y 9 tests.
+- `biblioteca.page.js`: 1317→1118 líneas; owner 233; cinco wrappers.
+- Script order: page → loader → render → modal render → events.
+- Sesión 7.2: Implementada; manual pendiente.
+- Sesión 7.3: No abierta.
+- Commit/push: No realizados.
+
+Siguiente acción: checklist manual de carga, navegación, Quick Create,
+generación normal, delete y consola/red. Solo después de su aprobación puede
+marcarse 7.2 completada y prepararse 7.3.

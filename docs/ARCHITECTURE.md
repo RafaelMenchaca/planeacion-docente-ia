@@ -484,13 +484,45 @@ para `BibliotecaEvents`, Escape, `renderAll` y la acción legacy de generación;
 también retiene los helpers de actividades, jerarquía y progreso con
 consumidores fuera de Quick Create.
 
-El orden clásico requerido en `dashboard.html` es ahora
+El orden clásico requerido al cerrar 7.1 fue
 `dashboard.page.js -> quick-create.js -> biblioteca.page.js -> render -> modal
 render -> events -> main.js`. No se movieron el estado ni Pending de
-Biblioteca, `loadAndRenderBiblioteca`, la reconciliación temporal→real,
-`PlaneacionGeneration`, API/services, previews, downloads, deletes o legacy.
-La extracción tiene validación automática aprobada; su prueba manual permanece
-pendiente antes de comenzar 7.2.
+Biblioteca, `PlaneacionGeneration`, API/services, previews, downloads, deletes
+o legacy. La extracción fue validada manualmente y quedó commiteada en
+`97b798c`.
+
+### Resultado implementado en 7.2: owner de loader/reconcile
+
+`js/features/biblioteca/biblioteca-loader.js` es el owner canónico de la carga,
+refetch y reconciliación de Biblioteca. Contiene literalmente el loader, la
+normalización/merge de resultados de planeaciones, el update optimista y el
+finish que conecta Quick Create con el refetch. Publica la superficie estrecha
+`window.BibliotecaLoader`; no contiene estado físico.
+
+```text
+biblioteca.page.js
+  ├─ bibliotecaState + Selection/Tabs + ModalState/Pending
+  ├─ coordinación de modales/features/compatibilidad
+  └─ wrappers léxicos para consumidores clásicos
+       -> biblioteca-loader.js
+          ├─ load/refetch + loading/error
+          ├─ tempId -> target/inferencia -> selección/tab
+          └─ optimistic/partial/finish -> render -> refetch
+```
+
+La carga normal conserva dos renders (loading y resultado/error); la silenciosa
+conserva uno al finalizar o fallar. Cada invocación realiza una sola lectura de
+conjuntos tras `requireSession`; si no hay sesión mantiene el early return
+histórico. El loader reemplaza `conjuntos` por la respuesta, no crea un merge de
+batches nuevo. El merge por ID solo aplica a planeaciones optimistas antes del
+refetch; la respuesta persistida vuelve a ser autoritativa.
+
+El orden contractual queda `biblioteca.page.js -> biblioteca-loader.js ->
+biblioteca-render.js -> biblioteca-modal-render.js -> biblioteca-events.js`.
+Los 15 caminos de carga mantienen sus firmas mediante wrappers. Quick Create,
+generadores y deletes no cambiaron funcionalmente; State/Pending, Selection y
+Tabs conservan fuente única. La validación automática de 7.2 está aprobada y la
+manual permanece pendiente; 7.3 no está abierta.
 
 ## Páginas
 
@@ -518,7 +550,10 @@ La ruta visual antigua incluye árbol, breadcrumbs y render por niveles. Su cód
 
 ## Estado global conocido
 
-- Biblioteca publica `window.biblioteca`, `window.initBiblioteca` y `window.renderBibliotecaContent`.
+- Biblioteca publica `window.biblioteca`, `window.initBiblioteca`,
+  `window.BibliotecaLoader` y `window.renderBibliotecaContent`.
+- Quick Create publica `window.QuickCreate` como namespace funcional; ni este
+  ni `window.BibliotecaLoader` son fuentes de estado.
 - Dashboard publica `window.explorerState` y wrappers de preview/descarga usados por Biblioteca.
 - `window.AppUI` concentra helpers compartidos.
 - `window.API_BASE_URL`, `window.supabase` y `window.currentUser` sostienen configuración y sesión.

@@ -899,9 +899,10 @@ Quitar dependencias activas de `dashboard.page.js` que pertenecen a Biblioteca s
 
 ### Estado
 
-**En progreso.** La Sesión 7.0 completó la auditoría técnica/documental de
-apertura y quedó commiteada en `7c75738`. La Sesión 7.1 tiene implementación y
-validaciones automáticas aprobadas; su validación manual permanece pendiente.
+**En progreso.** La Sesión 7.0 quedó commiteada en `7c75738`. La Sesión 7.1 fue
+validada manualmente y commiteada en `97b798c`. La Sesión 7.2 tiene
+implementación y validaciones automáticas aprobadas; su manual permanece
+pendiente. La Sesión 7.3 no está abierta.
 
 ### Dependencias
 
@@ -927,7 +928,7 @@ Crear inventario bidireccional Dashboard↔Biblioteca, resolver una dependencia 
 
 #### 7.1 — Extraer el coordinador completo de Quick Create
 
-**Estado: implementada; validación manual pendiente.** Se creó
+**Estado: completada, validada manualmente y commiteada en `97b798c`.** Se creó
 `js/features/dashboard/quick-create.js` como owner único de panel, comboboxes,
 validación, jerarquía técnica, staging, progreso SSE y coordinación con la
 fachada de Biblioteca. `dashboard.page.js` conserva solo wrappers para sus
@@ -937,8 +938,9 @@ loader/reconcile, API/service ni `PlaneacionGeneration`.
 
 Evidencia automática: comparación literal normalizada de seis bloques, 44
 listeners totales preservados (27 Dashboard + 17 Quick Create), smoke JSDOM de
-3 casos sin red real, sintaxis y suite Jest. No se abre 7.2 hasta recibir y
-registrar la validación manual de 7.1.
+3 casos sin red real, sintaxis y suite Jest. La manual confirmó Quick Create,
+reconciliación, Biblioteca posterior, generación normal con batch explícito y
+sin errores/duplicación nuevos.
 
 - Mover como unidad el estado propio, comboboxes, DOM, validación, resolución de
   jerarquía técnica, staging, progreso y coordinación SSE actualmente vigentes
@@ -957,6 +959,18 @@ nuevo y existente, progreso y resultado total/parcial/error, selección/tab,
 reload posterior, consola y una sola petición de generación.
 
 #### 7.2 — Separar loader y reconciliación de Biblioteca
+
+**Estado: implementada; validación manual pendiente.** El owner
+`js/features/biblioteca/biblioteca-loader.js` contiene literalmente loader,
+refetch, reconciliación temporal→real, merge optimista y finish. La fuente de
+State/Pending permanece en `biblioteca.page.js`; cinco wrappers conservan los
+15 caminos y la fachada. Quick Create, generadores, deletes, API y render no se
+modificaron funcionalmente.
+
+Evidencia automática: seis funciones con comparación literal PASS; smoke JSDOM
+de loader/reconcile con 4 casos; smoke Quick Create; sintaxis, suite Jest de 3
+suites/9 tests y diff check. No abrir 7.3 hasta aprobar y registrar la manual
+de 7.2.
 
 - Dar owner identificable a `loadAndRenderBiblioteca()` y a la reconciliación
   `tempId -> batch_id` sin crear un gestor genérico ni otra fuente de estado.

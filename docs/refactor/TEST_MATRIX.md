@@ -1546,7 +1546,7 @@ siguientes matrices quedan preparadas, no ejecutadas.
 | Loader/reconcile | PASS de alcance: cero llamadas directas nuevas; se conserva la fachada de Biblioteca |
 | Backend | PASS: limpio y sin cambios; no se ejecutaron migraciones ni llamadas reales |
 
-### Checklist manual pendiente de 7.1
+### Checklist manual aprobado de 7.1
 
 | Área | Comprobación solicitada |
 | --- | --- |
@@ -1561,10 +1561,29 @@ siguientes matrices quedan preparadas, no ejecutadas.
 Logs naturales útiles, sin tokens, UUIDs completos ni datos personales: para
 Quick Create nuevo, `batchIdRecibido:null`, `forceNewBatch:true` y creación de
 batch; para el modal normal, batch explícito, `forceNewBatch:false` y
-reutilización. Esta matriz permanece **Pendiente** hasta evidencia manual del
-usuario; 7.2 no está abierta.
+reutilización. El usuario confirmó el checklist sin errores ni duplicación
+nuevos; el flujo normal conservó batch explícito y `forceNewBatch:false`.
+Quick Create, Biblioteca posterior y generaciones de planeaciones, anexos y
+exámenes quedaron correctos. Commit `97b798c`.
 
-### Matriz preparada para 7.2 — loader y reconciliación
+## Fase 7 — Sesión 7.2: loader y reconciliación
+
+### Evidencia automática ejecutada
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: frontend `refactor-front`/`97b798c`; backend `refactor-back`/`e08d6e4`; limpios al abrir |
+| Owner | PASS: loader/reconcile en `biblioteca-loader.js`; State/Pending conservados en page |
+| Comparación literal | PASS: seis funciones, incluidos loader, finish, merge y optimistic apply |
+| Call sites | PASS: 14 externos + refetch interno de finish = 15; firmas/opciones intactas |
+| Requests/renders | PASS: una GET máxima por load; normal 2 renders, silent 1, finish 2 totales |
+| Smoke loader | PASS: 4 casos; success/empty/error, fallbacks, target/inferencia, partial/optimistic/finish |
+| Smoke Quick Create | PASS: 3 casos existentes, incluida temporal→real sin duplicado |
+| Jest acumulativo | PASS: 3 suites, 9 tests con `npm test -- --runInBand` |
+| Protegidos | PASS estático: generadores, deletes, API, render, State/Pending y Quick Create sin cambio funcional |
+| Backend | PASS: limpio, solo lectura y sin llamadas reales |
+
+### Checklist manual pendiente de 7.2
 
 | Caso | Verificación manual futura |
 | --- | --- |
