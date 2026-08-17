@@ -42,6 +42,7 @@ function createHarness({ layoutError = false } = {}) {
   };
 
   run(context, "js/pages/dashboard.page.js");
+  run(context, "js/features/dashboard/legacy-explorer.js");
   run(context, "js/features/dashboard/dashboard-bootstrap.js");
 
   return { dom, window, context };

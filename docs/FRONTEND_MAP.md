@@ -3205,3 +3205,136 @@ datos existentes. Riesgo principal: orden de script y lectura de registros
 históricos. Manual: registros vacío/válido/antiguo/inválido, scopes sin
 planeaciones, filtros/tree, restore/delete por item/batch/scope, reload,
 Dashboard/Biblioteca/Quick y consola/red.
+
+## Fase 8 — Sesión 8.1: explorer visual y navegación legacy
+
+Esta sección reemplaza la recomendación de registry de 8.0. Aquella
+implementación temporal fue descartada antes de commit; Archivados queda
+congelado. El corte ejecutado reduce Dashboard aislando el fallback visual.
+
+### Gate y arquitectura
+
+- Frontend: `refactor-front`/`9b8ede5`, limpio después de reconciliar el
+  descarte explícito; los archivos temporales del registry no existen.
+- Backend: `refactor-back`/`e08d6e4`, limpio y solo lectura.
+
+```text
+dashboard.page.js
+├─ explorerState + caches/loaders técnicos
+├─ Quick/shared helpers
+├─ recursos/generación legacy
+├─ previews/downloads activos
+└─ CRUD/archive callbacks
+
+legacy-explorer.js
+├─ session location + current visual
+├─ select root/plantel/grado/materia/unidad
+├─ tree + breadcrumbs
+├─ renders root/plantel/grado/materia/unidad
+├─ renderExplorerContent + renderAll
+├─ tree/breadcrumb/content dispatch
+└─ hydrate/restore/refresh fallback
+
+dashboard-bootstrap.js
+└─ listeners existentes + pageshow + init
+```
+
+### Clasificación y decisión de movimiento
+
+| Función/grupo | Categoría | Consumer | Owner anterior | Owner final/retenido | Riesgo |
+| --- | --- | --- | --- | --- | --- |
+| storage location, `setCurrentLevel` | B/E | select*/restore | Dashboard | legacy owner | session/current |
+| cinco `select*` | B; `selectUnidad` también G | tree, breadcrumbs, Quick | Dashboard | legacy owner | loaders + Quick |
+| restore/refresh/hydrate | B/K | bootstrap/pageshow | Dashboard | legacy owner | BFCache/fallback |
+| workspace/hero/subtitle | A/C | `renderAll` | Dashboard | legacy owner | modo Biblioteca |
+| tree: cuatro renders + handler | A/D | bootstrap DOM | Dashboard | legacy owner | expand/caches |
+| breadcrumbs render/handler | B/D | bootstrap DOM | Dashboard | legacy owner | current IDs |
+| cinco level renders | A/C | content render | Dashboard | legacy owner | DOM/actions |
+| content dispatcher | A/B/K | bootstrap | Dashboard | legacy owner | callbacks externos |
+| `renderExplorerContent`/`renderAll` | A/K | Quick, Bootstrap, recursos | Dashboard | legacy owner | bridge Biblioteca |
+| `loadPlanteles`, cuatro `ensure*` técnicos | F/G | Quick + owner | Dashboard | retenidos | no duplicar |
+| current entity/find/sort/error | F/G/J/I | Quick, CRUD/archive, owner | Dashboard | retenidos | compartidos |
+| staging/generación examen/lista | G/J | fallback + features | Dashboard | retenidos | generación protegida |
+| previews/downloads | H/K | Biblioteca + fallback | Dashboard/features | retenidos para 8.2 | bridges/globals |
+| CRUD/delete/archive | I/J/K | content callback | Dashboard | retenidos | Archivados/endpoints |
+
+**Decisión: A. Explorer visual legacy aislado.** Las 42 funciones se copiaron
+literalmente desde `HEAD`; no quedan duplicadas en Dashboard. No se añadió
+namespace porque los scripts clásicos ya resuelven las declaraciones top-level
+antes de que cualquier listener o callback se ejecute.
+
+### Tree, breadcrumbs y navegación
+
+- Tree: `renderUnidadNodes`, `renderMateriaNodes`, `renderGradoNodes`,
+  `renderSidebarTree` y `handleTreeClick`; HTML/classes/data-attributes,
+  scroll, labels, counts, empty/loading/error y Sets permanecen.
+- Breadcrumbs: `renderBreadcrumbs` y `handleBreadcrumbClick`; mismos cinco
+  niveles, labels, disabled, current y callbacks.
+- Navegación: `setCurrentLevel`, cinco `select*`, restore, refresh e hydrate;
+  las tres funciones de sessionStorage acompañan al owner.
+- Detalle: `handleContentClick` conserva literalmente
+  `detalle.html?id=${encodeURIComponent(planeacionId)}`.
+- `pageshow`: el listener permanece sin cambios en Bootstrap y llama la misma
+  función `refreshExplorerAfterReturn`, ahora declarada por el owner.
+
+### Recursos y callbacks retenidos
+
+`renderUnidadLevel` permanece en el owner porque compone la vista legacy, pero
+consume sin mover `ensureTemas`, `ensureExamenes`, `ensureListasCotejo`,
+`renderExamSection`, `renderListaCotejoSection`, progreso y actividades. Los
+generadores y estados no cambiaron.
+
+El dispatcher conserva callbacks hacia modal/CRUD, archive/delete, staging,
+generación, preview y download que continúan definidos en Dashboard/features.
+Así se mueve UI/navegación sin absorber responsabilidades de 8.2 ni Archivados.
+
+### `explorerState` y métricas
+
+No cambia el shape ni el owner físico de `explorerState`.
+
+| Métrica | Antes | Dashboard | Owner | Total |
+| --- | ---: | ---: | ---: | ---: |
+| LOC | 4049 | 2867 | 1188 | 4055 |
+| FunctionDeclaration | 174 | 132 | 42 | 174 |
+| refs `explorerState` | 488 | 330 | 158 | 488 |
+| primitivas DOM, patrón ampliado 8.1 | 198 | 136 | 62 | 198 |
+| listeners | 2 locales | 2 | 0 | 2 |
+
+Se movieron cinco funciones de tree, dos de breadcrumbs, nueve de navegación/
+fallback más tres de persistencia. No se creó wrapper nuevo; permanecen los 14
+wrappers/bridges ya clasificados en 8.0.
+
+El patrón ampliado cuenta `document.*`, inner/text/class/attribute/scroll y
+`requestAnimationFrame`; por eso su total 198 no sustituye la métrica histórica
+restringida de 171 registrada en 8.0. Su uso aquí es medir el reparto literal:
+62 operaciones acompañaron al owner y 136 permanecieron.
+
+### Script order y pruebas
+
+```text
+dashboard.page.js
+→ legacy-explorer.js
+→ dashboard-bootstrap.js
+→ quick-create.js
+→ biblioteca.page.js + owners
+→ main.js
+```
+
+El smoke `legacy-explorer.smoke.test.js` carga el mismo orden y cubre fallback
+sin Biblioteca, root→unidad, tree expand/collapse, breadcrumbs, restore de
+sessionStorage y URL de Detalle. Los harnesses existentes de Bootstrap y Quick
+incorporan el owner entre Dashboard y su consumer.
+
+### Archivados congelado
+
+Sin cambios en `archivados.page.js`, `archivados.html`,
+`planeaciones.service.js`, `educativo.archivedHierarchy.registry`, restore o
+delete. Biblioteca vigente usa delete directo. Un sistema de Archivados propio
+de Biblioteca queda diferido para trabajo posterior al refactor actual.
+
+### Roadmap restante
+
+1. 8.2: auditar previews/downloads y estado compatible ligado a
+   `explorerState`; extraer solo si el bloque es coherente.
+2. 8.3: residual Dashboard únicamente si existe otro corte grande y reversible.
+3. 8.4: auditoría formal de cierre.

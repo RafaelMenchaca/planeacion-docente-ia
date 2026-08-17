@@ -1090,50 +1090,50 @@ clásicos. La UI de Archivados ya posee un owner separado en
 `archivados.page.js`; su enlace de navbar está comentado, aunque la URL directa
 sigue siendo ejecutable.
 
-### Sesiones propuestas después de la auditoría 8.0
+La decisión de producto posterior a 8.0 congela Archivados durante el refactor
+actual: Biblioteca usa delete directo y cualquier sistema de Archivados propio
+de Biblioteca será trabajo futuro posterior. La propuesta original 8.1 de
+extraer el registry se descartó antes de commit y no forma parte del roadmap.
 
-#### 8.1 — Ownership del registro de jerarquía archivada
+La nueva Sesión 8.1 aisló literalmente el explorer visual y su navegación en
+`js/features/dashboard/legacy-explorer.js`. Dashboard bajó de 4049 a 2867 LOC;
+42 funciones pasaron al owner. Los loaders/caches técnicos, Quick Create,
+previews/downloads, generación, CRUD/archive callbacks y Archivados permanecen
+en sus owners actuales. Implementación automática aprobada; manual pendiente.
 
-Extraer como unidad el registro local `educativo.archivedHierarchy.registry`
-desde `planeaciones.service.js` hacia un owner de Archivados, conservando shape,
-normalización, fallbacks, cleanup y los siete globals actuales. Mantener
-`archivados.page.js`, endpoints, Dashboard legacy y datos almacenados sin
-cambio. Es el primer corte recomendado porque la UI ya está separada y el
-registro es la dependencia activa y reversible que todavía mezcla Archivados
-con el service general de planeaciones.
+### Sesiones de Fase 8
 
-Pruebas: URL directa de Archivados con registro vacío, válido, antiguo y JSON
-inválido; filtros, expand/collapse, restore y delete permanente individual,
-batch y scope; reload; Dashboard/Biblioteca/Quick Create; consola y red.
+#### 8.1 — Explorer visual y navegación jerárquica legacy
 
-#### 8.2 — Explorer visual y navegación jerárquica legacy
+**Implementada; manual pendiente.** El owner contiene ubicación persistida,
+selección root/plantel/grado/materia/unidad, tree, breadcrumbs, renders de los
+cinco niveles, dispatch `data-tree-action`/`data-content-action`, renderAll y
+fallback hydrate. Mantiene bindings clásicos hacia loaders técnicos y callbacks
+residuales, sin store/namespace nuevo ni listeners duplicados.
 
-Aislar como bloque árbol, breadcrumbs, render por niveles, selección,
-expand/collapse, CRUD/archive visual, staging/generación de la unidad histórica,
-fallback `hydrateExplorerData` y handlers `data-tree-action` /
-`data-content-action`. Deben permanecer fuera del bloque los loaders/caches de
-plantel, grado, materia y unidad consumidos por Quick Create, los helpers
-compartidos, el owner de Archivados y los previews activos.
+Pruebas: smoke sin red de fallback, root→unidad, expand/collapse, breadcrumbs,
+session restore y URL de Detalle; regresión manual de Biblioteca, Quick Create,
+Detalle/back-forward y preview vigente.
 
-Pruebas: ruta vigente sin árbol/breadcrumbs, fallback explícito sin Biblioteca,
-Quick Create nuevo/existente, Detalle/back-forward, Archivados, reload y
-ausencia de doble dispatch.
+#### 8.2 — Previews/downloads y compatibilidad residual de `explorerState`
 
-#### 8.3 — Preview y compatibilidad residual ligados a `explorerState`
+Auditar y, solo si forma un bloque coherente, aislar estado/cache y bridges de
+preview/download de Examen y Lista ligados a `explorerState`, preservando
+Biblioteca, markup, API, filename, `wordExport.js`, globals y Escape.
 
-Dar owner explícito al estado/cache de preview de Examen y Lista y a sus
-bridges de descarga/cierre, sin modificar markup, API, filename, `wordExport.js`
-ni consumidores de Biblioteca. Conservar wrappers/globales necesarios para
-Fase 10 y documentar por separado los aliases sin consumidor externo.
+Pruebas: preview/reapertura/cierre/Escape y descarga desde Biblioteca, más
+regresión de Anexo, Planeación, Detalle y fallback.
 
-Pruebas: preview/reapertura/cierre/Escape y descarga desde cards y modal para
-Examen y Lista; preview/descarga de Anexo y Planeación como regresión; Detalle,
-reload, consola y una sola lectura de detalle cuando aplique.
+#### 8.3 — Residual Dashboard, solo si existe corte coherente
+
+Evaluar el Dashboard restante después de 8.2. Solo abrir esta sesión si CRUD
+visual, recursos legacy u otro bloque tienen ownership y prueba reversibles;
+no crear una sesión para completar numeración.
 
 #### 8.4 — Auditoría formal de cierre
 
 Reconciliar owners, consumidores, no ejecución del explorer en la ruta vigente,
-jerarquía técnica, Archivados, previews, wrappers y matriz acumulativa. No abrir
+jerarquía técnica, Archivados congelado, previews, wrappers y matriz acumulativa. No abrir
 Fase 9 hasta que todo candidato de eliminación tenga evidencia explícita de
 cero consumidores.
 

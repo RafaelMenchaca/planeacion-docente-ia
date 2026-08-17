@@ -84,6 +84,7 @@ function createHarness({ generationResult, generationError } = {}) {
   }]);
 
   run(context, "js/pages/dashboard.page.js");
+  run(context, "js/features/dashboard/legacy-explorer.js");
   run(context, "js/features/dashboard/quick-create.js");
   run(context, "js/pages/biblioteca.page.js");
   run(context, "js/features/biblioteca/biblioteca-loader.js");

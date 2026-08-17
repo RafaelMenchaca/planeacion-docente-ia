@@ -1675,7 +1675,10 @@ manual. La evidencia estática delimita qué debe conservar cada corte futuro.
 | Diff | PASS: `git diff --check`; únicamente los cinco documentos autorizados |
 | Jest acumulativo | PASS: 4 suites, 12 pruebas con `npm test -- --runInBand` |
 
-### Matriz preparada para 8.1 — ownership del registro de Archivados
+### Propuesta descartada antes de commit — registry de Archivados
+
+Esta matriz no se ejecuta en el refactor actual. Archivados queda congelado y
+su rediseño para Biblioteca se difiere a trabajo posterior.
 
 | Caso | Verificación manual futura |
 | --- | --- |
@@ -1692,7 +1695,7 @@ manual. La evidencia estática delimita qué debe conservar cada corte futuro.
 | Regresión | Dashboard, Biblioteca y Quick Create cargan; jerarquía técnica y previews siguen operables |
 | Consola/red | Sin doble request, doble handler, error nuevo ni cambio de endpoint/payload |
 
-### Matriz preparada para 8.2 — explorer visual y navegación jerárquica legacy
+### Matriz base ejecutada por la nueva 8.1 — explorer visual y navegación legacy
 
 | Caso | Verificación manual futura |
 | --- | --- |
@@ -1707,7 +1710,7 @@ manual. La evidencia estática delimita qué debe conservar cada corte futuro.
 | Eventos | Sin doble dispatch entre `data-content-action`, `data-tree-action` y `data-bib-action` |
 | Consola/red | Sin errores nuevos ni consultas jerárquicas duplicadas |
 
-### Matriz preparada para 8.3 — previews y compatibilidad residual
+### Matriz preparada para la nueva 8.2 — previews y compatibilidad residual
 
 | Caso | Verificación manual futura |
 | --- | --- |
@@ -1732,3 +1735,48 @@ manual. La evidencia estática delimita qué debe conservar cada corte futuro.
 | Globals | Wrappers, aliases y dependencias de orden quedan entregados a Fase 10 |
 | Automatización | Jest acumulativo y smokes de los cortes funcionales aprobados |
 | Manual | Checklists de 8.1–8.3 aprobados; cierre no repite pruebas sin contradicción |
+
+## Fase 8 — Sesión 8.1: explorer visual y navegación legacy
+
+### Evidencia automática
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS tras descartar únicamente la implementación registry sin commit; frontend `refactor-front`/`9b8ede5` |
+| Backend | PASS: `refactor-back`/`e08d6e4`, limpio y solo lectura |
+| Owner | PASS: `legacy-explorer.js`, 1188 LOC y 42 funciones |
+| Dashboard | PASS: 4049→2867 LOC; 174→132 funciones |
+| Comparación literal | PASS AST: 42/42 funciones iguales a `HEAD`; cero duplicadas |
+| Estado | PASS: shape/fuente de `explorerState` intactos; refs 488=330+158 |
+| Jerarquía técnica | PASS de alcance: load/ensure/caches retenidos sin duplicación |
+| Tree | PASS smoke: render y toggle expand/collapse |
+| Breadcrumbs | PASS smoke: labels/current/click grado |
+| Navegación | PASS smoke: root→plantel→grado→materia→unidad |
+| Persistencia | PASS smoke: restore de `educativo.dashboard.last-location` |
+| Fallback | PASS: init sin Biblioteca, layout/sidebar y selección inicial |
+| Detalle | PASS estático: callback conserva `detalle.html?id=` + encoding |
+| Ruta Biblioteca | PASS por smoke existente: init sigue delegando a Biblioteca y retorna |
+| Quick Create | PASS por smoke existente con owner en el orden real |
+| Listeners | PASS de alcance: owner añade 0; Bootstrap permanece owner único |
+| Previews/generación | PASS de alcance: implementaciones y estados intactos |
+| Archivados | PASS de alcance: page/service/HTML/registry sin diff |
+| Jest acumulativo | PASS: 5 suites/15 pruebas con `npm test -- --runInBand` |
+| Sintaxis/diff | PASS: cuatro JS productivos + tres tests; `git diff --check` |
+
+Smoke específico: `tests/legacy-explorer.smoke.test.js`, 1 suite/3 pruebas.
+Bootstrap + Quick: 2 suites/6 pruebas aprobadas. La suite acumulativa aprobó
+5 suites y 15 pruebas.
+
+### Checklist manual pendiente de 8.1
+
+| Área | Verificación solicitada |
+| --- | --- |
+| Dashboard/Biblioteca | Carga, bloques, tabs, search y reload; no aparece explorer legacy |
+| Quick Create | Abrir y validar controles; generación IA opcional |
+| Detalle/back | Abrir planeación desde Biblioteca y volver; Biblioteca continúa correcta |
+| Preview | Abrir examen o lista y confirmar bridge/modal |
+| Consola | Sin ReferenceError, funciones undefined, doble listener o doble render |
+| Explorer natural | Solo si existe acceso visible natural: tree, breadcrumbs, niveles y Detalle |
+
+El fallback queda cubierto principalmente por smoke; no se pide activar ni
+manipular código manualmente.

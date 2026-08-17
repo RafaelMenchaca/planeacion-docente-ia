@@ -605,8 +605,13 @@ pages/dashboard.html
   -> dashboard.page.js
      ├─ estado/caches jerárquicos compartidos con Quick Create
      ├─ preview Examen/Lista y bridges activos de Biblioteca
-     ├─ fallback explorer: tree + breadcrumbs + niveles + CRUD/archive
+     ├─ recursos/generación/CRUD/archive legacy como callbacks
      └─ helpers léxicos compartidos y wrappers
+  -> legacy-explorer.js
+     ├─ ubicación + selección visual root/plantel/grado/materia/unidad
+     ├─ tree + breadcrumbs + renders por nivel
+     ├─ dispatch data-tree-action/data-content-action
+     └─ renderAll + hydrate fallback
   -> dashboard-bootstrap.js
      ├─ bindings estructurales, incluidos handlers del fallback
      ├─ pageshow back-forward todavía activo en modo Biblioteca
@@ -674,6 +679,42 @@ desconocido cae a registro vacío; shapes antiguos sin `scopes` conservan las
 colecciones reconocidas. Restore/delete limpia la rama y referencias conocidas,
 pero no existe migración explícita ni garbage collection contra backend.
 
+Archivados queda congelado por decisión de producto durante el refactor actual.
+Biblioteca usa delete directo; un sistema de Archivados específico para
+Biblioteca será trabajo futuro posterior. La propuesta original de extraer el
+registry como 8.1 fue descartada antes de commit. `archivados.page.js`,
+`planeaciones.service.js`, `archivados.html`, restore/delete y la key local no
+se modifican en Fase 8.
+
+### Owner del explorer visual desde 8.1
+
+`js/features/dashboard/legacy-explorer.js` posee 42 funciones movidas
+literalmente y 1188 LOC. Conserva el mismo estado físico `explorerState`, los
+mismos IDs/classes/data-attributes, HTML, mensajes, sessionStorage y URL de
+Detalle. No crea namespace, store, listener ni fuente de estado adicional.
+
+```text
+dashboard.page.js (2867 LOC)
+├─ explorerState físico
+├─ loadPlanteles + ensureGrados/Materias/Unidades
+├─ temas/exámenes/listas + generación y previews
+├─ CRUD/archive y callbacks de contenido
+└─ helpers compartidos / Quick / Biblioteca
+
+legacy-explorer.js (1188 LOC)
+├─ get/persist location + setCurrentLevel
+├─ select* + restore + refresh/pageshow target
+├─ tree + breadcrumbs + root/plantel/grado/materia/unidad
+├─ renderExplorerContent + renderAll
+├─ handlers delegados
+└─ hydrateExplorerData
+```
+
+El owner se carga entre `dashboard.page.js` y `dashboard-bootstrap.js`. Sus
+declaraciones top-level mantienen los bindings clásicos que consumen Bootstrap,
+Quick Create y callbacks retenidos. Los loaders técnicos no se duplican: el
+owner los llama como dependencias compartidas.
+
 ### Previews y estado mixto
 
 Los previews activos de Examen y Lista almacenan `examPreview`,
@@ -689,13 +730,12 @@ sí siguen consumidas por `renderAll`, Escape y bootstrap. `downloadExamWord`
 sí conserva un consumidor activo en `ExamDownload.downloadFromBiblioteca`.
 Ninguno se retira en Fase 8.0.
 
-### Roadmap técnico aprobado por 8.0
+### Roadmap técnico actualizado por 8.1
 
-1. 8.1: aislar ownership del registro local de Archivados, conservando globals
-   y datos antiguos.
-2. 8.2: aislar explorer visual, navegación, fallback y acciones legacy como un
-   bloque, dejando loaders técnicos y helpers activos fuera.
-3. 8.3: separar estado/bridges de previews activos ligados a `explorerState`.
+1. 8.1: explorer visual, navegación y fallback aislados; manual pendiente.
+2. 8.2: auditar previews/downloads y compatibilidad residual ligada a
+   `explorerState`.
+3. 8.3: solo si el Dashboard residual ofrece otro bloque coherente.
 4. 8.4: auditoría formal de cierre antes de considerar Fase 9.
 
 Fase 9 recibe únicamente piezas visuales y ramas sin emisor que después del

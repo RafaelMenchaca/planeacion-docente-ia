@@ -13,9 +13,10 @@
 
 - **Última fase cerrada:** 7 — Dashboard, Quick Create, loaders, navegación y reconciliación.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 8 — Aislar legacy visual; En progreso por auditoría 8.0.
-- **Sesión 8.0:** auditoría técnica/documental de apertura completada; sin implementación funcional ni manual requerida.
-- **Siguiente sesión:** 8.1 — ownership del registro de jerarquía archivada.
+- **Fase actual:** 8 — Aislar legacy visual; En progreso por implementación 8.1.
+- **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
+- **Sesión 8.1:** explorer visual/navegación aislados; manual pendiente.
+- **Siguiente sesión tras aprobación:** 8.2, previews/downloads y compatibilidad residual; no iniciada.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -4721,7 +4722,186 @@ Fase 8: En progreso
 Sesión 8.0: Auditoría completada
 Implementación funcional: No
 Manual: No requerida
-Commit: No
-Push: No
-Working tree: solo documentación autorizada al cierre de la sesión
+Commit: 9b8ede5 (realizado posteriormente por el usuario)
+Push: no reconciliado dentro de la sesión 8.0
+Working tree de 8.0: limpio al abrir la nueva 8.1
+```
+
+## Fase 8 — Sesión 8.1: explorer visual y navegación jerárquica legacy
+
+### A. Gate/reconciliación
+
+```text
+HEAD: 9b8ede5 docs(refactor): open legacy explorer and archived phase
+hash 8.0: 9b8ede5
+8.1 anterior: cambios sin commit descartados; owner/smoke registry ausentes
+backend: refactor-back / e08d6e4 / limpio / solo lectura
+puerta: PASS después de reconciliar el descarte explícito
+```
+
+### B. Auditoría explorer
+
+| Función/grupo | Categoría | Consumer | Owner anterior | Owner final/retenido | Riesgo |
+| --- | --- | --- | --- | --- | --- |
+| location/current/select* | B/E; unidad G | Bootstrap, Quick, tree | Dashboard | legacy owner | session/loaders |
+| tree/breadcrumbs | A/B/D | Bootstrap DOM | Dashboard | legacy owner | events/expanded |
+| cinco level renders | A/C | content bridge | Dashboard | legacy owner | DOM/actions |
+| renderAll/content | A/K | Quick, recursos, Biblioteca | Dashboard | legacy owner | bridge |
+| handlers/hydrate | A/B/K | Bootstrap fallback | Dashboard | legacy owner | dispatch/BFCache |
+| technical load/ensure | F/G | Quick + owner | Dashboard | retenido | fuente compartida |
+| preview/download | H/K | Biblioteca + legacy | Dashboard/features | retenido | 8.2 |
+| CRUD/archive | I/J/K | callbacks legacy | Dashboard | retenido | Archivados/API |
+
+### C. Decisión
+
+**A. Explorer visual legacy aislado.** No se elimina el fallback ni se cambia
+el flujo normal de Biblioteca.
+
+### D. Owner
+
+```text
+archivo: js/features/dashboard/legacy-explorer.js
+LOC: 1188
+funciones: 42
+scope: location, selección, tree, breadcrumbs, niveles, render/dispatch, hydrate
+dependencias: explorerState y helpers técnicos/callbacks clásicos de Dashboard
+```
+
+No crea namespace, store, listeners ni estado. Las declaraciones top-level
+mantienen los bindings existentes.
+
+### E. Arquitectura resultante
+
+```text
+dashboard.page.js (2867)
+├─ explorerState y helpers/caches técnicos
+├─ Quick/shared
+├─ recursos/generación legacy
+├─ previews/downloads
+└─ CRUD/archive callbacks
+
+legacy-explorer.js (1188)
+├─ ubicación/current/select*
+├─ tree + breadcrumbs
+├─ root/plantel/grado/materia/unidad
+├─ renderExplorerContent/renderAll
+├─ handlers delegados
+└─ restore/refresh/hydrate fallback
+
+dashboard-bootstrap.js
+└─ listeners/pageshow/init sin cambio funcional
+```
+
+### F–G. Jerarquía técnica y `explorerState`
+
+`loadPlanteles`, `ensureGrados`, `ensureMaterias`, `ensureUnidades`, sort,
+filtro registry, caches y helpers current/find permanecen en Dashboard porque
+Quick Create y callbacks vigentes los consumen. El owner los llama sin copia.
+
+`explorerState` conserva exactamente su shape y publicación. Se trasladaron
+158 de sus 488 referencias; 330 quedan con estado técnico, recursos, Quick,
+previews, generation, CRUD y callbacks. No hay segunda fuente.
+
+### H–I. Tree, breadcrumbs y navegación
+
+Se movieron literalmente cinco funciones tree, dos breadcrumb, cinco select*,
+setCurrent, restore/refresh/hydrate y tres helpers de sessionStorage. HTML,
+classes, IDs, `data-*`, labels, order, empty/loading/error, expanded Sets,
+current IDs y `detalle.html?id=` coinciden con `HEAD`.
+
+El listener `pageshow` sigue registrado en Bootstrap y resuelve la misma
+declaración `refreshExplorerAfterReturn`; BFCache/back-forward no se altera.
+
+### J. Resources/CRUD legacy
+
+`renderUnidadLevel` se movió como composición visual, pero temas, planeaciones,
+exámenes, listas, generación, progreso y actividades siguen siendo
+dependencias retenidas. CRUD jerárquico, delete/archive, modales y registry
+quedan en Dashboard/service; el dispatcher solo conserva sus callbacks.
+
+### K. Preview/download
+
+Exam/Lista Preview, downloads, estados, globals, modal DOM, Escape y
+`wordExport.js` permanecen intactos. Son candidatos auditables de 8.2.
+
+### L. Archivados
+
+Sin cambios. `archivados.page.js`, `archivados.html`, registry local,
+planeaciones service, restore y delete están fuera de alcance. Biblioteca usa
+delete directo; Archivados específico para Biblioteca se difiere a trabajo
+posterior al refactor.
+
+### M. Script order/bindings
+
+```text
+dashboard.page.js → legacy-explorer.js → dashboard-bootstrap.js
+→ quick-create.js → biblioteca.page.js/owners → main.js
+```
+
+Scripts clásicos; sin module/import/export/defer/async. El owner carga antes de
+Bootstrap y Quick. Los harnesses replican ese orden.
+
+### N–O. Archivos y métricas
+
+Código: Dashboard reducido + owner nuevo. HTML: una etiqueta script. Tests:
+dos harnesses adaptados y smoke nuevo. Documentación: cinco canónicos.
+
+```text
+dashboard.page.js: 4049 → 2867 LOC
+legacy owner: 1188 LOC
+funciones: 174 → 132 + 42
+explorerState refs: 488 → 330 + 158
+DOM primitivas patrón ampliado 8.1: 198 → 136 + 62
+tree: 5 movidas
+breadcrumbs: 2 movidas
+navegación/fallback: 9 + 3 storage movidas
+listeners owner: 0
+wrappers nuevos: 0; 14 existentes retenidos
+```
+
+### P. Validaciones
+
+- Comparación AST literal de 42 funciones: PASS.
+- Cero funciones movidas duplicadas en Dashboard: PASS.
+- `node --check` preliminar en Dashboard/owner/Bootstrap/Quick: PASS.
+- Smoke legacy: PASS, 1 suite/3 pruebas.
+- Smoke Bootstrap + Quick: PASS, 2 suites/6 pruebas.
+- Suite acumulativa: PASS, 5 suites/15 pruebas.
+- Sintaxis de cuatro JS productivos y tres tests: PASS.
+- `git diff --check`: PASS.
+- Backend final: `refactor-back`/`e08d6e4`, limpio y solo lectura.
+
+### Q. Riesgos
+
+Bindings léxicos entre scripts; `selectUnidad` también consumido por Quick;
+`renderAll` mezcla callbacks retained; `pageshow` corre bajo Biblioteca;
+session location histórica; callbacks archive/CRUD; previews pendientes de
+8.2. No se corrigió ningún comportamiento.
+
+### R. Manual pendiente
+
+- Dashboard/Biblioteca: carga, bloques, tabs, search y reload; sin explorer
+  apareciendo.
+- Quick Create: abrir y, opcionalmente, validar sin consumir IA.
+- Detalle: abrir planeación, volver atrás y confirmar Biblioteca.
+- Preview: abrir examen o lista.
+- Consola: sin ReferenceError, undefined, doble listener/render o árbol legacy.
+- Explorer visible: probar tree/breadcrumbs/niveles solo si existe acceso
+  natural; no manipular código.
+
+### S. Roadmap restante
+
+8.2 previews/downloads + compatibilidad residual; 8.3 solo si existe bloque
+coherente; 8.4 auditoría formal. Ninguna está iniciada.
+
+### T. Estado final
+
+```text
+Fase 8: En progreso
+8.0: completada/commiteada en 9b8ede5
+8.1: implementada
+Manual: pendiente
+Commit: no
+Push: no
+Working tree: cambios de 8.1 sin commit
 ```
