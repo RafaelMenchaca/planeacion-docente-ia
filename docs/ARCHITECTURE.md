@@ -8,8 +8,8 @@ La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” c
 
 Las Fases 0–7 están completadas. Fase 6 cerró mediante la auditoría 6.4 y Fase
 7 mediante la auditoría 7.4. Los commits funcionales de Fase 7 son `97b798c`,
-`a6840a4` y `bcd361e`; su manual acumulada está aprobada. Fase 8 permanece
-pendiente y no iniciada. El inventario ejecutable se conserva en
+`a6840a4` y `bcd361e`; su manual acumulada está aprobada. La auditoría 8.0 abrió
+documentalmente Fase 8, sin implementación funcional ni manual requerida. El inventario ejecutable se conserva en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -594,6 +594,113 @@ externo/preexistente de `public.ia_metrics` es no bloqueante.
 
 **Decisión: A. Fase 7 puede cerrarse.** Fase 7 y la Sesión 7.4 quedan
 completadas; auditoría aprobada. Fase 8 permanece pendiente y no iniciada.
+
+## Fase 8: frontera Archivados / explorer legacy / jerarquía técnica
+
+La auditoría 8.0 confirma que `dashboard.page.js` no puede tratarse como un
+bloque legacy. Sus 4049 líneas conservan cuatro fronteras distintas:
+
+```text
+pages/dashboard.html
+  -> dashboard.page.js
+     ├─ estado/caches jerárquicos compartidos con Quick Create
+     ├─ preview Examen/Lista y bridges activos de Biblioteca
+     ├─ fallback explorer: tree + breadcrumbs + niveles + CRUD/archive
+     └─ helpers léxicos compartidos y wrappers
+  -> dashboard-bootstrap.js
+     ├─ bindings estructurales, incluidos handlers del fallback
+     ├─ pageshow back-forward todavía activo en modo Biblioteca
+     └─ initDashboardPage -> initBiblioteca -> return
+
+pages/archivados.html
+  -> planeaciones.service.js
+     ├─ HTTP de planeaciones archivadas
+     └─ educativo.archivedHierarchy.registry (localStorage)
+  -> archivados.page.js
+     ├─ archivedState efímero
+     ├─ cards/filtros/árbol por rama
+     └─ restore/delete permanente
+```
+
+La ruta real de `dashboard.html` siempre carga `biblioteca.page.js` antes de
+`main.js`. Por ello `initDashboardPage()` detecta `window.initBiblioteca`, fija
+`BIBLIOTECA_MODE`, no inyecta `components/sidebar.html`, llama Biblioteca y
+retorna antes de `hydrateExplorerData()`. El árbol, los breadcrumbs y los
+renders por nivel no se montan en el arranque normal. Sí pueden montarse por el
+fallback conservado cuando `initBiblioteca` no existe; solo el smoke técnico
+ejercita hoy ese entry point, no una página de producto separada.
+
+El fallback no está completamente inerte. `bindDashboardEvents()` registra sus
+handlers contra nodos que existen en `components/layout.html`, y el listener
+`pageshow` se ejecuta también en modo Biblioteca. Al volver por back-forward,
+`refreshExplorerAfterReturn()` carga planteles y trata de restaurar
+`educativo.dashboard.last-location`; `renderAll()` despacha finalmente el
+contenido principal a `window.renderBibliotecaContent`. Esa ruta activa es
+compatibilidad/deuda y no autoriza borrar navegación ni storage todavía.
+
+### Jerarquía visual frente a técnica
+
+| Superficie | Visual | Técnica | Quick Create | Archivados | Legacy | Compatibilidad | Retirable ahora |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `planteles`, `gradosByPlantel`, `materiasByGrado`, `unidadesByMateria` | sí en fallback | sí | sí | no directamente | parcial | sí | no |
+| `loadPlanteles`, `ensureGrados/Materias/Unidades` | sí en fallback | sí | sí | loaders equivalentes propios | parcial | sí | no |
+| `current` y `setCurrentLevel/select*` | sí | IDs compartidos | Quick escribe IDs | no | sí | `pageshow` | no como bloque |
+| `expanded*`, `searchQuery`, tree y breadcrumbs | sí | no | no | no | sí | fallback | no en 8.0 |
+| temas/planeación por tema, generación/listas/exámenes por unidad | sí | contratos reales | solo staging/progreso compartido | no | sí | services activos | no en 8.0 |
+| archive visual de plantel/grado/materia/unidad/planeación | sí | endpoints reales | no | produce registro | sí | datos antiguos | no en 8.0 |
+| árbol de `archivados.page.js` | sí | sí al expandir scopes | no | sí | no | registro local | no |
+| previews Examen/Lista | modal compartido | detalle por ID | no | no | consumidor adicional | Biblioteca activa | no |
+
+### Archivados vigente pero sin acceso visible
+
+`pages/archivados.html` es una página privada ejecutable y `main.js` invoca
+`window.initArchivadosPage`. Carga datos desde `/api/planeaciones/archived`,
+combina payload persistido con el registro local, construye ramas `scope`,
+`batch` o `planeacion`, hidrata estructura jerárquica al expandir y permite
+restaurar o eliminar permanentemente. Sin embargo, el único enlace del navbar
+está comentado; el usuario solo puede llegar por URL directa o un enlace
+externo/no encontrado en el repositorio.
+
+Biblioteca no emite archive: sus acciones vigentes son delete directo. Los
+emisores de archive restantes están en el explorer fallback y en
+`batch.page.js`, cuya página redirige inmediatamente a Dashboard. Archivados
+sigue siendo una feature real para datos persistidos previamente, no una ruta
+visible del flujo principal.
+
+El registro `educativo.archivedHierarchy.registry` no tiene versión. Su shape
+normalizado contiene `hidden.{planteles,grados,materias,unidades}`, `scopes`,
+`planeaciones` y `batches`. Storage ausente, inaccesible, JSON inválido o shape
+desconocido cae a registro vacío; shapes antiguos sin `scopes` conservan las
+colecciones reconocidas. Restore/delete limpia la rama y referencias conocidas,
+pero no existe migración explícita ni garbage collection contra backend.
+
+### Previews y estado mixto
+
+Los previews activos de Examen y Lista almacenan `examPreview`,
+`examenDetalleById` y `listaCotejoPreview` en `window.explorerState`.
+Biblioteca los abre mediante `ExamPreview.openBiblioteca` y
+`ListaCotejoPreview.openBiblioteca`; el explorer fallback conserva aperturas
+alternativas. Anexo tiene modal/estado interno de su feature y Planeación no
+tiene preview modal en Dashboard: abre Detalle y descarga desde su feature.
+
+Los aliases globales de render/cierre de Examen y Lista publicados al final de
+Dashboard no tienen consumidores externos encontrados; las funciones léxicas
+sí siguen consumidas por `renderAll`, Escape y bootstrap. `downloadExamWord`
+sí conserva un consumidor activo en `ExamDownload.downloadFromBiblioteca`.
+Ninguno se retira en Fase 8.0.
+
+### Roadmap técnico aprobado por 8.0
+
+1. 8.1: aislar ownership del registro local de Archivados, conservando globals
+   y datos antiguos.
+2. 8.2: aislar explorer visual, navegación, fallback y acciones legacy como un
+   bloque, dejando loaders técnicos y helpers activos fuera.
+3. 8.3: separar estado/bridges de previews activos ligados a `explorerState`.
+4. 8.4: auditoría formal de cierre antes de considerar Fase 9.
+
+Fase 9 recibe únicamente piezas visuales y ramas sin emisor que después del
+aislamiento demuestren cero consumidores. Fase 10 conserva globals, wrappers,
+bindings léxicos y limpieza final del orden de scripts.
 
 ## Páginas
 

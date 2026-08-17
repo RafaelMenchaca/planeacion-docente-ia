@@ -1649,3 +1649,86 @@ externo/preexistente no bloqueante.
 
 **Decisión: A. Fase 7 puede cerrarse.** Sesión 7.4 completada, auditoría
 aprobada, manual adicional no requerida y Fase 8 pendiente/no iniciada.
+
+## Fase 8 — Sesión 8.0: auditoría técnica/documental de apertura
+
+La sesión 8.0 no modifica comportamiento y, por tanto, no requiere prueba
+manual. La evidencia estática delimita qué debe conservar cada corte futuro.
+
+### Evidencia de apertura
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate frontend | PASS: `refactor-front` en `2bb950d`; limpio al abrir; `origin/main` contiene el merge de Fases 6–7 |
+| Ramas | Local `main` está rezagada en `1254561`; `origin/refactor-front` conserva `3a5cf94`, ancestro coherente anterior al merge; no se hizo merge/rebase/reset |
+| Backend | PASS: `refactor-back`/`e08d6e4`, limpio, solo lectura |
+| Dashboard | 4049 LOC, 174 declaraciones de función, 2 listeners locales, 171 operaciones DOM y 488 referencias a `explorerState` |
+| Entrada vigente | `dashboard.html` publica todos los owners antes de `main.js`; `initDashboardPage` entra en Biblioteca y no monta el explorer visual en el flujo normal |
+| Fallback | El explorer jerárquico puede montarse si `initBiblioteca` no está disponible; sus listeners, DOM y APIs siguen presentes |
+| Jerarquía técnica | `loadPlanteles`, `ensureGrados`, `ensureMaterias` y `ensureUnidades` siguen consumidos por Quick Create; no son legacy |
+| Archivados | `archivados.html` funciona por URL directa y consume backend + registro local; su enlace de navbar está comentado |
+| Registro local | `educativo.archivedHierarchy.registry`; shape normalizado sin versión, fallback vacío y compatibilidad con shapes antiguos reconocibles |
+| Previews | Examen y Lista conservan estado dentro de `explorerState`; Biblioteca los consume mediante features y wrappers existentes |
+| Persistencia | Dashboard usa `sessionStorage` para `educativo.dashboard.last-location`; el registro de Archivados usa `localStorage` |
+| Navegación de retorno | `pageshow` sigue activo y ejecuta reconciliación legacy aun bajo modo Biblioteca; queda documentado, no corregido |
+| Protegidos | Biblioteca, Quick Create, bootstrap, generadores, API/services, HTML, CSS, tests funcionales y backend permanecen intactos |
+| Diff | PASS: `git diff --check`; únicamente los cinco documentos autorizados |
+| Jest acumulativo | PASS: 4 suites, 12 pruebas con `npm test -- --runInBand` |
+
+### Matriz preparada para 8.1 — ownership del registro de Archivados
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Sin registro | Abrir `archivados.html` sin key local: estado vacío o datos backend sin excepción |
+| Registro vigente | Cargar scopes/mappings actuales: mismas ramas, labels, cantidades y orden |
+| Registro antiguo | Shape reconocible sin `scopes` ni versión: normaliza sin perder mappings compatibles |
+| Registro inválido | JSON inválido o propiedades inválidas: fallback seguro, UI operable y consola sin excepción no controlada |
+| Scope sin planeaciones | Mantener/mostrar el scope archivado conforme al comportamiento previo |
+| Filtros | `all`, tipos disponibles, búsqueda y orden producen exactamente los mismos cards |
+| Árbol | Expandir ramas de plantel/grado/materia/unidad hace las mismas consultas y conserva IDs |
+| Restaurar | Individual, batch y scope limpian las mismas entradas del registro y actualizan UI |
+| Eliminar permanente | Cancelación no cambia datos; confirmación individual/batch/scope conserva endpoints y cleanup |
+| Reload | Tras restore/delete, recargar no reintroduce mappings ya limpiados |
+| Regresión | Dashboard, Biblioteca y Quick Create cargan; jerarquía técnica y previews siguen operables |
+| Consola/red | Sin doble request, doble handler, error nuevo ni cambio de endpoint/payload |
+
+### Matriz preparada para 8.2 — explorer visual y navegación jerárquica legacy
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Entrada normal | Dashboard abre Biblioteca; árbol, breadcrumbs y renders de nivel no aparecen |
+| Fallback controlado | Smoke sin `initBiblioteca` monta explorer, root, niveles y listeners una sola vez |
+| Selección | Root→plantel→grado→materia→unidad conserva `current`, IDs, expand/collapse y breadcrumbs |
+| Jerarquía técnica | Quick Create nuevo y sobre batch existente sigue resolviendo plantel/grado/materia/unidad |
+| Detalle | Navegación por card vigente y fallback conserva `detalle.html?id=...` |
+| Back/pageshow | Regreso desde Detalle no rompe Biblioteca ni restaura un nivel incorrecto |
+| Archivados | Acceso directo, cards, ramas y acciones siguen operables |
+| Reload | `educativo.dashboard.last-location` mantiene el mismo fallback y tolera datos inválidos |
+| Eventos | Sin doble dispatch entre `data-content-action`, `data-tree-action` y `data-bib-action` |
+| Consola/red | Sin errores nuevos ni consultas jerárquicas duplicadas |
+
+### Matriz preparada para 8.3 — previews y compatibilidad residual
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Examen | Abrir desde Biblioteca, cerrar por X/backdrop/Escape, reabrir y descargar Word |
+| Lista | Abrir desde Biblioteca, cerrar por X/backdrop/Escape, reabrir y descargar Word |
+| Cache/API | Reapertura conserva el mismo contrato de detalle y no duplica requests inesperadamente |
+| Estado | `examPreview`, `listaCotejoPreview`, caches y `current.unidadId` mantienen readers/writers previstos |
+| Anexo | Preview/download continúa bajo `AnexoPreview`, sin introducir estado paralelo |
+| Planeación | Detalle y descarga continúan con sus owners actuales |
+| Modal | Body lock, errores, loading y cleanup se conservan |
+| Exportación | `wordExport.js` permanece intacto y los bridges descargan el mismo contenido |
+| Consola/red | Sin errores nuevos, doble modal, doble listener o request duplicada |
+
+### Matriz preparada para 8.4 — cierre formal
+
+| Revisión | Criterio futuro |
+| --- | --- |
+| Owners | Archivados, explorer visual, jerarquía técnica y previews tienen fronteras documentadas y coherentes |
+| Estado | No existe segunda fuente para Biblioteca ni para estados de generación protegidos |
+| Contratos | IDs, APIs, storage keys, payloads, redirects y callbacks permanecen compatibles |
+| Legacy | Candidatos sin consumidor quedan documentados para Fase 9, no borrados por inferencia |
+| Globals | Wrappers, aliases y dependencias de orden quedan entregados a Fase 10 |
+| Automatización | Jest acumulativo y smokes de los cortes funcionales aprobados |
+| Manual | Checklists de 8.1–8.3 aprobados; cierre no repite pruebas sin contradicción |

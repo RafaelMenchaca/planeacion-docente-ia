@@ -30,8 +30,8 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 4 | Generación y polling | Separar procesos largos | Alto | Completada |
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Completada |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Completada |
-| 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | En progreso |
-| 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Pendiente |
+| 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Completada |
+| 8 | Aislar legacy visual | Separar explorador antiguo | Medio | En progreso |
 | 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Pendiente |
 | 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
 
@@ -1082,7 +1082,60 @@ Separar el explorador visual jerárquico antiguo de Biblioteca sin eliminar jera
 
 ### Estado
 
-**Pendiente.**
+**En progreso.** La Sesión 8.0 completó la auditoría técnica/documental de
+apertura sin cambios funcionales. Confirmó que la ruta vigente monta
+Biblioteca y no hidrata el explorer, pero conserva consumidores activos de
+jerarquía técnica, previews, `pageshow`, registro de Archivados y bridges
+clásicos. La UI de Archivados ya posee un owner separado en
+`archivados.page.js`; su enlace de navbar está comentado, aunque la URL directa
+sigue siendo ejecutable.
+
+### Sesiones propuestas después de la auditoría 8.0
+
+#### 8.1 — Ownership del registro de jerarquía archivada
+
+Extraer como unidad el registro local `educativo.archivedHierarchy.registry`
+desde `planeaciones.service.js` hacia un owner de Archivados, conservando shape,
+normalización, fallbacks, cleanup y los siete globals actuales. Mantener
+`archivados.page.js`, endpoints, Dashboard legacy y datos almacenados sin
+cambio. Es el primer corte recomendado porque la UI ya está separada y el
+registro es la dependencia activa y reversible que todavía mezcla Archivados
+con el service general de planeaciones.
+
+Pruebas: URL directa de Archivados con registro vacío, válido, antiguo y JSON
+inválido; filtros, expand/collapse, restore y delete permanente individual,
+batch y scope; reload; Dashboard/Biblioteca/Quick Create; consola y red.
+
+#### 8.2 — Explorer visual y navegación jerárquica legacy
+
+Aislar como bloque árbol, breadcrumbs, render por niveles, selección,
+expand/collapse, CRUD/archive visual, staging/generación de la unidad histórica,
+fallback `hydrateExplorerData` y handlers `data-tree-action` /
+`data-content-action`. Deben permanecer fuera del bloque los loaders/caches de
+plantel, grado, materia y unidad consumidos por Quick Create, los helpers
+compartidos, el owner de Archivados y los previews activos.
+
+Pruebas: ruta vigente sin árbol/breadcrumbs, fallback explícito sin Biblioteca,
+Quick Create nuevo/existente, Detalle/back-forward, Archivados, reload y
+ausencia de doble dispatch.
+
+#### 8.3 — Preview y compatibilidad residual ligados a `explorerState`
+
+Dar owner explícito al estado/cache de preview de Examen y Lista y a sus
+bridges de descarga/cierre, sin modificar markup, API, filename, `wordExport.js`
+ni consumidores de Biblioteca. Conservar wrappers/globales necesarios para
+Fase 10 y documentar por separado los aliases sin consumidor externo.
+
+Pruebas: preview/reapertura/cierre/Escape y descarga desde cards y modal para
+Examen y Lista; preview/descarga de Anexo y Planeación como regresión; Detalle,
+reload, consola y una sola lectura de detalle cuando aplique.
+
+#### 8.4 — Auditoría formal de cierre
+
+Reconciliar owners, consumidores, no ejecución del explorer en la ruta vigente,
+jerarquía técnica, Archivados, previews, wrappers y matriz acumulativa. No abrir
+Fase 9 hasta que todo candidato de eliminación tenga evidencia explícita de
+cero consumidores.
 
 ### Dependencias
 

@@ -13,7 +13,9 @@
 
 - **Última fase cerrada:** 7 — Dashboard, Quick Create, loaders, navegación y reconciliación.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Siguiente fase:** 8 — Aislar legacy visual; pendiente y no iniciada.
+- **Fase actual:** 8 — Aislar legacy visual; En progreso por auditoría 8.0.
+- **Sesión 8.0:** auditoría técnica/documental de apertura completada; sin implementación funcional ni manual requerida.
+- **Siguiente sesión:** 8.1 — ownership del registro de jerarquía archivada.
 - **Estado de Fase 4:** Completada en `8dcba86`.
 - **Sesión 4.0:** Auditoría documental de apertura, aprobada.
 - **Sesión 4.1:** extracción literal de generación de anexos desde Biblioteca; validación manual aprobada.
@@ -4520,3 +4522,206 @@ cinco wrappers hacia `BibliotecaLoader` conservan consumidores clásicos.
 **Decisión: A. Fase 7 puede cerrarse.** Fase 7 y Sesión 7.4 completadas;
 auditoría aprobada. Fase 8 queda pendiente/no iniciada. No se crea 7.5.
 Commit/push de 7.4: no realizados.
+
+## Fase 8 — Sesión 8.0: auditoría técnica/documental de apertura
+
+### A. Gate
+
+```text
+Frontend rama: refactor-front
+Frontend HEAD: 2bb950d (merge de Fases 6 y 7; coincide con origin/main)
+Main HEAD: local 1254561; origin/main 2bb950d
+Frontend clean: Sí al abrir
+Backend: refactor-back / e08d6e4 / limpio / solo lectura
+Commit cierre Fase 7: 3a5cf94; integrado por merge 2bb950d
+Puerta: PASS con desalineaciones remotas/locales documentadas; sin operación Git automática
+```
+
+`origin/refactor-front` permanece en `3a5cf94`, ancestro directo del merge. El
+`main` local permanece detrás de `origin/main`. `refactor-front` parte del merge
+coherente y el working tree estaba limpio; no se hizo merge, rebase, reset,
+fetch, commit ni push.
+
+### B. Objetivo canónico Fase 8
+
+Separar el explorador visual jerárquico antiguo de Biblioteca sin eliminar
+jerarquía técnica ni compatibilidad activa. La UI legacy se aísla antes de
+considerar eliminación; Biblioteca y Archivados deben seguir operativos.
+
+### C. Métricas
+
+```text
+dashboard.page.js: 4049 LOC
+funciones: 174 FunctionDeclaration nombradas, incluidas locales
+listeners: 2 locales (25 adicionales en dashboard-bootstrap)
+DOM ops: 171
+explorerState: 488 tokens en Dashboard
+archivedState: 0 en Dashboard; 75 en archivados.page.js
+localStorage: 0 en Dashboard; 1 acceso directo en el registry service
+navegación: 12 funciones de control/selección/handlers/hydrate
+previews: 6 wrappers de preview + 1 bridge download de Examen
+globals: 6 publicaciones en Dashboard; initDashboardPage en bootstrap
+```
+
+### D–H. Arquitectura residual, explorer, navegación y jerarquía
+
+La ruta vigente es `main -> initDashboardPage -> initBiblioteca -> return`. No
+inyecta sidebar ni llama `hydrateExplorerData`; Biblioteca oculta path bar y
+controla `#explorer-content`. El fallback conserva montaje técnico si
+`initBiblioteca` falta, cubierto solo por smoke, no por un HTML alternativo.
+
+Clasificación final:
+
+- A navegación vigente: arranque, Biblioteca, Quick Create y Detalle desde
+  cards de Biblioteca.
+- B jerarquía técnica activa: planteles/grados/materias/unidades, caches,
+  loaders/ensure y current IDs usados por Quick Create.
+- C preview/download activo: Examen, Lista, Anexo y Planeación; Examen/Lista
+  aún escriben `explorerState`.
+- D Archivados activo: página directa, estado, registry, tree, restore/delete;
+  emisores archive del Dashboard son legacy.
+- E legacy visual confirmado: tree, breadcrumbs, renders por nivel, selección,
+  CRUD/archive visual y generaciones por unidad del fallback.
+- F compatibilidad activa: fallback, `pageshow`, session location, registry,
+  render bridge y globals.
+- G helper compartido: actividades, sort/error, select visual, progreso/status.
+- H wrapper temporal: cuatro Quick, previews/download, AppUI y render bridge.
+- I sin consumidor confirmado y J debug/deuda: lista separada en
+  `FRONTEND_MAP.md`; nada se elimina.
+
+`pageshow` sí sigue activo en modo Biblioteca: en back-forward llama
+`refreshExplorerAfterReturn`, carga jerarquía y restaura
+`educativo.dashboard.last-location`; `renderAll` termina delegando a render de
+Biblioteca. No refetchea Biblioteca. Se documenta como compatibilidad frágil,
+no se corrige.
+
+### I. Archivados
+
+`archivados.page.js` ya es el owner UI separado. La URL directa es privada y
+ejecutable, carga `/api/planeaciones/archived`, construye ramas scope/batch/item,
+hidrata grados/materias/unidades al expandir y permite restore/delete
+permanente. El navbar tiene su único link comentado: no existe acceso visible
+en el repositorio.
+
+Biblioteca vigente usa delete directo y no archiva. Los únicos emisores de
+archive están en el explorer fallback y en Batch histórico, que redirige antes
+de montar su JS. Archivados conserva valor real para datos ya persistidos y
+acceso directo; no se clasifica como muerto.
+
+`archivedState` es efímero: loading/error, filter/search/sort,
+`expandedBranches`, data con totales/branches y confirm modal. No se expone en
+`window` ni persiste.
+
+El registry `educativo.archivedHierarchy.registry` contiene hidden por cuatro
+niveles, scopes con metadata, mappings de planeaciones y batches. No tiene
+versión ni migración explícita. Normaliza shapes antiguos reconocibles, cae a
+vacío ante storage/JSON inválido y limpia al restore/delete conocido; no tiene
+garbage collection contra backend.
+
+### J. `explorerState`
+
+El inventario completo propiedad/writer/reader/persistencia/fase queda en
+`FRONTEND_MAP.md`. Resumen:
+
+- técnico + Quick: `planteles`, tres caches descendentes, parte de
+  loading/errors y `current`;
+- Quick activo: `quickCreate`, staging/context/title, `progress`, `generating`;
+- legacy visual: expanded/search, temas/planeaciones por tema, exam/list
+  generation/modal, entity modal y confirm delete/archive;
+- preview activo: `examPreview`, `examenDetalleById`, `listaCotejoPreview`;
+- mixto: `current`, staging, progress, generating, loading/errors y body-lock
+  state.
+
+`current` tiene exactamente `level`, `plantelId`, `gradoId`, `materiaId` y
+`unidadId`; no tiene tema. Quick escribe IDs directamente; select* escribe y
+persiste; Archivados no lo usa.
+
+### K–O. Previews, Detalle, persistencia, globals y scripts
+
+- Examen/Lista: Biblioteca abre namespaces activos, pero estado/cache reside en
+  `explorerState`; fallback conserva aperturas alternativas. Download Examen
+  desde Biblioteca todavía pasa por `window.downloadExamWord`.
+- Anexo: estado/DOM de su feature, no explorerState. Planeación: Detalle +
+  `PlaneacionDownload`, sin preview Dashboard.
+- Detalle vigente recibe `detalle.html?id=` desde Biblioteca. El botón legacy
+  conserva la misma URL, pero no se emite en el flujo principal.
+- sessionStorage: solo `educativo.dashboard.last-location`. localStorage: solo
+  `educativo.archivedHierarchy.registry` en este perímetro.
+- Se mantienen `explorerState`, `BIBLIOTECA_MODE`, `biblioteca`,
+  `renderBibliotecaContent`, QuickCreate, BibliotecaLoader, initDashboardPage,
+  initBiblioteca y globals de features/registry.
+- El orden clásico real y sus dependencias léxicas permanecen intactos. No se
+  modificó HTML ni se reordenaron scripts.
+
+### P. Legacy confirmado
+
+Tree, breadcrumbs, renders por root/plantel/grado/materia/unidad, CRUD/delete y
+archive visual, staging/generación por unidad, generación/polling de examen y
+listas del fallback. Tienen consumidores internos y APIs reales, pero ningún
+entry point visible de producto. Se aíslan antes de evaluar retiro.
+
+### Q. Sin consumidor confirmado
+
+`renderActividadCierreStatus`, renderer/label/width antiguos de actividad de
+cierre, `hasInvalidExamQuestionCounts`, `renderActividadesEvaluadasHtml`,
+`getExamOptionLabel`, `findPlantelIdForGrado`, el par ejecutable de imagen
+pausada, las dos secciones generating/result de Quick y varios aliases globales
+de preview/registry. No se confunden con dead code y no se borran.
+
+### R–S. Handoff Fases 9 y 10
+
+- Fase 9: solo explorer ya aislado sin entry point, ramas sin emisor, helpers
+  huérfanos, DOM Quick sin caller y aliases sin reader, tras nueva evidencia.
+- Fase 10: globals, wrappers, namespaces, facade/bridge, bindings léxicos,
+  compatibilidad registry y orden final de scripts.
+
+### T. Riesgos
+
+- Alto: romper Quick al mover loaders/caches; preview/download de Biblioteca;
+  restore/delete permanente; registros antiguos; Detalle/pageshow.
+- Medio: fallback no detectado, doble binding/bubbling, tree de Archivados,
+  session location obsoleta y orden léxico.
+- Bajo/documental: aliases sin reader y helpers huérfanos; aun así requieren
+  Fase 9/10.
+
+### U–V. Roadmap y 8.1 recomendada
+
+1. 8.1 — ownership del registro de jerarquía archivada.
+2. 8.2 — explorer visual + navegación legacy como bloque.
+3. 8.3 — preview/compatibilidad residual ligada a explorerState.
+4. 8.4 — auditoría formal de cierre.
+
+8.1 va primero porque Archivados UI ya está separada, mientras su registry
+activo sigue mezclado con el service general de planeaciones. Debe mover solo
+key, normalización, read/write/register/restore/snapshot/cleanup hacia un owner
+Archivados; conservar siete globals, shape/fallback, page, HTTP, Dashboard y
+datos. No toca Quick, loaders, explorer, previews, Biblioteca, generación ni
+backend. Riesgo: script order y registros antiguos. Manual futura: registro
+vacío/válido/antiguo/inválido; scope sin planeaciones; filtros/tree;
+restore/delete item/batch/scope; reload; Dashboard/Biblioteca/Quick; consola y
+red.
+
+### W–Y. Documentación, validación y estado
+
+Documentos autorizados actualizados: `docs/ARCHITECTURE.md`,
+`docs/FRONTEND_MAP.md`, `docs/refactor/REFACTOR_ROADMAP.md`, este handoff y
+`docs/refactor/TEST_MATRIX.md`.
+
+Validación ejecutada:
+
+- `git diff --check`: PASS.
+- `git diff --name-only`: solo los cinco documentos autorizados.
+- `git diff --stat`: 5 archivos; JavaScript, HTML y CSS intactos.
+- `npm test -- --runInBand`: PASS, 4 suites y 12 pruebas.
+- Backend final: `refactor-back`/`e08d6e4`, limpio y sin cambios.
+
+```text
+Fase 7: Completada
+Fase 8: En progreso
+Sesión 8.0: Auditoría completada
+Implementación funcional: No
+Manual: No requerida
+Commit: No
+Push: No
+Working tree: solo documentación autorizada al cierre de la sesión
+```

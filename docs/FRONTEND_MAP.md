@@ -2857,3 +2857,351 @@ Candidatos futuros, no creados: un owner específico de Quick Create; un owner
 de loader/reconcile de Biblioteca; y un owner pequeño de bootstrap/navegación
 Dashboard. No se justifican `LoaderManager`, `NavigationManager`, store global o
 engine genérico.
+
+## Fase 8 — Sesión 8.0: auditoría técnica/documental de apertura
+
+### Gate y métricas reales
+
+- Frontend al abrir: `refactor-front`, `HEAD 2bb950d`, limpio. `HEAD` coincide
+  con `origin/main`, merge de Fases 6–7. El `main` local permanece en `1254561`
+  y `origin/refactor-front` en `3a5cf94`; ambos son ancestros coherentes, pero no
+  están sincronizados con el merge. No se ejecutó merge/rebase/reset/fetch/push.
+- Backend: `refactor-back`, `HEAD e08d6e4`, limpio y solo lectura.
+- Fases 0–7 completadas; Fase 8 abierta por esta auditoría. Fases 9–10 no se
+  abren.
+- El conteo de funciones usa AST (`FunctionDeclaration`, incluidas locales); el
+  resto conserva el patrón estático de cierre de 7.4.
+
+| Métrica | Resultado |
+| --- | ---: |
+| `dashboard.page.js` | 4049 líneas |
+| Funciones nombradas | 174 |
+| `addEventListener` locales | 2 |
+| Operaciones DOM | 171 |
+| Tokens `explorerState` | 488 |
+| Tokens `archivedState` en Dashboard / Archivados | 0 / 75 |
+| Accesos directos `localStorage` en Dashboard / registro | 0 / 1 |
+| Accesos directos `sessionStorage` en Dashboard | 1 |
+| Funciones de control/navegación residual | 12 |
+| Funciones de tree | 5 |
+| Funciones de breadcrumbs | 2 |
+| Wrappers de preview nombrados / download examen | 6 / 1 |
+| Wrappers/bridges identificados en Dashboard | 14 |
+| Publicaciones `window.*` al final de Dashboard | 6 |
+
+Bootstrap añade 25 sitios de listener, incluido `pageshow`; Quick Create añade
+17. No son parte de los dos listeners locales de Dashboard.
+
+### Arquitectura residual y clasificación A–J
+
+```text
+dashboard.page.js
+├─ G helpers compartidos: actividades, orden, error, progreso/status
+├─ B jerarquía técnica activa: caches + load/ensure plantel/grado/materia/unidad
+├─ A/F navegación/fallback: current, sessionStorage, select*, pageshow
+├─ E explorer visual confirmado: tree, breadcrumbs, niveles, CRUD/generación
+├─ D Archivados emisor legacy: archive dialogs, registry metadata y refresh
+├─ C previews/download activos: Examen y Lista sobre explorerState
+├─ H wrappers: Quick, preview, download, AppUI y render de Biblioteca
+└─ I/J candidatos sin consumidor o feature pausada; no eliminados
+
+archivados.page.js
+└─ D owner UI activo separado: load, cards, tree, filtros, restore, permanent
+
+planeaciones.service.js
+└─ D/F owner mixto: HTTP de planeaciones + registry local de Archivados
+```
+
+| Dominio | Funciones principales | Clasificación | Consumidores | Fase |
+| --- | --- | --- | --- | --- |
+| Helpers pedagógicos | `normalizeActividadDidactica`, `buildActividadDidacticaOptions`, `normalizeActividadesMomentos`, `buildTemaActividadesPayload`, renders de actividades | G compartido; algunos J | Quick Create, modal Planeaciones, staging fallback | conservar; 8.2 delimita |
+| Jerarquía técnica | `sortEntities`, `filterArchivedHierarchyItems`, `loadPlanteles`, `ensureGrados`, `ensureMaterias`, `ensureUnidades` | B activa + F compatibilidad | Quick Create, fallback; registry filtra scopes | no mover con legacy |
+| Jerarquía de unidad | `ensureTemas`, hydrate por tema, `ensureExamenes`, `ensureListasCotejo` | E legacy con contratos activos | selección/render de unidad fallback | 8.2 |
+| Navegación | `setCurrentLevel`, cinco `select*`, restore, refresh, tres handlers, hydrate | A/F/E | tree, breadcrumbs, contenido, `pageshow`, fallback | 8.2; pageshow revisar aparte |
+| Tree/breadcrumbs | cuatro renders de nodos/tree, render/handler breadcrumbs | E legacy visual confirmado | DOM emitido por fallback y bindings bootstrap | 8.2 |
+| Render por nivel | `renderRoot/Plantel/Grado/Materia/UnidadLevel`, shell/header/actions/progreso | E legacy visual confirmado | `renderExplorerContent` fuera de modo Biblioteca | 8.2 |
+| CRUD/delete visual | modal entity, create/edit/delete, prune/refresh | E legacy visual + B endpoints reales | `data-content-action` fallback | 8.2, no borrar endpoints |
+| Archive visual | metadata/dialog/request/submit/refresh de archive | D emisor de Archivados + E | cards fallback; globals registry | 8.1 registry, emisor 8.2 |
+| Examen/lista legacy | modales, generación/polling/listado por unidad | E | botones fallback; no Biblioteca | 8.2 |
+| Preview Examen/Lista | seis wrappers, caches y modal DOM | C activo + F | Biblioteca, Escape/download y fallback | 8.3 |
+| Quick wrappers | open/close/visibility/generate | H temporal | bootstrap, render y acción legacy | 10 tras 8.2 |
+| AppUI wrappers | `renderProgressPill`, `statusLabelFromTone` | G/H | Biblioteca loader/render, Quick y fallback | 10 |
+| Render bridge | `renderExplorerContent` | A/F/H | Biblioteca vigente y fallback | 8.2/10 |
+| Funciones huérfanas/pausadas | lista separada abajo | I/J | ninguno confirmado | 9, solo con evidencia posterior |
+
+### Explorer visual y posibilidad de montaje
+
+| Pieza | Estado de montaje real | Estado/DOM | API | Clasificación |
+| --- | --- | --- | --- | --- |
+| Sidebar/tree | no se inyecta cuando existe Biblioteca | `components/sidebar.html`, `expanded*`, caches | jerarquía list | E legacy |
+| Breadcrumbs/path bar | el DOM existe pero Biblioteca lo oculta | `#explorer-path-bar`, `current` | indirecta por select | E legacy |
+| Render por niveles | no se ejecuta en init normal | `#explorer-content` | loaders por nivel | E legacy |
+| Fallback sin `initBiblioteca` | puede montar tree y seleccionar primer plantel | sidebar + hydrate | jerarquía completa | F compatibilidad, no ruta soportada |
+| Bindings tree/content | se registran aunque no haya emisores vigentes | `data-tree-action`, `data-content-action` | según acción | F/E |
+| `pageshow` | sí se ejecuta en back-forward vigente | sessionStorage + `renderAll` | planteles y niveles restaurados | F activa/deuda |
+
+Solo `pages/dashboard.html` carga Dashboard page/bootstrap; no se encontró otro
+HTML que configure el fallback. El smoke `dashboard-bootstrap.smoke.test.js`
+lo monta sin Biblioteca. Por tanto el explorer puede montarse técnicamente, pero
+no tiene entry point visible de producto confirmado.
+
+### Matriz de navegación
+
+| Acción | Trigger | Owner | State leído | State escrito | DOM | URL | Backend/API | Clasificación / consumidores |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Arranque Dashboard | `DOMContentLoaded` | `main.js` / bootstrap | existencia `initBiblioteca` | `BIBLIOTECA_MODE` | layout/chrome | `dashboard.html` | Biblioteca GET | A vigente |
+| Seleccionar bloque/tab | `data-bib-action` | Biblioteca events/state | conjuntos, Selection/Tabs | Selection/Tabs | sidebar/detail | sin cambio | refetch según acción | A vigente |
+| Abrir Quick Create | hero o `crear-planeaciones` | Quick Create | Biblioteca facade, caches | `quickCreate` | panel | sin cambio | jerarquía al abrir/submit | A/B vigente |
+| `selectRoot` | breadcrumb root | Dashboard | — | `current`, staging | renderAll | sin cambio | no | E fallback |
+| `selectPlantel` | tree/card/breadcrumb | Dashboard | planteles | current/expanded | tree/content | sin cambio | grados | E con B técnica |
+| `selectGrado` | tree/card/breadcrumb | Dashboard | grados | current/expanded | tree/content | sin cambio | materias | E con B técnica |
+| `selectMateria` | tree/card/breadcrumb | Dashboard | materias | current/expanded | tree/content | sin cambio | unidades | E con B técnica |
+| `selectUnidad` | tree/card/breadcrumb | Dashboard | unidades | current/expanded/modal | unidad/content | sin cambio | temas, planeaciones, exámenes, listas | E legacy |
+| Expand/collapse | `data-tree-action=toggle-*` | Dashboard | expanded/caches | Sets + caches | sidebar tree | sin cambio | ensure por nivel | E/B |
+| Abrir Detalle Biblioteca | anchor card | biblioteca render | planeación ID | Detalle propio | nueva página | `detalle.html?id=` | detalle | A vigente |
+| Abrir Detalle fallback | `data-content-action=open-planeacion` | Dashboard | planeación ID | location | navegación | `detalle.html?id=` | Detalle carga | E/F |
+| Volver desde Detalle | `pageshow` back-forward | bootstrap/Dashboard | session location | caches/current | renderAll→Biblioteca | history del navegador | jerarquía | F activa; no refetch Biblioteca |
+| Abrir Archivados | URL directa | `main.js`/Archivados | — | `archivedState` | página propia | `archivados.html` | archived GET | D activa sin enlace visible |
+| Batch histórico | meta refresh/replace | HTML | — | — | redirect | `dashboard.html` | no | E histórico |
+
+No hay `history.*`, `location.assign` ni `URLSearchParams` en Dashboard o
+Archivados. Dashboard tiene un único `location.href`, hacia Detalle. Detalle
+lee `id` con `URLSearchParams`.
+
+### Jerarquía técnica: writers y readers
+
+| Función/estado | Writer/API | Quick Create | Navegación/legacy | Archivados | Riesgo |
+| --- | --- | ---: | ---: | ---: | --- |
+| `planteles` / `loadPlanteles` | `obtenerPlanteles`; sort + filtro registry | sí, selección/creación | hydrate, pageshow, CRUD | ocultamiento local indirecto | no extraer con tree |
+| `gradosByPlantel` / `ensureGrados` | `obtenerGradosPorPlantel` | sí, resolver/crear nivel | select/tree/entity | Archivados usa el mismo service en su page | cache compartido solo en Dashboard |
+| `materiasByGrado` / `ensureMaterias` | `obtenerMateriasPorGrado` | sí | select/tree/entity | hidrata scope | idem |
+| `unidadesByMateria` / `ensureUnidades` | `obtenerUnidadesPorMateria` | sí, resolver/crear unidad | select/tree/entity | hidrata scope | idem |
+| `temasByUnidad` / `ensureTemas` | temas + N lecturas por tema | no para resolución inicial | unidad/generación legacy | payload archived ya enriquecido | E, no confundir endpoint |
+| `current` | `setCurrentLevel`; Quick asigna objeto | IDs plantel/grado/materia/unidad | toda selección/breadcrumb | no | fuente mixta |
+
+`explorerState.current` no contiene `tema`: su shape real es `level`,
+`plantelId`, `gradoId`, `materiaId`, `unidadId`. Quick escribe los cinco al
+resolver la jerarquía; la navegación los escribe mediante `setCurrentLevel`;
+Lista Preview legacy solo lee `unidadId`. Archivados usa IDs de sus propios
+items/registry, no `current`.
+
+### Archivados: flujo y matriz
+
+Ruta real:
+
+```text
+URL directa archivados.html
+  -> main.js -> initArchivadosPage
+  -> chrome + bind (guard único)
+  -> obtenerArchivadosPlaneaciones
+  -> GET /api/planeaciones/archived
+  -> flatten routes + planeaciones
+  -> registry local + batch counts -> branches
+  -> cards/filtros
+  -> expand scope -> jerarquía grados/materias/unidades
+  -> restore o permanent delete -> cleanup registry -> reload
+```
+
+| Función/grupo | Owner | Estado | Persistencia | UI | Readers/Writers | Clasificación | Riesgo |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `loadArchivedData` | Archivados page | loading/error/data | backend + registry read | todo contenido | write `data`; render | D activo | payload/registry divergentes |
+| flatten/build branches | Archivados page | data temporal | no | agrupa scope/batch/item | read payload/registry | D activo | agrupación por batch completo |
+| load scope structure | Archivados page + hierarchy service | branch loading/tree/error | backend | expand tree | write branch | D/B activo | requests secuenciales N niveles |
+| filters/search/sort | Archivados page | filter/search/sort | no | sidebar/cards | UI read/write | D activo | rerender sidebar reemplaza nodos |
+| expanded branches | Archivados page | `Set` | no | tree visible | click read/write | D activo | se pierde en reload |
+| restore individual | planeaciones service/API | confirm | backend; registry cleanup si mapping | modal/feedback | API + byPlaneacion | D activo | mapping local puede faltar |
+| restore batch | planeaciones service/API | confirm/branch | backend; byBatch cleanup | modal/feedback | batch API | D activo | batch parcial se trata distinto |
+| restore scope | múltiples restores + registry | branch | backend + local cleanup | modal/feedback | items secuenciales | D activo | fallo parcial sin transacción frontend |
+| permanent individual/batch | planeaciones API | confirm | backend + cleanup | modal/feedback | delete API | D activo | irreversible |
+| permanent scope | hierarchy delete | confirm/branch | backend + cleanup | modal/feedback | delete hierarchy | D activo | irreversible/cascada backend |
+| archive emitters | Dashboard fallback / batch histórico | confirmDelete | backend + registry write para scope | UI no montada | archive APIs | E/F | no emisor vigente visible |
+
+Shape real de `archivedState`:
+
+| Propiedad | Tipo/shape | Writers | Readers | Persistencia/render/cleanup |
+| --- | --- | --- | --- | --- |
+| `loading` | boolean | `loadArchivedData` | content | no; loading UI |
+| `error` | string | load catch | content | no; error UI |
+| `filter` | `all|routes|planeaciones` | filter click | sidebar/content | no |
+| `search` | string | input | branch matcher/sidebar | no |
+| `sort` | `recent|oldest` | select | comparator/sidebar | no |
+| `expandedBranches` | `Set<branchKey>` | toggle click | actions/cards | no; no cleanup explícito tras reload |
+| `data` | `{total,total_routes,total_planeaciones,branches}` | load | sidebar/content/actions | deriva backend+registry; reemplazo completo |
+| `confirm` | `{open,action,id,title,message,warning,submitLabel,busyLabel,submitTone,busy,error}` | open/close/submit | modal | no; reset al cerrar |
+
+`archivedState` no se publica en `window` ni persiste. No comparte fuente con
+`explorerState`.
+
+### Registro `educativo.archivedHierarchy.registry`
+
+| Campo | Shape normalizado | Writers | Readers | Cleanup/fallback |
+| --- | --- | --- | --- | --- |
+| `hidden` | arrays `planteles`, `grados`, `materias`, `unidades` | register/prune | loaders Dashboard, branch detection | dedupe; prune por scope/items |
+| `scopes` | `{[type:id]:{type,id,label,archived_at,*_id,*_nombre,grado_nivel_base?}}` | register | Archivados metadata/scope-only | prune descendants |
+| `planeaciones` | `{[planeacionId]:{type,id}}` | register | cleanup by planeación | prune al restore/delete conocido |
+| `batches` | `{[batchId]:{type,id}}` | register | cleanup by batch | prune al restore/delete conocido |
+
+No hay campo de versión ni migrador. `read` normaliza y descarta niveles,
+records o referencias inválidas. Storage ausente/inaccesible, key inexistente,
+JSON inválido o excepción produce registro vacío. Un shape histórico con
+`hidden`, `planeaciones` o `batches` reconocibles se conserva aunque carezca de
+`scopes`; no se consulta backend para reparar referencias huérfanas. La única
+escritura ocurre al registrar, restaurar o limpiar; no hay cleanup periódico.
+
+### `explorerState` completo
+
+Owner físico: `dashboard.page.js`; no persistencia salvo `current` escrito por
+la navegación legacy en sessionStorage. “API” indica cache reconstruible, no
+persistencia frontend.
+
+| Propiedad | Writers | Readers | Persistencia | Uso/clasificación | Fase |
+| --- | --- | --- | --- | --- | --- |
+| `planteles` | `loadPlanteles`, prune | Quick/tree/entity | API | B + E + F | conservar/8.2 frontera |
+| `gradosByPlantel` | `ensureGrados`, prune | Quick/tree/entity | API | B + E | conservar |
+| `materiasByGrado` | `ensureMaterias`, prune | Quick/tree/entity | API | B + E | conservar |
+| `unidadesByMateria` | `ensureUnidades`, prune | Quick/tree/entity | API | B + E | conservar |
+| `temasByUnidad` | `ensureTemas`, prune | unidad/lista/examen legacy | API | E/F | 8.2 |
+| `examenesByUnidad` | ensure/generation | cards examen legacy | API | E | 8.2 |
+| `examenDetalleById` | Exam Preview/download/generation | preview/download Biblioteca y legacy | API detail cache | C activo | 8.3 |
+| `planeacionByTema` | hydrate/prune | unidad/delete legacy | API detail cache | E | 8.2 |
+| `loading` | loaders | Quick y renders legacy | no | B/E | separar por consumidor |
+| `errors` | loaders/actions | renders/bootstrap | no | B/E/F | separar por consumidor |
+| `expandedPlanteles` | select/tree/prune/hydrate | tree | no | E | 8.2 |
+| `expandedGrados` | select/tree/prune | tree | no | E | 8.2 |
+| `expandedMaterias` | select/tree/prune | tree | no | E | 8.2 |
+| `current` | `setCurrentLevel`; Quick assignment | Quick generate, navegación, lista legacy | sessionStorage solo select* | A/B/E/F | no eliminar |
+| `stagingTemas` | Quick copy/cleanup; staging legacy | Quick generator/render legacy | no | A + E bridge | 8.2/10 |
+| `stagingTituloConjunto` | Quick submit/cleanup | payload | no | A | owner Quick futuro/10 |
+| `stagingContext` | Quick submit/cleanup | resultado/contexto | no | A/F | 10 |
+| `stagingPanelOpen` | navigation/staging/Quick | render legacy | no | E/F | 8.2 |
+| `progress` | Quick SSE/result/error | Biblioteca pending + legacy render/loader | no | A/C bridge activo | conservar; 10 |
+| `quickCreate` | Quick owner | Quick/bootstrap/body lock | no | A vigente | protegido |
+| `searchQuery` | bootstrap input | tree render | no | E | 8.2 |
+| `generating` | Quick generator | guards, Biblioteca/legacy render | no | A + E compatibilidad | conservar |
+| `examGeneration` | legacy exam coordinator | legacy exam render | no | E | 8.2 |
+| `examModal` | legacy exam modal | legacy/bootstrap/body lock | no | E/F | 8.2 |
+| `examPreview` | Exam Preview | preview/bootstrap/body lock | no | C activo | 8.3 |
+| `listasCotejoByUnidad` | ensure legacy | legacy list + legacy preview | API | E/F | 8.2/8.3 |
+| `listaCotejoModal` | legacy list modal | legacy/bootstrap/body lock | no | E/F | 8.2 |
+| `listaCotejoGeneration` | legacy generation | legacy render | no | E | 8.2 |
+| `listaCotejoPreview` | Lista Preview | preview/bootstrap/body lock | no | C activo | 8.3 |
+| `modal` | entity modal | bootstrap/render | no | E | 8.2 |
+| `confirmDelete` | delete/archive modal | bootstrap/preview/body lock | no | E/F/D | 8.2/8.3 |
+
+`progress` tiene consumidores vigentes en Quick Create, Biblioteca render y
+Biblioteca loader. `generating` sigue siendo writer/guard de Quick vigente y
+lector del render legacy; no es “unused”.
+
+### Previews y downloads
+
+| Recurso | Apertura vigente | Estado | API/cache | Download bridge | Clasificación |
+| --- | --- | --- | --- | --- | --- |
+| Examen | `data-bib-action=ver-examen` → `ExamPreview.openBiblioteca` | `explorerState.examPreview` + `examenDetalleById` | detalle por ID, cache compartido | Biblioteca → `ExamDownload.downloadFromBiblioteca` → `window.downloadExamWord` → `ExamDownload.download` | C/F activo |
+| Lista | `ver-lista` → `ListaCotejoPreview.openBiblioteca` | `explorerState.listaCotejoPreview` | detalle por ID en `listaData` | `ListaCotejoDownload`; global Word preexistente | C/F activo |
+| Anexo | `ver-anexo` → `AnexoPreview.open` | DOM/closure de feature, no explorerState | detalle por ID | `AnexoDownload` | C activo, fuera de 8.3 salvo regresión |
+| Planeación | anchor a Detalle; no modal Dashboard | Detalle owner | detalle por ID | `PlaneacionDownload` | A/C activo |
+
+`wordExport.js` permanece intacto y protegido.
+
+### Globals y wrappers
+
+| Superficie | Consumidor real | Motivo | Fase candidata |
+| --- | --- | --- | --- |
+| `window.explorerState` | Quick, previews, Biblioteca render/loader, Dashboard | store mixto físico | separar 8.2–8.3; cleanup 10 |
+| `window.BIBLIOTECA_MODE` | Dashboard/Quick | bifurcación vigente | 10 |
+| `window.biblioteca` | Quick Create | fachada a State/Pending/loader | 10 |
+| `window.renderBibliotecaContent` | Quick pending + bridge Dashboard | render vigente | 10 |
+| `window.QuickCreate` | bootstrap + cuatro wrappers Dashboard | owner funcional | 10 |
+| `window.BibliotecaLoader` | cinco wrappers Biblioteca | owner funcional | 10 |
+| `window.initDashboardPage` | `main.js` | entry point | conservar |
+| `window.initBiblioteca` | bootstrap | detección/entry point | conservar |
+| cuatro wrappers Quick Dashboard | bootstrap/render/acción legacy | bridge léxico | 10 tras 8.2 |
+| `renderProgressPill`, `statusLabelFromTone` | Quick/Biblioteca/legacy | binding clásico a AppUI | 10 |
+| seis wrappers preview | renderAll/bootstrap/legacy; Biblioteca vía namespaces | firmas léxicas | 8.3/10 |
+| `window.downloadExamWord` | `ExamDownload.downloadFromBiblioteca` | puente activo | 10 |
+| cinco aliases globales render/close preview | no consumidor externo encontrado | compatibilidad histórica | 9/10, no retirar en 8.0 |
+| siete globals registry | Dashboard y Archivados | contrato activo | mover sin renombrar en 8.1; retiro 10 |
+
+Los 14 wrappers/bridges de Dashboard contados son cuatro Quick, siete de
+preview/download, dos AppUI y `renderExplorerContent`.
+
+### Script order y bindings léxicos
+
+Orden real de `pages/dashboard.html`:
+
+```text
+config -> Supabase -> auth -> utils
+-> planeaciones API/service -> jerarquía API/service
+-> exámenes API/service -> listas API/service/generation
+-> wordExport -> features Examen/Lista
+-> components.private -> shared.ui
+-> Biblioteca/anexos API -> features Anexo/Planeación/block delete
+-> dashboard.page -> dashboard-bootstrap -> quick-create
+-> biblioteca.page -> biblioteca-loader -> biblioteca-render
+-> biblioteca-modal-render -> biblioteca-events -> main
+```
+
+Dependencias léxicas críticas: Dashboard define caches/loaders, actividades,
+`renderTrashIcon`, error, progreso/status y wrappers que Quick/bootstrap y
+Biblioteca resuelven al ejecutarse. Preview/download features cargan antes de
+Dashboard/Biblioteca, pero leen `window.explorerState` o `bibliotecaState` solo
+en callbacks posteriores. Bootstrap carga antes de Quick, pero llama
+`window.QuickCreate.bind()` después de que todos los scripts ya ejecutaron.
+Archivados carga planeaciones service y jerarquía antes de su page owner. No se
+reordena nada en 8.0.
+
+### Legacy confirmado
+
+| Superficie | Definición | Consumers | Ruta visible | Backend/API | Acción futura |
+| --- | --- | --- | --- | --- | --- |
+| Tree Dashboard | nodos, expand/collapse y search | handlers bootstrap/fallback | no | jerarquía list | aislar 8.2 |
+| Breadcrumbs/niveles | `select*`, current y renders | fallback + pageshow parcial | no | jerarquía list | aislar; separar pageshow |
+| CRUD visual jerárquico | entity/delete modals | `data-content-action` fallback | no | CRUD real | aislar UI, conservar API |
+| Generación/lista/examen por unidad | coordinadores Dashboard | botones fallback | no | contratos reales distintos de Biblioteca | aislar 8.2 |
+| Archive emitters Dashboard | botones por nivel/planeación | fallback | no | archive real + registry | aislar 8.2, no borrar datos |
+| Batch archive inline | `batch.ui.js` + global | página batch redirigida | no | archive individual | candidato F9 |
+
+### Sin consumidor confirmado — no equivale a dead code
+
+- Dashboard: `renderActividadCierreStatus`, `renderActividadCierreControl`,
+  `getActividadCierreSelectLabel`/`getActividadCierreSelectWidth` como cadena
+  exclusiva del renderer anterior, `hasInvalidExamQuestionCounts`,
+  `renderActividadesEvaluadasHtml`, `getExamOptionLabel` y
+  `findPlantelIdForGrado`.
+- Feature pausada: `normalizeImagenMomentoKey` y `toggleMomentoInList` solo se
+  conectan con el bloque comentado de imágenes automáticas.
+- Quick Create: `showQuickCreateGeneratingSection` y
+  `showQuickCreateResultSection`; su DOM sigue en `components/layout.html`.
+- Aliases `window.renderExamPreviewModal`, `window.closeExamPreviewModal`,
+  `window.renderListaCotejoPreviewModal` y `window.closeListaCotejoPreview`: sin
+  lector externo; las funciones léxicas equivalentes sí tienen consumidores.
+- `window.restoreArchivedHierarchyScope`: publicado sin call site productivo;
+  las variantes by-planeación/by-batch/branch sí son activas.
+
+Todos quedan documentados para Fase 9/10. No se borran en 8.0.
+
+### Handoff Fase 9 y Fase 10
+
+- Fase 9: tree/breadcrumbs/renders/handlers ya aislados y sin entry point;
+  batch archive tras redirect; ramas sin emisor; helpers huérfanos; DOM
+  generating/result sin caller; aliases globales sin reader. Cada retiro exige
+  búsqueda posterior y matriz completa.
+- Fase 10: `window.explorerState`, `BIBLIOTECA_MODE`, fachada Biblioteca,
+  namespaces Quick/Loader/features, wrappers de preview/download/AppUI,
+  globals registry, bindings léxicos y orden final de scripts.
+
+### Riesgos y primer corte
+
+Riesgos altos: confundir caches técnicos con UI legacy; retirar `pageshow` sin
+validar Detalle; romper preview/download de Biblioteca; perder o reinterpretar
+registro local antiguo; cambiar orden clásico; eliminar endpoints usados por
+Archivados/Quick; tratar URL no enlazada como feature muerta.
+
+Primer corte recomendado: **8.1 — ownership del registro de jerarquía
+archivada**. Mueve solo constantes, normalización, read/write/register/restore,
+snapshot y cleanup local hacia un owner Archivados; conserva los siete globals,
+la key, el shape, fallbacks, `archivados.page.js`, API/service HTTP, Dashboard y
+datos existentes. Riesgo principal: orden de script y lectura de registros
+históricos. Manual: registros vacío/válido/antiguo/inválido, scopes sin
+planeaciones, filtros/tree, restore/delete por item/batch/scope, reload,
+Dashboard/Biblioteca/Quick y consola/red.
