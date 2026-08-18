@@ -1767,16 +1767,54 @@ Smoke específico: `tests/legacy-explorer.smoke.test.js`, 1 suite/3 pruebas.
 Bootstrap + Quick: 2 suites/6 pruebas aprobadas. La suite acumulativa aprobó
 5 suites y 15 pruebas.
 
-### Checklist manual pendiente de 8.1
+### Validación manual aprobada de 8.1
+
+| Área | Evidencia confirmada por el usuario |
+| --- | --- |
+| Dashboard/Biblioteca | Carga correcta y sin comportamiento raro |
+| Quick Create/generación | Correctos; batch existente reutilizado con `forceNewBatch:false` |
+| Planeaciones/Anexos/Listas | `generate:success` confirmado en los tres dominios |
+| Exámenes | 11/11 preguntas; `preguntas_fallidas:0` |
+| Delete | `delete:success`; comportamiento normal |
+| Regresión | Anexos, Listas, Exámenes y navegación vigente correctos |
+
+Commit real posterior: `1aa1599 refactor(frontend): extract legacy Dashboard explorer`.
+
+## Fase 8 — Sesión 8.2: preview/download y compatibilidad residual
+
+### Evidencia automática
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: `refactor-front`/`1aa1599`, working tree inicial limpio |
+| Reconciliación 8.1 | PASS: manual aprobada y commit real localizado |
+| Backend | PASS: `refactor-back`/`e08d6e4`, limpio y solo lectura |
+| Decisión | PASS: owners existentes reutilizados; no se crea `resource-previews.js` |
+| Bridges | PASS: 7/7 funciones movidas literalmente; 0 copias en Dashboard |
+| Dashboard | PASS: 2867→2799 LOC; 132→125 funciones |
+| Estado | PASS de alcance: 330 refs y shape de `explorerState` intactos en Dashboard |
+| Globals | PASS: siete firmas siguen publicadas y delegan a los mismos namespaces |
+| Examen | PASS smoke: Biblioteca, cache/reapertura, render, close, Escape y Word |
+| Lista | PASS smoke: Biblioteca, caller legacy, render, close, Escape y download |
+| Script order | PASS: owners siguen cargando antes de Dashboard/legacy/Bootstrap |
+| Protegidos | PASS: Bootstrap, Quick, legacy owner, Biblioteca, generación, Archivados y `wordExport.js` sin diff productivo |
+| Comparación literal | PASS AST: 7 movidas y 125 retenidas sin diferencias |
+| Jest acumulativo | PASS: 6 suites/19 pruebas |
+| Sintaxis/diff | PASS: `node --check` y `git diff --check` |
+
+Smoke específico: `tests/resource-previews.smoke.test.js`, 1 suite/4 pruebas,
+sin red ni dependencias nuevas. Los tres harnesses que cargan Dashboard replican
+ahora el orden real de los cuatro owners de Examen/Lista.
+
+### Checklist manual pendiente de 8.2
 
 | Área | Verificación solicitada |
 | --- | --- |
-| Dashboard/Biblioteca | Carga, bloques, tabs, search y reload; no aparece explorer legacy |
-| Quick Create | Abrir y validar controles; generación IA opcional |
-| Detalle/back | Abrir planeación desde Biblioteca y volver; Biblioteca continúa correcta |
-| Preview | Abrir examen o lista y confirmar bridge/modal |
-| Consola | Sin ReferenceError, funciones undefined, doble listener o doble render |
-| Explorer natural | Solo si existe acceso visible natural: tree, breadcrumbs, niveles y Detalle |
+| Dashboard/Biblioteca | Carga, bloques, tabs, search y reload |
+| Preview Examen | Abrir, validar contenido, cerrar, reabrir y descargar si es razonable |
+| Preview Lista | Abrir, validar contenido, cerrar y descargar si es razonable |
+| Quick Create | Abrir sin generar IA; confirmar ausencia de regresión |
+| Detalle/back | Abrir planeación y volver a Biblioteca |
+| Consola/red | Sin ReferenceError, global undefined, doble modal/listener/fetch |
 
-El fallback queda cubierto principalmente por smoke; no se pide activar ni
-manipular código manualmente.
+La generación IA es opcional y no forma parte del criterio manual de 8.2.

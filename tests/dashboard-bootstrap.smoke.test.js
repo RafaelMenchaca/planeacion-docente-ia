@@ -41,6 +41,10 @@ function createHarness({ layoutError = false } = {}) {
     openDownloadNameModal: jest.fn()
   };
 
+  run(context, "js/features/examenes/exam-download.js");
+  run(context, "js/features/examenes/exam-preview.js");
+  run(context, "js/features/listas-cotejo/lista-cotejo-download.js");
+  run(context, "js/features/listas-cotejo/lista-cotejo-preview.js");
   run(context, "js/pages/dashboard.page.js");
   run(context, "js/features/dashboard/legacy-explorer.js");
   run(context, "js/features/dashboard/dashboard-bootstrap.js");

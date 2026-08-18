@@ -1099,13 +1099,20 @@ La nueva Sesión 8.1 aisló literalmente el explorer visual y su navegación en
 `js/features/dashboard/legacy-explorer.js`. Dashboard bajó de 4049 a 2867 LOC;
 42 funciones pasaron al owner. Los loaders/caches técnicos, Quick Create,
 previews/downloads, generación, CRUD/archive callbacks y Archivados permanecen
-en sus owners actuales. Implementación automática aprobada; manual pendiente.
+en sus owners actuales. La validación manual posterior fue aprobada y el usuario
+commiteó la sesión en `1aa1599`.
+
+La Sesión 8.2 confirmó que preview/download ya tenía owners funcionales por
+dominio. Extrajo de Dashboard los siete bridges residuales hacia esos owners,
+sin crear un manager adicional: seis bridges de render/open/close y el bridge
+`downloadExamWord`. Dashboard quedó en 2799 LOC y 125 funciones; `explorerState`,
+cache, DOM, API, listeners, Escape, generación y Archivados permanecen intactos.
 
 ### Sesiones de Fase 8
 
 #### 8.1 — Explorer visual y navegación jerárquica legacy
 
-**Implementada; manual pendiente.** El owner contiene ubicación persistida,
+**Aprobada manualmente y commiteada en `1aa1599`.** El owner contiene ubicación persistida,
 selección root/plantel/grado/materia/unidad, tree, breadcrumbs, renders de los
 cinco niveles, dispatch `data-tree-action`/`data-content-action`, renderAll y
 fallback hydrate. Mantiene bindings clásicos hacia loaders técnicos y callbacks
@@ -1117,18 +1124,24 @@ Detalle/back-forward y preview vigente.
 
 #### 8.2 — Previews/downloads y compatibilidad residual de `explorerState`
 
-Auditar y, solo si forma un bloque coherente, aislar estado/cache y bridges de
-preview/download de Examen y Lista ligados a `explorerState`, preservando
-Biblioteca, markup, API, filename, `wordExport.js`, globals y Escape.
+**Implementada; manual pendiente.** La auditoría determinó que estado/cache,
+DOM, API y descargas ya pertenecían a `ExamPreview`, `ExamDownload`,
+`ListaCotejoPreview` y `ListaCotejoDownload`. Por ello no se creó un owner
+duplicado: los siete wrappers compatibles se trasladaron literalmente desde
+Dashboard a los owners existentes y se conservaron los mismos globals.
 
-Pruebas: preview/reapertura/cierre/Escape y descarga desde Biblioteca, más
-regresión de Anexo, Planeación, Detalle y fallback.
+Pruebas: smoke sin red de preview/reapertura/cache/cierre/Escape/download,
+`openBiblioteca`, caller legacy, loading/error y delegación de siete globals;
+suite acumulativa 6 suites/19 pruebas. La manual corta de Biblioteca, Examen, Lista, Quick,
+Detalle/back y consola queda pendiente.
 
 #### 8.3 — Residual Dashboard, solo si existe corte coherente
 
-Evaluar el Dashboard restante después de 8.2. Solo abrir esta sesión si CRUD
-visual, recursos legacy u otro bloque tienen ownership y prueba reversibles;
-no crear una sesión para completar numeración.
+Evaluar el Dashboard restante después de aprobar 8.2. El único candidato no
+protegido con tamaño material es el CRUD jerárquico visual (272 LOC funcionales
+aproximadas); abrir 8.3 solo si su auditoría confirma que puede separarse de
+archive/delete, generación y jerarquía técnica. No crear una sesión para
+completar numeración.
 
 #### 8.4 — Auditoría formal de cierre
 

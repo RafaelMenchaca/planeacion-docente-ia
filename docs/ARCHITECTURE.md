@@ -694,10 +694,10 @@ mismos IDs/classes/data-attributes, HTML, mensajes, sessionStorage y URL de
 Detalle. No crea namespace, store, listener ni fuente de estado adicional.
 
 ```text
-dashboard.page.js (2867 LOC)
+dashboard.page.js (2799 LOC desde 8.2)
 ├─ explorerState físico
 ├─ loadPlanteles + ensureGrados/Materias/Unidades
-├─ temas/exámenes/listas + generación y previews
+├─ temas/exámenes/listas + generación legacy
 ├─ CRUD/archive y callbacks de contenido
 └─ helpers compartidos / Quick / Biblioteca
 
@@ -724,18 +724,29 @@ Biblioteca los abre mediante `ExamPreview.openBiblioteca` y
 alternativas. Anexo tiene modal/estado interno de su feature y Planeación no
 tiene preview modal en Dashboard: abre Detalle y descarga desde su feature.
 
-Los aliases globales de render/cierre de Examen y Lista publicados al final de
-Dashboard no tienen consumidores externos encontrados; las funciones léxicas
-sí siguen consumidas por `renderAll`, Escape y bootstrap. `downloadExamWord`
-sí conserva un consumidor activo en `ExamDownload.downloadFromBiblioteca`.
-Ninguno se retira en Fase 8.0.
+Desde 8.2, los siete bridges residuales ya no pertenecen a Dashboard. Examen
+publica `renderExamPreviewModal`, `openExamPreview` y
+`closeExamPreviewModal` desde `exam-preview.js`, además de
+`downloadExamWord` desde `exam-download.js`. Lista publica
+`renderListaCotejoPreviewModal`, `openListaCotejoPreview` y
+`closeListaCotejoPreview` desde `lista-cotejo-preview.js`. Las firmas y cuerpos
+de delegación son literalmente los anteriores; los namespaces `ExamPreview`,
+`ExamDownload`, `ListaCotejoPreview` y `ListaCotejoDownload` siguen siendo los
+owners funcionales.
 
-### Roadmap técnico actualizado por 8.1
+No se creó `resource-previews.js`: habría duplicado owners existentes. El shape
+físico de `explorerState`, sus caches y estados de modal no se movieron. Los
+listeners de cierre, Escape y descarga continúan en `dashboard-bootstrap.js`;
+la UI, API, cache, filename, `wordExport.js`, Anexo y Planeación no cambiaron.
 
-1. 8.1: explorer visual, navegación y fallback aislados; manual pendiente.
-2. 8.2: auditar previews/downloads y compatibilidad residual ligada a
-   `explorerState`.
-3. 8.3: solo si el Dashboard residual ofrece otro bloque coherente.
+### Roadmap técnico actualizado por 8.2
+
+1. 8.1: explorer visual, navegación y fallback aislados; manual aprobada y
+   commit `1aa1599`.
+2. 8.2: bridges preview/download consolidados en los owners existentes;
+   manual pendiente.
+3. 8.3: solo si el CRUD jerárquico visual residual demuestra un corte grande,
+   reversible y separado de Archivados/generación.
 4. 8.4: auditoría formal de cierre antes de considerar Fase 9.
 
 Fase 9 recibe únicamente piezas visuales y ramas sin emisor que después del
@@ -772,7 +783,9 @@ La ruta visual antigua incluye árbol, breadcrumbs y render por niveles. Su cód
   `window.BibliotecaLoader` y `window.renderBibliotecaContent`.
 - Quick Create publica `window.QuickCreate` como namespace funcional; ni este
   ni `window.BibliotecaLoader` son fuentes de estado.
-- Dashboard publica `window.explorerState` y wrappers de preview/descarga usados por Biblioteca.
+- Dashboard publica `window.explorerState`; los owners de Examen/Lista publican
+  los wrappers de preview/descarga compatibles usados por Bootstrap, Biblioteca
+  y el explorer legacy.
 - `window.AppUI` concentra helpers compartidos.
 - `window.API_BASE_URL`, `window.supabase` y `window.currentUser` sostienen configuración y sesión.
 

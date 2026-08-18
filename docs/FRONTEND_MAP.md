@@ -3334,7 +3334,97 @@ de Biblioteca queda diferido para trabajo posterior al refactor actual.
 
 ### Roadmap restante
 
-1. 8.2: auditar previews/downloads y estado compatible ligado a
-   `explorerState`; extraer solo si el bloque es coherente.
-2. 8.3: residual Dashboard únicamente si existe otro corte grande y reversible.
+1. 8.2: bridges preview/download consolidados en owners existentes; manual
+   pendiente.
+2. 8.3: evaluar solo el CRUD jerárquico visual si resulta separable de
+   archive/delete, generación y jerarquía técnica.
 3. 8.4: auditoría formal de cierre.
+
+## Fase 8 — Sesión 8.2: preview/download y compatibilidad residual
+
+### Gate y decisión de corte
+
+- Frontend: `refactor-front`/`1aa1599`, limpio al iniciar; la manual de 8.1 fue
+  aprobada y el commit real es
+  `1aa1599 refactor(frontend): extract legacy Dashboard explorer`.
+- Backend: `refactor-back`/`e08d6e4`, limpio y solo lectura.
+- Decisión: preview/download sí ofrecía una frontera coherente, pero su lógica
+  real ya estaba extraída. El corte correcto fue retirar siete bridges de
+  Dashboard y entregarlos a los owners existentes, no crear un manager nuevo.
+
+### Auditoría residual previa
+
+| Dominio residual | Funciones | LOC funcional aprox. | Consumers | Riesgo | Decisión 8.2 |
+| --- | ---: | ---: | --- | --- | --- |
+| Actividades/staging/shared | 38 | 353 | Quick, generation, fallback | Alto | Retenido |
+| Jerarquía técnica/loaders | 23 | 296 | Quick, legacy, CRUD, archive | Alto | Retenido |
+| Examen/Lista legacy render + generation | 38 | 930 | fallback, Bootstrap, owners generación | Alto/protegido | Retenido |
+| Delete/archive | 20 | 627 | legacy, API, registry/Archivados | Alto/congelado | Retenido |
+| CRUD jerárquico visual | 6 | 272 | legacy content + Bootstrap modal | Medio | Candidato condicional 8.3 |
+| Preview/download bridges | 7 | 21 de función; 68 con contratos | legacy, Bootstrap, Biblioteca | Bajo/medio | Movido |
+
+No se eligió como alternativa el bloque de 930 LOC porque mezcla render legacy
+con generación protegida; delete/archive toca Archivados congelado; los loaders
+son jerarquía técnica compartida y staging cruza Quick Create.
+
+### Ownership resultante
+
+| Bridge | Consumer confirmado | Owner anterior | Owner final | Contrato |
+| --- | --- | --- | --- | --- |
+| `renderExamPreviewModal` | `renderAll` legacy; alias compatible | Dashboard | `exam-preview.js` | `ExamPreview.render()` |
+| `openExamPreview` | `handleContentClick` legacy | Dashboard | `exam-preview.js` | `ExamPreview.open(id)` |
+| `closeExamPreviewModal` | Bootstrap click/Escape; alias | Dashboard | `exam-preview.js` | `ExamPreview.close()` |
+| `downloadExamWord` | Bootstrap, legacy y `ExamDownload.downloadFromBiblioteca` | Dashboard | `exam-download.js` | `ExamDownload.download(id, filename)` |
+| `renderListaCotejoPreviewModal` | `renderAll` legacy; alias compatible | Dashboard | `lista-cotejo-preview.js` | `ListaCotejoPreview.render()` |
+| `openListaCotejoPreview` | `handleContentClick` legacy | Dashboard | `lista-cotejo-preview.js` | `ListaCotejoPreview.open(id)` |
+| `closeListaCotejoPreview` | Bootstrap click/Escape; alias | Dashboard | `lista-cotejo-preview.js` | `ListaCotejoPreview.close()` |
+
+`ListaCotejoDownload` ya era owner completo y no tenía wrapper residual en
+Dashboard. `AnexoPreview`, `AnexoDownload`, `PlaneacionDownload` y navegación a
+Detalle permanecen en sus owners sin cambios.
+
+### Estado, globals y bindings
+
+El shape y owner físico de `explorerState` no cambian. Dashboard conserva 330
+referencias; el owner legacy 158; Quick Create 98; Bootstrap 18; Examen
+Preview/Download 42; Lista Preview 24; Biblioteca loader/render 3. Los siete
+bridges movidos no contienen acceso directo al estado: delegan a los namespaces
+que ya poseían cache, fetch y render.
+
+Se preservan siete globals con la misma firma y return/promise. Los cuatro
+aliases render/close sin reader externo confirmado siguen documentados, no
+eliminados. Bootstrap continúa como owner único de clicks, Escape y descarga
+desde modal. `dashboard.html` conserva el orden existente:
+
+```text
+exam-download → exam-preview → lista-download → lista-preview
+→ dashboard.page → legacy-explorer → dashboard-bootstrap
+→ quick-create → biblioteca + owners → main
+```
+
+### Métricas y prueba
+
+| Métrica | Antes 8.2 | Después 8.2 |
+| --- | ---: | ---: |
+| `dashboard.page.js` LOC | 2867 | 2799 |
+| FunctionDeclaration Dashboard | 132 | 125 |
+| refs `explorerState` Dashboard | 330 | 330 |
+| DOM ops patrón 8.2 Dashboard | 134 | 134 |
+| listeners Dashboard | 2 | 2 |
+| funciones preview movidas | 0 | 6 |
+| wrappers download movidos | 0 | 1 |
+| globals compatibles | 7 | 7 |
+
+Los owners crecieron solo por los bridges: `exam-preview.js` 298→328 LOC,
+`exam-download.js` 238→248 y `lista-cotejo-preview.js` 121→151;
+`lista-cotejo-download.js` permanece en 36. Comparación AST: 7 movidas y 125
+retenidas iguales a `HEAD`, cero duplicadas y 132 funciones preservadas.
+
+`tests/resource-previews.smoke.test.js` cubre sin red Examen y Lista desde
+Biblioteca, cache/reapertura, render, close, Escape, download, caller legacy y
+delegación de los siete globals y fallbacks de error. Suite acumulativa: 6
+suites/19 pruebas.
+
+Archivados, registry/localStorage, generación, API/payload, Biblioteca, Quick,
+Bootstrap, legacy explorer, `wordExport.js`, HTML/CSS y backend quedan sin cambio
+funcional. La manual de 8.2 está pendiente; 8.3 no se abre todavía.

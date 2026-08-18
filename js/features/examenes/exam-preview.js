@@ -289,10 +289,40 @@
     render();
   }
 
+  // Compatibilidad temporal: conserva la firma pública y los consumidores del dashboard/Biblioteca.
+  // Motivo: mantener la API global durante la extracción.
+  // Consumidores actuales: renderAll(), Biblioteca y el explorador jerárquico.
+  // Condición para retirarlo: búsqueda global sin consumidores de window.renderExamPreviewModal.
+  // Fase prevista de retiro: Fase 10.
+  function renderExamPreviewModal() {
+    return window.ExamPreview.render();
+  }
+
+  // Compatibilidad temporal: conserva la apertura usada por el explorador histórico.
+  // Motivo: mantener la firma local durante la extracción del preview.
+  // Consumidores actuales: handleContentClick del explorador jerárquico.
+  // Condición para retirarlo: retiro separado del consumidor legacy confirmado.
+  // Fase prevista de retiro: Fase 8-9.
+  async function openExamPreview(examenId) {
+    return window.ExamPreview.open(examenId);
+  }
+
+  // Compatibilidad temporal: conserva la firma pública de cierre del modal.
+  // Motivo: mantener listeners y Escape sin cambiar el flujo de cierre.
+  // Consumidores actuales: listeners de Dashboard y compatibilidad global.
+  // Condición para retirarlo: búsqueda global sin consumidores de window.closeExamPreviewModal.
+  // Fase prevista de retiro: Fase 10.
+  function closeExamPreviewModal() {
+    return window.ExamPreview.close();
+  }
+
   window.ExamPreview = {
     render,
     open,
     openBiblioteca,
     close
   };
+  window.renderExamPreviewModal = renderExamPreviewModal;
+  window.openExamPreview = openExamPreview;
+  window.closeExamPreviewModal = closeExamPreviewModal;
 })();
