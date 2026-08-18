@@ -5059,3 +5059,136 @@ Commit: no
 Push: no
 Working tree: cambios de 8.2 sin commit
 ```
+
+## Fase 8 — Sesión 8.3: auditoría residual y CRUD jerárquico visual
+
+### A–B. Gate y reconciliación 8.2
+
+```text
+rama: refactor-front
+HEAD inicial: 6fb39ab refactor(frontend): move preview and download bridges to feature owners
+hash 8.2: 6fb39ab
+working tree inicial: limpio
+backend: refactor-back / 8977c62 / limpio / solo lectura
+puerta: PASS
+```
+
+8.2 está commiteada, pero su manual continúa marcada pendiente. No se inventó
+aprobación. El hotfix `duplicate_tema` quedó aislado en backend y no produjo
+cambios frontend.
+
+### C–D. Métricas y mapa residual previo
+
+| Dominio | LOC aprox. | Funciones | Consumers | Riesgo/Fase |
+| --- | ---: | ---: | --- | --- |
+| Estado físico | 54 | objeto | todos los owners | mixto; F10 |
+| Actividades/staging/shared | 353 | 38 | Quick/generation/fallback | alto; conservar |
+| Jerarquía técnica/loaders | 296 | 23 | Quick/legacy/CRUD/archive | activa; conservar |
+| Examen/Lista + generation legacy | 930 | 38 | fallback/Bootstrap/features | alto/protegido; F9 |
+| Delete/archive | 627 | 20 | legacy/API/registry | alto/congelado; F9/futuro |
+| CRUD visual | 234 | 5 | legacy + Bootstrap | medio; candidato 8.3 |
+| Wrappers/compatibilidad | ~90 | 6 wrappers | Quick/AppUI/legacy | F10 |
+
+Métricas iniciales verificadas: Dashboard 2799 LOC, 125 funciones, 2 listeners,
+330 refs de `explorerState`, 142 DOM ops con patrón ampliado, una publicación
+`window.*` explícita y seis funciones sin consumer productivo confirmado.
+
+### E–K. Frontera auditada
+
+El CRUD es exclusivamente visual/fallback. `openModalError`,
+`closeEntityModal`, `configureEntityModalFields`, `openEntityModal` y
+`submitEntityModal` poseen el modal y create/edit de plantel, grado, materia y
+unidad. Bootstrap conserva submit/click/Escape; `legacy-explorer.js` emite las
+acciones; `handleCreateAction` queda en Dashboard porque también despacha
+Examen, Lista y staging.
+
+La extracción consume, pero no mueve ni duplica, `loadPlanteles`, los tres
+`ensure*` jerárquicos usados aquí, current/find, `getNextOrder`, services CRUD,
+`select*`, `renderAll`, helpers de nivel/error/body lock. Quick Create no consume
+las cinco funciones movidas. Delete/archive, generación, preview/download,
+Archivados y Biblioteca quedan intactos.
+
+`explorerState` conserva shape y fuente: 330 refs se redistribuyen como 292 en
+Dashboard + 38 en el owner. CRUD lee/escribe `modal` y lee `current`,
+`gradosByPlantel` y `unidadesByMateria`. No se creó namespace, store, listener
+ni global explícito.
+
+### L. Sin consumidor confirmado
+
+No se eliminaron: `renderActividadCierreStatus`,
+`renderActividadCierreControl`, `hasInvalidExamQuestionCounts`,
+`renderActividadesEvaluadasHtml`, `getExamOptionLabel` y
+`findPlantelIdForGrado`. Cada una tiene solo su definición en JS/HTML productivo;
+siguen como candidatos Fase 9, no como dead code confirmado.
+
+### M–P. Decisión, implementación y métricas
+
+**A. Ejecutar último corte.** La frontera es de 234 LOC, reversible, sin estado
+propio y con consumidores comprendidos. Es el último owner grande justificable
+de Fase 8.
+
+```text
+owner: js/features/dashboard/legacy-hierarchy-crud.js
+LOC: 234
+funciones: 5
+dashboard.page.js: 2799 → 2564 LOC; 125 → 120 funciones
+explorerState: 330 → 292 Dashboard + 38 owner
+DOM ops: 142 → 118 Dashboard + 24 owner
+listeners: 2 Dashboard; 0 owner
+```
+
+Arquitectura resultante:
+
+```text
+dashboard.page (estado/técnica/generation/delete/shared/wrappers)
+→ legacy-explorer (visual/navegación)
+→ legacy-hierarchy-crud (modal create/edit)
+→ dashboard-bootstrap (bindings)
+→ quick-create
+→ Biblioteca
+```
+
+### Q. Tests y validaciones
+
+- Comparación literal: 234/234 líneas iguales al bloque de `HEAD`; PASS.
+- Smoke CRUD: 1 suite/3 pruebas; open, configure, validación, submit, close,
+  payload/loaders/select y superficie léxica; PASS.
+- Suite acumulativa: 7 suites/22 pruebas; PASS.
+- `node --check` sobre JS/tests tocados; PASS.
+- Script order clásico; sin module/defer/async; PASS.
+- Backend, owners protegidos, API/payload, generation, Archivados y CSS: sin
+  cambios.
+
+### R. Manual pendiente
+
+- Dashboard/Biblioteca: carga, bloques, tabs, search y reload; sin explorer
+  legacy apareciendo.
+- Quick Create: abrir sin regresión ni necesidad de generar IA.
+- Detalle: abrir una planeación y volver.
+- Preview: abrir/cerrar Examen y Lista.
+- Consola: sin ReferenceError, función undefined, doble listener/modal/render.
+- CRUD legacy solo si existe una ruta natural visible; no activar el fallback
+  mediante manipulación de código.
+
+### S–T. Handoff Fases 9/10
+
+- Fase 9: seis funciones sin consumer confirmado; explorer/CRUD aislados;
+  generation visual legacy; branches fallback no montadas; `batch.html`.
+- Fase 10: `window.explorerState`, wrappers Quick/AppUI, aliases preview,
+  bindings léxicos, compatibilidad y orden final de scripts.
+
+### U–X. Documentación, riesgos y estado
+
+Riesgos no bloqueantes: bindings clásicos entre cuatro scripts, modal state
+físico en Dashboard, fallback no visible en ruta Biblioteca y manual 8.2 aún
+pendiente. Ningún contrato funcional se cambió.
+
+```text
+Fase 8: En progreso
+8.2: commiteada en 6fb39ab / manual pendiente
+8.3: implementada
+Manual: pendiente
+Commit: no
+Push: no
+8.4: recomendada / no iniciada
+```

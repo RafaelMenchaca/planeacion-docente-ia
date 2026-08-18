@@ -47,6 +47,7 @@ function createHarness({ layoutError = false } = {}) {
   run(context, "js/features/listas-cotejo/lista-cotejo-preview.js");
   run(context, "js/pages/dashboard.page.js");
   run(context, "js/features/dashboard/legacy-explorer.js");
+  run(context, "js/features/dashboard/legacy-hierarchy-crud.js");
   run(context, "js/features/dashboard/dashboard-bootstrap.js");
 
   return { dom, window, context };

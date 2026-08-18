@@ -3428,3 +3428,84 @@ suites/19 pruebas.
 Archivados, registry/localStorage, generación, API/payload, Biblioteca, Quick,
 Bootstrap, legacy explorer, `wordExport.js`, HTML/CSS y backend quedan sin cambio
 funcional. La manual de 8.2 está pendiente; 8.3 no se abre todavía.
+
+## Fase 8 — Sesión 8.3: auditoría residual y último corte
+
+### Gate y reconciliación
+
+- Frontend inicial: `refactor-front`/`6fb39ab`, limpio.
+- 8.2: commit real `6fb39ab`; manual todavía pendiente.
+- Backend leído en `refactor-back`/`8977c62`, limpio y sin cambios.
+
+### Mapa residual previo
+
+| Dominio | LOC aprox. | Funciones | Consumers | Clasificación | Fase |
+| --- | ---: | ---: | --- | --- | --- |
+| Estado físico | 54 | objeto + publicación | todos los owners Dashboard/Biblioteca | mixto activo | 10 |
+| Actividades/staging/shared | 353 | 38 | Quick, generación, fallback | compartido/alto riesgo | conservar/9–10 |
+| Jerarquía técnica/loaders | 296 | 23 | Quick, explorer, CRUD, archive | técnica activa | conservar |
+| Examen/Lista legacy + generación | 930 | 38 | fallback, Bootstrap, generation owners | legacy protegido | 9, sin reabrir F4 |
+| Delete/archive | 627 | 20 | fallback, API, registry/Archivados | legacy + dependencia congelada | 9/pospuesto |
+| CRUD jerárquico visual | 234 | 5 | fallback + Bootstrap | legacy visual autónomo | extraído 8.3 |
+| Wrappers/compatibilidad | ~90 | 6 wrappers + helpers | Quick, AppUI, owners clásicos | compatibilidad activa | 10 |
+
+### Matriz CRUD visual/técnico
+
+| Función | Visual | Técnico | Quick | Legacy | API | Modal | Resultado |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `openModalError` | sí | no | no | Bootstrap | no | sí | owner CRUD |
+| `closeEntityModal` | sí | no | no | Bootstrap/Escape | no | sí | owner CRUD |
+| `configureEntityModalFields` | sí | no | no | modal | no | sí | owner CRUD |
+| `openEntityModal` | sí | lee current | no | dispatcher/onboarding fallback | no | sí | owner CRUD |
+| `submitEntityModal` | sí | consume loaders/caches | no | navegación fallback | create/update services | sí | owner CRUD |
+| `handleCreateAction` | dispatcher mixto | current | no | CRUD + examen/lista/staging | indirecta | indirecto | retenido |
+
+No se movieron `loadPlanteles`, `ensureGrados`, `ensureMaterias`,
+`ensureUnidades`, `getNextOrder`, current/find, services ni `select*`. El owner
+solo los consume. Delete/archive conserva su callback externo y no forma parte
+del nuevo archivo.
+
+### Estado, wrappers y candidatos sin consumidor
+
+`explorerState` conserva shape y owner físico. Sus referencias quedan 292 en
+Dashboard y 38 en CRUD, total 330 sin cambio. El owner usa únicamente `modal`,
+`current`, `gradosByPlantel` y `unidadesByMateria`.
+
+| Wrapper residual | Implementación | Consumer | Fase |
+| --- | --- | --- | --- |
+| `setQuickPanelVisibility` | `QuickCreate.setPanelVisibility` | legacy/Bootstrap | 10 |
+| `openQuickCreatePanel` / `closeQuickCreatePanel` | `QuickCreate.open/close` | Bootstrap | 10 |
+| `generatePlaneacionesFromStaging` | `QuickCreate.generateFromStaging` | dispatcher legacy | 10 |
+| `renderProgressPill` / `statusLabelFromTone` | `AppUI` | Quick/legacy/Biblioteca | 10 |
+
+Siguen sin consumer productivo confirmado, y no se eliminaron:
+`renderActividadCierreStatus`, `renderActividadCierreControl`,
+`hasInvalidExamQuestionCounts`, `renderActividadesEvaluadasHtml`,
+`getExamOptionLabel` y `findPlantelIdForGrado`. Los dos helpers de UI de imagen
+pausada conservan consumidores/comentarios en Quick y no se clasifican por una
+búsqueda simple como retirables.
+
+### Métricas 8.3
+
+| Métrica | Antes | Después Dashboard | Owner CRUD |
+| --- | ---: | ---: | ---: |
+| LOC | 2799 | 2564 | 234 |
+| FunctionDeclaration | 125 | 120 | 5 |
+| refs `explorerState` | 330 | 292 | 38 |
+| DOM ops patrón ampliado | 142 | 118 | 24 |
+| listeners | 2 | 2 | 0 |
+| publicación `window.*` explícita | 1 | 1 | 0 |
+
+Las 234 líneas del owner son literalmente iguales al bloque de `HEAD`.
+`dashboard.html` carga el owner después de `legacy-explorer.js` y antes de
+Bootstrap. El smoke específico cubre open/configure/validation/submit/close y
+superficie léxica; suite acumulativa: 7 suites/22 pruebas.
+
+### Handoffs
+
+- Fase 9: seis funciones sin consumer confirmado, ramas fallback no montadas,
+  generación visual legacy, CRUD/explorer ya aislados y `batch.html`; eliminar
+  solo tras probar cero consumidores.
+- Fase 10: `window.explorerState`, seis wrappers, aliases preview, bindings
+  léxicos cross-script, compatibilidad y orden final de scripts.
+- Recomendación: 8.4 después de manual/commit de 8.3; no abrir Fase 9 todavía.

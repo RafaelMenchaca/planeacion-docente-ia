@@ -1361,3 +1361,26 @@ Estas dependencias expresan el camino seguro esperado. Pueden ajustarse por una 
 | 8 | módulo o aislamiento legacy | ruta vigente sin ejecución del explorador |
 | 9 | eliminación segura del legacy | cero consumidores y matriz completa |
 | 10 | documentación final y wrappers retirados | inventario final, pruebas y cierre documental |
+
+## Actualización Fase 8 — Sesión 8.3
+
+Estado reconciliado:
+
+1. 8.0: auditoría de apertura, commit `9b8ede5`.
+2. 8.1: explorer visual/navegación legacy, manual aprobada y commit `1aa1599`.
+3. 8.2: siete bridges preview/download entregados a owners existentes, commit
+   `6fb39ab`; manual pendiente según evidencia documental disponible.
+4. 8.3: último corte coherente implementado; manual y commit pendientes.
+5. 8.4: auditoría formal de cierre recomendada, no iniciada.
+
+8.3 extrae cinco funciones/234 LOC del modal CRUD visual a
+`js/features/dashboard/legacy-hierarchy-crud.js`. Mantiene listeners en
+Bootstrap, estado y loaders técnicos en Dashboard, navegación en el owner
+legacy y APIs en services. No incluye delete/archive ni Archivados.
+
+Después del corte, `dashboard.page.js` queda en 2564 LOC/120 funciones. Lo
+restante no justifica otra extracción de Fase 8: generación legacy está
+protegida; actividades y jerarquía tienen consumidores compartidos;
+delete/archive cruza el sistema congelado; wrappers/globals/estado pertenecen a
+Fase 10. La condición para iniciar 8.4 es aprobar manualmente 8.3 y registrar su
+commit, sin abrir Fase 9.

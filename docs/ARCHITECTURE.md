@@ -839,3 +839,48 @@ La arquitectura objetivo es una **Biblioteca modular** con:
 - jerarquía técnica preservada cuando siga siendo necesaria para datos, contratos, selectores o Archivados.
 
 Este apartado describe una meta, no el estado ya implementado. El orden, los criterios y las pruebas están en el [`REFACTOR_ROADMAP.md`](refactor/REFACTOR_ROADMAP.md).
+
+## Fase 8 — Sesión 8.3: owner del CRUD jerárquico visual legacy
+
+8.2 quedó commiteada en `6fb39ab refactor(frontend): move preview and download
+bridges to feature owners`; su manual continúa pendiente, sin aprobación
+inferida. La auditoría residual de 8.3 confirmó un último bloque coherente:
+cinco funciones y 234 LOC del modal de creación/edición jerárquica, emitido solo
+por el fallback legacy y enlazado por Bootstrap.
+
+```text
+dashboard.page.js (2564 LOC)
+├─ explorerState físico y jerarquía técnica compartida
+├─ actividades/staging y generación legacy residual
+├─ delete/archive legacy congelado
+├─ wrappers y compatibilidad clásica
+└─ dispatch handleCreateAction
+
+legacy-explorer.js
+└─ tree, breadcrumbs, niveles y navegación fallback
+
+legacy-hierarchy-crud.js (234 LOC)
+├─ open/close/error/configuración del entity modal
+└─ submit create/edit para plantel, grado, materia y unidad
+
+dashboard-bootstrap.js
+└─ listeners únicos del modal y Escape; delega al owner CRUD
+```
+
+El owner CRUD no posee estado ni listeners. Consume `explorerState.modal`, los
+loaders técnicos existentes, los services CRUD y los `select*` del explorer
+legacy mediante los mismos bindings de scripts clásicos. Delete/archive,
+Archivados, Quick Create, Biblioteca, generación y APIs no cambiaron.
+
+El orden protegido queda:
+
+```text
+dashboard.page → legacy-explorer → legacy-hierarchy-crud
+→ dashboard-bootstrap → quick-create → Biblioteca
+```
+
+El residual de Dashboard ya no presenta otro owner grande obvio de Fase 8:
+jerarquía/loaders y actividades son compartidos; generación está protegida;
+delete/archive cruza Archivados; globals, wrappers y `explorerState` corresponden
+a cleanup final. Tras manual y commit de 8.3, procede 8.4, auditoría formal de
+cierre.

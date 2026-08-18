@@ -1818,3 +1818,43 @@ ahora el orden real de los cuatro owners de Examen/Lista.
 | Consola/red | Sin ReferenceError, global undefined, doble modal/listener/fetch |
 
 La generación IA es opcional y no forma parte del criterio manual de 8.2.
+
+## Fase 8 — Sesión 8.3: CRUD jerárquico visual legacy
+
+### Evidencia automática
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: `refactor-front`/`6fb39ab`, limpio al iniciar |
+| Reconciliación 8.2 | Commit `6fb39ab`; manual sigue pendiente |
+| Backend | PASS: `refactor-back`/`8977c62`, limpio y solo lectura |
+| Decisión | PASS: último corte coherente de 234 LOC/5 funciones |
+| Comparación literal | PASS: 234/234 líneas sin cambio |
+| Dashboard | PASS: 2799→2564 LOC; 125→120 funciones |
+| Estado | PASS: shape intacto; 330 refs = 292 Dashboard + 38 CRUD |
+| DOM/listeners | PASS: 24 DOM ops movidas; owner agrega 0 listeners |
+| Script order | PASS: Dashboard→Explorer→CRUD→Bootstrap→Quick |
+| Jerarquía técnica | PASS: loaders/caches compartidos retenidos |
+| Delete/archive | PASS de alcance: sin cambios |
+| Protegidos | PASS: Quick, Biblioteca, Explorer, previews, generación, Archivados, API/payload, CSS y backend intactos |
+| Smoke CRUD | PASS: 1 suite/3 pruebas |
+| Jest acumulativo | PASS: 7 suites/22 pruebas |
+| Sintaxis | PASS: `node --check` en JS y tests tocados |
+
+El smoke `tests/legacy-hierarchy-crud.smoke.test.js` cubre apertura,
+configuración de grado, validación vacía, cierre/reset, submit/payload, loaders,
+navegación legacy y disponibilidad de bindings consumidos por Bootstrap.
+
+### Checklist manual pendiente de 8.3
+
+| Área | Verificación |
+| --- | --- |
+| Dashboard/Biblioteca | Carga, bloques, tabs, search y reload; sin fallback visible |
+| Quick Create | Abrir y cerrar sin regresión; IA no requerida |
+| Detalle/back | Abrir planeación y volver a Biblioteca |
+| Preview | Abrir/cerrar Examen y Lista |
+| Consola | Sin ReferenceError, undefined, doble listener/modal/render |
+| CRUD legacy | Probar solo si existe acceso natural; no manipular código |
+
+8.2 conserva su estado documental de manual pendiente. 8.3 requiere esta manual
+por haber movido código productivo; 8.4 no está iniciada.
