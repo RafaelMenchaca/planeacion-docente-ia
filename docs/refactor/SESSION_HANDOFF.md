@@ -5192,3 +5192,196 @@ Commit: no
 Push: no
 8.4: recomendada / no iniciada
 ```
+
+## Fase 8 — Sesión 8.4: auditoría formal de cierre
+
+### A–C. Gate, objetivo y sesiones
+
+```text
+rama: refactor-front
+HEAD: cf48637 refactor(frontend): extract legacy hierarchy CRUD
+8.0: 9b8ede5
+8.1: 1aa1599
+8.2: 6fb39ab
+8.3: cf48637
+backend: refactor-back / 8977c62 / limpio / solo lectura
+puerta: PASS
+```
+
+Objetivo canónico confirmado: separar del Dashboard residual las superficies
+visuales legacy sin eliminar jerarquía técnica ni compatibilidad activa.
+Archivados quedó congelado por decisión de producto; Biblioteca usa delete
+directo y un Archivados propio de Biblioteca se diseñará después del refactor.
+
+| Sesión | Commit | Manual | Estado |
+| --- | --- | --- | --- |
+| 8.0 | `9b8ede5` | no requerida | completada |
+| 8.1 | `1aa1599` | aprobada | completada |
+| 8.2 | `6fb39ab` | aprobada por regresión acumulativa posterior | completada |
+| 8.3 | `cf48637` | aprobada | completada |
+| 8.4 | pendiente | auditoría documental | cierre aprobado |
+
+### D. Métricas Fase 8
+
+| Métrica Dashboard | Inicio | Final | Delta |
+| --- | ---: | ---: | ---: |
+| LOC | 4049 | 2564 | -1485 |
+| funciones | 174 | 120 | -54 |
+| refs `explorerState` | 488 | 292 | -196 |
+| DOM ops patrón ampliado | 191 | 118 | -73 |
+| listeners | 2 | 2 | 0 |
+| wrappers auditados | 13 | 6 | -7 |
+| publicaciones `window.*` explícitas | 6 | 1 | -5 |
+
+### E–F. Arquitectura y ownership final
+
+```text
+dashboard.page.js (estado/técnica/shared/generation/delete/wrappers)
+→ legacy-explorer.js (location/select/tree/breadcrumbs/renders/fallback)
+→ legacy-hierarchy-crud.js (modal create/edit)
+→ dashboard-bootstrap.js (bindings/init/Biblioteca-vs-fallback)
+→ quick-create.js
+→ biblioteca.page + loader/render/modal-render/events
+→ main.js
+```
+
+| Dominio | Owner | State | Consumers | Estado |
+| --- | --- | --- | --- | --- |
+| explorer/navegación | `legacy-explorer.js` | `explorerState` | fallback, Bootstrap, Quick | aislado |
+| CRUD visual | `legacy-hierarchy-crud.js` | `explorerState.modal/current` | dispatcher, Bootstrap | aislado |
+| Examen preview/download | feature owners | cache/modal compartido | Biblioteca/fallback/Bootstrap | vigente/compatible |
+| Lista preview/download | feature owners | cache/modal compartido | Biblioteca/fallback/Bootstrap | vigente/compatible |
+| jerarquía técnica | Dashboard loaders | caches por ID | Quick/explorer/CRUD/delete | activa |
+| Biblioteca | cinco owners protegidos | State/Pending propios | ruta principal | vigente |
+
+### G–N. Dashboard residual y fronteras
+
+- Estado físico: `explorerState` permanece en Dashboard por consumidores
+  cross-script de Quick, legacy, CRUD, previews, Bootstrap y Biblioteca.
+- Jerarquía técnica: `loadPlanteles`, `ensureGrados`, `ensureMaterias` y
+  `ensureUnidades` tienen consumers reales en Quick, explorer y CRUD; no son
+  legacy eliminable.
+- Actividades/staging/shared: consumido por Quick, generation y fallback; no
+  existe frontera segura adicional.
+- Generation residual: modales/renders/coordinación de Examen, Lista y
+  Planeación legacy se clasifican para Fase 9/10; no se reabre Fase 4.
+- Delete/archive: callbacks, prune, confirm y refresh legacy permanecen; el
+  registry y Archivados no se modificaron.
+- Explorer: 1188 LOC/42 funciones/158 refs de estado/0 listeners; usa la fuente
+  existente, conserva session location y fallback, y no se hidrata bajo la ruta
+  normal Biblioteca.
+- CRUD: 234 LOC/5 funciones/38 refs/0 listeners; state sigue en Dashboard,
+  loaders compartidos y listeners en Bootstrap; delete/archive quedó fuera.
+- Preview/download: siete bridges conservan firma/global en los owners
+  `ExamPreview`, `ExamDownload` y `ListaCotejoPreview`; Lista Download ya era
+  owner completo.
+- Archivados: page, localStorage registry, restore y delete intactos. La feature
+  futura de Biblioteca no se asigna automáticamente a Fase 9.
+
+### O. `explorerState`
+
+| Grupo | Consumers | Clasificación | Fase |
+| --- | --- | --- | --- |
+| caches plantel→unidad/loading/errors | Quick/explorer/CRUD | técnica activa + legacy | preservar/10 |
+| current | Quick/explorer/CRUD/resources | mixto activo | 10 |
+| quickCreate/progress/generating/staging | Quick/Biblioteca/fallback | vigente + bridge | 10 |
+| expanded/search | tree legacy | visual legacy | 9 |
+| preview caches/state | feature owners/Bootstrap | vigente compatible | 10 |
+| generation/modal resource | fallback/Bootstrap | legacy coordinado | 9/10 |
+| entity modal/confirmDelete | CRUD/delete/archive | legacy/compatibilidad | 9/10 |
+
+### P. Globals y wrappers
+
+Globals preservados: `explorerState`, `BIBLIOTECA_MODE`, `biblioteca`,
+`renderBibliotecaContent`, `QuickCreate`, `BibliotecaLoader`,
+`initDashboardPage`, `initBiblioteca`, namespaces de Preview/Download y los
+siete aliases compatibles. Fase 10 recibe su cleanup.
+
+| Wrapper Dashboard | Owner real | Consumer | Necesario | Fase |
+| --- | --- | --- | ---: | --- |
+| `setQuickPanelVisibility` | QuickCreate | render legacy | sí | 10 |
+| `openQuickCreatePanel` | QuickCreate | Biblioteca events | sí | 10 |
+| `closeQuickCreatePanel` | QuickCreate | Bootstrap | sí | 10 |
+| `generatePlaneacionesFromStaging` | QuickCreate | dispatcher legacy | sí | 10 |
+| `renderProgressPill` | AppUI | legacy/Biblioteca | sí | 10 |
+| `statusLabelFromTone` | AppUI | Quick/Biblioteca | sí | 10 |
+
+### Q. Sin consumidor confirmado
+
+Solo su definición aparece en JS/HTML productivo, sin data attribute, alias,
+callback, global ni test consumidor: `renderActividadCierreStatus`,
+`renderActividadCierreControl`, `hasInvalidExamQuestionCounts`,
+`renderActividadesEvaluadasHtml`, `getExamOptionLabel` y
+`findPlantelIdForGrado`. Se entregan a Fase 9; no se etiquetan dead code.
+
+### R–T. Orden, listeners y rutas vigentes
+
+Orden real: base APIs/services/features → Dashboard → Explorer → CRUD →
+Bootstrap → Quick → Biblioteca page/loader/render/modal/events → main. Todos son
+scripts clásicos, sin module/defer/async. Los bindings existen cuando
+`main.js` ejecuta `initDashboardPage`.
+
+Explorer, CRUD y previews añaden 0 listeners. Bootstrap conserva 25 bindings
+estructurales con guard `isDashboardBound`; Quick conserva su owner y Biblioteca
+su delegación. `initDashboardPage` detecta `initBiblioteca`, fija
+`BIBLIOTECA_MODE`, inicializa Biblioteca y retorna antes de
+`hydrateExplorerData`. No se observó doble árbol, render, preview ni listener en
+la regresión manual o smokes. `BibliotecaEvents.bind()` conserva duplicabilidad
+histórica sin guard interno, pero la ruta normal inicializa una vez; deuda no
+bloqueante para cleanup final.
+
+Quick Create mantiene `batch_id` explícito sin `force_new_batch` al agregar a un
+bloque y `force_new_batch:true` cuando Biblioteca crea uno nuevo. Biblioteca
+mantiene State/Pending, loader, render, modal render y events. Detalle conserva
+`detalle.html?id=` desde Biblioteca y fallback.
+
+### U. Evidencia manual acumulada
+
+- Planeación: `successCount:1`, `errorCount:0`, `skippedCount:0`.
+- Anexos: `generate:success`, `anexos_creados:5`.
+- Lista: `created:1`, `skipped:0`.
+- Examen: 13/13, `preguntas_fallidas:0`; 12 retries pertenecen al control de
+  similitud existente, no a una regresión Fase 8.
+- Deletes: Examen, Lista, Anexo, Planeación y Batch con success.
+- Usuario: “todo funciona bien después de la sesión”.
+- `duplicate_tema`: incidencia backend preexistente resuelta externamente en
+  Supabase; `Fracciones 1` llegó a AI request/response con success 1 y skipped 0.
+
+### V–W. Tests y riesgos
+
+`node --check`: 9 archivos críticos PASS. Jest: 7 suites/22 pruebas PASS.
+
+- Blockers: ninguno.
+- No bloqueantes: bindings léxicos, fallback cargado pero no montado,
+  duplicabilidad histórica de BibliotecaEvents y 12 retries de Examen.
+- Deuda futura: legacy/branches/functions sin consumer para F9; estado,
+  globals/wrappers/aliases/order para F10; temas huérfanos fuera del frontend.
+- Externos: `public.ia_metrics` ausente continúa conocido y fuera de alcance.
+
+### X–Y. Handoffs
+
+Fase 9 recibe explorer y CRUD ya aislados, seis funciones sin consumer
+confirmado, `batch.html` redirect, generation visual legacy, branches fallback y
+acciones jerárquicas antiguas. Requisito: búsqueda exhaustiva y prueba de cero
+consumers antes de borrar.
+
+Fase 10 recibe `explorerState`, globals, wrappers, aliases, bridges, bindings
+léxicos cross-script, compatibilidad y orden final.
+
+### Z–AC. Documentación, contradicciones, decisión y estado
+
+Contradicción reconciliada: el criterio antiguo decía que Biblioteca “no carga”
+el explorer; el HTML sí carga el script para mantener fallback. El criterio
+correcto y verificado es “no monta ni hidrata” el explorer bajo Biblioteca.
+
+**A. Fase 8 puede cerrarse.**
+
+```text
+Fase 8: Completada
+Sesión 8.4: Completada
+Auditoría de cierre: Aprobada
+Fase 9: Pendiente / no iniciada
+Commit: no
+Push: no
+Working tree: cinco documentos de cierre
+```

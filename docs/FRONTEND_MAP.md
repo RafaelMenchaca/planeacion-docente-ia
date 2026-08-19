@@ -3509,3 +3509,99 @@ superficie léxica; suite acumulativa: 7 suites/22 pruebas.
 - Fase 10: `window.explorerState`, seis wrappers, aliases preview, bindings
   léxicos cross-script, compatibilidad y orden final de scripts.
 - Recomendación: 8.4 después de manual/commit de 8.3; no abrir Fase 9 todavía.
+
+## Fase 8 — Sesión 8.4: auditoría formal de cierre
+
+### Sesiones y métricas acumuladas
+
+| Sesión | Commit | Manual | Estado |
+| --- | --- | --- | --- |
+| 8.0 | `9b8ede5` | no requerida | apertura completada |
+| 8.1 | `1aa1599` | aprobada | explorer/navegación aislados |
+| 8.2 | `6fb39ab` | aprobada por regresión acumulativa posterior | bridges en owners |
+| 8.3 | `cf48637` | aprobada | CRUD visual aislado |
+| 8.4 | sin commit | auditoría documental | cierre aprobado |
+
+| Métrica Dashboard | Inicio F8 | Final F8 | Delta |
+| --- | ---: | ---: | ---: |
+| LOC | 4049 | 2564 | -1485 |
+| FunctionDeclaration | 174 | 120 | -54 |
+| refs `explorerState` | 488 | 292 | -196 |
+| DOM ops patrón ampliado | 191 | 118 | -73 |
+| listeners locales | 2 | 2 | 0 |
+| wrappers auditados en Dashboard | 13 | 6 | -7 |
+| publicaciones `window.*` explícitas en Dashboard | 6 | 1 | -5 |
+
+### Owners finales
+
+| Owner | LOC | Funciones | Estado/ref | Listeners | API/compatibilidad |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `legacy-explorer.js` | 1188 | 42 | `explorerState`/158 | 0 | bindings clásicos `select*`, render, handlers |
+| `legacy-hierarchy-crud.js` | 234 | 5 | `explorerState`/38 | 0 | open/close/configure/submit léxicos |
+| `exam-preview.js` | 328 | 20 | cache/modal/37 | 0 | `ExamPreview` + 3 aliases |
+| `exam-download.js` | 248 | 11 | cache/5 | 0 | `ExamDownload` + `downloadExamWord` |
+| `lista-cotejo-preview.js` | 151 | 9 | cache/modal/24 | 0 | `ListaCotejoPreview` + 3 aliases |
+| `lista-cotejo-download.js` | 36 | 2 | sin estado Dashboard | 0 | `ListaCotejoDownload` |
+
+### Dashboard residual final
+
+| Dominio | Funciones/LOC aprox. | Consumers | Clasificación | Próxima fase |
+| --- | ---: | --- | --- | --- |
+| `explorerState` físico | 54 LOC | todos los owners | fuente mixta vigente | 10 |
+| actividades/staging/shared | 38/~353 | Quick, generation, fallback | compartido | conservar/9–10 |
+| jerarquía técnica/loaders | 23/~296 | Quick, explorer, CRUD, archive | activa, no legacy eliminable | conservar |
+| Examen/Lista/generation legacy | 38/~930 | fallback, Bootstrap, feature owners | render/coordinación legacy protegida | 9/10 |
+| delete/archive | 20/~627 | fallback, APIs, registry histórico | legacy/compatibilidad congelada | 9/futuro |
+| dispatch/shared coordination | `handleCreateAction`, render/progress | owners legacy/Quick | puente mixto | 10 |
+| wrappers | 6 | Quick/AppUI/legacy/Biblioteca | compatibilidad activa | 10 |
+| sin consumer confirmado | 6 | ninguno encontrado | no equivale a dead code | 9 |
+
+No existe otro corte obvio propio de Fase 8: mover loaders rompería ownership
+compartido; generation reabriría Fase 4; delete/archive invadiría el sistema
+congelado; wrappers/estado/globals corresponden a Fase 10.
+
+### `explorerState` final
+
+| Propiedad | Owner/consumers | Vigente | Legacy | Fase futura |
+| --- | --- | ---: | ---: | --- |
+| `planteles`, `gradosByPlantel`, `materiasByGrado`, `unidadesByMateria` | Dashboard loaders; Quick/explorer/CRUD | sí | también | preservar |
+| `temasByUnidad`, `planeacionByTema` | unidad/generation/delete fallback | indirecto | sí | 9/10 |
+| `loading`, `errors` | loaders/Bootstrap/renders | sí | sí | 10 |
+| `expandedPlanteles/Grados/Materias`, `searchQuery` | explorer/tree | no normal | sí | 9 |
+| `current` | Quick, explorer, CRUD, resource callbacks | sí | sí | 10 |
+| `staging*` | Quick y generación/staging fallback | sí | sí | 10 |
+| `progress`, `generating` | Quick, Biblioteca y render fallback | sí | sí | 10 |
+| `quickCreate` | `quick-create.js`/Bootstrap/body lock | sí | no | 10 |
+| `examGeneration`, `examModal` | coordinator legacy/Bootstrap | no normal | sí | 9/10 |
+| `examPreview`, `examenDetalleById` | Exam Preview/Download | sí | compatibilidad | 10 |
+| `listasCotejoByUnidad`, `listaCotejoGeneration`, `listaCotejoModal` | Lista legacy/Bootstrap | parcial | sí | 9/10 |
+| `listaCotejoPreview` | Lista Preview/Bootstrap | sí | compatibilidad | 10 |
+| `modal` | CRUD/Bootstrap | no normal | sí | 9/10 |
+| `confirmDelete` | delete/archive/Bootstrap | no normal | sí | 9/futuro |
+
+### Globals, wrappers y candidatos
+
+Los globals activos incluyen `explorerState`, `BIBLIOTECA_MODE`, `biblioteca`,
+`renderBibliotecaContent`, `QuickCreate`, `BibliotecaLoader`,
+`initDashboardPage`, `initBiblioteca`, namespaces de Preview/Download y sus
+siete bridges. También siguen AppUI y namespaces de generación/delete. Ninguno
+se retiró; Fase 10 conserva su limpieza.
+
+Los seis wrappers Dashboard son `setQuickPanelVisibility`,
+`openQuickCreatePanel`, `closeQuickCreatePanel`,
+`generatePlaneacionesFromStaging`, `renderProgressPill` y
+`statusLabelFromTone`; todos tienen consumers confirmados.
+
+Sin consumer productivo confirmado después de buscar JS, HTML, data attributes,
+globals, callbacks y tests: `renderActividadCierreStatus`,
+`renderActividadCierreControl`, `hasInvalidExamQuestionCounts`,
+`renderActividadesEvaluadasHtml`, `getExamOptionLabel` y
+`findPlantelIdForGrado`. Se entregan a Fase 9 sin llamarlos dead code.
+
+### Cierre
+
+Script order clásico validado; 0 listeners en explorer/CRUD/previews; Bootstrap
+conserva binding estructural, Quick su owner y Biblioteca su delegación. La ruta
+Biblioteca retorna antes de `hydrateExplorerData`; `renderExplorerContent`
+redirige a `renderBibliotecaContent` bajo `BIBLIOTECA_MODE`. Suite: 7 suites/22
+pruebas. Decisión: Fase 8 completada; Fase 9 pendiente/no iniciada.

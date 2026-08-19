@@ -1858,3 +1858,62 @@ navegación legacy y disponibilidad de bindings consumidos por Bootstrap.
 
 8.2 conserva su estado documental de manual pendiente. 8.3 requiere esta manual
 por haber movido código productivo; 8.4 no está iniciada.
+
+## Fase 8 — Sesión 8.4: matriz de cierre
+
+La regresión acumulativa posterior reconcilia como aprobadas las manuales de
+8.2 y 8.3. No se inventan recorridos adicionales.
+
+### Evidencia automática final
+
+| Revisión | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`cf48637`, limpio al iniciar | PASS |
+| Backend | `refactor-back`/`8977c62`, limpio/solo lectura | PASS |
+| Sintaxis | 9 JS críticos con `node --check` | PASS |
+| Suite base | `planeacion.test.js` | PASS |
+| Quick Create | smoke owner | PASS |
+| Biblioteca loader | smoke owner | PASS |
+| Dashboard Bootstrap | smoke bindings/Biblioteca | PASS |
+| Legacy Explorer | fallback/tree/breadcrumb/restore | PASS |
+| Resource Preview | Examen/Lista/cache/Escape/download | PASS |
+| Legacy CRUD | modal/validation/submit/delegation | PASS |
+| Jest acumulativo | 7 suites/22 pruebas | PASS |
+| Script order | clásicos; Dashboard→Explorer→CRUD→Bootstrap→Quick→Biblioteca | PASS |
+| Estado | una fuente `explorerState`; shape intacto | PASS |
+| Ruta vigente | Biblioteca retorna antes de hydrate fallback | PASS |
+| Archivados | page/registry/storage/restore/delete sin diff F8 | PASS |
+
+### Evidencia manual acumulada aprobada
+
+| Área | Evidencia real |
+| --- | --- |
+| Planeación | success 1, error 0, skipped 0 |
+| Anexos | `generate:success`, 5 creados |
+| Lista | 1 creada, 0 skipped |
+| Examen | 13/13, 0 fallidas; 12 retries existentes no son regresión F8 |
+| Deletes | success en Examen, Lista, Anexo, Planeación y Batch |
+| Regresión | usuario confirma que todo funciona bien después de la sesión |
+| Hotfix externo | `Fracciones 1`: AI request/response, success 1, skipped 0 |
+
+`duplicate_tema` fue un hotfix backend/Supabase preexistente y no cuenta como
+cambio Fase 8. El error conocido de `public.ia_metrics` tampoco bloquea el
+cierre y permanece fuera de alcance.
+
+### Criterios de cierre
+
+| Criterio | Resultado |
+| --- | --- |
+| Explorer/navegación aislados | PASS |
+| CRUD visual aislado | PASS |
+| Preview/download en owners | PASS |
+| Jerarquía técnica preservada | PASS |
+| Quick Create/Biblioteca preservados | PASS |
+| Archivados diferido conscientemente | PASS |
+| Residual Dashboard clasificado | PASS |
+| Otro corte Fase 8 obvio | NO |
+| Automatización y manual acumulativa | PASS |
+| Blockers | ninguno |
+
+Decisión: Fase 8 completada; Sesión 8.4 y auditoría de cierre aprobadas. Fase 9
+permanece pendiente/no iniciada.

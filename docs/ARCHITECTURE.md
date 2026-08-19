@@ -884,3 +884,37 @@ jerarquía/loaders y actividades son compartidos; generación está protegida;
 delete/archive cruza Archivados; globals, wrappers y `explorerState` corresponden
 a cleanup final. Tras manual y commit de 8.3, procede 8.4, auditoría formal de
 cierre.
+
+## Cierre formal de Fase 8 — Sesión 8.4
+
+Fase 8 queda completada. La regresión acumulativa posterior aprobó manualmente
+8.2 y 8.3; el commit real de 8.3 es `cf48637`. No se detectó regresión, binding
+ausente, segunda fuente, doble montaje ni test fallido atribuible a la fase.
+
+| Dominio | Owner final | Estado | Consumers principales |
+| --- | --- | --- | --- |
+| Explorer/navegación fallback | `legacy-explorer.js` | aislado, no eliminado | Bootstrap, Quick y callbacks legacy |
+| CRUD jerárquico visual | `legacy-hierarchy-crud.js` | aislado, no eliminado | dispatcher legacy y Bootstrap |
+| Preview Examen | `exam-preview.js` | owner vigente + aliases | Biblioteca, Bootstrap, fallback |
+| Download Examen | `exam-download.js` | owner vigente + bridge | Biblioteca y fallback |
+| Preview Lista | `lista-cotejo-preview.js` | owner vigente + aliases | Biblioteca, Bootstrap, fallback |
+| Download Lista | `lista-cotejo-download.js` | owner vigente | Biblioteca/preview |
+| Estado/técnica/shared residual | `dashboard.page.js` | compartido o diferido | Quick, owners legacy, Biblioteca |
+
+La entrada normal conserva esta bifurcación:
+
+```text
+initDashboardPage
+├─ initBiblioteca existe → BIBLIOTECA_MODE → initBiblioteca → return
+└─ sin Biblioteca → hydrateExplorerData → fallback legacy
+```
+
+Los scripts legacy siguen en `dashboard.html` para que el fallback sea viable;
+“aislado” no significa “retirable”. Fase 9 recibe la prueba de cero consumers y
+posible eliminación. Fase 10 recibe `explorerState`, globals, wrappers, aliases,
+bindings léxicos y orden final.
+
+Archivados permaneció congelado: Biblioteca usa delete directo; page, registry,
+storage, restore y delete histórico no cambiaron. Un Archivados propio de
+Biblioteca será diseño futuro posterior al refactor, no trabajo implícito de
+Fase 9.

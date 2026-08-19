@@ -31,7 +31,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 5 | Estado de Biblioteca | Reducir `explorerState` | Alto | Completada |
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Completada |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Completada |
-| 8 | Aislar legacy visual | Separar explorador antiguo | Medio | En progreso |
+| 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Completada |
 | 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Pendiente |
 | 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
 
@@ -1082,13 +1082,12 @@ Separar el explorador visual jerárquico antiguo de Biblioteca sin eliminar jera
 
 ### Estado
 
-**En progreso.** La Sesión 8.0 completó la auditoría técnica/documental de
-apertura sin cambios funcionales. Confirmó que la ruta vigente monta
-Biblioteca y no hidrata el explorer, pero conserva consumidores activos de
-jerarquía técnica, previews, `pageshow`, registro de Archivados y bridges
-clásicos. La UI de Archivados ya posee un owner separado en
-`archivados.page.js`; su enlace de navbar está comentado, aunque la URL directa
-sigue siendo ejecutable.
+**Completada.** Las Sesiones 8.0–8.4 delimitaron, aislaron y validaron las
+superficies visuales legacy sin eliminar la jerarquía técnica ni la
+compatibilidad activa. La ruta vigente monta Biblioteca y retorna antes de
+hidratar el fallback; los scripts legacy siguen cargados deliberadamente por
+compatibilidad, pero no montan tree, breadcrumbs ni niveles bajo la entrada
+normal.
 
 La decisión de producto posterior a 8.0 congela Archivados durante el refactor
 actual: Biblioteca usa delete directo y cualquier sistema de Archivados propio
@@ -1108,6 +1107,12 @@ sin crear un manager adicional: seis bridges de render/open/close y el bridge
 `downloadExamWord`. Dashboard quedó en 2799 LOC y 125 funciones; `explorerState`,
 cache, DOM, API, listeners, Escape, generación y Archivados permanecen intactos.
 
+La Sesión 8.3 aisló cinco funciones/234 LOC del modal CRUD visual en
+`legacy-hierarchy-crud.js`; mantuvo listeners en Bootstrap y loaders/caches en
+Dashboard. Dashboard cerró en 2564 LOC/120 funciones. La regresión acumulativa
+posterior aprobó manualmente tanto 8.2 como 8.3. La Sesión 8.4 reconcilió owners,
+consumidores, script order, residual, manual y 7 suites/22 pruebas sin blockers.
+
 ### Sesiones de Fase 8
 
 #### 8.1 — Explorer visual y navegación jerárquica legacy
@@ -1124,7 +1129,7 @@ Detalle/back-forward y preview vigente.
 
 #### 8.2 — Previews/downloads y compatibilidad residual de `explorerState`
 
-**Implementada; manual pendiente.** La auditoría determinó que estado/cache,
+**Aprobada manualmente y commiteada en `6fb39ab`.** La auditoría determinó que estado/cache,
 DOM, API y descargas ya pertenecían a `ExamPreview`, `ExamDownload`,
 `ListaCotejoPreview` y `ListaCotejoDownload`. Por ello no se creó un owner
 duplicado: los siete wrappers compatibles se trasladaron literalmente desde
@@ -1132,23 +1137,23 @@ Dashboard a los owners existentes y se conservaron los mismos globals.
 
 Pruebas: smoke sin red de preview/reapertura/cache/cierre/Escape/download,
 `openBiblioteca`, caller legacy, loading/error y delegación de siete globals;
-suite acumulativa 6 suites/19 pruebas. La manual corta de Biblioteca, Examen, Lista, Quick,
-Detalle/back y consola queda pendiente.
+suite acumulativa 6 suites/19 pruebas. La regresión acumulativa posterior aprobó
+Biblioteca, previews, generación y deletes.
 
-#### 8.3 — Residual Dashboard, solo si existe corte coherente
+#### 8.3 — CRUD jerárquico visual
 
-Evaluar el Dashboard restante después de aprobar 8.2. El único candidato no
-protegido con tamaño material es el CRUD jerárquico visual (272 LOC funcionales
-aproximadas); abrir 8.3 solo si su auditoría confirma que puede separarse de
-archive/delete, generación y jerarquía técnica. No crear una sesión para
-completar numeración.
+**Aprobada manualmente y commiteada en `cf48637`.** Cinco funciones/234 LOC de
+open/configure/submit/close del modal jerárquico viven en
+`legacy-hierarchy-crud.js`. No posee estado ni listeners; consume
+`explorerState.modal`, loaders técnicos, services CRUD y navegación legacy sin
+duplicarlos. Delete/archive quedó fuera.
 
 #### 8.4 — Auditoría formal de cierre
 
-Reconciliar owners, consumidores, no ejecución del explorer en la ruta vigente,
-jerarquía técnica, Archivados congelado, previews, wrappers y matriz acumulativa. No abrir
-Fase 9 hasta que todo candidato de eliminación tenga evidencia explícita de
-cero consumidores.
+**Completada.** Reconciliados owners, consumidores, no montaje del explorer en
+la ruta vigente, jerarquía técnica, Archivados congelado, previews, wrappers y
+matriz acumulativa. Fase 9 permanece pendiente: ningún candidato se elimina sin
+evidencia explícita de cero consumidores.
 
 ### Dependencias
 
@@ -1176,7 +1181,7 @@ Delimitar el bloque visual, separar helpers activos, comprobar entry points alte
 
 ### Criterios de salida
 
-- La ruta vigente no carga ni ejecuta el explorador visual.
+- La ruta vigente no monta ni hidrata el explorador visual; su script compatible puede seguir cargado.
 - Biblioteca y Archivados siguen funcionando.
 - Jerarquía técnica y helpers activos permanecen.
 - Todo componente aislado tiene clasificación y evidencia de consumidores.
@@ -1195,7 +1200,7 @@ Scripts/entry points revisados, búsqueda global, componentes aislados, no ejecu
 
 ### Condición para avanzar
 
-El legacy debe estar aislado y no tener consumidores confirmados; cualquier duda mantiene la Fase 9 bloqueada.
+El legacy está aislado. Fase 9 no puede retirar una superficie hasta demostrar cero consumidores; la compatibilidad documentada no reabre Fase 8.
 
 ## Fase 9 — Eliminar legacy confirmado
 
@@ -1369,9 +1374,9 @@ Estado reconciliado:
 1. 8.0: auditoría de apertura, commit `9b8ede5`.
 2. 8.1: explorer visual/navegación legacy, manual aprobada y commit `1aa1599`.
 3. 8.2: siete bridges preview/download entregados a owners existentes, commit
-   `6fb39ab`; manual pendiente según evidencia documental disponible.
-4. 8.3: último corte coherente implementado; manual y commit pendientes.
-5. 8.4: auditoría formal de cierre recomendada, no iniciada.
+   `6fb39ab`; manual aprobada por regresión acumulativa posterior.
+4. 8.3: último corte coherente, manual aprobada y commit `cf48637`.
+5. 8.4: auditoría formal de cierre completada; Fase 9 pendiente/no iniciada.
 
 8.3 extrae cinco funciones/234 LOC del modal CRUD visual a
 `js/features/dashboard/legacy-hierarchy-crud.js`. Mantiene listeners en
@@ -1382,5 +1387,5 @@ Después del corte, `dashboard.page.js` queda en 2564 LOC/120 funciones. Lo
 restante no justifica otra extracción de Fase 8: generación legacy está
 protegida; actividades y jerarquía tienen consumidores compartidos;
 delete/archive cruza el sistema congelado; wrappers/globals/estado pertenecen a
-Fase 10. La condición para iniciar 8.4 es aprobar manualmente 8.3 y registrar su
-commit, sin abrir Fase 9.
+Fase 10. La auditoría de cierre confirmó estas fronteras y marca Fase 8
+completada, sin abrir Fase 9.
