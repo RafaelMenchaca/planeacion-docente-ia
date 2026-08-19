@@ -83,7 +83,13 @@ function createHarness({ generationResult, generationError } = {}) {
     anexos: []
   }]);
 
+  run(context, "js/features/examenes/exam-download.js");
+  run(context, "js/features/examenes/exam-preview.js");
+  run(context, "js/features/listas-cotejo/lista-cotejo-download.js");
+  run(context, "js/features/listas-cotejo/lista-cotejo-preview.js");
   run(context, "js/pages/dashboard.page.js");
+  run(context, "js/features/dashboard/legacy-explorer.js");
+  run(context, "js/features/dashboard/legacy-hierarchy-crud.js");
   run(context, "js/features/dashboard/quick-create.js");
   run(context, "js/pages/biblioteca.page.js");
   run(context, "js/features/biblioteca/biblioteca-loader.js");

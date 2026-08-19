@@ -8,8 +8,8 @@ La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” c
 
 Las Fases 0–7 están completadas. Fase 6 cerró mediante la auditoría 6.4 y Fase
 7 mediante la auditoría 7.4. Los commits funcionales de Fase 7 son `97b798c`,
-`a6840a4` y `bcd361e`; su manual acumulada está aprobada. Fase 8 permanece
-pendiente y no iniciada. El inventario ejecutable se conserva en
+`a6840a4` y `bcd361e`; su manual acumulada está aprobada. La auditoría 8.0 abrió
+documentalmente Fase 8, sin implementación funcional ni manual requerida. El inventario ejecutable se conserva en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -595,6 +595,164 @@ externo/preexistente de `public.ia_metrics` es no bloqueante.
 **Decisión: A. Fase 7 puede cerrarse.** Fase 7 y la Sesión 7.4 quedan
 completadas; auditoría aprobada. Fase 8 permanece pendiente y no iniciada.
 
+## Fase 8: frontera Archivados / explorer legacy / jerarquía técnica
+
+La auditoría 8.0 confirma que `dashboard.page.js` no puede tratarse como un
+bloque legacy. Sus 4049 líneas conservan cuatro fronteras distintas:
+
+```text
+pages/dashboard.html
+  -> dashboard.page.js
+     ├─ estado/caches jerárquicos compartidos con Quick Create
+     ├─ preview Examen/Lista y bridges activos de Biblioteca
+     ├─ recursos/generación/CRUD/archive legacy como callbacks
+     └─ helpers léxicos compartidos y wrappers
+  -> legacy-explorer.js
+     ├─ ubicación + selección visual root/plantel/grado/materia/unidad
+     ├─ tree + breadcrumbs + renders por nivel
+     ├─ dispatch data-tree-action/data-content-action
+     └─ renderAll + hydrate fallback
+  -> dashboard-bootstrap.js
+     ├─ bindings estructurales, incluidos handlers del fallback
+     ├─ pageshow back-forward todavía activo en modo Biblioteca
+     └─ initDashboardPage -> initBiblioteca -> return
+
+pages/archivados.html
+  -> planeaciones.service.js
+     ├─ HTTP de planeaciones archivadas
+     └─ educativo.archivedHierarchy.registry (localStorage)
+  -> archivados.page.js
+     ├─ archivedState efímero
+     ├─ cards/filtros/árbol por rama
+     └─ restore/delete permanente
+```
+
+La ruta real de `dashboard.html` siempre carga `biblioteca.page.js` antes de
+`main.js`. Por ello `initDashboardPage()` detecta `window.initBiblioteca`, fija
+`BIBLIOTECA_MODE`, no inyecta `components/sidebar.html`, llama Biblioteca y
+retorna antes de `hydrateExplorerData()`. El árbol, los breadcrumbs y los
+renders por nivel no se montan en el arranque normal. Sí pueden montarse por el
+fallback conservado cuando `initBiblioteca` no existe; solo el smoke técnico
+ejercita hoy ese entry point, no una página de producto separada.
+
+El fallback no está completamente inerte. `bindDashboardEvents()` registra sus
+handlers contra nodos que existen en `components/layout.html`, y el listener
+`pageshow` se ejecuta también en modo Biblioteca. Al volver por back-forward,
+`refreshExplorerAfterReturn()` carga planteles y trata de restaurar
+`educativo.dashboard.last-location`; `renderAll()` despacha finalmente el
+contenido principal a `window.renderBibliotecaContent`. Esa ruta activa es
+compatibilidad/deuda y no autoriza borrar navegación ni storage todavía.
+
+### Jerarquía visual frente a técnica
+
+| Superficie | Visual | Técnica | Quick Create | Archivados | Legacy | Compatibilidad | Retirable ahora |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `planteles`, `gradosByPlantel`, `materiasByGrado`, `unidadesByMateria` | sí en fallback | sí | sí | no directamente | parcial | sí | no |
+| `loadPlanteles`, `ensureGrados/Materias/Unidades` | sí en fallback | sí | sí | loaders equivalentes propios | parcial | sí | no |
+| `current` y `setCurrentLevel/select*` | sí | IDs compartidos | Quick escribe IDs | no | sí | `pageshow` | no como bloque |
+| `expanded*`, `searchQuery`, tree y breadcrumbs | sí | no | no | no | sí | fallback | no en 8.0 |
+| temas/planeación por tema, generación/listas/exámenes por unidad | sí | contratos reales | solo staging/progreso compartido | no | sí | services activos | no en 8.0 |
+| archive visual de plantel/grado/materia/unidad/planeación | sí | endpoints reales | no | produce registro | sí | datos antiguos | no en 8.0 |
+| árbol de `archivados.page.js` | sí | sí al expandir scopes | no | sí | no | registro local | no |
+| previews Examen/Lista | modal compartido | detalle por ID | no | no | consumidor adicional | Biblioteca activa | no |
+
+### Archivados vigente pero sin acceso visible
+
+`pages/archivados.html` es una página privada ejecutable y `main.js` invoca
+`window.initArchivadosPage`. Carga datos desde `/api/planeaciones/archived`,
+combina payload persistido con el registro local, construye ramas `scope`,
+`batch` o `planeacion`, hidrata estructura jerárquica al expandir y permite
+restaurar o eliminar permanentemente. Sin embargo, el único enlace del navbar
+está comentado; el usuario solo puede llegar por URL directa o un enlace
+externo/no encontrado en el repositorio.
+
+Biblioteca no emite archive: sus acciones vigentes son delete directo. Los
+emisores de archive restantes están en el explorer fallback y en
+`batch.page.js`, cuya página redirige inmediatamente a Dashboard. Archivados
+sigue siendo una feature real para datos persistidos previamente, no una ruta
+visible del flujo principal.
+
+El registro `educativo.archivedHierarchy.registry` no tiene versión. Su shape
+normalizado contiene `hidden.{planteles,grados,materias,unidades}`, `scopes`,
+`planeaciones` y `batches`. Storage ausente, inaccesible, JSON inválido o shape
+desconocido cae a registro vacío; shapes antiguos sin `scopes` conservan las
+colecciones reconocidas. Restore/delete limpia la rama y referencias conocidas,
+pero no existe migración explícita ni garbage collection contra backend.
+
+Archivados queda congelado por decisión de producto durante el refactor actual.
+Biblioteca usa delete directo; un sistema de Archivados específico para
+Biblioteca será trabajo futuro posterior. La propuesta original de extraer el
+registry como 8.1 fue descartada antes de commit. `archivados.page.js`,
+`planeaciones.service.js`, `archivados.html`, restore/delete y la key local no
+se modifican en Fase 8.
+
+### Owner del explorer visual desde 8.1
+
+`js/features/dashboard/legacy-explorer.js` posee 42 funciones movidas
+literalmente y 1188 LOC. Conserva el mismo estado físico `explorerState`, los
+mismos IDs/classes/data-attributes, HTML, mensajes, sessionStorage y URL de
+Detalle. No crea namespace, store, listener ni fuente de estado adicional.
+
+```text
+dashboard.page.js (2799 LOC desde 8.2)
+├─ explorerState físico
+├─ loadPlanteles + ensureGrados/Materias/Unidades
+├─ temas/exámenes/listas + generación legacy
+├─ CRUD/archive y callbacks de contenido
+└─ helpers compartidos / Quick / Biblioteca
+
+legacy-explorer.js (1188 LOC)
+├─ get/persist location + setCurrentLevel
+├─ select* + restore + refresh/pageshow target
+├─ tree + breadcrumbs + root/plantel/grado/materia/unidad
+├─ renderExplorerContent + renderAll
+├─ handlers delegados
+└─ hydrateExplorerData
+```
+
+El owner se carga entre `dashboard.page.js` y `dashboard-bootstrap.js`. Sus
+declaraciones top-level mantienen los bindings clásicos que consumen Bootstrap,
+Quick Create y callbacks retenidos. Los loaders técnicos no se duplican: el
+owner los llama como dependencias compartidas.
+
+### Previews y estado mixto
+
+Los previews activos de Examen y Lista almacenan `examPreview`,
+`examenDetalleById` y `listaCotejoPreview` en `window.explorerState`.
+Biblioteca los abre mediante `ExamPreview.openBiblioteca` y
+`ListaCotejoPreview.openBiblioteca`; el explorer fallback conserva aperturas
+alternativas. Anexo tiene modal/estado interno de su feature y Planeación no
+tiene preview modal en Dashboard: abre Detalle y descarga desde su feature.
+
+Desde 8.2, los siete bridges residuales ya no pertenecen a Dashboard. Examen
+publica `renderExamPreviewModal`, `openExamPreview` y
+`closeExamPreviewModal` desde `exam-preview.js`, además de
+`downloadExamWord` desde `exam-download.js`. Lista publica
+`renderListaCotejoPreviewModal`, `openListaCotejoPreview` y
+`closeListaCotejoPreview` desde `lista-cotejo-preview.js`. Las firmas y cuerpos
+de delegación son literalmente los anteriores; los namespaces `ExamPreview`,
+`ExamDownload`, `ListaCotejoPreview` y `ListaCotejoDownload` siguen siendo los
+owners funcionales.
+
+No se creó `resource-previews.js`: habría duplicado owners existentes. El shape
+físico de `explorerState`, sus caches y estados de modal no se movieron. Los
+listeners de cierre, Escape y descarga continúan en `dashboard-bootstrap.js`;
+la UI, API, cache, filename, `wordExport.js`, Anexo y Planeación no cambiaron.
+
+### Roadmap técnico actualizado por 8.2
+
+1. 8.1: explorer visual, navegación y fallback aislados; manual aprobada y
+   commit `1aa1599`.
+2. 8.2: bridges preview/download consolidados en los owners existentes;
+   manual pendiente.
+3. 8.3: solo si el CRUD jerárquico visual residual demuestra un corte grande,
+   reversible y separado de Archivados/generación.
+4. 8.4: auditoría formal de cierre antes de considerar Fase 9.
+
+Fase 9 recibe únicamente piezas visuales y ramas sin emisor que después del
+aislamiento demuestren cero consumidores. Fase 10 conserva globals, wrappers,
+bindings léxicos y limpieza final del orden de scripts.
+
 ## Páginas
 
 | Página | Clasificación |
@@ -625,7 +783,9 @@ La ruta visual antigua incluye árbol, breadcrumbs y render por niveles. Su cód
   `window.BibliotecaLoader` y `window.renderBibliotecaContent`.
 - Quick Create publica `window.QuickCreate` como namespace funcional; ni este
   ni `window.BibliotecaLoader` son fuentes de estado.
-- Dashboard publica `window.explorerState` y wrappers de preview/descarga usados por Biblioteca.
+- Dashboard publica `window.explorerState`; los owners de Examen/Lista publican
+  los wrappers de preview/descarga compatibles usados por Bootstrap, Biblioteca
+  y el explorer legacy.
 - `window.AppUI` concentra helpers compartidos.
 - `window.API_BASE_URL`, `window.supabase` y `window.currentUser` sostienen configuración y sesión.
 
@@ -679,3 +839,82 @@ La arquitectura objetivo es una **Biblioteca modular** con:
 - jerarquía técnica preservada cuando siga siendo necesaria para datos, contratos, selectores o Archivados.
 
 Este apartado describe una meta, no el estado ya implementado. El orden, los criterios y las pruebas están en el [`REFACTOR_ROADMAP.md`](refactor/REFACTOR_ROADMAP.md).
+
+## Fase 8 — Sesión 8.3: owner del CRUD jerárquico visual legacy
+
+8.2 quedó commiteada en `6fb39ab refactor(frontend): move preview and download
+bridges to feature owners`; su manual continúa pendiente, sin aprobación
+inferida. La auditoría residual de 8.3 confirmó un último bloque coherente:
+cinco funciones y 234 LOC del modal de creación/edición jerárquica, emitido solo
+por el fallback legacy y enlazado por Bootstrap.
+
+```text
+dashboard.page.js (2564 LOC)
+├─ explorerState físico y jerarquía técnica compartida
+├─ actividades/staging y generación legacy residual
+├─ delete/archive legacy congelado
+├─ wrappers y compatibilidad clásica
+└─ dispatch handleCreateAction
+
+legacy-explorer.js
+└─ tree, breadcrumbs, niveles y navegación fallback
+
+legacy-hierarchy-crud.js (234 LOC)
+├─ open/close/error/configuración del entity modal
+└─ submit create/edit para plantel, grado, materia y unidad
+
+dashboard-bootstrap.js
+└─ listeners únicos del modal y Escape; delega al owner CRUD
+```
+
+El owner CRUD no posee estado ni listeners. Consume `explorerState.modal`, los
+loaders técnicos existentes, los services CRUD y los `select*` del explorer
+legacy mediante los mismos bindings de scripts clásicos. Delete/archive,
+Archivados, Quick Create, Biblioteca, generación y APIs no cambiaron.
+
+El orden protegido queda:
+
+```text
+dashboard.page → legacy-explorer → legacy-hierarchy-crud
+→ dashboard-bootstrap → quick-create → Biblioteca
+```
+
+El residual de Dashboard ya no presenta otro owner grande obvio de Fase 8:
+jerarquía/loaders y actividades son compartidos; generación está protegida;
+delete/archive cruza Archivados; globals, wrappers y `explorerState` corresponden
+a cleanup final. Tras manual y commit de 8.3, procede 8.4, auditoría formal de
+cierre.
+
+## Cierre formal de Fase 8 — Sesión 8.4
+
+Fase 8 queda completada. La regresión acumulativa posterior aprobó manualmente
+8.2 y 8.3; el commit real de 8.3 es `cf48637`. No se detectó regresión, binding
+ausente, segunda fuente, doble montaje ni test fallido atribuible a la fase.
+
+| Dominio | Owner final | Estado | Consumers principales |
+| --- | --- | --- | --- |
+| Explorer/navegación fallback | `legacy-explorer.js` | aislado, no eliminado | Bootstrap, Quick y callbacks legacy |
+| CRUD jerárquico visual | `legacy-hierarchy-crud.js` | aislado, no eliminado | dispatcher legacy y Bootstrap |
+| Preview Examen | `exam-preview.js` | owner vigente + aliases | Biblioteca, Bootstrap, fallback |
+| Download Examen | `exam-download.js` | owner vigente + bridge | Biblioteca y fallback |
+| Preview Lista | `lista-cotejo-preview.js` | owner vigente + aliases | Biblioteca, Bootstrap, fallback |
+| Download Lista | `lista-cotejo-download.js` | owner vigente | Biblioteca/preview |
+| Estado/técnica/shared residual | `dashboard.page.js` | compartido o diferido | Quick, owners legacy, Biblioteca |
+
+La entrada normal conserva esta bifurcación:
+
+```text
+initDashboardPage
+├─ initBiblioteca existe → BIBLIOTECA_MODE → initBiblioteca → return
+└─ sin Biblioteca → hydrateExplorerData → fallback legacy
+```
+
+Los scripts legacy siguen en `dashboard.html` para que el fallback sea viable;
+“aislado” no significa “retirable”. Fase 9 recibe la prueba de cero consumers y
+posible eliminación. Fase 10 recibe `explorerState`, globals, wrappers, aliases,
+bindings léxicos y orden final.
+
+Archivados permaneció congelado: Biblioteca usa delete directo; page, registry,
+storage, restore y delete histórico no cambiaron. Un Archivados propio de
+Biblioteca será diseño futuro posterior al refactor, no trabajo implícito de
+Fase 9.

@@ -112,10 +112,40 @@
     render();
   }
 
+  // Compatibilidad temporal: conserva la firma pública y los consumidores del dashboard/Biblioteca.
+  // Motivo: mantener la API global durante la extracción.
+  // Consumidores actuales: renderAll(), Biblioteca y el explorador jerárquico.
+  // Condición para retirarlo: búsqueda global sin consumidores de window.renderListaCotejoPreviewModal.
+  // Fase prevista de retiro: Fase 10.
+  function renderListaCotejoPreviewModal() {
+    return window.ListaCotejoPreview.render();
+  }
+
+  // Compatibilidad temporal: conserva la apertura usada por el explorador histórico.
+  // Motivo: mantener la firma local durante la extracción del preview.
+  // Consumidores actuales: handleContentClick del explorador jerárquico.
+  // Condición para retirarlo: retiro separado del consumidor legacy confirmado.
+  // Fase prevista de retiro: Fase 8-9.
+  function openListaCotejoPreview(listaId) {
+    return window.ListaCotejoPreview.open(listaId);
+  }
+
+  // Compatibilidad temporal: conserva la firma pública de cierre del modal.
+  // Motivo: mantener listeners y Escape sin cambiar el flujo de cierre.
+  // Consumidores actuales: listeners de Dashboard y compatibilidad global.
+  // Condición para retirarlo: búsqueda global sin consumidores de window.closeListaCotejoPreview.
+  // Fase prevista de retiro: Fase 10.
+  function closeListaCotejoPreview() {
+    return window.ListaCotejoPreview.close();
+  }
+
   window.ListaCotejoPreview = {
     render,
     open,
     openBiblioteca,
     close
   };
+  window.renderListaCotejoPreviewModal = renderListaCotejoPreviewModal;
+  window.openListaCotejoPreview = openListaCotejoPreview;
+  window.closeListaCotejoPreview = closeListaCotejoPreview;
 })();

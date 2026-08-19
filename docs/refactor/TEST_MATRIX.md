@@ -1649,3 +1649,271 @@ externo/preexistente no bloqueante.
 
 **Decisión: A. Fase 7 puede cerrarse.** Sesión 7.4 completada, auditoría
 aprobada, manual adicional no requerida y Fase 8 pendiente/no iniciada.
+
+## Fase 8 — Sesión 8.0: auditoría técnica/documental de apertura
+
+La sesión 8.0 no modifica comportamiento y, por tanto, no requiere prueba
+manual. La evidencia estática delimita qué debe conservar cada corte futuro.
+
+### Evidencia de apertura
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate frontend | PASS: `refactor-front` en `2bb950d`; limpio al abrir; `origin/main` contiene el merge de Fases 6–7 |
+| Ramas | Local `main` está rezagada en `1254561`; `origin/refactor-front` conserva `3a5cf94`, ancestro coherente anterior al merge; no se hizo merge/rebase/reset |
+| Backend | PASS: `refactor-back`/`e08d6e4`, limpio, solo lectura |
+| Dashboard | 4049 LOC, 174 declaraciones de función, 2 listeners locales, 171 operaciones DOM y 488 referencias a `explorerState` |
+| Entrada vigente | `dashboard.html` publica todos los owners antes de `main.js`; `initDashboardPage` entra en Biblioteca y no monta el explorer visual en el flujo normal |
+| Fallback | El explorer jerárquico puede montarse si `initBiblioteca` no está disponible; sus listeners, DOM y APIs siguen presentes |
+| Jerarquía técnica | `loadPlanteles`, `ensureGrados`, `ensureMaterias` y `ensureUnidades` siguen consumidos por Quick Create; no son legacy |
+| Archivados | `archivados.html` funciona por URL directa y consume backend + registro local; su enlace de navbar está comentado |
+| Registro local | `educativo.archivedHierarchy.registry`; shape normalizado sin versión, fallback vacío y compatibilidad con shapes antiguos reconocibles |
+| Previews | Examen y Lista conservan estado dentro de `explorerState`; Biblioteca los consume mediante features y wrappers existentes |
+| Persistencia | Dashboard usa `sessionStorage` para `educativo.dashboard.last-location`; el registro de Archivados usa `localStorage` |
+| Navegación de retorno | `pageshow` sigue activo y ejecuta reconciliación legacy aun bajo modo Biblioteca; queda documentado, no corregido |
+| Protegidos | Biblioteca, Quick Create, bootstrap, generadores, API/services, HTML, CSS, tests funcionales y backend permanecen intactos |
+| Diff | PASS: `git diff --check`; únicamente los cinco documentos autorizados |
+| Jest acumulativo | PASS: 4 suites, 12 pruebas con `npm test -- --runInBand` |
+
+### Propuesta descartada antes de commit — registry de Archivados
+
+Esta matriz no se ejecuta en el refactor actual. Archivados queda congelado y
+su rediseño para Biblioteca se difiere a trabajo posterior.
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Sin registro | Abrir `archivados.html` sin key local: estado vacío o datos backend sin excepción |
+| Registro vigente | Cargar scopes/mappings actuales: mismas ramas, labels, cantidades y orden |
+| Registro antiguo | Shape reconocible sin `scopes` ni versión: normaliza sin perder mappings compatibles |
+| Registro inválido | JSON inválido o propiedades inválidas: fallback seguro, UI operable y consola sin excepción no controlada |
+| Scope sin planeaciones | Mantener/mostrar el scope archivado conforme al comportamiento previo |
+| Filtros | `all`, tipos disponibles, búsqueda y orden producen exactamente los mismos cards |
+| Árbol | Expandir ramas de plantel/grado/materia/unidad hace las mismas consultas y conserva IDs |
+| Restaurar | Individual, batch y scope limpian las mismas entradas del registro y actualizan UI |
+| Eliminar permanente | Cancelación no cambia datos; confirmación individual/batch/scope conserva endpoints y cleanup |
+| Reload | Tras restore/delete, recargar no reintroduce mappings ya limpiados |
+| Regresión | Dashboard, Biblioteca y Quick Create cargan; jerarquía técnica y previews siguen operables |
+| Consola/red | Sin doble request, doble handler, error nuevo ni cambio de endpoint/payload |
+
+### Matriz base ejecutada por la nueva 8.1 — explorer visual y navegación legacy
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Entrada normal | Dashboard abre Biblioteca; árbol, breadcrumbs y renders de nivel no aparecen |
+| Fallback controlado | Smoke sin `initBiblioteca` monta explorer, root, niveles y listeners una sola vez |
+| Selección | Root→plantel→grado→materia→unidad conserva `current`, IDs, expand/collapse y breadcrumbs |
+| Jerarquía técnica | Quick Create nuevo y sobre batch existente sigue resolviendo plantel/grado/materia/unidad |
+| Detalle | Navegación por card vigente y fallback conserva `detalle.html?id=...` |
+| Back/pageshow | Regreso desde Detalle no rompe Biblioteca ni restaura un nivel incorrecto |
+| Archivados | Acceso directo, cards, ramas y acciones siguen operables |
+| Reload | `educativo.dashboard.last-location` mantiene el mismo fallback y tolera datos inválidos |
+| Eventos | Sin doble dispatch entre `data-content-action`, `data-tree-action` y `data-bib-action` |
+| Consola/red | Sin errores nuevos ni consultas jerárquicas duplicadas |
+
+### Matriz preparada para la nueva 8.2 — previews y compatibilidad residual
+
+| Caso | Verificación manual futura |
+| --- | --- |
+| Examen | Abrir desde Biblioteca, cerrar por X/backdrop/Escape, reabrir y descargar Word |
+| Lista | Abrir desde Biblioteca, cerrar por X/backdrop/Escape, reabrir y descargar Word |
+| Cache/API | Reapertura conserva el mismo contrato de detalle y no duplica requests inesperadamente |
+| Estado | `examPreview`, `listaCotejoPreview`, caches y `current.unidadId` mantienen readers/writers previstos |
+| Anexo | Preview/download continúa bajo `AnexoPreview`, sin introducir estado paralelo |
+| Planeación | Detalle y descarga continúan con sus owners actuales |
+| Modal | Body lock, errores, loading y cleanup se conservan |
+| Exportación | `wordExport.js` permanece intacto y los bridges descargan el mismo contenido |
+| Consola/red | Sin errores nuevos, doble modal, doble listener o request duplicada |
+
+### Matriz preparada para 8.4 — cierre formal
+
+| Revisión | Criterio futuro |
+| --- | --- |
+| Owners | Archivados, explorer visual, jerarquía técnica y previews tienen fronteras documentadas y coherentes |
+| Estado | No existe segunda fuente para Biblioteca ni para estados de generación protegidos |
+| Contratos | IDs, APIs, storage keys, payloads, redirects y callbacks permanecen compatibles |
+| Legacy | Candidatos sin consumidor quedan documentados para Fase 9, no borrados por inferencia |
+| Globals | Wrappers, aliases y dependencias de orden quedan entregados a Fase 10 |
+| Automatización | Jest acumulativo y smokes de los cortes funcionales aprobados |
+| Manual | Checklists de 8.1–8.3 aprobados; cierre no repite pruebas sin contradicción |
+
+## Fase 8 — Sesión 8.1: explorer visual y navegación legacy
+
+### Evidencia automática
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS tras descartar únicamente la implementación registry sin commit; frontend `refactor-front`/`9b8ede5` |
+| Backend | PASS: `refactor-back`/`e08d6e4`, limpio y solo lectura |
+| Owner | PASS: `legacy-explorer.js`, 1188 LOC y 42 funciones |
+| Dashboard | PASS: 4049→2867 LOC; 174→132 funciones |
+| Comparación literal | PASS AST: 42/42 funciones iguales a `HEAD`; cero duplicadas |
+| Estado | PASS: shape/fuente de `explorerState` intactos; refs 488=330+158 |
+| Jerarquía técnica | PASS de alcance: load/ensure/caches retenidos sin duplicación |
+| Tree | PASS smoke: render y toggle expand/collapse |
+| Breadcrumbs | PASS smoke: labels/current/click grado |
+| Navegación | PASS smoke: root→plantel→grado→materia→unidad |
+| Persistencia | PASS smoke: restore de `educativo.dashboard.last-location` |
+| Fallback | PASS: init sin Biblioteca, layout/sidebar y selección inicial |
+| Detalle | PASS estático: callback conserva `detalle.html?id=` + encoding |
+| Ruta Biblioteca | PASS por smoke existente: init sigue delegando a Biblioteca y retorna |
+| Quick Create | PASS por smoke existente con owner en el orden real |
+| Listeners | PASS de alcance: owner añade 0; Bootstrap permanece owner único |
+| Previews/generación | PASS de alcance: implementaciones y estados intactos |
+| Archivados | PASS de alcance: page/service/HTML/registry sin diff |
+| Jest acumulativo | PASS: 5 suites/15 pruebas con `npm test -- --runInBand` |
+| Sintaxis/diff | PASS: cuatro JS productivos + tres tests; `git diff --check` |
+
+Smoke específico: `tests/legacy-explorer.smoke.test.js`, 1 suite/3 pruebas.
+Bootstrap + Quick: 2 suites/6 pruebas aprobadas. La suite acumulativa aprobó
+5 suites y 15 pruebas.
+
+### Validación manual aprobada de 8.1
+
+| Área | Evidencia confirmada por el usuario |
+| --- | --- |
+| Dashboard/Biblioteca | Carga correcta y sin comportamiento raro |
+| Quick Create/generación | Correctos; batch existente reutilizado con `forceNewBatch:false` |
+| Planeaciones/Anexos/Listas | `generate:success` confirmado en los tres dominios |
+| Exámenes | 11/11 preguntas; `preguntas_fallidas:0` |
+| Delete | `delete:success`; comportamiento normal |
+| Regresión | Anexos, Listas, Exámenes y navegación vigente correctos |
+
+Commit real posterior: `1aa1599 refactor(frontend): extract legacy Dashboard explorer`.
+
+## Fase 8 — Sesión 8.2: preview/download y compatibilidad residual
+
+### Evidencia automática
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: `refactor-front`/`1aa1599`, working tree inicial limpio |
+| Reconciliación 8.1 | PASS: manual aprobada y commit real localizado |
+| Backend | PASS: `refactor-back`/`e08d6e4`, limpio y solo lectura |
+| Decisión | PASS: owners existentes reutilizados; no se crea `resource-previews.js` |
+| Bridges | PASS: 7/7 funciones movidas literalmente; 0 copias en Dashboard |
+| Dashboard | PASS: 2867→2799 LOC; 132→125 funciones |
+| Estado | PASS de alcance: 330 refs y shape de `explorerState` intactos en Dashboard |
+| Globals | PASS: siete firmas siguen publicadas y delegan a los mismos namespaces |
+| Examen | PASS smoke: Biblioteca, cache/reapertura, render, close, Escape y Word |
+| Lista | PASS smoke: Biblioteca, caller legacy, render, close, Escape y download |
+| Script order | PASS: owners siguen cargando antes de Dashboard/legacy/Bootstrap |
+| Protegidos | PASS: Bootstrap, Quick, legacy owner, Biblioteca, generación, Archivados y `wordExport.js` sin diff productivo |
+| Comparación literal | PASS AST: 7 movidas y 125 retenidas sin diferencias |
+| Jest acumulativo | PASS: 6 suites/19 pruebas |
+| Sintaxis/diff | PASS: `node --check` y `git diff --check` |
+
+Smoke específico: `tests/resource-previews.smoke.test.js`, 1 suite/4 pruebas,
+sin red ni dependencias nuevas. Los tres harnesses que cargan Dashboard replican
+ahora el orden real de los cuatro owners de Examen/Lista.
+
+### Checklist manual pendiente de 8.2
+
+| Área | Verificación solicitada |
+| --- | --- |
+| Dashboard/Biblioteca | Carga, bloques, tabs, search y reload |
+| Preview Examen | Abrir, validar contenido, cerrar, reabrir y descargar si es razonable |
+| Preview Lista | Abrir, validar contenido, cerrar y descargar si es razonable |
+| Quick Create | Abrir sin generar IA; confirmar ausencia de regresión |
+| Detalle/back | Abrir planeación y volver a Biblioteca |
+| Consola/red | Sin ReferenceError, global undefined, doble modal/listener/fetch |
+
+La generación IA es opcional y no forma parte del criterio manual de 8.2.
+
+## Fase 8 — Sesión 8.3: CRUD jerárquico visual legacy
+
+### Evidencia automática
+
+| Revisión | Resultado |
+| --- | --- |
+| Gate | PASS: `refactor-front`/`6fb39ab`, limpio al iniciar |
+| Reconciliación 8.2 | Commit `6fb39ab`; manual sigue pendiente |
+| Backend | PASS: `refactor-back`/`8977c62`, limpio y solo lectura |
+| Decisión | PASS: último corte coherente de 234 LOC/5 funciones |
+| Comparación literal | PASS: 234/234 líneas sin cambio |
+| Dashboard | PASS: 2799→2564 LOC; 125→120 funciones |
+| Estado | PASS: shape intacto; 330 refs = 292 Dashboard + 38 CRUD |
+| DOM/listeners | PASS: 24 DOM ops movidas; owner agrega 0 listeners |
+| Script order | PASS: Dashboard→Explorer→CRUD→Bootstrap→Quick |
+| Jerarquía técnica | PASS: loaders/caches compartidos retenidos |
+| Delete/archive | PASS de alcance: sin cambios |
+| Protegidos | PASS: Quick, Biblioteca, Explorer, previews, generación, Archivados, API/payload, CSS y backend intactos |
+| Smoke CRUD | PASS: 1 suite/3 pruebas |
+| Jest acumulativo | PASS: 7 suites/22 pruebas |
+| Sintaxis | PASS: `node --check` en JS y tests tocados |
+
+El smoke `tests/legacy-hierarchy-crud.smoke.test.js` cubre apertura,
+configuración de grado, validación vacía, cierre/reset, submit/payload, loaders,
+navegación legacy y disponibilidad de bindings consumidos por Bootstrap.
+
+### Checklist manual pendiente de 8.3
+
+| Área | Verificación |
+| --- | --- |
+| Dashboard/Biblioteca | Carga, bloques, tabs, search y reload; sin fallback visible |
+| Quick Create | Abrir y cerrar sin regresión; IA no requerida |
+| Detalle/back | Abrir planeación y volver a Biblioteca |
+| Preview | Abrir/cerrar Examen y Lista |
+| Consola | Sin ReferenceError, undefined, doble listener/modal/render |
+| CRUD legacy | Probar solo si existe acceso natural; no manipular código |
+
+8.2 conserva su estado documental de manual pendiente. 8.3 requiere esta manual
+por haber movido código productivo; 8.4 no está iniciada.
+
+## Fase 8 — Sesión 8.4: matriz de cierre
+
+La regresión acumulativa posterior reconcilia como aprobadas las manuales de
+8.2 y 8.3. No se inventan recorridos adicionales.
+
+### Evidencia automática final
+
+| Revisión | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`cf48637`, limpio al iniciar | PASS |
+| Backend | `refactor-back`/`8977c62`, limpio/solo lectura | PASS |
+| Sintaxis | 9 JS críticos con `node --check` | PASS |
+| Suite base | `planeacion.test.js` | PASS |
+| Quick Create | smoke owner | PASS |
+| Biblioteca loader | smoke owner | PASS |
+| Dashboard Bootstrap | smoke bindings/Biblioteca | PASS |
+| Legacy Explorer | fallback/tree/breadcrumb/restore | PASS |
+| Resource Preview | Examen/Lista/cache/Escape/download | PASS |
+| Legacy CRUD | modal/validation/submit/delegation | PASS |
+| Jest acumulativo | 7 suites/22 pruebas | PASS |
+| Script order | clásicos; Dashboard→Explorer→CRUD→Bootstrap→Quick→Biblioteca | PASS |
+| Estado | una fuente `explorerState`; shape intacto | PASS |
+| Ruta vigente | Biblioteca retorna antes de hydrate fallback | PASS |
+| Archivados | page/registry/storage/restore/delete sin diff F8 | PASS |
+
+### Evidencia manual acumulada aprobada
+
+| Área | Evidencia real |
+| --- | --- |
+| Planeación | success 1, error 0, skipped 0 |
+| Anexos | `generate:success`, 5 creados |
+| Lista | 1 creada, 0 skipped |
+| Examen | 13/13, 0 fallidas; 12 retries existentes no son regresión F8 |
+| Deletes | success en Examen, Lista, Anexo, Planeación y Batch |
+| Regresión | usuario confirma que todo funciona bien después de la sesión |
+| Hotfix externo | `Fracciones 1`: AI request/response, success 1, skipped 0 |
+
+`duplicate_tema` fue un hotfix backend/Supabase preexistente y no cuenta como
+cambio Fase 8. El error conocido de `public.ia_metrics` tampoco bloquea el
+cierre y permanece fuera de alcance.
+
+### Criterios de cierre
+
+| Criterio | Resultado |
+| --- | --- |
+| Explorer/navegación aislados | PASS |
+| CRUD visual aislado | PASS |
+| Preview/download en owners | PASS |
+| Jerarquía técnica preservada | PASS |
+| Quick Create/Biblioteca preservados | PASS |
+| Archivados diferido conscientemente | PASS |
+| Residual Dashboard clasificado | PASS |
+| Otro corte Fase 8 obvio | NO |
+| Automatización y manual acumulativa | PASS |
+| Blockers | ninguno |
+
+Decisión: Fase 8 completada; Sesión 8.4 y auditoría de cierre aprobadas. Fase 9
+permanece pendiente/no iniciada.
