@@ -1917,3 +1917,73 @@ cierre y permanece fuera de alcance.
 
 Decisión: Fase 8 completada; Sesión 8.4 y auditoría de cierre aprobadas. Fase 9
 permanece pendiente/no iniciada.
+
+## Fase 9 — Sesión 9.0: auditoría de apertura
+
+9.0 no modifica código, HTML ni CSS y no requiere prueba manual. La evidencia
+estática define qué pruebas deben acompañar cada eliminación futura.
+
+| Revisión | Evidencia 9.0 | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front`/`41f933e`, limpio al abrir | PASS |
+| Cierre Fase 8 | `bf97b1a`, `378ac30`, merge `41f933e` | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio, solo lectura | PASS |
+| Ruta vigente | script order garantiza `initBiblioteca`; init retorna antes de hydrate | PASS |
+| Ruta alternativa | ningún HTML carga Bootstrap sin Biblioteca; fallback solo en smokes/asset failure | confirmado |
+| Explorer/CRUD | consumers cross-script listados; no eliminables como bloque todavía | protegido |
+| Jerarquía técnica | cuatro loaders y caches tienen consumers Quick/legacy | protegido |
+| Cero consumer | seis funciones sin JS/HTML/data/global/callback/test | confirmado |
+| Actions | 34 emitidas con handler; 7 handlers sin emitter; 0 emitters sin handler | confirmado |
+| Batch | redirect ejecutable; assets antiguos sin tag HTML | candidato 9.1 |
+| Tailwind | sin enlaces entrantes, pero ejecutable por URL directa | requiere decisión |
+| DOM/CSS | 57 hooks legacy; selectores compartidos separados de exclusivos | clasificado, intacto |
+| Session/pageshow | key con reader/writer; listener activo con requests/rerender | no retirar aislado |
+| Protegidos | Biblioteca, Quick, Detalle, previews, generación, Archivados y backend | sin cambios |
+| Jest acumulativo | `npm test -- --runInBand`: 7 suites/22 pruebas | PASS |
+| Diff | `git diff --check`; solo cinco documentos autorizados | PASS |
+
+### Matriz futura 9.1 — Batch sin entry point
+
+| Caso | Verificación |
+| --- | --- |
+| Redirect | abrir `batch.html?batch_id=ficticio` redirige a `dashboard.html` |
+| Scripts | ningún HTML ni JS productivo referencia assets Batch retirados o `initBatchPage` |
+| Dashboard | Biblioteca carga normalmente desde URL directa y tras redirect |
+| Detalle | cards vigentes conservan `detalle.html?id=` |
+| Suite | tests existentes completos; smoke estático del redirect si se incorpora |
+| Consola/red | sin 404 de assets, global undefined o request Batch inesperada |
+
+Los links históricos que apuntan a `batch.html` pueden mantenerse porque el
+redirect es precisamente el contrato conservado. No se prueba la UI Batch
+retirada.
+
+### Matriz futura 9.2 — hojas y handlers sin emitter
+
+| Caso | Verificación |
+| --- | --- |
+| Búsqueda posterior | seis nombres cero-consumer ausentes y sin referencias rotas |
+| Dispatcher | cinco acciones archive emitidas siguen atendidas |
+| Delete vigente | deletes de Biblioteca por sus feature owners siguen funcionando |
+| Confirmación | modal archive conserva open/cancel/submit/error/cleanup |
+| Archivados | page/registry/restore/delete sin cambio |
+| Suite | adaptar solo tests que modelaban deliberadamente la rama retirada |
+
+### Matriz futura 9.3 — fallback visual coordinado
+
+| Caso | Verificación |
+| --- | --- |
+| Entrada | Dashboard monta exclusivamente Biblioteca sin scripts Explorer/CRUD |
+| Quick | crear en conjunto existente y nuevo; loaders/IDs intactos |
+| Agregar Tema | modal vigente, actividades, SSE, pending y refetch |
+| Detalle/back | navegar a Detalle y volver sin requests/render legacy |
+| Preview/download | Examen y Lista abren/cierran/descargan con owners vigentes |
+| Generación | Planeación, Anexo, Lista y Examen mantienen contratos |
+| Deletes | recursos y bloque de Biblioteca conservan comportamiento |
+| Reload | no tree, breadcrumbs, session location ni `pageshow` legacy |
+| Tests legacy | retirar smokes Explorer/CRUD si ya no representan producción; sustituir por smoke Biblioteca-only |
+| Consola/red | cero ReferenceError, listener/render/request duplicado o 404 |
+
+### Cierre futuro 9.4
+
+Repetir búsqueda global, rutas, scripts, DOM/CSS, globals, suite completa y
+manual acumulada. No abrir Fase 10 hasta aprobar formalmente el cierre de Fase 9.

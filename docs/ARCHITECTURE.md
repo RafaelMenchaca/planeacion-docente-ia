@@ -6,11 +6,12 @@ Este documento describe la arquitectura frontend observada en el código actual.
 
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
-Las Fases 0–7 están completadas. Fase 6 cerró mediante la auditoría 6.4 y Fase
-7 mediante la auditoría 7.4. Los commits funcionales de Fase 7 son `97b798c`,
-`a6840a4` y `bcd361e`; su manual acumulada está aprobada. La auditoría 8.0 abrió
-documentalmente Fase 8, sin implementación funcional ni manual requerida. El inventario ejecutable se conserva en
-[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+Las Fases 0–8 están completadas. Fase 8 cerró mediante la auditoría 8.4;
+sus commits funcionales reales son `1aa1599`, `6fb39ab` y `cf48637`, el cierre
+documental es `bf97b1a`, y el merge acumulativo es `41f933e`. La auditoría 9.0
+abrió documentalmente Fase 9 sin modificar código funcional ni requerir
+manual. Fase 10 permanece pendiente y no iniciada. El inventario ejecutable se
+conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
 
@@ -918,3 +919,46 @@ Archivados permaneció congelado: Biblioteca usa delete directo; page, registry,
 storage, restore y delete histórico no cambiaron. Un Archivados propio de
 Biblioteca será diseño futuro posterior al refactor, no trabajo implícito de
 Fase 9.
+
+## Fase 9 — Sesión 9.0: auditoría de apertura
+
+La arquitectura ejecutable confirma una entrada normal única:
+
+```text
+main.js
+→ initDashboardPage
+→ initBiblioteca existe
+→ BIBLIOTECA_MODE = true
+→ initBiblioteca
+→ return
+```
+
+`dashboard.html` usa scripts clásicos bloqueantes y carga
+`biblioteca.page.js` antes de `main.js`; si todos los assets cargan normalmente,
+`window.initBiblioteca` ya existe cuando se ejecuta el init. No hay otro HTML de
+producto que cargue `dashboard-bootstrap.js` sin Biblioteca. El fallback
+`hydrateExplorerData → restore/select → renderAll` es ejecutable en los smokes y
+ante ausencia/fallo del asset de Biblioteca, pero no constituye una ruta de
+producto soportada.
+
+Ese resultado no permite retirar todavía `legacy-explorer.js` completo. Sus
+bindings top-level siguen cruzando owners: `loadPlanteles()` puede llamar
+`setCurrentLevel()`, Quick Create conserva una rama no-Biblioteca que llama
+`selectUnidad()`, el CRUD usa los cuatro `select*`, Dashboard usa `select*` y
+`renderAll()` en callbacks de delete/archive/generación, y Bootstrap registra
+handlers, `pageshow` e hidratación. Primero deben cortarse o reasignarse esos
+consumidores.
+
+La superficie con cero entry point más clara es la implementación histórica de
+Batch: `batch.html` redirige sin cargar scripts, mientras `batch.page.js`,
+`batch.ui.js` y `batch.css` no aparecen en ningún tag HTML. El redirect se
+mantiene como compatibilidad de bookmarks; los assets antiguos son el primer
+corte recomendado para 9.1. `dashboard_tailwind.html`, en cambio, sí es una
+página standalone ejecutable por URL directa y consume su JS/CSS: queda
+clasificada como legacy huérfana, pero requiere una decisión explícita antes de
+eliminarse.
+
+La jerarquía técnica, Quick Create, Biblioteca, previews/downloads, Detalle y
+Archivados permanecen protegidos. El mapa completo de owners, acciones,
+estado, DOM, globals y candidatos está en
+[`FRONTEND_MAP.md`](FRONTEND_MAP.md).

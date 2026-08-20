@@ -32,7 +32,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Completada |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Completada |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Completada |
-| 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Pendiente |
+| 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | En progreso |
 | 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
 
 Los únicos estados válidos son `Pendiente`, `En progreso`, `Completada`, `Bloqueada` y `Cancelada`. No se marca una fase como completada sin evidencia de todos sus criterios de salida.
@@ -1210,7 +1210,11 @@ Eliminar únicamente código del explorador visual obsoleto demostrado sin consu
 
 ### Estado
 
-**Pendiente.**
+**En progreso.** La Sesión 9.0 completó la auditoría técnica/documental de
+apertura sin modificar código. Confirmó seis funciones con cero consumers,
+siete ramas de handler sin emitter y una implementación Batch sin entry point;
+demostró también que Explorer/CRUD no pueden borrarse en bloque mientras
+conserven cruces con loaders, Quick, Bootstrap, callbacks y `pageshow`.
 
 ### Dependencias
 
@@ -1262,6 +1266,38 @@ Búsquedas antes/después, alcance exacto eliminado, commit previo, plan de reve
 ### Condición para avanzar
 
 La aplicación debe permanecer estable sin el legacy eliminado y sin referencias residuales; de lo contrario se revierte y la fase continúa.
+
+### Sesiones propuestas después de 9.0
+
+#### 9.1 — Implementación Batch sin entry point
+
+Retirar `js/pages/batch.page.js`, `js/ui/batch.ui.js`, `css/batch.css` y el
+registro inalcanzable `batch.html → initBatchPage` de `main.js`. Conservar
+`pages/batch.html` exactamente como redirect de compatibilidad y verificar que
+ningún HTML cargue los assets retirados. No tocar Detalle, Archivados ni los
+links históricos que terminan correctamente en el redirect.
+
+#### 9.2 — Hojas cero-consumer y ramas sin emitter
+
+Retirar las seis funciones confirmadas sin consumers. Auditar y separar después
+la cadena de seis acciones `delete-*` y `archive-batch`, que no tienen emitter,
+sin afectar las cinco acciones archive emitidas, el confirm compartido, el
+registry ni Archivados.
+
+#### 9.3 — Fallback visual coordinado
+
+Solo si una nueva búsqueda demuestra el corte completo: eliminar primero los
+cruces activos del fallback (`setCurrentLevel` desde loader,
+`selectUnidad` desde Quick no-Biblioteca, render bridge y callbacks), retirar
+después Explorer/CRUD/generación/archive visual, DOM/CSS exclusivo,
+sessionStorage, `pageshow` y scripts legacy. Los smokes de una feature retirada
+se eliminan o sustituyen por pruebas de la entrada Biblioteca; no se conserva
+código productivo por un test artificial.
+
+#### 9.4 — Auditoría formal de cierre
+
+Repetir mapas de consumers y rutas, suite completa, manual acumulada y
+documentación. Fase 10 permanece pendiente hasta una aprobación explícita.
 
 ## Fase 10 — Consolidación final
 
