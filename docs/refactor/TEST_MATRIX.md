@@ -1987,3 +1987,38 @@ retirada.
 
 Repetir búsqueda global, rutas, scripts, DOM/CSS, globals, suite completa y
 manual acumulada. No abrir Fase 10 hasta aprobar formalmente el cierre de Fase 9.
+
+## Fase 9 — Sesión 9.1: compatibilidad Batch
+
+9.1 retira únicamente la implementación Batch sin entry point. La validación
+manual permanece pendiente; los resultados siguientes son técnicos.
+
+| Verificación técnica | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`73d52b4`, limpio al abrir | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio y solo lectura | PASS |
+| Baseline Jest | 7 suites/22 pruebas | PASS |
+| Redirect | meta refresh, `location.replace` y `noscript` a `dashboard.html` | PASS estático |
+| HTML | Batch no carga main ni ninguno de los tres assets retirados | PASS |
+| Assets | page JS, UI JS y CSS ya no existen | PASS |
+| Main | cero dispatch/mapping a `initBatchPage` | PASS |
+| Referencias | cero referencias productivas a assets/init retirados | PASS |
+| Sintaxis | `node --check` en `js/main.js` y smoke | PASS |
+| Smoke específico | 1 suite/2 pruebas | PASS |
+| Jest final | 8 suites/24 pruebas | PASS |
+| Scope | Batch redirect y dominios protegidos sin diff | PASS |
+
+### Manual obligatoria pendiente de 9.1
+
+| Caso | Evidencia esperada | Estado |
+| --- | --- | --- |
+| `/batch.html` | redirect a Dashboard; Biblioteca carga | Pendiente usuario |
+| `/batch.html?id=test` | mismo redirect histórico; query no requerida | Pendiente usuario |
+| Login/Dashboard | Biblioteca, bloques y tabs normales | Pendiente usuario |
+| Quick Create | abre y cierra sin error; no requiere IA | Pendiente usuario |
+| Detalle/back | planeación abre y retorno reconstruye Biblioteca | Pendiente usuario |
+| Consola/red | sin 404 Batch, `initBatchPage` ni error nuevo | Pendiente usuario |
+
+La UI Batch eliminada no se prueba. Las seis funciones cero-consumer, siete
+handlers sin emitter y fallback visual pertenecen a 9.2/9.3 y permanecen
+intactos.

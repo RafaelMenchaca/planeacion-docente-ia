@@ -1,9 +1,9 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` hasta la auditoría de apertura 9.0. Las
-Fases 0–8 están completadas y Fase 9 está en progreso. Este documento conserva inventarios históricos y registra la
-arquitectura ejecutable y las consolidaciones internas sin cambiar contratos
-públicos.
+Estado observado en `refactor-front` hasta la implementación 9.1, con manual
+pendiente. Las Fases 0–8 están completadas y Fase 9 está en progreso. Este
+documento conserva inventarios históricos y registra la arquitectura
+ejecutable y las consolidaciones internas sin cambiar contratos públicos.
 
 ## Configuración y carga
 
@@ -3871,3 +3871,68 @@ observable desde el repositorio.
 
 9.1 es un solo corte reversible y de bajo acoplamiento: preserva el contrato de
 URL mientras elimina la implementación que ningún HTML puede cargar.
+
+## Fase 9 — Sesión 9.1: mapa Batch posterior al retiro
+
+### Auditoría previa reconciliada
+
+| Asset | Entry point | Consumers productivos | Cargado por HTML | Resultado 9.1 |
+| --- | --- | --- | --- | --- |
+| `pages/batch.html` | URL, bookmark y links históricos | navegador | sí, directamente | preservado sin cambios |
+| `js/pages/batch.page.js` | ninguno | UI Batch retirada | no | eliminado |
+| `js/ui/batch.ui.js` | ninguno | page Batch retirada | no | eliminado |
+| `css/batch.css` | ninguno | selectores `.batch-shell/.batch-card` sin otra carga | no | eliminado |
+| `main.js → initBatchPage` | ninguno | mapping de init | `batch.html` no carga `main.js` | entrada eliminada |
+
+Los links de `dashboard.ui.js` y `planeacion.ui.js` apuntan a
+`batch.html?batch_id=...`; no son consumidores de los assets eliminados. Esos
+dos archivos tampoco tienen tag HTML vigente, pero sus links se conservaron
+porque el redirect es un contrato válido.
+
+### Redirect compatible
+
+```text
+source: pages/batch.html[?query][#hash]
+meta refresh: 0; url=dashboard.html
+script: window.location.replace("dashboard.html")
+noscript: href="dashboard.html"
+target: pages/dashboard.html
+query/hash: no preservados por el target explícito vigente
+```
+
+`pages/batch.html` no referencia `main.js`, `batch.page.js`, `batch.ui.js` ni
+`batch.css`. Se conservó byte a byte. La mención de `batch.html` en
+`isPrivatePage()` no invoca Batch ni es un mapping; permanece por compatibilidad
+semántica.
+
+### Implementación retirada y métricas
+
+| Métrica productiva | Antes | Después | Retiro |
+| --- | ---: | ---: | ---: |
+| Assets de implementación Batch | 3 | 0 | 3 archivos |
+| LOC de assets | 145 | 0 | 145 |
+| Registro `initBatchPage` en `main.js` | 1 | 0 | 1 LOC |
+| Funciones Batch | 6 | 0 | 6 |
+| Listeners | 0 | 0 | 0 |
+| Operaciones DOM | 11 | 0 | 11 |
+| Referencias API externas | 2 | 0 | 2 |
+| Bindings globales clásicos implícitos | 6 | 0 | 6 |
+| Publicaciones `window.*` | 6 | 0 | 6 |
+
+Las operaciones DOM eran tres queries, tres escrituras `innerHTML` y cinco
+lecturas/escrituras de estado del botón. Las dependencias retiradas eran
+`obtenerBatchPlaneaciones`, `archivarPlaneacionApi`, `escapeHtml` y los renders
+internos. No había listeners ni estado persistente; `currentBatchId` era estado
+léxico efímero.
+
+### Búsqueda posterior
+
+- Cero referencias productivas a `batch.page.js`, `batch.ui.js`, `batch.css`,
+  `initBatchPage`, `BatchUI`, `BatchPage` o `batchState`.
+- Las únicas referencias a nombres de assets están en el smoke que afirma su
+  inexistencia y en documentación histórica/actual etiquetada como retirada.
+- `batch.html` permanece referenciado como redirect compatible.
+- `dashboard_tailwind.html`, Dashboard, Explorer/CRUD, Quick, Biblioteca,
+  Detalle, generación, previews, Archivados y backend están fuera del diff.
+
+9.1 queda implementada con manual pendiente. 9.2 permanece no iniciada.

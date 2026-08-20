@@ -13,9 +13,10 @@
 
 - **Última fase cerrada:** 8 — aislamiento del explorer, CRUD y bridges legacy.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 9 — eliminación controlada de legacy; En progreso por auditoría 9.0.
-- **Sesión 9.0:** auditoría de apertura completada; sin implementación funcional ni manual requerida.
-- **Siguiente sesión recomendada:** 9.1, implementación Batch sin entry point; no iniciada.
+- **Fase actual:** 9 — eliminación controlada de legacy; En progreso por implementación 9.1.
+- **Sesión 9.0:** auditoría aprobada y commiteada en `73d52b4`; manual no requerida.
+- **Sesión 9.1:** implementación Batch retirada; manual y commit pendientes.
+- **Siguiente acción:** ejecutar la manual 9.1; no iniciar 9.2.
 - **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
 - **Sesión 8.1:** explorer visual/navegación aislados; manual aprobada y commit `1aa1599`.
 - **Sesión 8.2:** bridges preview/download trasladados a owners existentes; manual acumulada aprobada y commit `6fb39ab`.
@@ -5610,4 +5611,146 @@ Manual: no requerida
 Commit: no
 Push: no
 Working tree: cinco documentos
+```
+
+## Fase 9 — Sesión 9.1: retiro de implementación Batch sin entry point
+
+### A. Gate
+
+```text
+rama: refactor-front
+HEAD: 73d52b4
+hash 9.0: 73d52b4 docs(refactor): open controlled legacy removal phase
+working tree inicial: limpio
+backend: refactor-back / fe25abe / limpio / solo lectura
+puerta: PASS
+```
+
+### B. Reconciliación 9.0
+
+Fase 8 completada. Fase 9 en progreso. 9.0 fue aprobada, no requirió manual y
+quedó commiteada en `73d52b4`. Su primer corte recomendado se revalidó antes de
+editar.
+
+### C. Auditoría Batch previa
+
+| Asset | Entry point | Consumers | Cargado | Resultado |
+| --- | --- | --- | --- | --- |
+| `pages/batch.html` | URL/bookmark/link histórico | redirect del navegador | directo | preservar |
+| `js/pages/batch.page.js` | ninguno | solo UI Batch retirada | ningún HTML | eliminar |
+| `js/ui/batch.ui.js` | ninguno | solo page Batch retirada | ningún HTML | eliminar |
+| `css/batch.css` | ninguno | dos selectores Batch autónomos | ningún HTML | eliminar |
+| `main.js → initBatchPage` | ninguno | init map inalcanzable | Batch no carga main | eliminar entrada |
+
+### D. `batch.html`
+
+`pages/batch.html` permanece sin cambios. Contiene meta refresh a
+`dashboard.html`, `window.location.replace("dashboard.html")` y enlace
+`noscript` al mismo destino. Una query o hash de entrada no se preserva porque
+el target histórico es explícito; no se modernizó el redirect.
+
+### E. `main.js`
+
+El mapping previo asociaba `"batch.html"` con `window.initBatchPage`, pero la
+página redirect no carga `main.js`. Se eliminó solo esa propiedad. La inclusión
+de `batch.html` en `isPrivatePage()` permanece y no constituye dispatch.
+
+### F. Consumer audit
+
+No había tags HTML, callers, globals externos ni tests de entrada productiva
+para los tres assets. Los links a `batch.html` son referencias al redirect y se
+conservaron. La búsqueda posterior deja cero referencias productivas a los
+assets o `initBatchPage`.
+
+### G. Decisión
+
+```text
+A. Retiro seguro.
+```
+
+### H. Implementación
+
+```text
+archivos eliminados:
+- css/batch.css
+- js/pages/batch.page.js
+- js/ui/batch.ui.js
+
+archivos productivos modificados:
+- js/main.js (una propiedad retirada)
+
+test añadido:
+- tests/batch-compatibility.smoke.test.js
+```
+
+### I. Métricas
+
+145 LOC de assets y una línea de mapping eliminadas: 146 LOC productivas. Se
+retiraron 6 funciones, 0 listeners, 11 operaciones DOM, 2 referencias API, 6
+bindings globales clásicos implícitos y 6 publicaciones `window.*`.
+
+### J. Referencias post-change
+
+Producción contiene cero `batch.page.js`, `batch.ui.js`, `batch.css`,
+`initBatchPage`, `BatchUI`, `BatchPage` y `batchState`. El smoke contiene los
+nombres únicamente para comprobar ausencia. Documentación los conserva como
+evidencia de retiro.
+
+### K. Tests
+
+Baseline: 7 suites/22 pruebas PASS. Final: 8 suites/24 pruebas PASS. Sintaxis de
+`js/main.js` y del smoke PASS.
+
+### L. Smoke Batch
+
+`tests/batch-compatibility.smoke.test.js`: 1 suite/2 pruebas PASS. Verifica
+redirect meta/script/noscript, ausencia de tags a assets, inexistencia física de
+los tres archivos y ausencia del dispatch `initBatchPage`.
+
+### M. Arquitectura
+
+```text
+antes: URL Batch → redirect; implementación histórica huérfana en disco
+después: URL Batch → redirect → Dashboard/Biblioteca; sin implementación huérfana
+```
+
+### N. Scope protegido
+
+`pages/batch.html`, destino Dashboard, links históricos, Dashboard page,
+Tailwind, Explorer/CRUD, fallback, storage/pageshow, Quick, Biblioteca, Detalle,
+generación, previews, Archivados, APIs, payloads, `wordExport.js`, backend y DB
+permanecen sin cambios.
+
+### O. Manual pendiente
+
+1. Abrir `/batch.html`: debe redirigir a Dashboard y cargar Biblioteca.
+2. Abrir `/batch.html?id=test`: debe continuar redirigiendo; no se exige
+   preservar la query.
+3. Entrar por login/Dashboard: Biblioteca, bloques y tabs operativos.
+4. Abrir y cerrar Quick Create, sin generar IA.
+5. Abrir una planeación y volver a Dashboard/Biblioteca.
+6. Confirmar en consola/red: sin 404 de los tres assets, sin ReferenceError de
+   `initBatchPage` y sin errores nuevos.
+
+### P. Documentación
+
+Actualizados los cinco archivos autorizados: `ARCHITECTURE.md`,
+`FRONTEND_MAP.md`, `REFACTOR_ROADMAP.md`, este handoff y `TEST_MATRIX.md`.
+
+### Q. Riesgos
+
+Blockers: ninguno. No bloqueantes: bookmarks externos no observables y pérdida
+histórica de query/hash al redirigir. No se corrigieron porque forman parte del
+contrato previo. 9.2 permanece pendiente.
+
+### R. Estado final
+
+```text
+Fase 9: En progreso
+9.0: completada/commiteada en 73d52b4
+9.1: implementada
+Manual 9.1: pendiente
+Commit 9.1: no
+Push: no
+9.2: no iniciada
 ```

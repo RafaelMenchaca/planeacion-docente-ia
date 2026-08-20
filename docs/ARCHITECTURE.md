@@ -9,9 +9,10 @@ La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” c
 Las Fases 0–8 están completadas. Fase 8 cerró mediante la auditoría 8.4;
 sus commits funcionales reales son `1aa1599`, `6fb39ab` y `cf48637`, el cierre
 documental es `bf97b1a`, y el merge acumulativo es `41f933e`. La auditoría 9.0
-abrió documentalmente Fase 9 sin modificar código funcional ni requerir
-manual. Fase 10 permanece pendiente y no iniciada. El inventario ejecutable se
-conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+abrió documentalmente Fase 9 y quedó commiteada en `73d52b4`. La Sesión 9.1
+retiró la implementación Batch sin entry point y preservó su redirect; su
+manual está pendiente. Fase 10 permanece pendiente y no iniciada. El inventario
+ejecutable se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
 
@@ -962,3 +963,35 @@ La jerarquía técnica, Quick Create, Biblioteca, previews/downloads, Detalle y
 Archivados permanecen protegidos. El mapa completo de owners, acciones,
 estado, DOM, globals y candidatos está en
 [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+
+## Fase 9 — Sesión 9.1: retiro de implementación Batch
+
+`pages/batch.html` permanece byte a byte como entrada de compatibilidad. No
+carga hojas ni scripts de la implementación anterior: aplica meta refresh,
+`window.location.replace("dashboard.html")` y ofrece el mismo enlace dentro de
+`noscript`. La URL destino explícita no conserva query ni hash; 9.1 documenta
+ese comportamiento histórico sin modificarlo.
+
+La segunda búsqueda de consumers confirmó que ningún HTML cargaba
+`js/pages/batch.page.js`, `js/ui/batch.ui.js` o `css/batch.css`. Los dos links
+históricos encontrados apuntan a `batch.html`, no a sus assets, y por ello
+siguen resolviendo mediante el redirect. `batch.html` tampoco carga `main.js`,
+de modo que el registro `"batch.html": window.initBatchPage` era inalcanzable.
+
+Se retiraron exclusivamente los tres assets y ese registro. `main.js` conserva
+`batch.html` en la lista de páginas privadas; no es un dispatch y mantiene el
+concepto de compatibilidad si el bootstrap cambiara en el futuro. El smoke
+`batch-compatibility.smoke.test.js` fija la existencia y destino del redirect,
+la ausencia de tags Batch, assets y `initBatchPage`.
+
+Arquitectura resultante:
+
+```text
+URL/bookmark pages/batch.html
+→ meta refresh / location.replace
+→ pages/dashboard.html
+→ Biblioteca vigente
+```
+
+No se modificaron Dashboard, Biblioteca, Quick Create, Detalle, Explorer/CRUD,
+generación, Archivados, API, backend ni contratos. 9.2 no está iniciada.

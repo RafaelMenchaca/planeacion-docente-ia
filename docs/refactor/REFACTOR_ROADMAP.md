@@ -1211,10 +1211,10 @@ Eliminar únicamente código del explorador visual obsoleto demostrado sin consu
 ### Estado
 
 **En progreso.** La Sesión 9.0 completó la auditoría técnica/documental de
-apertura sin modificar código. Confirmó seis funciones con cero consumers,
-siete ramas de handler sin emitter y una implementación Batch sin entry point;
-demostró también que Explorer/CRUD no pueden borrarse en bloque mientras
-conserven cruces con loaders, Quick, Bootstrap, callbacks y `pageshow`.
+apertura y quedó commiteada en `73d52b4`. La Sesión 9.1 retiró la implementación
+Batch sin entry point, preservó `pages/batch.html` y está pendiente de manual y
+commit. Las seis funciones cero-consumer, siete ramas sin emitter y el fallback
+Explorer/CRUD permanecen intactos y reservados para sesiones posteriores.
 
 ### Dependencias
 
@@ -1271,11 +1271,12 @@ La aplicación debe permanecer estable sin el legacy eliminado y sin referencias
 
 #### 9.1 — Implementación Batch sin entry point
 
-Retirar `js/pages/batch.page.js`, `js/ui/batch.ui.js`, `css/batch.css` y el
-registro inalcanzable `batch.html → initBatchPage` de `main.js`. Conservar
-`pages/batch.html` exactamente como redirect de compatibilidad y verificar que
-ningún HTML cargue los assets retirados. No tocar Detalle, Archivados ni los
-links históricos que terminan correctamente en el redirect.
+**Implementada; manual pendiente.** Se retiraron `js/pages/batch.page.js`,
+`js/ui/batch.ui.js`, `css/batch.css` y el registro inalcanzable
+`batch.html → initBatchPage` de `main.js`. `pages/batch.html` quedó sin cambios
+como redirect de compatibilidad. La búsqueda posterior confirma cero referencias
+productivas a los assets o al init; el smoke textual y la suite completa pasan.
+No avanzar a 9.2 hasta validar y commitear 9.1.
 
 #### 9.2 — Hojas cero-consumer y ramas sin emitter
 
