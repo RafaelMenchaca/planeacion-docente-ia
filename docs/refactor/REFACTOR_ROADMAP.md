@@ -1211,10 +1211,10 @@ Eliminar únicamente código del explorador visual obsoleto demostrado sin consu
 ### Estado
 
 **En progreso.** 9.0 quedó commiteada en `73d52b4`; 9.1 retiró Batch, fue
-aprobada manualmente y quedó commiteada en `9496303`. La Sesión 9.2 retiró las
-seis funciones cero-consumer, tres hojas derivadas y la cadena completa de siete
-acciones sin emitter; está pendiente de manual y commit. El fallback
-Explorer/CRUD permanece intacto y reservado para 9.3.
+aprobada manualmente y quedó commiteada en `9496303`. 9.2 fue aprobada
+manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
+Explorer/CRUD tras migrar los cruces vigentes; está implementada con manual y
+commit pendientes. 9.4 no se ha iniciado.
 
 ### Dependencias
 
@@ -1281,22 +1281,22 @@ posteriores al retiro.
 
 #### 9.2 — Hojas cero-consumer y ramas sin emitter
 
-**Implementada; manual pendiente.** Se retiraron las seis funciones confirmadas,
+**Completada, manual aprobada y commiteada en `7cca74e`.** Se retiraron las seis funciones confirmadas,
 los helpers derivados `getActividadCierreSelectLabel`,
 `getActividadCierreSelectWidth` y `findTemaById`, y la cadena de seis acciones
 `delete-*` más `archive-batch`. Los cinco archives emitidos, `confirmDelete`,
 registry, Archivados y deletes de Biblioteca permanecen. Suite final: 9
-suites/27 pruebas. No avanzar a 9.3 antes de aprobación manual y commit.
+suites/27 pruebas. La evidencia manual acumulada cubrió Planeación, Anexo,
+Lista, Examen y Agregar Tema sin errores nuevos.
 
 #### 9.3 — Fallback visual coordinado
 
-Solo si una nueva búsqueda demuestra el corte completo: eliminar primero los
-cruces activos del fallback (`setCurrentLevel` desde loader,
-`selectUnidad` desde Quick no-Biblioteca, render bridge y callbacks), retirar
-después Explorer/CRUD/generación/archive visual, DOM/CSS exclusivo,
-sessionStorage, `pageshow` y scripts legacy. Los smokes de una feature retirada
-se eliminan o sustituyen por pruebas de la entrada Biblioteca; no se conserva
-código productivo por un test artificial.
+**Implementada; manual y commit pendientes.** Quick llama directamente a
+`BibliotecaRender.renderContent()` y conserva los IDs técnicos en
+`explorerState.current`. Bootstrap monta exclusivamente Biblioteca. Se retiraron
+Explorer/CRUD, archive y generación visual legacy, `pageshow`, sessionStorage,
+DOM/CSS exclusivos y sus smokes. Jerarquía técnica, owners de generación,
+previews, Biblioteca, Archivados y contratos backend permanecen.
 
 #### 9.4 — Auditoría formal de cierre
 
@@ -1429,3 +1429,22 @@ protegida; actividades y jerarquía tienen consumidores compartidos;
 delete/archive cruza el sistema congelado; wrappers/globals/estado pertenecen a
 Fase 10. La auditoría de cierre confirmó estas fronteras y marca Fase 8
 completada, sin abrir Fase 9.
+
+## Actualización Fase 9 — Sesión 9.3
+
+Decisión A: retiro completo del fallback posible y ejecutado. Los cruces
+vigentes se resolvieron sin mover la jerarquía técnica ni crear otro owner:
+Quick renderiza por Biblioteca, mantiene los IDs técnicos y Bootstrap deja de
+ofrecer ruta alternativa. Archive no tiene entrada en Biblioteca; su UI y
+dispatcher desaparecen con Explorer, mientras Archivados y services quedan
+congelados.
+
+Se retiraron Explorer/CRUD, sidebar, generación visual antigua, tree,
+breadcrumbs, onboarding, modal CRUD/archive, sessionStorage y `pageshow` legacy.
+Dashboard pasa de 2274 a 464 LOC; Explorer 1183→0; CRUD 234→0; CSS 2257→1841.
+La suite final queda en 8 suites/24 pruebas PASS. La manual 9.3 y el commit están
+pendientes; no se abre 9.4 hasta recibir la aprobación del usuario.
+
+Handoff 9.4: auditoría formal de cierre de Fase 9. Debe verificar consumers,
+rutas, script order, DOM/CSS, globals, suite y evidencia manual acumulada. No
+crear micro-sesiones ni iniciar Fase 10 desde 9.3.

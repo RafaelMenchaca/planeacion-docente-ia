@@ -36,6 +36,7 @@ function createHarness({ generationResult, generationError } = {}) {
     renderProgressPill: (status, label) => `<span>${label || status}</span>`,
     statusLabelFromTone: (status) => ({ ready: "Listo", skipped: "No realizado", error: "Error", generating: "Generando", pending: "Pendiente" }[status] || status)
   };
+  window.statusLabelFromTone = window.AppUI.statusLabelFromTone;
   window.escapeHtml = (value) => String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -88,8 +89,6 @@ function createHarness({ generationResult, generationError } = {}) {
   run(context, "js/features/listas-cotejo/lista-cotejo-download.js");
   run(context, "js/features/listas-cotejo/lista-cotejo-preview.js");
   run(context, "js/pages/dashboard.page.js");
-  run(context, "js/features/dashboard/legacy-explorer.js");
-  run(context, "js/features/dashboard/legacy-hierarchy-crud.js");
   run(context, "js/features/dashboard/quick-create.js");
   run(context, "js/pages/biblioteca.page.js");
   run(context, "js/features/biblioteca/biblioteca-loader.js");

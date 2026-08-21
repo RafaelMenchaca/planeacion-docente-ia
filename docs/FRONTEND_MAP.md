@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` hasta la implementación 9.2, con manual
+Estado observado en `refactor-front` hasta la implementación 9.3, con manual
 pendiente. Las Fases 0–8 están completadas y Fase 9 está en progreso. Este
 documento conserva inventarios históricos y registra la arquitectura
 ejecutable y las consolidaciones internas sin cambiar contratos públicos.
@@ -4010,4 +4010,52 @@ una a `selectUnidad`; archive refresh llama `selectPlantel`, `selectGrado` y
 `pageshow → refreshExplorerAfterReturn`. Explorer/CRUD, generation visual,
 sessionStorage, pageshow, DOM/CSS, globals y wrappers siguen fuera del corte.
 
-9.2 está implementada con manual pendiente. 9.3 permanece no iniciada.
+9.2 está aprobada y commiteada en `7cca74e`. El estado actual continúa abajo.
+
+## Fase 9 — Sesión 9.3: mapa ejecutable posterior
+
+Gate: `refactor-front` limpio en `7cca74e`; backend `refactor-back` limpio en
+`fe25abe` y solo lectura. 9.2 está aprobada manualmente y commiteada.
+
+| Superficie | Antes | Después | Owner actual |
+| --- | --- | --- | --- |
+| Entry Dashboard | Bootstrap con Biblioteca o hydrate fallback | Bootstrap → Biblioteca siempre | `dashboard-bootstrap.js` |
+| Render tras Quick | `renderExplorerContent` (5 cruces) | `BibliotecaRender.renderContent` | Biblioteca Render |
+| Selección Quick | `selectUnidad` visual fuera de modo Biblioteca | asignación del mismo `current` técnico | Quick + `explorerState` |
+| Back/`pageshow` | rehidrata Explorer y vuelve a renderizar | bfcache/loader de Biblioteca; sin listener legacy | Biblioteca/navegador |
+| Archive Dashboard | 5 emitters dentro del Explorer | sin UI emitter/handler Dashboard | services/Archivados preservados |
+| Explorer/CRUD | 2 scripts productivos | archivos y tags retirados | ninguno |
+| Batch | redirect compatible | sin cambio | `pages/batch.html` |
+
+### State posterior
+
+Preservado: `planteles`, `gradosByPlantel`, `materiasByGrado`,
+`unidadesByMateria`, `temasByUnidad`, loading/errors técnicos, `current`,
+staging, `progress`, `quickCreate`, `generating`, cache/datos de previews.
+Retirado: `expandedPlanteles/Grados/Materias`, search del Explorer,
+`examenesByUnidad`, `listasCotejoByUnidad`, modales/generación visual legacy,
+modal CRUD y `confirmDelete` Dashboard.
+
+### Métricas
+
+| Métrica | Antes 9.3 | Después | Delta |
+| --- | ---: | ---: | ---: |
+| Dashboard LOC | 2274 | 464 | -1810 |
+| Funciones Dashboard | 108 | 32 | -76 |
+| Explorer LOC/funciones | 1183 / 42 | 0 / 0 | -1183 / -42 |
+| CRUD LOC/funciones | 234 / 5 | 0 / 0 | -234 / -5 |
+| Bootstrap LOC/listener call sites | 286 / 25 | 99 / 5 | -187 / -20 |
+| Quick LOC/listener call sites | 1414 / 17 | 1406 / 17 | -8 / 0 |
+| Layout IDs | 104 | 51 | -53 |
+| CSS LOC/reglas | 2257 / 294 | 1841 / 235 | -416 / -59 |
+| `explorerState` refs en Dashboard/Explorer/CRUD/Bootstrap/Quick | 585 | 160 | -425 |
+| asignaciones globales `window.*` en esas superficies | 7 | 4 | -3 |
+
+Consumer audit productivo: cero `legacy-explorer`, `legacy-hierarchy-crud`,
+`renderExplorerContent`, `renderAll`, `selectRoot/Plantel/Grado/Materia/Unidad`,
+`refreshExplorerAfterReturn` y `educativo.dashboard.last-location`. Las
+apariciones históricas de este documento describen estados anteriores.
+
+Suite final: 8 suites/24 pruebas PASS. Se retiraron los dos smokes de la UI
+eliminada y se añadió `dashboard-no-legacy-fallback.smoke.test.js`. Manual 9.3
+pendiente; commit y push no realizados.

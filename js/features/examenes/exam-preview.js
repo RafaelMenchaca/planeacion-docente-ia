@@ -12,11 +12,9 @@
   function syncExamPreviewBodyScrollLock() {
     if (!document.body) return;
     const explorerState = window.explorerState;
-    const entityModalOpen = !document.getElementById("entity-modal")?.classList.contains("hidden");
-
     document.body.classList.toggle(
       "overflow-hidden",
-      explorerState.quickCreate.open || explorerState.confirmDelete.open || explorerState.examModal.open || explorerState.examPreview.open || explorerState.listaCotejoModal.open || explorerState.listaCotejoPreview.open || entityModalOpen
+      explorerState.quickCreate.open || explorerState.examPreview.open || explorerState.listaCotejoPreview.open
     );
   }
 
@@ -220,45 +218,6 @@
     close.disabled = state.loading;
   }
 
-  async function ensureExamenDetalle(examenId, { force = false } = {}) {
-    const explorerState = window.explorerState;
-    if (!examenId) return null;
-    if (!force && explorerState.examenDetalleById[examenId]) {
-      return explorerState.examenDetalleById[examenId];
-    }
-
-    const examen = await window.obtenerExamenDetalle(examenId);
-    explorerState.examenDetalleById[examenId] = examen;
-    return examen;
-  }
-
-  function formatFetchError(error, fallbackMessage) {
-    if (!error) return fallbackMessage;
-    if (typeof error.message === "string" && error.message.trim()) return error.message;
-    return fallbackMessage;
-  }
-
-  async function open(examenId) {
-    const explorerState = window.explorerState;
-    explorerState.examPreview = {
-      open: true,
-      examenId,
-      loading: true,
-      error: ""
-    };
-    render();
-
-    try {
-      await ensureExamenDetalle(examenId);
-      explorerState.examPreview.loading = false;
-      render();
-    } catch (error) {
-      explorerState.examPreview.loading = false;
-      explorerState.examPreview.error = formatFetchError(error, "No se pudo cargar el examen.");
-      render();
-    }
-  }
-
   async function openBiblioteca(examenId) {
     const explorerState = window.explorerState;
     if (!explorerState) return;
@@ -289,40 +248,9 @@
     render();
   }
 
-  // Compatibilidad temporal: conserva la firma pública y los consumidores del dashboard/Biblioteca.
-  // Motivo: mantener la API global durante la extracción.
-  // Consumidores actuales: renderAll(), Biblioteca y el explorador jerárquico.
-  // Condición para retirarlo: búsqueda global sin consumidores de window.renderExamPreviewModal.
-  // Fase prevista de retiro: Fase 10.
-  function renderExamPreviewModal() {
-    return window.ExamPreview.render();
-  }
-
-  // Compatibilidad temporal: conserva la apertura usada por el explorador histórico.
-  // Motivo: mantener la firma local durante la extracción del preview.
-  // Consumidores actuales: handleContentClick del explorador jerárquico.
-  // Condición para retirarlo: retiro separado del consumidor legacy confirmado.
-  // Fase prevista de retiro: Fase 8-9.
-  async function openExamPreview(examenId) {
-    return window.ExamPreview.open(examenId);
-  }
-
-  // Compatibilidad temporal: conserva la firma pública de cierre del modal.
-  // Motivo: mantener listeners y Escape sin cambiar el flujo de cierre.
-  // Consumidores actuales: listeners de Dashboard y compatibilidad global.
-  // Condición para retirarlo: búsqueda global sin consumidores de window.closeExamPreviewModal.
-  // Fase prevista de retiro: Fase 10.
-  function closeExamPreviewModal() {
-    return window.ExamPreview.close();
-  }
-
   window.ExamPreview = {
     render,
-    open,
     openBiblioteca,
     close
   };
-  window.renderExamPreviewModal = renderExamPreviewModal;
-  window.openExamPreview = openExamPreview;
-  window.closeExamPreviewModal = closeExamPreviewModal;
 })();

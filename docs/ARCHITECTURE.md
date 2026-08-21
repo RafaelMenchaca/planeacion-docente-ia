@@ -11,8 +11,10 @@ sus commits funcionales reales son `1aa1599`, `6fb39ab` y `cf48637`, el cierre
 documental es `bf97b1a`, y el merge acumulativo es `41f933e`. La auditoría 9.0
 abrió documentalmente Fase 9 y quedó commiteada en `73d52b4`. La Sesión 9.1,
 aprobada manualmente, retiró Batch y quedó commiteada en `9496303`. La Sesión
-9.2 retiró hojas cero-consumer y siete acciones sin emitter; su manual está
-pendiente. Fase 10 permanece pendiente y no iniciada. El inventario ejecutable
+9.2 retiró hojas cero-consumer y siete acciones sin emitter; fue aprobada
+manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
+jerárquico y está implementada con manual pendiente. Fase 10 permanece pendiente
+y no iniciada. El inventario ejecutable
 se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -1029,3 +1031,53 @@ Dashboard queda en 2274 LOC, 108 funciones y 273 referencias a
 todavía debe resolver Quick → `selectUnidad`/`renderExplorerContent`, archive →
 `select*` y `pageshow → refreshExplorerAfterReturn` antes de retirar el
 fallback visual.
+
+## Fase 9 — Sesión 9.3: arquitectura sin fallback visual
+
+9.2 fue aprobada manualmente y commiteada en `7cca74e`. La evidencia real fue:
+Planeación `success 1 / error 0 / skipped 0`; Anexo `generate success`; Lista
+`created 1 / skipped 0`; Examen `11/11`, cero fallidas y un retry; Agregar Tema
+en batch existente `success 1 / skipped 0`; sin errores nuevos.
+
+La auditoría de cruces permitió el retiro completo. Las cinco llamadas de Quick
+a `renderExplorerContent()` eran únicamente un puente hacia Biblioteca y ahora
+invocan `BibliotecaRender.renderContent()`. La selección de unidad de Quick
+conserva el mismo shape técnico en `explorerState.current`, sin tree,
+breadcrumbs ni navegación visual. `loadPlanteles()` restablece ese shape
+directamente cuando desaparece el plantel actual.
+
+```text
+Dashboard
+└─ dashboard-bootstrap
+   ├─ QuickCreate
+   ├─ Biblioteca
+   │  ├─ Loader
+   │  ├─ Render
+   │  ├─ Modal render
+   │  └─ Events
+   └─ previews/downloads vigentes
+
+Jerarquía técnica preservada
+└─ planteles → grados → materias → unidades → temas
+   └─ IDs, caches, loaders y contratos backend
+```
+
+Se retiraron `legacy-explorer.js`, `legacy-hierarchy-crud.js`, sidebar, tree,
+breadcrumbs, onboarding CRUD, archive visual, modales de generación legacy,
+sessionStorage `educativo.dashboard.last-location`, refresh `pageshow`, DOM y
+CSS exclusivos. Los cinco archive actions perdieron su único emitter junto con
+el fallback; sus services, registry, localStorage y Archivados permanecen.
+
+Biblioteca ya poseía loader/reconciliation y el retorno bfcache no necesitaba
+rehidratar jerarquía visual. Por ello `pageshow → refreshExplorerAfterReturn`
+se retiró sin crear un coordinador sustituto. Los owners vigentes
+`PlaneacionGeneration`, `ExamGeneration`, `ListaCotejoGeneration`,
+`AnexoGeneration`, previews y downloads permanecen cargados.
+
+Estado preservado: caches jerárquicos, `current`, staging técnico, `progress`,
+`quickCreate`, `generating`, `examenDetalleById`, `examPreview` y
+`listaCotejoPreview`. Estado retirado: `expanded*`, search del Explorer,
+generación/modal legacy, listas/exámenes por unidad del render antiguo,
+`confirmDelete` y modal CRUD. 9.3 está implementada; su regresión manual y
+commit permanecen pendientes. 9.4 es la auditoría formal siguiente y no se ha
+iniciado.

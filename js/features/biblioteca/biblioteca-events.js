@@ -60,9 +60,7 @@ function onBibliotecaClick(event) {
     }
 
     case "crear-planeaciones": {
-      if (typeof openQuickCreatePanel === "function") {
-        openQuickCreatePanel().catch(console.error);
-      }
+      window.QuickCreate?.open().catch(console.error);
       break;
     }
 
@@ -160,4 +158,3 @@ const BibliotecaEvents = Object.freeze({
   handleClick: onBibliotecaClick,
   handleSearch: onBibliotecaSearch
 });
-

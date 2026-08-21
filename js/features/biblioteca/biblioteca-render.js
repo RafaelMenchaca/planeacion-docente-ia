@@ -596,11 +596,6 @@ function renderBibliotecaContent() {
   const container = document.getElementById("explorer-content");
   if (!container) return;
 
-  const workspace  = document.getElementById("explorer-workspace");
-  const onboarding = document.getElementById("explorer-onboarding");
-  if (workspace)  workspace.classList.remove("hidden");
-  if (onboarding) onboarding.classList.add("hidden");
-
   if (bibliotecaState.loading) {
     container.innerHTML = `<div class="biblioteca-loading"><p>Cargando biblioteca...</p></div>`;
     return;

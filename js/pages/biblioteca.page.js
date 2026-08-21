@@ -1104,14 +1104,6 @@ async function initBiblioteca() {
 
   BibliotecaEvents.bind();
 
-  // Hide path bar / sidebar for biblioteca layout
-  const pathBar = document.getElementById("explorer-path-bar");
-  const sidebar  = document.getElementById("dashboard-sidebar-slot");
-  const grid     = document.getElementById("explorer-workspace-grid");
-  if (pathBar) pathBar.style.display = "none";
-  if (sidebar)  sidebar.classList.add("hidden");
-  if (grid)     grid.style.display = "block";
-
   await loadAndRenderBiblioteca();
 }
 

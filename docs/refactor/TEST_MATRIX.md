@@ -2025,9 +2025,9 @@ intactos.
 
 ## Fase 9 — Sesión 9.2: cero-consumer y actions sin emitter
 
-9.1 quedó aprobada manualmente y commiteada en `9496303`. La evidencia recibida
-confirma Dashboard/Biblioteca y bloques cargados sin errores posteriores al
-retiro. 9.2 tiene validación técnica completa y manual pendiente.
+9.1 quedó aprobada manualmente y commiteada en `9496303`. 9.2 fue aprobada
+manualmente y commiteada en `7cca74e`; la evidencia acumulada cubrió Planeación,
+Anexo, Lista, Examen y Agregar Tema sin errores nuevos.
 
 | Verificación técnica | Evidencia | Resultado |
 | --- | --- | --- |
@@ -2046,15 +2046,59 @@ retiro. 9.2 tiene validación técnica completa y manual pendiente.
 | Jest final | 9 suites/27 pruebas | PASS |
 | Scope | solo Dashboard, Explorer, smoke y cinco docs | PASS |
 
-### Manual obligatoria pendiente de 9.2
+### Manual 9.2 aprobada
 
 | Caso | Evidencia esperada | Estado |
 | --- | --- | --- |
-| Dashboard/Biblioteca | carga, bloques, tabs, search, reload | Pendiente usuario |
-| Quick/Agregar Tema | abrir/cerrar y modal vigente; sin IA obligatoria | Pendiente usuario |
-| Detalle/back | abre planeación y vuelve correctamente | Pendiente usuario |
-| Delete Biblioteca | al menos un recurso de prueba si existe | Pendiente usuario |
-| Archive legacy | solo si hay acceso natural; no activar artificialmente | Source/smoke suficiente si no hay acceso |
-| Consola/red | sin ReferenceError, undefined, 404, duplicación o error nuevo | Pendiente usuario |
+| Planeación | success 1 / error 0 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen | 11/11 preguntas, 0 fallidas, 1 retry | Aprobada |
+| Agregar Tema | batch existente; success 1 / skipped 0 | Aprobada |
+| Consola/red | sin errores nuevos | Aprobada |
 
-No se requiere generar IA. 9.3 no inicia hasta aprobar y commitear 9.2.
+9.2 quedó cerrada y habilitó la apertura de 9.3.
+
+## Fase 9 — Sesión 9.3: Dashboard sin fallback visual
+
+| Verificación técnica | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`7cca74e`, limpio al abrir | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio/solo lectura | PASS |
+| Baseline | 9 suites/27 pruebas | PASS |
+| Quick render | 5 cruces migrados a `BibliotecaRender.renderContent` | PASS |
+| Quick selección | mismo shape `current`; cero `selectUnidad` | PASS |
+| Dashboard entry | Bootstrap siempre inicializa Biblioteca | PASS |
+| Explorer/CRUD | archivos y tags ausentes | PASS |
+| `pageshow`/storage | listener y key legacy ausentes | PASS |
+| Archive visual | 0 emitter/handler Dashboard; services/Archivados sin cambio | PASS |
+| DOM/CSS | 53 IDs y 59 reglas exclusivas retiradas | PASS |
+| Owners vigentes | generation, previews, downloads y Biblioteca cargados | PASS |
+| Batch | redirect a Dashboard intacto | PASS |
+| Consumer audit | cero nombres del fallback en producción | PASS |
+| Sintaxis | todos los JS productivos modificados | PASS |
+| Smoke nuevo | 1 suite/4 pruebas | PASS |
+| Jest final | 8 suites/24 pruebas | PASS |
+
+Se retiraron `legacy-explorer.smoke.test.js` (3 pruebas) y
+`legacy-hierarchy-crud.smoke.test.js` (3 pruebas) porque modelaban una UI
+deliberadamente eliminada. `dashboard-no-legacy-fallback.smoke.test.js` cubre
+entrada Biblioteca-only, Quick sin Explorer, DOM/actions/storage ausentes,
+owners vigentes y redirect Batch. Los tests de Quick, Bootstrap y previews se
+actualizaron para invocar sus owners reales.
+
+### Manual obligatoria pendiente de 9.3
+
+| Caso | Evidencia esperada | Estado |
+| --- | --- | --- |
+| Dashboard/Biblioteca | login, bloques, search, tabs, cambio, reload | Pendiente usuario |
+| Quick bloque nuevo | pending, feedback, success y bloque visible | Pendiente usuario |
+| Agregar Tema | reutiliza batch y muestra tema nuevo | Pendiente usuario |
+| Detalle/back | Biblioteca correcta, sin Explorer visual | Pendiente usuario |
+| Preview/download | Examen y Lista abren, cierran, reabren y descargan si práctico | Pendiente usuario |
+| Generation | Anexo, Lista y Examen sobre planeación nueva | Pendiente usuario |
+| Deletes | Examen, Lista, Anexo y planeación/batch de prueba | Pendiente usuario |
+| Consola/red | sin ReferenceError, undefined, 404 o duplicaciones | Pendiente usuario |
+
+Archive legacy no se activa artificialmente. `public.ia_metrics` continúa como
+issue externo conocido y no bloqueante. 9.4 no está iniciada.

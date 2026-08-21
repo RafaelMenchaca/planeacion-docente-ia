@@ -26,9 +26,6 @@ function createHarness({ layoutError = false } = {}) {
     if (String(resource).endsWith("components/layout.html")) {
       return { ok: true, text: async () => read("components/layout.html") };
     }
-    if (String(resource).endsWith("components/sidebar.html")) {
-      return { ok: true, text: async () => read("components/sidebar.html") };
-    }
     throw new Error(`Unexpected fetch: ${resource}`);
   });
   window.initPrivateChrome = jest.fn(async () => {});
@@ -46,8 +43,6 @@ function createHarness({ layoutError = false } = {}) {
   run(context, "js/features/listas-cotejo/lista-cotejo-download.js");
   run(context, "js/features/listas-cotejo/lista-cotejo-preview.js");
   run(context, "js/pages/dashboard.page.js");
-  run(context, "js/features/dashboard/legacy-explorer.js");
-  run(context, "js/features/dashboard/legacy-hierarchy-crud.js");
   run(context, "js/features/dashboard/dashboard-bootstrap.js");
 
   return { dom, window, context };
@@ -85,28 +80,13 @@ describe("Dashboard bootstrap/bindings owner smoke", () => {
     expect(window.QuickCreate.bind).toHaveBeenCalledTimes(1);
   });
 
-  test("conserva bridge de preview y rama legacy desconocida sin crash", async () => {
+  test("conserva bindings de preview sin dispatcher legacy", async () => {
     const { window } = createHarness();
     await window.initDashboardPage();
 
-    const preview = jest.fn(async () => {});
-    window.openListaCotejoPreview = preview;
-    const content = window.document.getElementById("explorer-content");
-    const previewButton = window.document.createElement("button");
-    previewButton.dataset.contentAction = "preview-lista-cotejo";
-    previewButton.dataset.listaId = "lista-1";
-    content.appendChild(previewButton);
-    previewButton.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
-    await Promise.resolve();
-    expect(preview).toHaveBeenCalledWith("lista-1");
-
-    const errorLog = jest.spyOn(window.console, "error").mockImplementation(() => {});
-    const unknown = window.document.createElement("button");
-    unknown.dataset.contentAction = "legacy-unknown";
-    content.appendChild(unknown);
-    unknown.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
-    await Promise.resolve();
-    expect(errorLog).not.toHaveBeenCalled();
+    const close = jest.spyOn(window.ListaCotejoPreview, "close");
+    window.document.getElementById("lista-cotejo-preview-close").click();
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   test("conserva error de layout y detiene bindings/init", async () => {

@@ -737,7 +737,6 @@ function requireQuickGradoSelection() {
 }
 
 function initProgressFromStaging() {
-  explorerState.stagingPanelOpen = true;
   explorerState.progress.items = explorerState.stagingTemas.map((tema, index) => ({
     index: index + 1,
     localId: tema.localId,
@@ -910,8 +909,7 @@ async function generatePlaneacionesFromStaging() {
 
   explorerState.generating = true;
   initProgressFromStaging();
-  renderExplorerContent();
-  scrollToProgress();
+  window.BibliotecaRender?.renderContent();
 
   const body = {
     temas: explorerState.stagingTemas.map((tema, index) => ({
@@ -934,7 +932,7 @@ async function generatePlaneacionesFromStaging() {
   try {
     const result = await generarPlaneacionesUnidadConProgreso({ unidadId, body }, (evt) => {
       updateProgressFromEvent(evt);
-      renderExplorerContent();
+      window.BibliotecaRender?.renderContent();
     });
 
     applyGenerateResult(result || {});
@@ -950,8 +948,7 @@ async function generatePlaneacionesFromStaging() {
       await window.biblioteca.refresh();
     }
 
-    renderExplorerContent();
-    scrollToProgressFinal();
+    window.BibliotecaRender?.renderContent();
   } catch (error) {
     const message = friendlyProgressMessage(formatFetchError(error, "No se pudieron generar las planeaciones."));
     const fallbackStatus = isDuplicateTemaMessage(message) ? "skipped" : "error";
@@ -967,15 +964,14 @@ async function generatePlaneacionesFromStaging() {
     explorerState.progress.finalTone = fallbackStatus === "skipped" ? "warning" : "danger";
     explorerState.progress.finalMessage = message;
     updateProgressCounters();
-    renderExplorerContent();
-    scrollToProgressFinal();
+    window.BibliotecaRender?.renderContent();
   } finally {
     explorerState.generating = false;
     if (window.biblioteca?.pendingBatchId) {
       window.biblioteca.pendingBatchId = null;
     }
     updateProgressCounters();
-    renderExplorerContent();
+    window.BibliotecaRender?.renderContent();
   }
 }
 
@@ -1124,11 +1120,7 @@ async function submitQuickCreateForm(event) {
       }
     }
 
-    if (window.BIBLIOTECA_MODE) {
-      explorerState.current = { level: "unidad", plantelId, gradoId, materiaId, unidadId };
-    } else {
-      await selectUnidad(plantelId, gradoId, materiaId, unidadId);
-    }
+    explorerState.current = { level: "unidad", plantelId, gradoId, materiaId, unidadId };
 
     explorerState.stagingTemas = explorerState.quickCreate.temas.map((tema) => ({
       localId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

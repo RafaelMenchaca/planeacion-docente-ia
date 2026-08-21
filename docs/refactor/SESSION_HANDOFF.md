@@ -13,11 +13,12 @@
 
 - **Última fase cerrada:** 8 — aislamiento del explorer, CRUD y bridges legacy.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 9 — eliminación controlada de legacy; En progreso por implementación 9.2.
+- **Fase actual:** 9 — eliminación controlada de legacy; En progreso por implementación 9.3.
 - **Sesión 9.0:** auditoría aprobada y commiteada en `73d52b4`; manual no requerida.
 - **Sesión 9.1:** Batch retirado; manual aprobada y commit `9496303`.
-- **Sesión 9.2:** hojas y siete acciones sin emitter retiradas; manual y commit pendientes.
-- **Siguiente acción:** ejecutar la manual 9.2; no iniciar 9.3.
+- **Sesión 9.2:** aprobada manualmente y commiteada en `7cca74e`.
+- **Sesión 9.3:** fallback visual retirado; manual y commit pendientes.
+- **Siguiente acción:** ejecutar la regresión manual 9.3; no iniciar 9.4.
 - **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
 - **Sesión 8.1:** explorer visual/navegación aislados; manual aprobada y commit `1aa1599`.
 - **Sesión 8.2:** bridges preview/download trasladados a owners existentes; manual acumulada aprobada y commit `6fb39ab`.
@@ -5942,9 +5943,91 @@ pageshow siguen activos. No justifican ampliar 9.2.
 Fase 9: En progreso
 9.0: completada
 9.1: completada/commiteada/manual aprobada (9496303)
-9.2: implementada
-Manual 9.2: pendiente
-Commit 9.2: no
+9.2: completada/commiteada/manual aprobada (7cca74e)
+Manual 9.2: aprobada
+Commit 9.2: 7cca74e
 Push: no
-9.3: no iniciada
+9.3: iniciada; ver sección siguiente
+```
+
+## Sesión 9.3 — Retiro coordinado del fallback visual
+
+### Gate y reconciliación
+
+- Frontend: `refactor-front`, HEAD inicial `7cca74e`, árbol limpio.
+- 9.2: manual aprobada y commit real `7cca74e`.
+- Backend: `refactor-back`, `fe25abe`, limpio y solo lectura.
+- Evidencia 9.2: Planeación 1/0/0; Anexo success; Lista 1/0; Examen 11/11,
+  cero fallidas, un retry; Agregar Tema 1/0; sin errores nuevos.
+
+### Decisión y cruces
+
+Decisión A: retiro completo. Los cinco `Quick → renderExplorerContent` eran un
+bridge a Biblioteca y migraron a `BibliotecaRender.renderContent`. El único
+`Quick → selectUnidad` mezclaba selección técnica y render visual; se sustituyó
+por el mismo objeto `explorerState.current`. El reset root de `loadPlanteles`
+también usa asignación técnica directa.
+
+No existe archive en Biblioteca. Sus cinco emitters vivían únicamente en
+Explorer, por lo que UI, confirmación, branches y refresh Dashboard quedaron
+sin entry point y fueron retirados. Services, registry/localStorage y
+Archivados no cambiaron. Biblioteca posee loader/reconciliation propio; el
+`pageshow` que rehidrataba Explorer era redundante para Detalle/back y se retiró
+sin bridge sustituto.
+
+### Implementación
+
+Eliminados: `legacy-explorer.js`, `legacy-hierarchy-crud.js`,
+`components/sidebar.html` y sus dos smokes. `dashboard.html` ya no carga esos
+scripts. `layout.html` conserva hero, Biblioteca, Quick y previews; elimina
+tree, breadcrumbs, onboarding, CRUD, generación y archive legacy. CSS elimina
+59 reglas exclusivas. Los previews apuntan a sus owners vigentes y su scroll
+lock ya no consulta modales retirados.
+
+Jerarquía técnica preservada: planteles, grados, materias, unidades, temas,
+loaders, caches, IDs y contratos. Generation owners, polling/SSE, downloads,
+Detalle, Quick, Biblioteca, Batch, `dashboard_tailwind.html`, Archivados,
+backend, DB, APIs, payloads y `wordExport.js` permanecen.
+
+### Métricas y pruebas
+
+| Métrica | Antes | Después |
+| --- | ---: | ---: |
+| Dashboard LOC/funciones | 2274 / 108 | 464 / 32 |
+| Explorer LOC/funciones | 1183 / 42 | 0 / 0 |
+| CRUD LOC/funciones | 234 / 5 | 0 / 0 |
+| Bootstrap LOC/listeners | 286 / 25 | 99 / 5 |
+| Layout IDs | 104 | 51 |
+| CSS LOC/reglas | 2257 / 294 | 1841 / 235 |
+| `explorerState` refs auditadas | 585 | 160 |
+
+Baseline: 9 suites/27 pruebas PASS. Final: 8 suites/24 pruebas PASS. La reducción
+es deliberada: se retiraron dos suites/6 pruebas de UI eliminada y se añadió una
+suite/4 pruebas de ausencia/contrato. `node --check` y diff checks pasan.
+
+### Manual pendiente
+
+1. Dashboard/Biblioteca: login, bloques, search, tabs, cambio de bloque, reload.
+2. Quick: crear bloque con una planeación y validar pending/feedback/success.
+3. Agregar Tema a batch existente y confirmar reutilización.
+4. Detalle/back con navegador: Biblioteca correcta y sin Explorer visual.
+5. Preview/download de Examen y Lista; cerrar y reabrir.
+6. Generar Anexo, Lista y Examen; Planeación queda cubierta por Quick.
+7. Eliminar Examen, Lista, Anexo y planeación/batch de prueba según datos.
+8. Consola/red: sin ReferenceError, undefined, 404, request/listener/render
+   duplicado ni error nuevo. `public.ia_metrics` continúa como issue externo no
+   bloqueante.
+
+### Estado
+
+```text
+Fase 9: En progreso
+9.0: completada
+9.1: completada
+9.2: completada/commiteada/manual aprobada (7cca74e)
+9.3: implementada
+Manual 9.3: pendiente
+Commit 9.3: no
+Push: no
+9.4: recomendada/no iniciada
 ```
