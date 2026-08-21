@@ -1141,13 +1141,8 @@ async function handleContentClick(event) {
     return;
   }
 
-  if (["archive-plantel", "archive-grado", "archive-materia", "archive-unidad", "archive-planeacion", "archive-batch"].includes(action)) {
+  if (["archive-plantel", "archive-grado", "archive-materia", "archive-unidad", "archive-planeacion"].includes(action)) {
     requestArchiveAction(action, ids);
-    return;
-  }
-
-  if (["delete-plantel", "delete-grado", "delete-materia", "delete-unidad", "delete-tema", "delete-planeacion"].includes(action)) {
-    requestDeleteAction(action, ids);
     return;
   }
 

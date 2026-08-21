@@ -13,10 +13,11 @@
 
 - **Última fase cerrada:** 8 — aislamiento del explorer, CRUD y bridges legacy.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 9 — eliminación controlada de legacy; En progreso por implementación 9.1.
+- **Fase actual:** 9 — eliminación controlada de legacy; En progreso por implementación 9.2.
 - **Sesión 9.0:** auditoría aprobada y commiteada en `73d52b4`; manual no requerida.
-- **Sesión 9.1:** implementación Batch retirada; manual y commit pendientes.
-- **Siguiente acción:** ejecutar la manual 9.1; no iniciar 9.2.
+- **Sesión 9.1:** Batch retirado; manual aprobada y commit `9496303`.
+- **Sesión 9.2:** hojas y siete acciones sin emitter retiradas; manual y commit pendientes.
+- **Siguiente acción:** ejecutar la manual 9.2; no iniciar 9.3.
 - **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
 - **Sesión 8.1:** explorer visual/navegación aislados; manual aprobada y commit `1aa1599`.
 - **Sesión 8.2:** bridges preview/download trasladados a owners existentes; manual acumulada aprobada y commit `6fb39ab`.
@@ -5753,4 +5754,197 @@ Manual 9.1: pendiente
 Commit 9.1: no
 Push: no
 9.2: no iniciada
+```
+
+## Fase 9 — Sesión 9.2: funciones cero-consumer y branches sin emitter
+
+### A. Gate
+
+```text
+rama: refactor-front
+HEAD/hash 9.1: 9496303 refactor(frontend): remove orphaned Batch implementation
+working tree inicial: limpio
+backend: refactor-back / fe25abe / limpio / solo lectura
+puerta: PASS
+```
+
+### B. Reconciliación 9.1
+
+9.0 completada en `73d52b4`. 9.1 fue aprobada manualmente y commiteada en
+`9496303`. La evidencia recibida confirma únicamente que Dashboard/Biblioteca
+carga, los bloques cargan sin errores y no se observaron errores posteriores al
+retiro. `pages/batch.html` permanece como redirect.
+
+### C. Baseline
+
+Dashboard: 2564 LOC, 120 funciones y 292 refs a `explorerState`. Explorer: 1188
+LOC. Jest baseline: 8 suites/24 pruebas PASS.
+
+### D. Grupo A audit
+
+| Función | Consumers productivos | Resultado |
+| --- | --- | --- |
+| `renderActividadCierreStatus` | solo definición | ZERO_CONSUMER |
+| `renderActividadCierreControl` | solo definición | ZERO_CONSUMER |
+| `hasInvalidExamQuestionCounts` | solo definición | ZERO_CONSUMER |
+| `renderActividadesEvaluadasHtml` | solo definición | ZERO_CONSUMER |
+| `getExamOptionLabel` | solo definición | ZERO_CONSUMER |
+| `findPlantelIdForGrado` | solo definición | ZERO_CONSUMER |
+
+La búsqueda incluyó JS, HTML, CSS/strings, `data-*`, globals, aliases, callbacks,
+tests y documentación. No había Quick/Biblioteca consumer. Tras el retiro se
+revalidaron tres hojas derivadas: `getActividadCierreSelectLabel`,
+`getActividadCierreSelectWidth` y `findTemaById`, todas en cero.
+
+### E. Grupo A decisión
+
+```text
+eliminadas: las seis candidatas + tres helpers privados derivados
+preservadas: ninguna candidata
+helpers/constantes compartidos: preservados
+```
+
+### F. Grupo B audit
+
+| Action | Emitter productivo/test | Handler/state previo | Side effects previos | Resultado |
+| --- | --- | --- | --- | --- |
+| `archive-batch` | ninguno/ninguno | archive config + confirm | API archive batch + refresh | retirado |
+| `delete-plantel` | ninguno/ninguno | delete config + confirm | API + refresh | retirado |
+| `delete-grado` | ninguno/ninguno | delete config + confirm | API + refresh | retirado |
+| `delete-materia` | ninguno/ninguno | delete config + confirm | API + refresh | retirado |
+| `delete-unidad` | ninguno/ninguno | delete config + confirm | API + refresh | retirado |
+| `delete-tema` | ninguno/ninguno | delete config + confirm | API + refresh | retirado |
+| `delete-planeacion` | ninguno/ninguno | delete config + confirm | API + refresh | retirado |
+
+No había HTML, template, tree, breadcrumb, card, onboarding, context menu,
+callback dinámico, alias ni test que emitiera estas acciones.
+
+### G. `confirmDelete`
+
+```text
+renderActionButton archive
+→ handleContentClick
+→ requestArchiveAction/getArchiveDialogConfig
+→ openDeleteConfirm
+→ explorerState.confirmDelete
+→ render modal / Bootstrap close-Escape-submit
+→ submitDeleteConfirm
+→ archive service / registry / refresh
+```
+
+`open`, `type`, `id`, `parentIds`, textos, labels, tonos, `busy` y `error`
+mantienen writers/readers en las cinco rutas archive. State, shape, DOM y
+listeners se preservaron; no se reescribió el modal.
+
+### H. Archive vigente
+
+`archive-plantel`, `archive-grado`, `archive-materia`, `archive-unidad` y
+`archive-planeacion` conservan emitter generado, handler, config, submit API,
+registry para jerarquía y refresh. `archivados.page.js`, HTML, localStorage,
+restore y permanent delete permanecen sin diff.
+
+### I. Grupo B decisión
+
+```text
+branches eliminadas: archive-batch + seis delete-*
+branches preservadas: cinco archive-* con emitter real
+confirmDelete: preservado
+```
+
+Se retiraron también los tres owners exclusivos de la cadena delete:
+`getDeleteDialogConfig`, `requestDeleteAction` y
+`refreshAfterHierarchyDelete`. Services/endpoints permanecieron intactos.
+
+### J. Implementación
+
+Productivos modificados: `js/pages/dashboard.page.js` y
+`js/features/dashboard/legacy-explorer.js`. Test añadido:
+`tests/legacy-zero-consumer-removal.smoke.test.js`. No se modificó otro código
+productivo.
+
+### K. Métricas
+
+| Métrica | Antes | Después |
+| --- | ---: | ---: |
+| Dashboard LOC | 2564 | 2274 |
+| Funciones Dashboard | 120 | 108 |
+| `explorerState` refs Dashboard | 292 | 273 |
+| Explorer LOC | 1188 | 1183 |
+| Funciones retiradas | 0 | 12 |
+| Acciones sin emitter | 7 | 0 |
+| DOM/CSS cambiado | 0 | 0 |
+| Dispatch API retirado | 0 | 7 call sites |
+
+### L. Consumer audit post-change
+
+Cero definiciones/referencias productivas para las nueve hojas y siete acciones.
+Cero `getDeleteDialogConfig`, `requestDeleteAction` o
+`refreshAfterHierarchyDelete`. Los cinco archive vigentes conservan emitter y
+handler. Los nombres retirados solo permanecen en documentación y en el smoke
+que comprueba ausencia.
+
+### M. Tests
+
+Baseline: 8 suites/24 pruebas PASS. Final: 9 suites/27 pruebas PASS. Sintaxis
+Dashboard, Explorer y smoke PASS.
+
+### N. Smoke
+
+`legacy-zero-consumer-removal.smoke.test.js`: 1 suite/3 pruebas PASS. Comprueba
+hojas ausentes, siete acciones imposibles ausentes, cinco archives completos,
+modal confirm preservado y cinco deletes Biblioteca emitter+handler.
+
+### O. Quick/Biblioteca
+
+Quick y Biblioteca no tienen diff. Búsqueda source-level confirma cero consumo
+de Grupo A/B. Biblioteca conserva `eliminar-bloque`, `eliminar-planeacion`,
+`eliminar-examen`, `eliminar-lista` y `eliminar-anexo` en render/events.
+
+### P. Scope protegido
+
+Sin cambios: Quick, Biblioteca, CRUD, Bootstrap, Archivados, generation,
+previews/downloads, Detalle, services/APIs/payloads, DOM/CSS, `explorerState`
+shape, pageshow, sessionStorage, `wordExport.js`, backend y DB.
+
+### Q. Manual pendiente
+
+1. Dashboard/Biblioteca: carga, bloques, tabs, search y reload.
+2. Quick Create: abrir/cerrar y Agregar Tema; IA no obligatoria.
+3. Abrir una planeación y volver.
+4. Ejecutar al menos un delete vigente de Biblioteca si hay recurso de prueba.
+5. No activar archive legacy artificialmente; source/smoke basta sin acceso
+   natural.
+6. Consola/red: sin ReferenceError, handler undefined, 404, doble listener ni
+   error nuevo.
+
+### R. Handoff 9.3
+
+Permanecen: cinco `Quick → renderExplorerContent`, uno
+`Quick → selectUnidad`, archive refresh → `selectPlantel/selectGrado/selectMateria`
+y `pageshow → refreshExplorerAfterReturn → select*` indirecto desde Bootstrap.
+9.3 debe resolverlos antes de retirar fallback, Explorer/CRUD, generation
+legacy, DOM, sessionStorage o pageshow.
+
+### S. Documentación
+
+Actualizados los cinco documentos autorizados: `ARCHITECTURE.md`,
+`FRONTEND_MAP.md`, `REFACTOR_ROADMAP.md`, este handoff y `TEST_MATRIX.md`.
+
+### T. Riesgos
+
+Blockers: ninguno técnico. No bloqueantes: archive solo tiene entrada natural
+en fallback, `confirmDelete` conserva nombre histórico, crossings de Quick y
+pageshow siguen activos. No justifican ampliar 9.2.
+
+### U. Estado final
+
+```text
+Fase 9: En progreso
+9.0: completada
+9.1: completada/commiteada/manual aprobada (9496303)
+9.2: implementada
+Manual 9.2: pendiente
+Commit 9.2: no
+Push: no
+9.3: no iniciada
 ```

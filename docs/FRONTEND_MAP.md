@@ -1,6 +1,6 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` hasta la implementación 9.1, con manual
+Estado observado en `refactor-front` hasta la implementación 9.2, con manual
 pendiente. Las Fases 0–8 están completadas y Fase 9 está en progreso. Este
 documento conserva inventarios históricos y registra la arquitectura
 ejecutable y las consolidaciones internas sin cambiar contratos públicos.
@@ -3935,4 +3935,79 @@ léxico efímero.
 - `dashboard_tailwind.html`, Dashboard, Explorer/CRUD, Quick, Biblioteca,
   Detalle, generación, previews, Archivados y backend están fuera del diff.
 
-9.1 queda implementada con manual pendiente. 9.2 permanece no iniciada.
+9.1 quedó aprobada manualmente y commiteada en `9496303`.
+
+## Fase 9 — Sesión 9.2: mapa posterior a hojas/branches sin consumer
+
+### Grupo A y hojas derivadas
+
+| Función retirada | Callers/HTML/data/global/alias/callback/tests | Dependencias internas | Resultado |
+| --- | --- | --- | --- |
+| `renderActividadCierreStatus` | 0 | ninguna; retornaba vacío | ZERO_CONSUMER |
+| `renderActividadCierreControl` | 0 | helpers de actividad, HTML string | ZERO_CONSUMER |
+| `hasInvalidExamQuestionCounts` | 0 | parser de conteos compartido | ZERO_CONSUMER |
+| `renderActividadesEvaluadasHtml` | 0 | `escapeHtml`, HTML string | ZERO_CONSUMER |
+| `getExamOptionLabel` | 0 | cálculo local | ZERO_CONSUMER |
+| `findPlantelIdForGrado` | 0 | solo lectura de `explorerState` | ZERO_CONSUMER |
+| `getActividadCierreSelectLabel` | 0 tras retirar control | helpers compartidos | ZERO_CONSUMER derivado |
+| `getActividadCierreSelectWidth` | 0 tras retirar control | helper anterior | ZERO_CONSUMER derivado |
+| `findTemaById` | 0 tras retirar delete config | cache de temas | ZERO_CONSUMER derivado |
+
+Los parsers, constantes, normalizadores y helpers compartidos llamados por las
+hojas conservan otros consumidores y permanecen intactos.
+
+### Grupo B: emitter → handler posterior
+
+| Acción | Emitter previo | Handler retirado | State/side effects previos | Resultado |
+| --- | --- | --- | --- | --- |
+| `archive-batch` | ninguno | dispatcher/config/API/refresh | confirm + archive batch API | retirado |
+| `delete-plantel` | ninguno | dispatcher/config/API/refresh | confirm + delete jerarquía | retirado |
+| `delete-grado` | ninguno | dispatcher/config/API/refresh | confirm + delete jerarquía | retirado |
+| `delete-materia` | ninguno | dispatcher/config/API/refresh | confirm + delete jerarquía | retirado |
+| `delete-unidad` | ninguno | dispatcher/config/API/refresh | confirm + delete jerarquía | retirado |
+| `delete-tema` | ninguno | dispatcher/config/API/refresh | confirm + delete jerarquía | retirado |
+| `delete-planeacion` | ninguno | dispatcher/config/API/refresh | confirm + delete planeación | retirado |
+
+La búsqueda posterior da cero strings productivos para las siete acciones. Los
+services de delete y archive Batch no se tocaron: Archivados conserva consumers
+de delete jerárquico y las APIs permanecen fuera del corte.
+
+### `confirmDelete` preservado
+
+| Campo/grupo | Writer | Reader | Acción vigente | Retirable |
+| --- | --- | --- | --- | --- |
+| `open` | open/close | render, scroll lock, submit, Escape | cinco archives | no |
+| `type`, `id`, `parentIds` | archive config/open/close | submit, registry, refresh | cinco archives | no |
+| `eyebrow`, `title`, `message`, `warning` | config/open/close | modal render | cinco archives | no |
+| `submitLabel`, `busyLabel`, tonos | config/open/close | modal render | cinco archives | no |
+| `busy`, `error` | open/close/submit/Bootstrap catch | render, guards | cinco archives | no |
+
+Emitters preservados: `archive-plantel`, `archive-grado`, `archive-materia`,
+`archive-unidad` y `archive-planeacion`, generados por `renderActionButton` con
+su handler, service, registry cuando aplica y refresh intactos. Los cinco
+deletes `data-bib-action="eliminar-*"` de Biblioteca conservan emitter y branch
+en `BibliotecaEvents`.
+
+### Métricas y crossings hacia 9.3
+
+| Métrica | Antes | Después | Delta |
+| --- | ---: | ---: | ---: |
+| `dashboard.page.js` LOC | 2564 | 2274 | -290 |
+| Funciones Dashboard | 120 | 108 | -12 |
+| Referencias `explorerState` Dashboard | 292 | 273 | -19 |
+| `legacy-explorer.js` LOC | 1188 | 1183 | -5 |
+| Acciones sin emitter | 7 | 0 | -7 |
+| DOM/CSS productivo | intacto | intacto | 0 |
+| Dispatch API legacy | 7 call sites | 0 | -7 |
+
+Las 12 funciones retiradas son nueve hojas y tres owners de la cadena Grupo B:
+`getDeleteDialogConfig`, `requestDeleteAction` y
+`refreshAfterHierarchyDelete`. No se eliminaron helpers compartidos.
+
+Crossings aún reales: Quick tiene cinco llamadas a `renderExplorerContent` y
+una a `selectUnidad`; archive refresh llama `selectPlantel`, `selectGrado` y
+`selectMateria`; Bootstrap llega indirectamente a `select*` mediante
+`pageshow → refreshExplorerAfterReturn`. Explorer/CRUD, generation visual,
+sessionStorage, pageshow, DOM/CSS, globals y wrappers siguen fuera del corte.
+
+9.2 está implementada con manual pendiente. 9.3 permanece no iniciada.

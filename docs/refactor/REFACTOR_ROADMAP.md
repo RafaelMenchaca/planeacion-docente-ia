@@ -1210,11 +1210,11 @@ Eliminar únicamente código del explorador visual obsoleto demostrado sin consu
 
 ### Estado
 
-**En progreso.** La Sesión 9.0 completó la auditoría técnica/documental de
-apertura y quedó commiteada en `73d52b4`. La Sesión 9.1 retiró la implementación
-Batch sin entry point, preservó `pages/batch.html` y está pendiente de manual y
-commit. Las seis funciones cero-consumer, siete ramas sin emitter y el fallback
-Explorer/CRUD permanecen intactos y reservados para sesiones posteriores.
+**En progreso.** 9.0 quedó commiteada en `73d52b4`; 9.1 retiró Batch, fue
+aprobada manualmente y quedó commiteada en `9496303`. La Sesión 9.2 retiró las
+seis funciones cero-consumer, tres hojas derivadas y la cadena completa de siete
+acciones sin emitter; está pendiente de manual y commit. El fallback
+Explorer/CRUD permanece intacto y reservado para 9.3.
 
 ### Dependencias
 
@@ -1271,19 +1271,22 @@ La aplicación debe permanecer estable sin el legacy eliminado y sin referencias
 
 #### 9.1 — Implementación Batch sin entry point
 
-**Implementada; manual pendiente.** Se retiraron `js/pages/batch.page.js`,
+**Completada, manual aprobada y commiteada en `9496303`.** Se retiraron `js/pages/batch.page.js`,
 `js/ui/batch.ui.js`, `css/batch.css` y el registro inalcanzable
 `batch.html → initBatchPage` de `main.js`. `pages/batch.html` quedó sin cambios
 como redirect de compatibilidad. La búsqueda posterior confirma cero referencias
 productivas a los assets o al init; el smoke textual y la suite completa pasan.
-No avanzar a 9.2 hasta validar y commitear 9.1.
+La validación manual confirmó Dashboard/Biblioteca, bloques y ausencia de errores
+posteriores al retiro.
 
 #### 9.2 — Hojas cero-consumer y ramas sin emitter
 
-Retirar las seis funciones confirmadas sin consumers. Auditar y separar después
-la cadena de seis acciones `delete-*` y `archive-batch`, que no tienen emitter,
-sin afectar las cinco acciones archive emitidas, el confirm compartido, el
-registry ni Archivados.
+**Implementada; manual pendiente.** Se retiraron las seis funciones confirmadas,
+los helpers derivados `getActividadCierreSelectLabel`,
+`getActividadCierreSelectWidth` y `findTemaById`, y la cadena de seis acciones
+`delete-*` más `archive-batch`. Los cinco archives emitidos, `confirmDelete`,
+registry, Archivados y deletes de Biblioteca permanecen. Suite final: 9
+suites/27 pruebas. No avanzar a 9.3 antes de aprobación manual y commit.
 
 #### 9.3 — Fallback visual coordinado
 

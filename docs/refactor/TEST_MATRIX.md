@@ -2022,3 +2022,39 @@ manual permanece pendiente; los resultados siguientes son técnicos.
 La UI Batch eliminada no se prueba. Las seis funciones cero-consumer, siete
 handlers sin emitter y fallback visual pertenecen a 9.2/9.3 y permanecen
 intactos.
+
+## Fase 9 — Sesión 9.2: cero-consumer y actions sin emitter
+
+9.1 quedó aprobada manualmente y commiteada en `9496303`. La evidencia recibida
+confirma Dashboard/Biblioteca y bloques cargados sin errores posteriores al
+retiro. 9.2 tiene validación técnica completa y manual pendiente.
+
+| Verificación técnica | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`9496303`, limpio al abrir | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio/solo lectura | PASS |
+| Baseline | 8 suites/24 pruebas | PASS |
+| Grupo A | seis candidatas con solo definición | ZERO_CONSUMER |
+| Hojas derivadas | tres helpers quedan sin caller y se revalidan | ZERO_CONSUMER |
+| Grupo B emitters | siete acciones: cero productivo/test/dinámico | confirmado |
+| Post-search | nueve hojas y siete actions: cero producción | PASS |
+| Archive vigente | cinco emitters + config + submit + refresh | PASS source/smoke |
+| `confirmDelete` | shape/render/open/close/submit/listeners intactos | PASS |
+| Biblioteca delete | cinco emitters y handlers vigentes | PASS source/smoke |
+| Sintaxis | Dashboard, Explorer y smoke | PASS |
+| Smoke específico | 1 suite/3 pruebas | PASS |
+| Jest final | 9 suites/27 pruebas | PASS |
+| Scope | solo Dashboard, Explorer, smoke y cinco docs | PASS |
+
+### Manual obligatoria pendiente de 9.2
+
+| Caso | Evidencia esperada | Estado |
+| --- | --- | --- |
+| Dashboard/Biblioteca | carga, bloques, tabs, search, reload | Pendiente usuario |
+| Quick/Agregar Tema | abrir/cerrar y modal vigente; sin IA obligatoria | Pendiente usuario |
+| Detalle/back | abre planeación y vuelve correctamente | Pendiente usuario |
+| Delete Biblioteca | al menos un recurso de prueba si existe | Pendiente usuario |
+| Archive legacy | solo si hay acceso natural; no activar artificialmente | Source/smoke suficiente si no hay acceso |
+| Consola/red | sin ReferenceError, undefined, 404, duplicación o error nuevo | Pendiente usuario |
+
+No se requiere generar IA. 9.3 no inicia hasta aprobar y commitear 9.2.

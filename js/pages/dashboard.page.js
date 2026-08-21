@@ -204,22 +204,6 @@ function buildActividadDidacticaOptions(selectedValue) {
   return options.join("");
 }
 
-function renderActividadCierreStatus(actividadCierre) {
-  return "";
-}
-
-function getActividadCierreSelectLabel(actividadCierre) {
-  return isActividadDidacticaValida(actividadCierre)
-    ? normalizeActividadDidactica(actividadCierre)
-    : "Sin actividad especifica";
-}
-
-function getActividadCierreSelectWidth(actividadCierre) {
-  const label = getActividadCierreSelectLabel(actividadCierre);
-  const widthCh = Math.min(Math.max(label.length + 3, 11), 28);
-  return `${widthCh}ch`;
-}
-
 function renderActividadDidacticaSelect({ scope, localId, momentoKey, actividad }) {
   const safeScope = scope === "quick" ? "quick" : "staging";
   const safeLocalId = escapeHtml(String(localId));
@@ -266,30 +250,6 @@ function renderActividadesMomentosControl({ scope, localId, actividadesMomentos 
         `).join("")}
       </div>
     </div>
-  `;
-}
-
-function renderActividadCierreControl({ scope, localId, actividadCierre }) {
-  const safeScope = scope === "quick" ? "quick" : "staging";
-  const selectId = `${safeScope}-actividad-cierre-${escapeHtml(String(localId))}`;
-  const dataAttribute = safeScope === "quick"
-    ? `data-quick-actividad-select="${escapeHtml(String(localId))}"`
-    : `data-staging-actividad-select="${escapeHtml(String(localId))}"`;
-  const descripcion = getActividadDidacticaDescripcion(actividadCierre);
-  const title = isActividadDidacticaValida(actividadCierre)
-    ? `${normalizeActividadDidactica(actividadCierre)}${descripcion ? ` - ${descripcion}` : ""}`
-    : "Sin actividad especifica";
-
-  return `
-    <select
-      id="${selectId}"
-      class="actividad-cierre-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none ${isActividadDidacticaValida(actividadCierre) ? "is-filled" : ""}"
-      style="width: ${getActividadCierreSelectWidth(actividadCierre)}; min-width: 118px; max-width: 240px;"
-      title="${escapeHtml(title)}"
-      ${dataAttribute}
-    >
-      ${buildActividadDidacticaOptions(actividadCierre)}
-    </select>
   `;
 }
 
@@ -444,11 +404,6 @@ function findMateriaById(gradoId, materiaId) {
 function findUnidadById(materiaId, unidadId) {
   const list = explorerState.unidadesByMateria[materiaId] || [];
   return list.find((item) => item.id === unidadId) || null;
-}
-
-function findTemaById(unidadId, temaId) {
-  const list = explorerState.temasByUnidad[unidadId] || [];
-  return list.find((item) => item.id === temaId) || null;
 }
 
 function buildArchivedHierarchyScopeMetadata(type, id, parentIds = {}) {
@@ -829,13 +784,6 @@ function parseExamQuestionCount(value) {
 
 function getExamQuestionCountValue(state, tipo) {
   return normalizeExamQuestionCountInput(state?.questionCounts?.[tipo] ?? "");
-}
-
-function hasInvalidExamQuestionCounts(state) {
-  return (state?.selectedTypes || []).some((tipo) => {
-    const count = parseExamQuestionCount(state?.questionCounts?.[tipo]);
-    return !Number.isInteger(count) || count < 1;
-  });
 }
 
 function getExamQuestionCountsPayload(state) {
@@ -1258,33 +1206,6 @@ async function submitListaCotejoGenerate() {
     explorerState.errors.listaCotejo[unidadId] = formatFetchError(error, "No se pudieron generar las listas de cotejo.");
     renderAll();
   }
-}
-
-function renderActividadesEvaluadasHtml(lista) {
-  const actividadesEvaluadas = Array.isArray(lista.actividades_evaluadas) ? lista.actividades_evaluadas : [];
-
-  if (actividadesEvaluadas.length > 0) {
-    const label = actividadesEvaluadas.length === 1 ? "Actividad evaluada" : "Actividades evaluadas";
-    const items = actividadesEvaluadas.map((act) => `
-      <div class="mb-2 last:mb-0">
-        <p class="text-xs font-semibold text-slate-600">${escapeHtml(act.momento_label || "")} — ${escapeHtml(act.actividad_seleccionada || "")}</p>
-        ${act.actividad_texto ? `<p class="mt-0.5 text-sm text-slate-700">${escapeHtml(act.actividad_texto)}</p>` : ""}
-      </div>
-    `).join("");
-    return `
-      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">${escapeHtml(label)}</p>
-        <div class="mt-1 space-y-2">${items}</div>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividad evaluada</p>
-      <p class="mt-1 text-sm text-slate-700">${escapeHtml(lista.actividad_cierre || "No especificada")}</p>
-    </div>
-  `;
 }
 
 function shouldShowListaCotejoSection(unidadId) {
@@ -1764,112 +1685,6 @@ function removeUnidadRecord(materiaId, unidadId) {
   }
 }
 
-function getDeleteDialogConfig(action, ids) {
-  if (action === "delete-plantel") {
-    const plantel = explorerState.planteles.find((item) => item.id === ids.plantelId) || getCurrentPlantel();
-    const nombre = plantel?.nombre || "este plantel";
-    return {
-      type: "plantel",
-      id: ids.plantelId,
-      parentIds: {},
-      title: "Eliminar plantel",
-      message: `Se eliminara ${nombre}.`,
-      warning: "Se eliminara este plantel y todo su contenido: grados, materias, unidades, temas y planeaciones."
-    };
-  }
-
-  if (action === "delete-grado") {
-    const grado = findGradoById(ids.plantelId, ids.gradoId) || getCurrentGrado();
-    const nombre = grado?.nombre || "este grado";
-    return {
-      type: "grado",
-      id: ids.gradoId,
-      parentIds: { plantelId: ids.plantelId },
-      title: "Eliminar grado",
-      message: `Se eliminara ${nombre}.`,
-      warning: "Se eliminara este grado y todas sus materias, unidades, temas y planeaciones."
-    };
-  }
-
-  if (action === "delete-materia") {
-    const materia = findMateriaById(ids.gradoId, ids.materiaId) || getCurrentMateria();
-    const nombre = materia?.nombre || "esta materia";
-    return {
-      type: "materia",
-      id: ids.materiaId,
-      parentIds: {
-        plantelId: ids.plantelId,
-        gradoId: ids.gradoId
-      },
-      title: "Eliminar materia",
-      message: `Se eliminara ${nombre}.`,
-      warning: "Se eliminara esta materia y todas sus unidades, temas y planeaciones."
-    };
-  }
-
-  if (action === "delete-unidad") {
-    const unidad = findUnidadById(ids.materiaId, ids.unidadId) || getCurrentUnidad();
-    const nombre = unidad?.nombre || "esta unidad";
-    return {
-      type: "unidad",
-      id: ids.unidadId,
-      parentIds: {
-        plantelId: ids.plantelId,
-        gradoId: ids.gradoId,
-        materiaId: ids.materiaId
-      },
-      title: "Eliminar unidad",
-      message: `Se eliminara ${nombre}.`,
-      warning: "Se eliminara esta unidad y todos sus temas y planeaciones."
-    };
-  }
-
-  if (action === "delete-tema") {
-    const tema = findTemaById(ids.unidadId, ids.temaId);
-    const nombre = tema?.titulo || "este tema";
-    return {
-      type: "tema",
-      id: ids.temaId,
-      parentIds: {
-        plantelId: ids.plantelId,
-        gradoId: ids.gradoId,
-        materiaId: ids.materiaId,
-        unidadId: ids.unidadId
-      },
-      title: "Eliminar tema",
-      message: `Se eliminara ${nombre}.`,
-      warning: "Se eliminara este tema y su planeacion asociada, si existe."
-    };
-  }
-
-  if (action === "delete-planeacion") {
-    const tema = findTemaById(ids.unidadId, ids.temaId);
-    const nombre = tema?.titulo || "este tema";
-    return {
-      type: "planeacion",
-      id: ids.planeacionId,
-      parentIds: {
-        plantelId: ids.plantelId,
-        gradoId: ids.gradoId,
-        materiaId: ids.materiaId,
-        unidadId: ids.unidadId,
-        temaId: ids.temaId
-      },
-      title: "Eliminar planeacion",
-      message: `Se eliminara la planeacion asociada a ${nombre}.`,
-      warning: "El tema se conservara."
-    };
-  }
-
-  return null;
-}
-
-function requestDeleteAction(action, ids) {
-  const config = getDeleteDialogConfig(action, ids);
-  if (!config?.id) return;
-  openDeleteConfirm(config);
-}
-
 function getArchiveDialogConfig(action, ids) {
   if (action === "archive-plantel") {
     const plantel = explorerState.planteles.find((item) => item.id === ids.plantelId) || getCurrentPlantel();
@@ -1978,29 +1793,6 @@ function getArchiveDialogConfig(action, ids) {
     };
   }
 
-  if (action === "archive-batch") {
-    return {
-      type: "archive-batch",
-      id: ids.batchId,
-      parentIds: {
-        plantelId: ids.plantelId,
-        gradoId: ids.gradoId,
-        materiaId: ids.materiaId,
-        unidadId: ids.unidadId,
-        temaId: ids.temaId,
-        batchId: ids.batchId
-      },
-      eyebrow: "Mover a Archivados",
-      title: "¿Archivar elemento?",
-      message: "Este elemento se movera a Archivados y podras restaurarlo despues.",
-      warning: "Se archivaran todas las planeaciones que compartan esta ruta por batch_id.",
-      submitLabel: "Si, archivar",
-      busyLabel: "Archivando...",
-      submitTone: "archive",
-      warningTone: "archive"
-    };
-  }
-
   return null;
 }
 
@@ -2008,59 +1800,6 @@ function requestArchiveAction(action, ids) {
   const config = getArchiveDialogConfig(action, ids);
   if (!config?.id) return;
   openDeleteConfirm(config);
-}
-
-async function refreshAfterHierarchyDelete(type, context = {}) {
-  if (type === "plantel") {
-    prunePlantelBranch(context.id);
-    await loadPlanteles();
-    await selectRoot();
-    return;
-  }
-
-  if (type === "grado") {
-    pruneGradoBranch(context.id);
-    delete explorerState.gradosByPlantel[context.plantelId];
-    delete explorerState.loading.grados[context.plantelId];
-    delete explorerState.errors.grados[context.plantelId];
-    await selectPlantel(context.plantelId);
-    return;
-  }
-
-  if (type === "materia") {
-    pruneMateriaBranch(context.id);
-    delete explorerState.materiasByGrado[context.gradoId];
-    delete explorerState.loading.materias[context.gradoId];
-    delete explorerState.errors.materias[context.gradoId];
-    await selectGrado(context.plantelId, context.gradoId);
-    return;
-  }
-
-  if (type === "unidad") {
-    pruneUnidadBranch(context.id);
-    delete explorerState.unidadesByMateria[context.materiaId];
-    delete explorerState.loading.unidades[context.materiaId];
-    delete explorerState.errors.unidades[context.materiaId];
-    await selectMateria(context.plantelId, context.gradoId, context.materiaId);
-    return;
-  }
-
-  if (type === "tema") {
-    pruneTemaRecord(context.unidadId, context.id);
-    delete explorerState.temasByUnidad[context.unidadId];
-    delete explorerState.loading.temas[context.unidadId];
-    delete explorerState.errors.temas[context.unidadId];
-    await selectUnidad(context.plantelId, context.gradoId, context.materiaId, context.unidadId);
-    return;
-  }
-
-  if (type === "planeacion") {
-    explorerState.planeacionByTema[context.temaId] = null;
-    delete explorerState.temasByUnidad[context.unidadId];
-    delete explorerState.loading.temas[context.unidadId];
-    delete explorerState.errors.temas[context.unidadId];
-    await selectUnidad(context.plantelId, context.gradoId, context.materiaId, context.unidadId);
-  }
 }
 
 async function refreshAfterPlaneacionArchive(context = {}) {
@@ -2137,24 +1876,16 @@ async function submitDeleteConfirm() {
     "archive-grado",
     "archive-materia",
     "archive-unidad",
-    "archive-planeacion",
-    "archive-batch"
+    "archive-planeacion"
   ]);
   let responsePayload = null;
 
   try {
-    if (type === "plantel") await eliminarPlantel(id);
-    else if (type === "grado") await eliminarGrado(id);
-    else if (type === "materia") await eliminarMateria(id);
-    else if (type === "unidad") await eliminarUnidad(id);
-    else if (type === "tema") await eliminarTema(id);
-    else if (type === "planeacion") await eliminarPlaneacionApi(id);
-    else if (type === "archive-plantel") responsePayload = await archivarPlantel(id);
+    if (type === "archive-plantel") responsePayload = await archivarPlantel(id);
     else if (type === "archive-grado") responsePayload = await archivarGrado(id);
     else if (type === "archive-materia") responsePayload = await archivarMateria(id);
     else if (type === "archive-unidad") responsePayload = await archivarUnidad(id);
     else if (type === "archive-planeacion") responsePayload = await archivarPlaneacionApi(id);
-    else if (type === "archive-batch") responsePayload = await archivarRutaBatchApi(id);
 
     if (
       ["archive-plantel", "archive-grado", "archive-materia", "archive-unidad"].includes(type) &&
@@ -2177,12 +1908,10 @@ async function submitDeleteConfirm() {
 
     closeDeleteConfirm({ force: true });
     try {
-      if (type === "archive-planeacion" || type === "archive-batch") {
+      if (type === "archive-planeacion") {
         await refreshAfterPlaneacionArchive({ id, ...parentIds });
       } else if (archiveTypes.has(type)) {
         await refreshAfterHierarchyArchive(type, { id, ...parentIds });
-      } else {
-        await refreshAfterHierarchyDelete(type, { id, ...parentIds });
       }
     } catch (refreshError) {
       const fallbackMessage = archiveTypes.has(type)
@@ -2287,18 +2016,6 @@ function renderProgressSection() {
 
 function getExamTypeLabel(tipo) {
   return EXAM_TIPOS_PREGUNTA.find((item) => item.value === tipo)?.label || tipo || "Tipo";
-}
-
-function getExamOptionLabel(index) {
-  let currentIndex = Number.isInteger(index) ? index : 0;
-  let label = "";
-
-  do {
-    label = String.fromCharCode(97 + (currentIndex % 26)) + label;
-    currentIndex = Math.floor(currentIndex / 26) - 1;
-  } while (currentIndex >= 0);
-
-  return `${label})`;
 }
 
 function shouldShowExamSection(unidadId) {
@@ -2552,13 +2269,6 @@ async function handleCreateAction(action) {
     renderExplorerContent();
     focusStagingInput();
   }
-}
-
-function findPlantelIdForGrado(gradoId) {
-  for (const [plantelId, grados] of Object.entries(explorerState.gradosByPlantel || {})) {
-    if ((grados || []).some((g) => g.id === gradoId)) return plantelId;
-  }
-  return null;
 }
 
 window.explorerState = explorerState;

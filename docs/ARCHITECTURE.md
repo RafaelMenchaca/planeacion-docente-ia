@@ -9,10 +9,11 @@ La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” c
 Las Fases 0–8 están completadas. Fase 8 cerró mediante la auditoría 8.4;
 sus commits funcionales reales son `1aa1599`, `6fb39ab` y `cf48637`, el cierre
 documental es `bf97b1a`, y el merge acumulativo es `41f933e`. La auditoría 9.0
-abrió documentalmente Fase 9 y quedó commiteada en `73d52b4`. La Sesión 9.1
-retiró la implementación Batch sin entry point y preservó su redirect; su
-manual está pendiente. Fase 10 permanece pendiente y no iniciada. El inventario
-ejecutable se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+abrió documentalmente Fase 9 y quedó commiteada en `73d52b4`. La Sesión 9.1,
+aprobada manualmente, retiró Batch y quedó commiteada en `9496303`. La Sesión
+9.2 retiró hojas cero-consumer y siete acciones sin emitter; su manual está
+pendiente. Fase 10 permanece pendiente y no iniciada. El inventario ejecutable
+se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
 
@@ -994,4 +995,37 @@ URL/bookmark pages/batch.html
 ```
 
 No se modificaron Dashboard, Biblioteca, Quick Create, Detalle, Explorer/CRUD,
-generación, Archivados, API, backend ni contratos. 9.2 no está iniciada.
+generación, Archivados, API, backend ni contratos durante 9.1.
+
+## Fase 9 — Sesión 9.2: hojas y acciones inaccesibles
+
+La auditoría repetida confirmó que las seis funciones candidatas no tenían
+caller, emitter HTML/data, global/alias, callback ni test. Su eliminación dejó
+dos helpers de tamaño de select y `findTemaById` sin consumidores; los tres se
+sometieron a la misma búsqueda y también se retiraron. En total desaparecieron
+nueve hojas privadas.
+
+Las acciones `archive-batch` y las seis `delete-*` jerárquicas tampoco tenían
+emitter productivo ni de test. Se eliminó su cadena completa: aceptación en
+`handleContentClick`, configuración del modal, dispatch API y refresh delete.
+El estado y DOM de `confirmDelete` permanecen porque los cinco archives
+realmente emitidos los siguen usando:
+
+```text
+archive-{plantel,grado,materia,unidad,planeacion}
+→ requestArchiveAction
+→ openDeleteConfirm
+→ confirmDelete
+→ submitDeleteConfirm
+→ archive service / registry / refresh
+```
+
+No se modificaron services, endpoints, registry, Archivados ni deletes de
+Biblioteca. `confirmDelete` conserva su shape, render, close, submit, busy/error
+y listeners Bootstrap; solo admite ahora las cinco rutas archive demostradas.
+
+Dashboard queda en 2274 LOC, 108 funciones y 273 referencias a
+`explorerState`; el owner Explorer queda en 1183 LOC. 9.3 no está iniciada y
+todavía debe resolver Quick → `selectUnidad`/`renderExplorerContent`, archive →
+`select*` y `pageshow → refreshExplorerAfterReturn` antes de retirar el
+fallback visual.
