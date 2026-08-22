@@ -1983,15 +1983,17 @@ retirada.
 | Tests legacy | retirar smokes Explorer/CRUD si ya no representan producción; sustituir por smoke Biblioteca-only |
 | Consola/red | cero ReferenceError, listener/render/request duplicado o 404 |
 
-### Cierre futuro 9.4
+### Plan histórico de cierre 9.4 (ejecutado más abajo)
 
-Repetir búsqueda global, rutas, scripts, DOM/CSS, globals, suite completa y
-manual acumulada. No abrir Fase 10 hasta aprobar formalmente el cierre de Fase 9.
+El plan exigía repetir búsqueda global, rutas, scripts, DOM/CSS, globals, suite
+completa y manual acumulada antes de abrir Fase 10. La evidencia ejecutada se
+registra en la sección 9.4 al final del documento.
 
 ## Fase 9 — Sesión 9.1: compatibilidad Batch
 
-9.1 retira únicamente la implementación Batch sin entry point. La validación
-manual permanece pendiente; los resultados siguientes son técnicos.
+9.1 retiró únicamente la implementación Batch sin entry point. Al entregar el
+corte, la validación manual permanecía pendiente; su aprobación real se registra
+más abajo. Los resultados siguientes son la evidencia técnica de esa entrega.
 
 | Verificación técnica | Evidencia | Resultado |
 | --- | --- | --- |
@@ -2008,16 +2010,12 @@ manual permanece pendiente; los resultados siguientes son técnicos.
 | Jest final | 8 suites/24 pruebas | PASS |
 | Scope | Batch redirect y dominios protegidos sin diff | PASS |
 
-### Manual obligatoria pendiente de 9.1
+### Manual 9.1 aprobada
 
-| Caso | Evidencia esperada | Estado |
-| --- | --- | --- |
-| `/batch.html` | redirect a Dashboard; Biblioteca carga | Pendiente usuario |
-| `/batch.html?id=test` | mismo redirect histórico; query no requerida | Pendiente usuario |
-| Login/Dashboard | Biblioteca, bloques y tabs normales | Pendiente usuario |
-| Quick Create | abre y cierra sin error; no requiere IA | Pendiente usuario |
-| Detalle/back | planeación abre y retorno reconstruye Biblioteca | Pendiente usuario |
-| Consola/red | sin 404 Batch, `initBatchPage` ni error nuevo | Pendiente usuario |
+La evidencia real aprobada confirmó que Dashboard/Biblioteca y sus bloques
+cargaron correctamente y que no aparecieron errores después del retiro Batch.
+No se atribuyen a 9.1 pruebas manuales más específicas que las informadas. El
+redirect y ausencia de assets/init quedan cubiertos por el smoke automatizado.
 
 La UI Batch eliminada no se prueba. Las seis funciones cero-consumer, siete
 handlers sin emitter y fallback visual pertenecen a 9.2/9.3 y permanecen
@@ -2087,18 +2085,43 @@ entrada Biblioteca-only, Quick sin Explorer, DOM/actions/storage ausentes,
 owners vigentes y redirect Batch. Los tests de Quick, Bootstrap y previews se
 actualizaron para invocar sus owners reales.
 
-### Manual obligatoria pendiente de 9.3
+### Manual 9.3 aprobada
 
-| Caso | Evidencia esperada | Estado |
+| Caso | Evidencia real | Estado |
 | --- | --- | --- |
-| Dashboard/Biblioteca | login, bloques, search, tabs, cambio, reload | Pendiente usuario |
-| Quick bloque nuevo | pending, feedback, success y bloque visible | Pendiente usuario |
-| Agregar Tema | reutiliza batch y muestra tema nuevo | Pendiente usuario |
-| Detalle/back | Biblioteca correcta, sin Explorer visual | Pendiente usuario |
-| Preview/download | Examen y Lista abren, cierran, reabren y descargan si práctico | Pendiente usuario |
-| Generation | Anexo, Lista y Examen sobre planeación nueva | Pendiente usuario |
-| Deletes | Examen, Lista, Anexo y planeación/batch de prueba | Pendiente usuario |
-| Consola/red | sin ReferenceError, undefined, 404 o duplicaciones | Pendiente usuario |
+| Dashboard/Biblioteca | carga correcta; bloques donde deben; sin problemas posteriores | Aprobada |
+| Planeación nueva | success 1 / error 0 / skipped 0 | Aprobada |
+| Agregar Tema | batch reutilizado; success 1 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen | 11/11; 0 fallidas; 1 retry | Aprobada |
+| Deletes | Examen, Lista, Anexo, Planeación y Batch success | Aprobada |
 
-Archive legacy no se activa artificialmente. `public.ia_metrics` continúa como
-issue externo conocido y no bloqueante. 9.4 no está iniciada.
+Archive legacy no se activó artificialmente. `public.ia_metrics` continúa como
+issue externo, preexistente, no bloqueante y fuera de F9.
+
+## Fase 9 — Sesión 9.4: auditoría formal de cierre
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front` limpio en `7393909` | PASS |
+| Backend | `refactor-back` limpio en `fe25abe`, solo lectura | PASS |
+| Commits 9.0–9.3 | `73d52b4`, `9496303`, `7cca74e`, `7393909` | reconciliados |
+| Consumer audit | cero referencias productivas a Explorer/CRUD/Batch/init retirados | PASS |
+| Bootstrap | Biblioteca obligatoria; cero fallback/hydrate visual | PASS |
+| Quick | cero Explorer/select visual; IDs/caches/loaders preservados | PASS |
+| Jerarquía técnica | state, `loadPlanteles` y cuatro `ensure*` con consumers | PASS |
+| Scripts | 43 tags; cero rutas locales faltantes; orden clásico válido | PASS |
+| DOM | 51 IDs vigentes; cero hooks exclusivamente legacy | PASS |
+| CSS | 1841 LOC/235 reglas auditadas; reglas restantes con owner o compat | PASS |
+| Actions | 20 emitters Biblioteca con handler; cero emitter huérfano | PASS |
+| Batch | redirect intacto; smoke PASS; assets/init ausentes | PASS |
+| Generation/previews | owners cargados y con consumers | PASS |
+| `node --check` | 8 JS críticos | PASS |
+| Jest | 8 suites / 24 pruebas | PASS |
+| Scope | solo cinco documentos; código productivo/backend sin cambios | PASS |
+
+Tres branches de Biblioteca sin emitter (`toggle-expand`, `generar-anexo`,
+`regenerar-anexo`) quedan clasificadas como compatibilidad para Fase 10; no son
+actions ni emitters del fallback eliminado. Decisión de auditoría:
+**A. Fase 9 puede cerrarse.**

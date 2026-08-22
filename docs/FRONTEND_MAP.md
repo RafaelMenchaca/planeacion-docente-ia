@@ -1,7 +1,7 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` hasta la implementación 9.3, con manual
-pendiente. Las Fases 0–8 están completadas y Fase 9 está en progreso. Este
+Estado observado en `refactor-front` después de la auditoría formal 9.4. Las
+Fases 0–9 están completadas; Fase 10 está pendiente y no iniciada. Este
 documento conserva inventarios históricos y registra la arquitectura
 ejecutable y las consolidaciones internas sin cambiar contratos públicos.
 
@@ -4058,4 +4058,75 @@ apariciones históricas de este documento describen estados anteriores.
 
 Suite final: 8 suites/24 pruebas PASS. Se retiraron los dos smokes de la UI
 eliminada y se añadió `dashboard-no-legacy-fallback.smoke.test.js`. Manual 9.3
-pendiente; commit y push no realizados.
+aprobada; commit real `7393909`.
+
+## Fase 9 — Sesión 9.4: mapa final auditado
+
+Gate: frontend `refactor-front` limpio en `7393909`; backend `refactor-back`
+limpio en `fe25abe` y solo lectura. Commits reales: 9.0 `73d52b4`, 9.1
+`9496303`, 9.2 `7cca74e`, 9.3 `7393909`.
+
+### Métricas acumuladas de Fase 9
+
+| Métrica | Inicio F9 (`73d52b4`) | Final F9 (`7393909`) | Delta |
+| --- | ---: | ---: | ---: |
+| Dashboard LOC | 2564 | 464 | -2100 |
+| Funciones Dashboard | 120 | 32 | -88 |
+| Explorer LOC/funciones | 1188 / 42 | 0 / 0 | -1188 / -42 |
+| CRUD LOC/funciones | 234 / 5 | 0 / 0 | -234 / -5 |
+| `explorerState` refs en Dashboard/Explorer/CRUD/Bootstrap/Quick | 604 | 160 | -444 |
+| Layout IDs | 104 | 51 | -53 |
+| `dashboard.css` LOC/reglas auditadas | 2257 / 294 | 1841 / 235 | -416 / -59 |
+| Scripts Dashboard exclusivamente legacy | 2 | 0 | -2 |
+| Hooks DOM exclusivamente legacy | 53 | 0 | -53 |
+| Asignaciones `window.*` en las cinco superficies auditadas | 7 | 4 | -3 |
+| Suites/tests | 7 / 22 | 8 / 24 | +1 / +2 |
+
+Las reglas CSS usan el mismo conteo de selectores empleado en 9.3. Los nombres
+`.explorer-shell`, `.explorer-hero`, `.explorer-card`,
+`.explorer-content-area`, `.explorer-danger-icon-btn` y
+`.explorer-status-pill` permanecen porque tienen markup o consumers vigentes en
+layout, Quick, AppUI o Archivados; son nombres históricos compartidos, no UI
+Explorer ejecutable. El modal `delete-confirm` pertenece a Archivados.
+
+### Estado, globals y compatibilidad
+
+| Superficie | Owner/consumer vigente | Clasificación | Fase 10 |
+| --- | --- | --- | --- |
+| `explorerState` + `ensure*` | Dashboard técnico → Quick; previews/progress por owners | activo técnico | revisar nombre/frontera, no borrar |
+| `window.QuickCreate` | Quick → Bootstrap | namespace activo | auditar namespace |
+| `window.biblioteca` | Biblioteca → Quick (selección, pending, reconcile) | bridge activo | consolidar contrato |
+| `window.initBiblioteca` | Biblioteca → Bootstrap | entry clásico activo | revisar contrato léxico |
+| `window.BibliotecaLoader/Render/ModalRender/Events` | owners de Biblioteca | namespaces activos | consolidar exposición |
+| `window.AppUI` + aliases de status/progress | shared UI → Quick/Biblioteca | aliases activos | retirar solo tras migrar consumers |
+| generation/preview/download namespaces | Biblioteca/Bootstrap | owners activos | compatibilidad de namespace |
+| funciones `bib*`, preview/download y `loadAndRenderBiblioteca` | Events/features → owners reales | wrappers activos | migrar consumers antes de retirar |
+| `renderBibliotecaContent` global | Quick/features clásicos → BibliotecaRender | bridge activo | consolidar sin cambiar orden |
+
+`explorerState` conserva `planteles`, `gradosByPlantel`, `materiasByGrado`,
+`unidadesByMateria`, `temasByUnidad`, caches de preview, loading/errors,
+`current`, staging, progress, Quick y flags de generación. No conserva
+`expanded*`, search Explorer, modales/generación visual legacy ni
+`confirmDelete` Dashboard.
+
+### Scripts, DOM y actions
+
+`dashboard.html` carga 43 scripts; cero rutas locales faltantes y cero tags a
+Explorer/CRUD. El orden clásico deja APIs/services y owners antes de
+Dashboard/Bootstrap/Quick/Biblioteca, y `main.js` al final. `layout.html`
+conserva hero/workspace Biblioteca, Quick, previews de Examen/Lista y chrome;
+no contiene tree, breadcrumbs, entity modal, onboarding, archive confirm ni
+modales de generación legacy.
+
+Los 20 valores emitidos de `data-bib-action` poseen branch en
+`BibliotecaEvents`; no hay emitter productivo huérfano. Permanecen tres branches
+sin emitter (`toggle-expand`, `generar-anexo`, `regenerar-anexo`) previamente
+clasificadas como compatibilidad de Biblioteca. No pertenecen al fallback
+retirado y pasan a auditoría de compatibilidad en Fase 10.
+
+Consumer audit final: cero referencias productivas a `legacy-explorer`,
+`legacy-hierarchy-crud`, `renderExplorerContent`, `renderAll`, `selectRoot`,
+`selectPlantel`, `selectGrado`, `selectMateria`, `selectUnidad`,
+`refreshExplorerAfterReturn`, `educativo.dashboard.last-location`,
+`initBatchPage` o los tres assets Batch retirados. Las menciones anteriores de
+este documento son inventario histórico.

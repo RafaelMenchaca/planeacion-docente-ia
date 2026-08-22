@@ -32,7 +32,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Completada |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Completada |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Completada |
-| 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | En progreso |
+| 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Completada |
 | 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
 
 Los únicos estados válidos son `Pendiente`, `En progreso`, `Completada`, `Bloqueada` y `Cancelada`. No se marca una fase como completada sin evidencia de todos sus criterios de salida.
@@ -1206,15 +1206,17 @@ El legacy está aislado. Fase 9 no puede retirar una superficie hasta demostrar 
 
 ### Objetivo
 
-Eliminar únicamente código del explorador visual obsoleto demostrado sin consumidores.
+Eliminar únicamente legacy obsoleto demostrado sin consumidores, sin romper el
+flujo vigente ni los contratos técnicos.
 
 ### Estado
 
-**En progreso.** 9.0 quedó commiteada en `73d52b4`; 9.1 retiró Batch, fue
+**Completada.** 9.0 quedó commiteada en `73d52b4`; 9.1 retiró Batch, fue
 aprobada manualmente y quedó commiteada en `9496303`. 9.2 fue aprobada
 manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
-Explorer/CRUD tras migrar los cruces vigentes; está implementada con manual y
-commit pendientes. 9.4 no se ha iniciado.
+Explorer/CRUD tras migrar los cruces vigentes; fue aprobada manualmente y quedó
+commiteada en `7393909`. 9.4 aprobó formalmente el cierre. Fase 10 permanece
+pendiente y no iniciada.
 
 ### Dependencias
 
@@ -1291,7 +1293,7 @@ Lista, Examen y Agregar Tema sin errores nuevos.
 
 #### 9.3 — Fallback visual coordinado
 
-**Implementada; manual y commit pendientes.** Quick llama directamente a
+**Completada, manual aprobada y commiteada en `7393909`.** Quick llama directamente a
 `BibliotecaRender.renderContent()` y conserva los IDs técnicos en
 `explorerState.current`. Bootstrap monta exclusivamente Biblioteca. Se retiraron
 Explorer/CRUD, archive y generación visual legacy, `pageshow`, sessionStorage,
@@ -1300,8 +1302,12 @@ previews, Biblioteca, Archivados y contratos backend permanecen.
 
 #### 9.4 — Auditoría formal de cierre
 
-Repetir mapas de consumers y rutas, suite completa, manual acumulada y
-documentación. Fase 10 permanece pendiente hasta una aprobación explícita.
+**Completada; auditoría de cierre aprobada.** Se repitieron mapas de consumers,
+rutas, script order, DOM/CSS, globals, wrappers y estado técnico. La suite pasa
+8/8 suites y 24/24 pruebas; ocho JS críticos pasan `node --check`; no existen
+referencias productivas a superficies retiradas. La manual acumulada de 9.3
+confirma Dashboard/Biblioteca, generación, Agregar Tema y deletes. Fase 10
+permanece pendiente/no iniciada.
 
 ## Fase 10 — Consolidación final
 
@@ -1430,7 +1436,7 @@ delete/archive cruza el sistema congelado; wrappers/globals/estado pertenecen a
 Fase 10. La auditoría de cierre confirmó estas fronteras y marca Fase 8
 completada, sin abrir Fase 9.
 
-## Actualización Fase 9 — Sesión 9.3
+## Actualización Fase 9 — cierre 9.4
 
 Decisión A: retiro completo del fallback posible y ejecutado. Los cruces
 vigentes se resolvieron sin mover la jerarquía técnica ni crear otro owner:
@@ -1442,9 +1448,11 @@ congelados.
 Se retiraron Explorer/CRUD, sidebar, generación visual antigua, tree,
 breadcrumbs, onboarding, modal CRUD/archive, sessionStorage y `pageshow` legacy.
 Dashboard pasa de 2274 a 464 LOC; Explorer 1183→0; CRUD 234→0; CSS 2257→1841.
-La suite final queda en 8 suites/24 pruebas PASS. La manual 9.3 y el commit están
-pendientes; no se abre 9.4 hasta recibir la aprobación del usuario.
+La suite final queda en 8 suites/24 pruebas PASS. La manual 9.3 fue aprobada y
+el corte quedó commiteado en `7393909`.
 
-Handoff 9.4: auditoría formal de cierre de Fase 9. Debe verificar consumers,
-rutas, script order, DOM/CSS, globals, suite y evidencia manual acumulada. No
-crear micro-sesiones ni iniciar Fase 10 desde 9.3.
+9.4 verificó consumers, rutas, script order, DOM/CSS, globals, suite y evidencia
+manual acumulada. Decisión A: **Fase 9 puede cerrarse**. Fase 10 queda pendiente
+y no iniciada; su handoff se limita a `explorerState` residual, globals,
+wrappers, aliases, bridges, contratos léxicos de scripts clásicos, orden de
+carga y compatibilidad Biblioteca/Quick/previews.

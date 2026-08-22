@@ -11,14 +11,16 @@
 
 ## Estado del roadmap
 
-- **Última fase cerrada:** 8 — aislamiento del explorer, CRUD y bridges legacy.
+- **Última fase cerrada:** 9 — eliminación controlada de legacy.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
-- **Fase actual:** 9 — eliminación controlada de legacy; En progreso por implementación 9.3.
+- **Fase 9:** Completada; auditoría formal 9.4 aprobada.
+- **Fase 10:** Pendiente / no iniciada.
 - **Sesión 9.0:** auditoría aprobada y commiteada en `73d52b4`; manual no requerida.
 - **Sesión 9.1:** Batch retirado; manual aprobada y commit `9496303`.
 - **Sesión 9.2:** aprobada manualmente y commiteada en `7cca74e`.
-- **Sesión 9.3:** fallback visual retirado; manual y commit pendientes.
-- **Siguiente acción:** ejecutar la regresión manual 9.3; no iniciar 9.4.
+- **Sesión 9.3:** fallback visual retirado; manual aprobada y commit `7393909`.
+- **Sesión 9.4:** auditoría formal completada; cambios únicamente documentales, sin commit ni push.
+- **Siguiente acción:** revisar/commitear el cierre documental cuando el usuario lo decida; no iniciar Fase 10.
 - **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
 - **Sesión 8.1:** explorer visual/navegación aislados; manual aprobada y commit `1aa1599`.
 - **Sesión 8.2:** bridges preview/download trasladados a owners existentes; manual acumulada aprobada y commit `6fb39ab`.
@@ -6005,7 +6007,7 @@ Baseline: 9 suites/27 pruebas PASS. Final: 8 suites/24 pruebas PASS. La reducci�
 es deliberada: se retiraron dos suites/6 pruebas de UI eliminada y se añadió una
 suite/4 pruebas de ausencia/contrato. `node --check` y diff checks pasan.
 
-### Manual pendiente
+### Manual pendiente al entregar 9.3 (snapshot histórico)
 
 1. Dashboard/Biblioteca: login, bloques, search, tabs, cambio de bloque, reload.
 2. Quick: crear bloque con una planeación y validar pending/feedback/success.
@@ -6018,7 +6020,7 @@ suite/4 pruebas de ausencia/contrato. `node --check` y diff checks pasan.
    duplicado ni error nuevo. `public.ia_metrics` continúa como issue externo no
    bloqueante.
 
-### Estado
+### Estado al entregar 9.3 (snapshot histórico; supersedido por 9.4)
 
 ```text
 Fase 9: En progreso
@@ -6030,4 +6032,163 @@ Manual 9.3: pendiente
 Commit 9.3: no
 Push: no
 9.4: recomendada/no iniciada
+```
+
+## Sesión 9.4 — Auditoría formal de cierre de Fase 9
+
+### A. Gate y sesiones
+
+- Frontend: `refactor-front`, HEAD inicial `7393909`, working tree limpio.
+- Backend: `refactor-back`, HEAD `fe25abe`, limpio y solo lectura.
+- Commits: 9.0 `73d52b4`; 9.1 `9496303`; 9.2 `7cca74e`; 9.3 `7393909`.
+- 9.3: manual aprobada con la evidencia entregada por el usuario.
+
+| Sesión | Commit | Manual | Estado |
+| --- | --- | --- | --- |
+| 9.0 | `73d52b4` | no requerida | completada |
+| 9.1 | `9496303` | aprobada | completada |
+| 9.2 | `7cca74e` | aprobada | completada |
+| 9.3 | `7393909` | aprobada | completada |
+| 9.4 | sin commit | auditoría documental | completada |
+
+### B. Decisión de cierre
+
+El objetivo canónico se cumplió: todo retiro de Fase 9 estuvo precedido por
+prueba de cero consumers y no se reescribieron jerarquía técnica, contratos,
+Archivados, globals ni estado general. Decisión **A. Fase 9 puede cerrarse**.
+
+Superficie retirada y revalidada: Batch huérfano, seis funciones candidatas y
+hojas derivadas, siete branches sin emitter, Explorer/CRUD visual, fallback
+Bootstrap, tree/breadcrumbs/onboarding, archive Dashboard, UI de generación
+legacy, DOM/CSS exclusivo, `pageshow` Explorer y
+`educativo.dashboard.last-location`.
+
+### C. Arquitectura y métricas finales
+
+```text
+dashboard.html
+└─ Bootstrap (Biblioteca obligatoria)
+   ├─ QuickCreate → jerarquía técnica/IDs/caches/loaders
+   ├─ Biblioteca → State/Loader/Render/ModalRender/Events
+   └─ generation + previews/downloads
+
+Compatibilidad separada
+├─ batch.html redirect
+├─ dashboard_tailwind.html URL directa
+└─ Archivados + registry/localStorage/services
+```
+
+| Métrica | Inicio F9 | Final F9 | Delta |
+| --- | ---: | ---: | ---: |
+| Dashboard LOC/funciones | 2564 / 120 | 464 / 32 | -2100 / -88 |
+| Explorer LOC/funciones | 1188 / 42 | 0 / 0 | -1188 / -42 |
+| CRUD LOC/funciones | 234 / 5 | 0 / 0 | -234 / -5 |
+| `explorerState` refs auditadas | 604 | 160 | -444 |
+| Layout IDs | 104 | 51 | -53 |
+| CSS LOC/reglas | 2257 / 294 | 1841 / 235 | -416 / -59 |
+| Scripts exclusivamente legacy | 2 | 0 | -2 |
+| Hooks DOM exclusivamente legacy | 53 | 0 | -53 |
+| `window.*` en cinco superficies | 7 | 4 | -3 |
+| Suites/tests | 7 / 22 | 8 / 24 | +1 / +2 |
+
+### D. Dashboard residual y jerarquía técnica
+
+Las 464 LOC se clasifican en: shape físico de `explorerState`; caches/loaders
+jerárquicos; helpers técnicos compartidos; payload, staging y progress de Quick
+/generation; soporte de previews; y publicación global compatible. No queda UI
+Explorer grande.
+
+| Slice/propiedad | Consumer vigente | Estado | F10 |
+| --- | --- | --- | --- |
+| `planteles`, `gradosByPlantel`, `materiasByGrado`, `unidadesByMateria` | Quick + loaders Dashboard | técnica activa | revisar owner/nombre |
+| `temasByUnidad` | `ensureTemas`, invocado por Quick | cache técnica | revisar cache |
+| `loading`, `errors`, `current` | loaders Dashboard + Quick | técnica activa | posible consolidación |
+| staging + `progress` + `quickCreate` + `generating` | Quick, BibliotecaLoader, Bootstrap | activa | revisar frontera |
+| `examenDetalleById`, `examPreview`, `listaCotejoPreview` | preview/download owners + Bootstrap | activa | revisar compatibilidad |
+| `expanded*`, search Explorer, modal/generation legacy, `confirmDelete` | ninguno | eliminadas | no aplica |
+
+`loadPlanteles()` y `ensureGrados/Materias/Unidades/Temas()` permanecen porque
+Quick depende de ellos. Biblioteca no usa esas caches directamente: mantiene
+State/Selection/Tabs/Pending, Loader, Render, Modal Render y Events propios.
+
+### E. Globals, wrappers y orden clásico
+
+| Global/bridge | Owner | Consumer | Clasificación F10 |
+| --- | --- | --- | --- |
+| `window.explorerState` | Dashboard | Quick/previews/Bootstrap | estado técnico con nombre histórico |
+| `window.QuickCreate` | Quick | Bootstrap | namespace activo |
+| `window.biblioteca` | Biblioteca | Quick | bridge activo de pending/reconcile |
+| `window.initBiblioteca` | Biblioteca | Bootstrap | entry clásico activo |
+| `BibliotecaLoader/Render/ModalRender/Events` | Biblioteca modular | Biblioteca/Quick | namespaces activos |
+| `AppUI`, `statusLabelFromTone`, `renderProgressPill` | shared UI | Quick/Biblioteca | aliases compatibles |
+| generation/preview/download namespaces | feature owners | Biblioteca/Bootstrap | activos |
+| wrappers `bib*`, preview/download y loader | Biblioteca page | Events/features | migrar antes de retirar |
+| `renderBibliotecaContent` | BibliotecaRender | Quick/features clásicos | bridge activo |
+
+`dashboard.html` tiene 43 scripts, cero rutas locales inexistentes y cero tags
+a archivos retirados. El orden clásico es válido; APIs/services y owners se
+cargan antes de sus consumidores, Biblioteca completa antes de `main.js`. El
+orden y los contratos léxicos se auditarán en Fase 10, no se cambiaron en 9.4.
+
+### F. DOM, CSS y data-actions
+
+`layout.html` conserva Biblioteca, Quick, previews y chrome. No contiene tree,
+breadcrumbs, entity modal, onboarding, archive Dashboard ni modales de
+generación legacy. Los selectores con prefijo `explorer-*` que permanecen sí
+tienen consumers en layout, Quick, AppUI o Archivados; `delete-confirm` es de
+Archivados. No se hizo cleanup CSS adicional.
+
+Los 20 emitters finales `data-bib-action` tienen handler. No existen emitters
+huérfanos ni actions del fallback eliminado. Tres handlers sin emitter
+(`toggle-expand`, `generar-anexo`, `regenerar-anexo`) son compatibilidad de
+Biblioteca ya documentada y se transfieren a Fase 10 sin eliminarlos.
+
+### G. Owners y compatibilidad preservada
+
+- Generation: `PlaneacionGeneration`, `AnexoGeneration`,
+  `ListaCotejoGeneration`, `ExamGeneration` activos.
+- Preview/download: `ExamPreview`, `ExamDownload`, `ListaCotejoPreview`,
+  `ListaCotejoDownload` activos y con consumers.
+- Detalle/back: sin `pageshow` Explorer; Biblioteca/loader y navegador conservan
+  ownership. La manual general 9.3 no reportó regresiones.
+- Batch: `pages/batch.html` preservado y smoke PASS; assets/init ausentes.
+- Archive: UI Dashboard eliminada; Archivados, registry/localStorage, services y
+  endpoints preservados.
+- `dashboard_tailwind.html`: sin cambios; legacy ejecutable por URL directa,
+  decisión futura no bloqueante.
+- `wordExport.js`, API, payloads, backend y DB: intactos.
+
+### H. Evidencia y validaciones
+
+Evidencia manual real 9.3: Dashboard/Biblioteca carga correctamente; los bloques
+aparecen donde deben; no se detectaron problemas tras el retiro. Planeación
+1/0/0; Agregar Tema reutilizó batch y terminó 1/0; Anexo success; Lista 1/0;
+Examen 11/11, cero fallidas y un retry; deletes de Examen, Lista, Anexo,
+Planeación y Batch exitosos.
+
+Automatización: 8/8 suites y 24/24 pruebas PASS. `node --check` PASS en
+Dashboard, Bootstrap, Quick, Biblioteca page/render/events y previews de Examen
+y Lista. Consumer audit: cero referencias productivas a todos los nombres
+retirados. El error `public.ia_metrics` es externo, preexistente, no bloqueante
+y fuera de F9.
+
+### I. Handoff Fase 10
+
+Fase 10 permanece pendiente/no iniciada. Su frontera exacta es: nombre y slices
+residuales de `explorerState`; globals; wrappers; aliases; bridges; namespaces;
+dependencias léxicas cross-script; script order; compatibilidad
+Biblioteca/Quick; compatibilidad de previews; y limpieza del namespace global.
+También debe reclasificar los tres handlers Biblioteca sin emitter. No incluye
+retomar Explorer, retirar jerarquía técnica ni refactorizar Archivados.
+
+### J. Estado final
+
+```text
+Fase 9: Completada
+Sesión 9.4: Completada
+Auditoría de cierre: Aprobada
+Fase 10: Pendiente / no iniciada
+Commit 9.4: no
+Push: no
+Working tree: cinco documentos autorizados
 ```

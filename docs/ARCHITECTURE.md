@@ -13,7 +13,8 @@ abrió documentalmente Fase 9 y quedó commiteada en `73d52b4`. La Sesión 9.1,
 aprobada manualmente, retiró Batch y quedó commiteada en `9496303`. La Sesión
 9.2 retiró hojas cero-consumer y siete acciones sin emitter; fue aprobada
 manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
-jerárquico y está implementada con manual pendiente. Fase 10 permanece pendiente
+jerárquico, fue aprobada manualmente y quedó commiteada en `7393909`. La
+auditoría 9.4 aprobó formalmente el cierre de Fase 9. Fase 10 permanece pendiente
 y no iniciada. El inventario ejecutable
 se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
@@ -1078,6 +1079,53 @@ Estado preservado: caches jerárquicos, `current`, staging técnico, `progress`,
 `quickCreate`, `generating`, `examenDetalleById`, `examPreview` y
 `listaCotejoPreview`. Estado retirado: `expanded*`, search del Explorer,
 generación/modal legacy, listas/exámenes por unidad del render antiguo,
-`confirmDelete` y modal CRUD. 9.3 está implementada; su regresión manual y
-commit permanecen pendientes. 9.4 es la auditoría formal siguiente y no se ha
-iniciado.
+`confirmDelete` y modal CRUD. 9.3 fue aprobada manualmente y quedó commiteada en
+`7393909`.
+
+## Fase 9 — Sesión 9.4: cierre arquitectónico formal
+
+La auditoría de cierre se ejecutó sobre `refactor-front` limpio en `7393909` y
+el backend `refactor-back` limpio en `fe25abe`, solo lectura. La búsqueda global
+confirmó cero referencias productivas a los archivos, funciones, navegación,
+refresh `pageshow`, storage y dispatch Batch retirados. Los 43 scripts de
+`dashboard.html` resuelven a archivos existentes y conservan el orden de los
+scripts clásicos.
+
+```text
+Dashboard
+└─ dashboard-bootstrap
+   ├─ QuickCreate
+   │  └─ jerarquía técnica: IDs, caches y ensure*
+   ├─ Biblioteca (UI principal obligatoria)
+   │  ├─ State / Selection / Tabs / Pending
+   │  ├─ Loader
+   │  ├─ Render / Modal Render
+   │  └─ Events
+   └─ generation + preview/download owners
+
+Compatibilidad preservada
+├─ pages/batch.html → dashboard.html
+├─ pages/dashboard_tailwind.html (URL directa)
+└─ Archivados + registry/localStorage + services
+```
+
+`dashboard.page.js` queda como soporte técnico compartido: shape físico de
+`explorerState`, caches y loaders jerárquicos, helpers de payload/actividad,
+staging y progreso de Quick, y estado de previews. No contiene tree,
+breadcrumbs, CRUD jerárquico, onboarding, archive Dashboard, generación visual
+legacy, `pageshow` Explorer ni su sessionStorage.
+
+La jerarquía técnica continúa activa y no es legacy eliminable: `planteles`,
+`gradosByPlantel`, `materiasByGrado`, `unidadesByMateria`, `temasByUnidad`,
+`current`, `loadPlanteles()` y `ensureGrados/Materias/Unidades/Temas()` sostienen
+Quick Create y sus contratos de IDs/caches. Biblioteca mantiene su estado y
+loader propios; generation y previews consumen sus owners vigentes.
+
+Fase 10 recibe únicamente consolidación de compatibilidad: el nombre residual
+`explorerState`, globals `window.*`, wrappers/aliases de Biblioteca y AppUI,
+bridges clásicos, dependencias léxicas entre scripts y revisión final del orden
+de carga. Esos elementos están activos o son compatibilidad y no se eliminan en
+Fase 9.
+
+Decisión: **Fase 9 completada; auditoría de cierre aprobada.** Fase 10 queda
+pendiente y no iniciada.
