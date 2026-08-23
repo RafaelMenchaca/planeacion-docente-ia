@@ -1196,3 +1196,47 @@ acciones Biblioteca a owners reales y retira wrappers/handlers demostrados;
 auditoría, suite y manual completa. El mapa exhaustivo y las clasificaciones
 A–G están en [`FRONTEND_MAP.md`](FRONTEND_MAP.md) y
 [`SESSION_HANDOFF.md`](refactor/SESSION_HANDOFF.md).
+
+## Fase 10 — Sesión 10.1: actions de Biblioteca entregadas a sus owners
+
+El gate abrió sobre `refactor-front` limpio en `ec03f94`, commit real de la
+auditoría 10.0. Backend permaneció limpio y de solo lectura en
+`refactor-back`/`fe25abe`. La sesión no altera el orden de los 43 scripts ni la
+frontera de estado/globales reservada para 10.2.
+
+El dispatch vigente queda simplificado sin introducir otra capa:
+
+```text
+data-bib-action
+  → BibliotecaEvents
+    → Preview owner
+    → Download owner
+    → Delete owner
+```
+
+Doce branches activos llaman directamente a `ExamPreview`,
+`ListaCotejoPreview`, `AnexoPreview`, los cuatro Download owners y los cinco
+Delete owners. Los nombres de action, las fuentes dataset, IDs y orden del
+`switch` permanecen; los owners conservan íntegramente confirmación, pending,
+selección, render, reconcile, errores, logs y filenames.
+
+Se retiraron 15 wrappers pass-through de `biblioteca.page.js`. Dos de ellos
+(`descargarAnexoWord` y `renderBibliotecaAnexoModal`) no tenían consumer; el
+wrapper de cierre Anexo tenía un solo consumer y el mismo listener de backdrop
+ahora invoca `AnexoPreview.close()`. También se retiraron las implementaciones
+`bibGenerarAnexo` y `bibRegenerarAnexo`, junto con los branches
+`toggle-expand`, `generar-anexo` y `regenerar-anexo`, después de confirmar cero
+emitters y cero callers productivos.
+
+Quedan seis wrappers de compatibilidad: los cinco de `BibliotecaLoader`/
+Reconcile y el global `downloadExamWord`. El segundo continúa requerido por
+Bootstrap, `ExamDownload.downloadFromBiblioteca` y pruebas; todos pasan a 10.2.
+`window.biblioteca`, `window.renderBibliotecaContent`, aliases AppUI,
+`BIBLIOTECA_MODE`, Quick public API y `explorerState` permanecen sin cambios.
+
+Resultado técnico: `biblioteca.page.js` pasa de 1110 LOC/50 funciones a
+863/33; `biblioteca-events.js`, de 160 a 143 LOC; 23 branches pasan a 20,
+exactamente los mismos 20 emitters. Las publicaciones explícitas `window.*` no
+cambian; los tokens productivos `window.` bajan de 422 a 418 por retirar hojas
+sin entrada. El smoke específico valida dispatch e IDs. La implementación
+queda técnicamente PASS y pendiente de la manual 10.1 antes de commit/cierre.

@@ -28,13 +28,6 @@ function onBibliotecaClick(event) {
       break;
     }
 
-    case "toggle-expand": {
-      setSelectedConjunto(conjuntoId);
-      updateBibliotecaSidebarActive();
-      renderBibliotecaDetailInPlace();
-      break;
-    }
-
     case "switch-tab": {
       setSelectedConjunto(conjuntoId, { tab });
       renderBibliotecaDetailInPlace();
@@ -70,27 +63,27 @@ function onBibliotecaClick(event) {
     }
 
     case "ver-examen": {
-      if (examenId) openBibliotecaExamenPreview(examenId);
+      if (examenId) window.ExamPreview.openBiblioteca(examenId);
       break;
     }
 
     case "ver-lista": {
-      if (listaId) openBibliotecaListaPreview(listaId);
+      if (listaId) window.ListaCotejoPreview.openBiblioteca(listaId);
       break;
     }
 
     case "descargar-planeacion": {
-      if (planeacionId) bibDescargarPlaneacion(planeacionId);
+      if (planeacionId) window.PlaneacionDownload.downloadFromBiblioteca(planeacionId);
       break;
     }
 
     case "descargar-examen": {
-      if (examenId) bibDescargarExamen(examenId);
+      if (examenId) window.ExamDownload.downloadFromBiblioteca(examenId);
       break;
     }
 
     case "descargar-lista": {
-      if (listaId) bibDescargarLista(listaId);
+      if (listaId) window.ListaCotejoDownload.downloadBiblioteca(listaId);
       break;
     }
 
@@ -100,48 +93,38 @@ function onBibliotecaClick(event) {
       break;
     }
 
-    case "generar-anexo": {
-      if (planeacionId && conjuntoId) bibGenerarAnexo(planeacionId, conjuntoId);
-      break;
-    }
-
     case "ver-anexo": {
-      if (anexoId) openBibliotecaAnexoPreview(anexoId);
+      if (anexoId) window.AnexoPreview.open(anexoId);
       break;
     }
 
     case "descargar-anexo": {
-      if (anexoId) bibDescargarAnexo(anexoId);
-      break;
-    }
-
-    case "regenerar-anexo": {
-      if (anexoId && conjuntoId && planeacionId) bibRegenerarAnexo(anexoId, conjuntoId, planeacionId);
+      if (anexoId) window.AnexoDownload.downloadBiblioteca(anexoId);
       break;
     }
 
     case "eliminar-bloque": {
-      if (conjuntoId) bibEliminarBloque(conjuntoId);
+      if (conjuntoId) window.BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId);
       break;
     }
 
     case "eliminar-planeacion": {
-      if (planeacionId && conjuntoId) bibEliminarPlaneacion(planeacionId, conjuntoId);
+      if (planeacionId && conjuntoId) window.PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId);
       break;
     }
 
     case "eliminar-examen": {
-      if (examenId && conjuntoId) bibEliminarExamen(examenId, conjuntoId);
+      if (examenId && conjuntoId) window.ExamDelete.deleteFromBiblioteca(examenId, conjuntoId);
       break;
     }
 
     case "eliminar-lista": {
-      if (listaId && conjuntoId) bibEliminarLista(listaId, conjuntoId);
+      if (listaId && conjuntoId) window.ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId);
       break;
     }
 
     case "eliminar-anexo": {
-      if (anexoId && conjuntoId) bibEliminarAnexo(anexoId, conjuntoId);
+      if (anexoId && conjuntoId) window.AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId);
       break;
     }
   }

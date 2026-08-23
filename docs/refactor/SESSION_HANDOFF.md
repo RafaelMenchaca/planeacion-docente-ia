@@ -6498,3 +6498,181 @@ Commit: no
 Push: no
 10.1: no iniciada
 ```
+
+## Fase 10 — Sesión 10.1: migración de actions de Biblioteca
+
+### A. Gate
+
+```text
+rama: refactor-front
+HEAD/hash 10.0: ec03f94 (docs(refactor): open final compatibility cleanup phase)
+working tree al abrir: limpio
+origin/refactor-front al abrir: aa56e06
+backend: refactor-back / fe25abe / limpio / solo lectura
+puerta: PASS
+```
+
+### B. Reconciliación 10.0
+
+Fase 9 completada; Fase 10 en progreso; auditoría 10.0 aprobada, commiteada en
+`ec03f94` y sin manual requerida. Baseline transferido: 21 wrappers, dos
+aliases, 15 wrappers action migrables, tres handlers sin emitter;
+`BIBLIOTECA_MODE` y Loader/Reconcile reservados para 10.2.
+
+### C. Baseline
+
+`npm test -- --runInBand`: 8/8 suites, 24/24 pruebas, PASS. Actions: 20
+emitters, 23 branches y tres handlers sin emitter. Wrappers: 21.
+
+### D. Wrapper audit
+
+| Wrapper/grupo | Owner | Consumers | Global | Resultado |
+| --- | --- | --- | --- | --- |
+| cinco Anexo page | Anexo Preview/Download | Events, Modal o cero | no | cinco retirados |
+| tres `bibDescargar*` | Download owners | Events | no | retirados |
+| dos `openBiblioteca*Preview` | Exam/Lista Preview | Events | no | retirados |
+| cinco `bibEliminar*` | Block/Resource Delete | Events | no | retirados |
+| cinco Loader/Reconcile | `BibliotecaLoader` | generation/facade/features | no | preservados para 10.2 |
+| `downloadExamWord` | `ExamDownload.download` | Bootstrap, ExamDownload, tests | sí | preservado para 10.2 |
+
+La tabla individual de los 16 candidatos está en `FRONTEND_MAP.md`. Los 15
+retirados eran passthroughs sin adaptación de firma, contexto, pending, modal o
+errores. Los owners Anexo conservan funciones internas homónimas; no son los
+wrappers page retirados.
+
+### E. Zero-emitter audit
+
+| Action/símbolo | Emitter | Caller/global | Resultado |
+| --- | --- | --- | --- |
+| `toggle-expand` | 0 | solo branch | branch retirado |
+| `generar-anexo` / `bibGenerarAnexo` | 0 | 0 / 0 | ambos retirados |
+| `regenerar-anexo` / `bibRegenerarAnexo` | 0 | 0 / 0 | ambos retirados |
+
+Búsqueda: HTML, templates, `innerHTML`, `data-bib-action`, `data-action`, otros
+`data-*`, tests, Quick, Biblioteca, globals y strings productivos.
+
+### F. Preview migration
+
+`ver-examen`, `ver-lista` y `ver-anexo` llaman ahora directamente a
+`ExamPreview.openBiblioteca(examenId)`,
+`ListaCotejoPreview.openBiblioteca(listaId)` y `AnexoPreview.open(anexoId)`.
+El backdrop Anexo conserva su listener/target y llama `AnexoPreview.close()`.
+No se modificaron preview internals ni sus listeners locales.
+
+### G. Download migration
+
+Las cuatro actions llaman directamente a `PlaneacionDownload`, `ExamDownload`,
+`ListaCotejoDownload` y `AnexoDownload` con el mismo ID. Filenames, modal de
+nombre, Word export, catch/log/alert y flujo async permanecen dentro de los
+owners sin cambios. `downloadExamWord` permanece por consumers reales.
+
+### H. Delete migration
+
+Las cinco actions llaman directamente a `BibliotecaBlockDelete`,
+`PlaneacionDelete`, `ExamDelete`, `ListaCotejoDelete` y `AnexoDelete` con los
+mismos IDs. Los owner files no cambiaron: confirmación, normalización, pending,
+selection/tab, render, reload/reconcile, endpoints, errores y logs siguen
+idénticos.
+
+### I. Anexo compatibility
+
+Retirados cinco wrappers page y las dos implementaciones generation sin
+entrada. `AnexoGeneration`, `AnexoPreview`, `AnexoDownload`, `AnexoDelete`, el
+modal create y el preview DOM permanecen activos e intactos. No se mezcló
+generation con preview/download.
+
+### J. BibliotecaEvents
+
+Antes: 23 branches, 20 emitters, 12 rutas mediante wrapper y tres ramas sin
+emitter. Después: 20 branches para los mismos 20 emitters, 12 rutas directas a
+owner y cero handler sin emitter. Delegación, `closest`, dataset, guards de ID,
+bubbling y ausencia histórica de await/catch en el dispatcher no cambian.
+
+### K. Implementación
+
+Productivo modificado: `biblioteca-events.js`, `biblioteca-modal-render.js` y
+`biblioteca.page.js`. Test añadido:
+`tests/biblioteca-action-owners.smoke.test.js`. Owners de dominio, Bootstrap,
+Quick, Loader, HTML y orden de scripts no se modificaron.
+
+### L. Metrics
+
+```text
+wrappers: 21 → 6 (15 retirados)
+branches: 23 → 20
+emitters: 20 → 20
+handlers sin emitter: 3 → 0
+biblioteca.page.js: 1110 LOC/50 funciones → 863/33
+biblioteca-events.js: 160 LOC → 143
+window publications: sin cambio (174 repo / 147 Dashboard)
+window. tokens productivos: 422 → 418
+listener sites: sin cambio
+```
+
+### M. Consumer audit
+
+Cero definiciones wrapper en `biblioteca.page.js` y cero callers residuales.
+Los cinco nombres internos homónimos de Anexo permanecen exclusivamente dentro
+de sus owners protegidos. Cero referencias productivas a los tres actions
+retirados o a `bibGenerarAnexo`/`bibRegenerarAnexo`. Todos los namespaces owner
+y sus tags siguen presentes. `downloadExamWord` conserva sus consumers.
+
+### N. Tests
+
+Baseline: 8 suites/24 pruebas PASS. Final automatizado: 9 suites/27 pruebas
+PASS, cero snapshots, 2.498 s. `node --check` pasa en los tres JS productivos y
+el smoke nuevo.
+
+### O. Smoke
+
+`biblioteca-action-owners.smoke.test.js`: 1 suite/3 pruebas PASS. Verifica
+20/20, retiro de tres ramas, dispatch dinámico directo con IDs exactos,
+ausencia de wrappers page, owners cargados y preservación de
+`downloadExamWord`.
+
+### P. Scope protegido
+
+Sin cambios en shape de `explorerState`, Quick API, Loader/Reconcile,
+`window.biblioteca`, render bridge, aliases AppUI, `BIBLIOTECA_MODE`, `main.js`,
+script order, listeners generales, generation/preview/delete internals,
+backend/API/DB/payloads, `wordExport.js`, Archivados, Dashboard Tailwind y
+Batch.
+
+### Q. Manual pendiente
+
+Pendiente: Dashboard/Biblioteca carga/bloques/tabs/search/reload; Quick
+abrir/cerrar/crear/Agregar Tema; previews Examen/Lista/Anexo; downloads de los
+cuatro recursos; deletes de cuatro recursos y bloque si es práctico; cuatro
+generaciones; Detalle/back; consola/red sin ReferenceError, owner undefined,
+404, requests/listeners duplicados ni error nuevo. `public.ia_metrics` no
+bloquea.
+
+### R. Handoff 10.2
+
+No iniciada. Conserva cinco wrappers Loader/Reconcile, AppUI aliases,
+`downloadExamWord`, render bridge, revisión de facade `window.biblioteca`,
+Quick public surface, `BIBLIOTECA_MODE`, mapping huérfano de `main.js`, frontera
+global/léxica final y listener guards solo si corresponde.
+
+### S. Documentación
+
+Actualizados únicamente los cinco documentos autorizados: Arquitectura, mapa
+frontend, roadmap, handoff y matriz de pruebas.
+
+### T. Riesgos
+
+Sin blocker técnico. No bloqueantes: manual pendiente; compatibilidad global de
+10.2; `BibliotecaEvents.bind` sin guard; backdrop confirm `{once:true}`; y
+`origin/refactor-front` aún detrás del commit local 10.0. No se corrigieron.
+
+### U. Estado final
+
+```text
+Fase 10: En progreso
+10.0: completada/commiteada en ec03f94
+10.1: implementada
+Manual 10.1: pendiente
+Commit: no
+Push: no
+10.2: no iniciada
+```

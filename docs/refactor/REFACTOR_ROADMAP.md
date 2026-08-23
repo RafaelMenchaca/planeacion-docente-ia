@@ -1321,8 +1321,11 @@ Retirar compatibilidad ya innecesaria y cerrar una Biblioteca modular con docume
 **En progreso.** La Sesión 10.0 completó la auditoría técnica/documental de
 apertura sin modificar código productivo. El gate pasó sobre
 `refactor-front`/`aa56e06`, alineado con `origin/refactor-front`, y backend
-`refactor-back`/`fe25abe` limpio y solo lectura. La suite base pasa 8/8 suites y
-24/24 pruebas. La implementación funcional de 10.1 no ha iniciado.
+`refactor-back`/`fe25abe` limpio y solo lectura. 10.0 quedó commiteada en
+`ec03f94`, con manual no requerida. La Sesión 10.1 implementó el dispatch
+directo de 12 actions hacia sus owners, retiró 15 wrappers, tres handlers sin
+emitter y dos implementaciones Anexo sin entrada. La validación técnica pasa;
+la manual 10.1 está pendiente y 10.2 no ha iniciado.
 
 ### Dependencias
 
@@ -1382,6 +1385,12 @@ las dos hojas wrapper sin consumer y los tres handlers sin emitter junto con
 sus dos implementaciones de Anexo sin entrada. No incluye loader/reconcile,
 `BIBLIOTECA_MODE`, `explorerState`, orden de scripts, generación, payloads ni
 listeners. La búsqueda posterior debe conservar 20 emitters con 20 handlers.
+
+**Implementada, manual pendiente.** `BibliotecaEvents` despacha preview,
+download y delete directamente a los namespaces propietarios con las mismas
+fuentes dataset e IDs. Permanecen seis wrappers: cinco Loader/Reconcile y
+`downloadExamWord`, todos reservados para 10.2. El smoke específico confirma
+20 emitters/20 handlers, owners cargados y ausencia de los wrappers page.
 
 #### 10.2 — Frontera global y contratos clásicos
 

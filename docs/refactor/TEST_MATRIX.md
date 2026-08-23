@@ -2183,3 +2183,42 @@ Repetir gate, hashes, globals, wrappers, aliases, bridges, namespaces,
 `explorerState`, contratos léxicos, script order, handlers/emitters, listeners,
 suite y manual acumulada. Fase 10 solo puede cerrarse cuando todo contrato
 restante tenga owner, consumer y motivo documentado.
+
+## Fase 10 — Sesión 10.1: actions hacia owners
+
+### Validación técnica ejecutada
+
+| Caso | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front` limpio en `ec03f94`; commit real 10.0 | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio y solo lectura | PASS |
+| Baseline Jest | 8 suites/24 pruebas | PASS |
+| Emitters/handlers | 20 valores emitidos / 20 branches | PASS |
+| Zero-emitter | tres branches y dos implementaciones Anexo ausentes | PASS |
+| Preview dispatch | Examen, Lista y Anexo llaman owner directo con mismo ID | PASS smoke |
+| Download dispatch | cuatro resources llaman owner directo con mismo ID | PASS smoke |
+| Delete dispatch | cinco owners reciben mismos resource/batch IDs | PASS smoke |
+| Wrappers page | 15 definiciones ausentes; cero caller residual | PASS |
+| Owners activos | doce assets siguen cargados por Dashboard | PASS |
+| Compatibilidad preservada | cinco wrappers Loader + `downloadExamWord` | PASS |
+| Sintaxis | tres JS productivos + smoke | PASS |
+| Smoke nuevo | 1 suite/3 pruebas | PASS |
+| Jest final | 9 suites/27 pruebas, 0 snapshots | PASS |
+| Scope | state, Quick, Loader, Mode, main, order y backend sin cambio | PASS |
+
+### Manual 10.1 pendiente
+
+| Área | Pasos | Estado |
+| --- | --- | --- |
+| Dashboard/Biblioteca | carga, bloques, tabs, búsqueda, reload | Pendiente |
+| Quick Create | abrir/cerrar, crear bloque, Agregar Tema | Pendiente |
+| Preview | abrir/cerrar/reabrir Examen, Lista y Anexo | Pendiente |
+| Download | Examen, Lista, Anexo y Planeación si es práctico; validar nombre | Pendiente |
+| Delete | Examen, Lista, Anexo, Planeación y bloque si se crea uno | Pendiente |
+| Generation | Planeación, Anexo, Lista y Examen | Pendiente |
+| Detalle/back | abrir Planeación y volver a Biblioteca | Pendiente |
+| Consola/red | sin ReferenceError, owner undefined, 404, duplicados o error nuevo | Pendiente |
+
+El error conocido de `public.ia_metrics` permanece fuera de alcance y no
+bloquea. La manual es el único gate pendiente antes de cerrar/commitear 10.1;
+10.2 no debe iniciarse todavía.

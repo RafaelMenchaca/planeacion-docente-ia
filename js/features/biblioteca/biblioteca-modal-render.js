@@ -601,7 +601,7 @@ function injectBibliotecaModals() {
     `;
     document.body.appendChild(div);
     document.getElementById("bib-anexo-backdrop")
-      ?.addEventListener("click", closeBibliotecaAnexoModal);
+      ?.addEventListener("click", () => window.AnexoPreview.close());
   }
 
   if (!document.getElementById("biblioteca-anexo-create-modal")) {
@@ -680,4 +680,3 @@ const BibliotecaModalRender = Object.freeze({
   showConfirm: showBibConfirm,
   inject: injectBibliotecaModals
 });
-

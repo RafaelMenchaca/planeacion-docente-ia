@@ -4637,3 +4637,109 @@ demostrados; 10.2 frontera global/Loader/AppUI/render/Quick/
 10.1 porque modifica un solo dispatcher y sus adaptadores, mantiene
 `explorerState`, loader/reconcile y orden de scripts intactos, y deja una
 búsqueda verificable de 20 emitters/20 handlers.
+
+## Fase 10 — Sesión 10.1: dispatch directo de Biblioteca
+
+### Gate y reconciliación
+
+- Frontend: `refactor-front`, limpio en `ec03f94`; este es el commit real de
+  10.0. `origin/refactor-front` permanecía en `aa56e06`; no se hizo push.
+- Backend: `refactor-back`/`fe25abe`, limpio y solo lectura.
+- Fase 9 completada; Fase 10 en progreso; 10.0 aprobada/commiteada y sin manual.
+- Baseline: 21 wrappers, dos aliases, 23 branches, 20 emitters y tres handlers
+  sin emitter; Jest 8/8 suites y 24/24 pruebas.
+
+### Auditoría y decisión por wrapper
+
+| Wrapper auditado | Owner real | Consumers previos | Global | Decisión 10.1 |
+| --- | --- | --- | --- | --- |
+| `bibDescargarAnexo` page | `AnexoDownload.downloadBiblioteca` | Events | no, lexical | retirado |
+| `descargarAnexoWord` page | `AnexoDownload.download` | ninguno | no | retirado, zero-consumer |
+| `openBibliotecaAnexoPreview` page | `AnexoPreview.open` | Events | no | retirado |
+| `closeBibliotecaAnexoModal` page | `AnexoPreview.close` | backdrop de Modal Render | no | consumer migrado; retirado |
+| `renderBibliotecaAnexoModal` page | `AnexoPreview.render` | ninguno | no | retirado, zero-consumer |
+| `bibDescargarPlaneacion` | `PlaneacionDownload.downloadFromBiblioteca` | Events | no | retirado |
+| `bibDescargarExamen` | `ExamDownload.downloadFromBiblioteca` | Events | no | retirado |
+| `bibDescargarLista` | `ListaCotejoDownload.downloadBiblioteca` | Events | no | retirado |
+| `openBibliotecaExamenPreview` | `ExamPreview.openBiblioteca` | Events | no | retirado |
+| `openBibliotecaListaPreview` | `ListaCotejoPreview.openBiblioteca` | Events | no | retirado |
+| `bibEliminarBloque` | `BibliotecaBlockDelete.deleteFromBiblioteca` | Events | no | retirado |
+| `bibEliminarPlaneacion` | `PlaneacionDelete.deleteFromBiblioteca` | Events | no | retirado |
+| `bibEliminarExamen` | `ExamDelete.deleteFromBiblioteca` | Events | no | retirado |
+| `bibEliminarLista` | `ListaCotejoDelete.deleteFromBiblioteca` | Events | no | retirado |
+| `bibEliminarAnexo` | `AnexoDelete.deleteFromBiblioteca` | Events | no | retirado |
+| `downloadExamWord` | `ExamDownload.download` | Bootstrap, `downloadFromBiblioteca`, tests | sí | preservado para 10.2 |
+
+Los cinco wrappers Loader/Reconcile no forman parte de esta tabla de actions y
+permanecen sin cambio: `normalizeGeneratedPlaneaciones`,
+`applyOptimisticPlaneacionesToConjunto`,
+`applyGenerationResultToPendingItems`,
+`finishBibliotecaPlaneacionesGeneration` y `loadAndRenderBiblioteca`.
+
+Las funciones internas de los owners Anexo conservan algunos nombres
+homónimos (`bibDescargarAnexo`, `descargarAnexoWord`,
+`openBibliotecaAnexoPreview`, `closeBibliotecaAnexoModal` y
+`renderBibliotecaAnexoModal`). No son wrappers page ni globals nuevos y no se
+renombran porque los internals de Preview/Download están protegidos en 10.1.
+
+### Action map antes y después
+
+| Actions | Antes | Después | Owner final |
+| --- | --- | --- | --- |
+| `ver-examen` | Events → wrapper | Events → `ExamPreview.openBiblioteca` | Exam Preview |
+| `ver-lista` | Events → wrapper | Events → `ListaCotejoPreview.openBiblioteca` | Lista Preview |
+| `ver-anexo` | Events → wrapper | Events → `AnexoPreview.open` | Anexo Preview |
+| cuatro `descargar-*` | Events → cuatro wrappers | Events → cuatro Download namespaces | owner por recurso |
+| cinco `eliminar-*` | Events → cinco wrappers | Events → cinco Delete namespaces | owner por recurso |
+| otras ocho actions emitidas | coordinador/owner existente | sin cambio | Biblioteca/Quick/Generation/Loader |
+| `toggle-expand` | branch sin emitter | eliminado | ninguno |
+| `generar-anexo` | branch → implementación sin entrada | eliminados ambos | `AnexoGeneration` activo no cambia |
+| `regenerar-anexo` | branch → implementación sin entrada | eliminados ambos | `AnexoGeneration` activo no cambia |
+
+Los doce branches migrados conservan el mismo `if` de ID, el mismo miembro
+dataset (`conjuntoId`, `planeacionId`, `examenId`, `listaId`, `anexoId`) y el
+mismo comportamiento fire-and-forget del dispatcher. No se añadió ni retiró
+`await`, catch, `preventDefault`, `stopPropagation` o parsing. La semántica de
+downloads/deletes permanece dentro de sus owners, que no fueron modificados.
+
+### Zero-emitter y consumer audit posterior
+
+| Símbolo/action | HTML/templates/innerHTML/data/tests/globals | Resultado |
+| --- | --- | --- |
+| `toggle-expand` | cero emitter/caller productivo | branch retirado |
+| `generar-anexo` / `bibGenerarAnexo` | cero emitter/caller/global requerido | branch e implementación retirados |
+| `regenerar-anexo` / `bibRegenerarAnexo` | cero emitter/caller/global requerido | branch e implementación retirados |
+| 15 wrappers en `biblioteca.page.js` | cero definiciones/callers después de migrar | retirados |
+| Owners Preview/Download/Delete | scripts y namespaces siguen cargados | activos |
+| `downloadExamWord` | tres clases de consumer real | preservado |
+
+Después del corte hay 20 valores emitidos, 20 branches y cero handler sin
+emitter. No hay emitter sin handler. Se sustituyeron 13 cruces léxicos bare:
+doce en Events y uno en Modal Render. Las publicaciones explícitas `window.*`
+siguen en 174 repo/147 Dashboard; los tokens `window.` productivos pasan de
+422 a 418 porque también se retiraron dos implementaciones sin entrada.
+
+### Métricas, pruebas y frontera 10.2
+
+| Métrica | Antes 10.1 | Después 10.1 |
+| --- | ---: | ---: |
+| Wrappers de compatibilidad | 21 | 6 |
+| Wrappers retirados | — | 15 |
+| `biblioteca.page.js` LOC / funciones | 1110 / 50 | 863 / 33 |
+| `biblioteca-events.js` LOC / branches | 160 / 23 | 143 / 20 |
+| Emitters / handlers sin emitter | 20 / 3 | 20 / 0 |
+| Publicaciones `window.*` | 174 / 147 | sin cambio |
+| Tokens `window.` productivos | 422 | 418 |
+| Listener sites | 102 / 72 | sin cambio |
+
+`biblioteca-action-owners.smoke.test.js` cubre igualdad emitter/handler,
+ausencia de las tres ramas, dispatch dinámico con IDs exactos, ausencia de los
+wrappers page y carga de los doce assets owner. El baseline fue 8 suites/24
+pruebas; la suite final incorpora una suite y tres pruebas. La manual 10.1
+queda pendiente.
+
+10.2 conserva exactamente: cinco wrappers Loader/Reconcile,
+`downloadExamWord`, aliases AppUI, bridge `renderBibliotecaContent`, revisión
+de `window.biblioteca`, Quick public surface, `BIBLIOTECA_MODE`, mapping
+Planeación de `main.js`, frontera léxica/global y guards de listeners si la
+evidencia lo justifica. No se inició ninguna de esas tareas.
