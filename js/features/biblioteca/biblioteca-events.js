@@ -58,7 +58,7 @@ function onBibliotecaClick(event) {
     }
 
     case "retry": {
-      loadAndRenderBiblioteca();
+      window.BibliotecaLoader.load();
       break;
     }
 

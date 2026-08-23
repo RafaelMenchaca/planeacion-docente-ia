@@ -9,7 +9,7 @@
       items: temasSnap.map(t => ({ titulo: t.titulo, status: "pending", message: "" })),
       error: ""
     });
-    renderBibliotecaContent();
+    BibliotecaRender.renderContent();
 
     // Generate in background
     ;(async () => {
@@ -36,21 +36,24 @@
               pending.items[idx].status  = "skipped";
               pending.items[idx].message = evt.message || "Ya existe";
             }
-            renderBibliotecaContent();
+            BibliotecaRender.renderContent();
           }
         });
 
         const batchId = getGenerationBatchId(result) || conjuntoId;
-        applyGenerationResultToPendingItems(batchId, result || {});
-        applyOptimisticPlaneacionesToConjunto(batchId, normalizeGeneratedPlaneaciones(result || {}));
+        window.BibliotecaLoader.applyGenerationResultToPendingItems(batchId, result || {});
+        window.BibliotecaLoader.applyOptimisticPlaneacionesToConjunto(
+          batchId,
+          window.BibliotecaLoader.normalizeGeneratedPlaneaciones(result || {})
+        );
         if (Number(result?.error_count || 0) === 0) {
           BibliotecaPlaneacionesPending.delete(conjuntoId);
           if (batchId !== conjuntoId) BibliotecaPlaneacionesPending.delete(batchId);
         }
         setSelectedConjunto(batchId, { tab: "planeaciones" });
-        renderBibliotecaContent();
+        BibliotecaRender.renderContent();
 
-        await loadAndRenderBiblioteca({
+        await window.BibliotecaLoader.load({
           silent: true,
           targetBatchId: batchId,
           activeTab: "planeaciones"
@@ -59,7 +62,7 @@
         console.error("[biblioteca] Error generando planeaciones:", error);
         const pending = BibliotecaPlaneacionesPending.get(conjuntoId);
         if (pending) pending.error = error.message || "No se pudieron generar las planeaciones.";
-        renderBibliotecaContent();
+        BibliotecaRender.renderContent();
       }
     })();
   }

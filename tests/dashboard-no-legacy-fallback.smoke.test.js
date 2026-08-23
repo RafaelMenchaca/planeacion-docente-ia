@@ -16,7 +16,7 @@ describe("Dashboard without the legacy visual fallback", () => {
     expect(dashboardHtml).not.toContain("legacy-hierarchy-crud.js");
     expect(fs.existsSync(path.join(rootDir, "js/features/dashboard/legacy-explorer.js"))).toBe(false);
     expect(fs.existsSync(path.join(rootDir, "js/features/dashboard/legacy-hierarchy-crud.js"))).toBe(false);
-    expect(bootstrap).toContain("window.BIBLIOTECA_MODE = true");
+    expect(bootstrap).not.toContain("BIBLIOTECA_MODE");
     expect(bootstrap).toContain("await window.initBiblioteca()");
     expect(bootstrap).not.toMatch(/hydrateExplorerData|renderAll|pageshow/);
 
@@ -34,7 +34,8 @@ describe("Dashboard without the legacy visual fallback", () => {
   });
 
   test("Quick usa el owner Biblioteca y conserva únicamente selección técnica", () => {
-    expect(quick).toContain("window.BibliotecaRender?.renderContent()");
+    expect(quick).toContain("BibliotecaRender.renderContent()");
+    expect(quick).not.toMatch(/BIBLIOTECA_MODE|window\.BibliotecaRender|window\.renderBibliotecaContent/);
     expect(quick).not.toMatch(/renderExplorerContent|selectUnidad/);
     expect(quick).toContain('explorerState.current = { level: "unidad", plantelId, gradoId, materiaId, unidadId }');
 

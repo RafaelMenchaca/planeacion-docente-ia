@@ -155,6 +155,7 @@ describe("Biblioteca action owners", () => {
       "biblioteca-block-delete.js"
     ].forEach((asset) => expect(dashboardHtml).toContain(asset));
 
-    expect(read("js/features/examenes/exam-download.js")).toContain("window.downloadExamWord");
+    expect(read("js/features/examenes/exam-download.js")).not.toContain("window.downloadExamWord");
+    expect(read("js/features/examenes/exam-download.js")).toContain("window.ExamDownload");
   });
 });

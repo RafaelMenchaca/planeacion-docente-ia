@@ -31,8 +31,8 @@
       BibliotecaListaPending.delete(safeBatchId);
       BibliotecaAnexosPending.deleteBatch(safeBatchId);
 
-      renderBibliotecaContent();
-      await loadAndRenderBiblioteca({ silent: true });
+      BibliotecaRender.renderContent();
+      await window.BibliotecaLoader.load({ silent: true });
     } catch (error) {
       console.error("[biblioteca] Error eliminando bloque:", error);
       alert(error.message || "No se pudo eliminar el bloque. Intenta nuevamente.");

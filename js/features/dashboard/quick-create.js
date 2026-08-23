@@ -356,13 +356,6 @@ async function fillQuickMateriaOptions(gradoId) {
   materiaCombobox?.setItems(gradoId ? (explorerState.materiasByGrado[gradoId] || []) : []);
 }
 
-async function fillQuickUnidadOptions(materiaId) {
-  const requestId = ++explorerState.quickCreate.requestVersion.unidad;
-  if (materiaId) await ensureUnidades(materiaId);
-  if (requestId !== explorerState.quickCreate.requestVersion.unidad) return;
-  unidadCombobox?.setItems(materiaId ? (explorerState.unidadesByMateria[materiaId] || []) : []);
-}
-
 function normalizeQuickText(value) {
   return String(value || "")
     .trim()
@@ -476,7 +469,7 @@ function findQuickGradoByNivel(plantelId, nivelBase) {
 }
 
 async function fillQuickMateriaOptionsForNivel(nivelBase) {
-  if (!window.BIBLIOTECA_MODE || !nivelBase) {
+  if (!nivelBase) {
     materiaCombobox?.setItems(getQuickMateriaItems());
     return;
   }
@@ -520,17 +513,12 @@ async function initQuickCreateForm() {
   plantelCombobox?.setItems(explorerState.planteles || []);
 
   gradoCombobox?.reset();
-  if (window.BIBLIOTECA_MODE) {
-    gradoCombobox?.setItems(getAllGradosFlat());
-    gradoCombobox?.setDisabled(false);
-  } else {
-    gradoCombobox?.setItems([]);
-    gradoCombobox?.setDisabled(true);
-  }
+  gradoCombobox?.setItems(getAllGradosFlat());
+  gradoCombobox?.setDisabled(false);
 
   materiaCombobox?.reset();
-  materiaCombobox?.setItems(window.BIBLIOTECA_MODE ? getQuickMateriaItems() : []);
-  materiaCombobox?.setDisabled(!window.BIBLIOTECA_MODE);
+  materiaCombobox?.setItems(getQuickMateriaItems());
+  materiaCombobox?.setDisabled(false);
 
   unidadCombobox?.reset();
   unidadCombobox?.setItems([]);
@@ -613,18 +601,11 @@ async function openQuickCreatePanel() {
   setQuickPanelVisibility(true);
   resetQuickCreatePanelSections();
 
-  if (window.BIBLIOTECA_MODE) {
-    await loadPlanteles();
-    await ensureAllGrados();
-  }
+  await loadPlanteles();
+  await ensureAllGrados();
 
   await initQuickCreateForm();
-
-  if (window.BIBLIOTECA_MODE) {
-    tituloConjuntoCombobox?.focus();
-  } else {
-    plantelCombobox?.focus();
-  }
+  tituloConjuntoCombobox?.focus();
 }
 
 function closeQuickCreatePanel() {
@@ -713,27 +694,17 @@ function requireQuickComboboxValue(combobox, label) {
 }
 
 function requireQuickGradoSelection() {
-  if (window.BIBLIOTECA_MODE) {
-    try {
-      return getQuickNivelEducativoSelection();
-    } catch (error) {
-      const selected = explorerState.quickCreate.selectedConjunto;
-      if (selected?.nivel) {
-        const normalized = normalizeQuickText(selected.nivel);
-        const option = QUICK_NIVELES_EDUCATIVOS.find((item) => item.value === normalized || normalizeQuickText(item.label) === normalized);
-        if (option) return { id: null, nombre: option.label, nivelBase: option.value, isNew: true };
-      }
-      throw error;
+  try {
+    return getQuickNivelEducativoSelection();
+  } catch (error) {
+    const selected = explorerState.quickCreate.selectedConjunto;
+    if (selected?.nivel) {
+      const normalized = normalizeQuickText(selected.nivel);
+      const option = QUICK_NIVELES_EDUCATIVOS.find((item) => item.value === normalized || normalizeQuickText(item.label) === normalized);
+      if (option) return { id: null, nombre: option.label, nivelBase: option.value, isNew: true };
     }
+    throw error;
   }
-
-  const selection = requireQuickComboboxValue(gradoCombobox, "Grado");
-
-  if (selection.isNew) {
-    selection.nivelBase = requireNivelBaseValue("quick-grado-base-select", "Nivel base del grado");
-  }
-
-  return selection;
 }
 
 function initProgressFromStaging() {
@@ -813,7 +784,7 @@ function updateProgressFromEvent(evt) {
   if (update.titulo) item.titulo = update.titulo;
   if (update.status) {
     item.status = update.status;
-    item.statusLabel = statusLabelFromTone(update.status);
+    item.statusLabel = window.AppUI.statusLabelFromTone(update.status);
   }
   if (typeof update.message === "string") {
     item.message = friendlyProgressMessage(update.message);
@@ -909,7 +880,7 @@ async function generatePlaneacionesFromStaging() {
 
   explorerState.generating = true;
   initProgressFromStaging();
-  window.BibliotecaRender?.renderContent();
+  BibliotecaRender.renderContent();
 
   const body = {
     temas: explorerState.stagingTemas.map((tema, index) => ({
@@ -924,7 +895,7 @@ async function generatePlaneacionesFromStaging() {
     ...buildLegacyContext(),
     ...(window.biblioteca?.pendingBatchId ? { batch_id: window.biblioteca.pendingBatchId } : {}),
     ...(explorerState.stagingTituloConjunto ? { titulo_conjunto: explorerState.stagingTituloConjunto } : {}),
-    ...(window.BIBLIOTECA_MODE && !window.biblioteca?.pendingBatchId
+    ...(!window.biblioteca?.pendingBatchId
       ? { force_new_batch: true, mode: "create" }
       : {})
   };
@@ -932,7 +903,7 @@ async function generatePlaneacionesFromStaging() {
   try {
     const result = await generarPlaneacionesUnidadConProgreso({ unidadId, body }, (evt) => {
       updateProgressFromEvent(evt);
-      window.BibliotecaRender?.renderContent();
+      BibliotecaRender.renderContent();
     });
 
     applyGenerateResult(result || {});
@@ -941,14 +912,9 @@ async function generatePlaneacionesFromStaging() {
     explorerState.stagingContext = null;
     await ensureTemas(unidadId, { force: true });
 
-    if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.finishPlaneacionesGeneration === "function") {
-      await window.biblioteca.finishPlaneacionesGeneration(result || {});
-    } else if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.refresh === "function") {
-      window.biblioteca.pendingBatchId = null;
-      await window.biblioteca.refresh();
-    }
+    await window.biblioteca.finishPlaneacionesGeneration(result || {});
 
-    window.BibliotecaRender?.renderContent();
+    BibliotecaRender.renderContent();
   } catch (error) {
     const message = friendlyProgressMessage(formatFetchError(error, "No se pudieron generar las planeaciones."));
     const fallbackStatus = isDuplicateTemaMessage(message) ? "skipped" : "error";
@@ -956,7 +922,7 @@ async function generatePlaneacionesFromStaging() {
     explorerState.progress.items.forEach((item) => {
       if (item.status === "pending" || item.status === "generating") {
         item.status = fallbackStatus;
-        item.statusLabel = statusLabelFromTone(fallbackStatus);
+        item.statusLabel = window.AppUI.statusLabelFromTone(fallbackStatus);
         item.message = message;
       }
     });
@@ -964,14 +930,14 @@ async function generatePlaneacionesFromStaging() {
     explorerState.progress.finalTone = fallbackStatus === "skipped" ? "warning" : "danger";
     explorerState.progress.finalMessage = message;
     updateProgressCounters();
-    window.BibliotecaRender?.renderContent();
+    BibliotecaRender.renderContent();
   } finally {
     explorerState.generating = false;
     if (window.biblioteca?.pendingBatchId) {
       window.biblioteca.pendingBatchId = null;
     }
     updateProgressCounters();
-    window.BibliotecaRender?.renderContent();
+    BibliotecaRender.renderContent();
   }
 }
 
@@ -983,25 +949,19 @@ async function submitQuickCreateForm(event) {
     showQuickCreateError("Agrega al menos un tema antes de crear la planeacion.");
     return;
   }
-  let plantelSelection = null, gradoSelection, materiaSelection, unidadSelection;
+  let gradoSelection, materiaSelection;
   try {
-    if (!window.BIBLIOTECA_MODE) {
-      plantelSelection = requireQuickComboboxValue(plantelCombobox, "Plantel");
-    }
     gradoSelection = requireQuickGradoSelection();
     materiaSelection = requireQuickComboboxValue(materiaCombobox, "Materia");
-    if (!window.BIBLIOTECA_MODE) {
-      unidadSelection = requireQuickComboboxValue(unidadCombobox, "Unidad");
-    }
   } catch (validationError) {
     showQuickCreateError(formatFetchError(validationError, "Completa todos los campos requeridos."));
     return;
   }
 
-  const selectedConjunto = window.BIBLIOTECA_MODE ? explorerState.quickCreate.selectedConjunto : null;
+  const selectedConjunto = explorerState.quickCreate.selectedConjunto;
   const tituloValue = tituloConjuntoCombobox?.getValue();
   explorerState.stagingTituloConjunto = selectedConjunto?.titulo || tituloValue?.nombre?.trim() || "";
-  if (window.BIBLIOTECA_MODE && !selectedConjunto && !explorerState.stagingTituloConjunto) {
+  if (!selectedConjunto && !explorerState.stagingTituloConjunto) {
     explorerState.stagingTituloConjunto = materiaSelection?.nombre?.trim() || "Bloque de planeacion";
   }
 
@@ -1012,38 +972,14 @@ async function submitQuickCreateForm(event) {
   try {
     const normalizeForCompare = (str) => String(str || "").trim().toLowerCase();
 
-    let plantelId;
-    if (window.BIBLIOTECA_MODE) {
-      plantelId = await ensureDefaultPlantel();
-    } else {
-      plantelId = plantelSelection.id;
-      if (!plantelId) {
-        const existingPlantel = explorerState.planteles.find(
-          (p) => normalizeForCompare(p.nombre) === normalizeForCompare(plantelSelection.nombre)
-        );
-        if (existingPlantel) {
-          plantelId = existingPlantel.id;
-        } else {
-          const created = await crearPlantel({ nombre: plantelSelection.nombre.trim() });
-          plantelId = created?.id;
-          if (!plantelId) throw new Error("No se pudo crear el plantel.");
-          await loadPlanteles();
-        }
-      } else if (!quickListHasId(explorerState.planteles, plantelId)) {
-        throw new Error("El plantel seleccionado no es valido.");
-      }
-    }
+    const plantelId = await ensureDefaultPlantel();
 
     await ensureGrados(plantelId);
     const gradosDisponibles = explorerState.gradosByPlantel[plantelId] || [];
 
     let gradoId = gradoSelection.id;
     if (!gradoId) {
-      const existingGrado = window.BIBLIOTECA_MODE
-        ? findQuickGradoByNivel(plantelId, gradoSelection.nivelBase)
-        : gradosDisponibles.find(
-            (g) => normalizeForCompare(g.nombre) === normalizeForCompare(gradoSelection.nombre)
-          );
+      const existingGrado = findQuickGradoByNivel(plantelId, gradoSelection.nivelBase);
       if (existingGrado) {
         gradoId = existingGrado.id;
       } else {
@@ -1088,14 +1024,12 @@ async function submitQuickCreateForm(event) {
     let unidadId = selectedConjunto?.unidad_id || selectedConjunto?.unidadId || null;
     if (!unidadId) {
       const unidadTecnicaNombre = "Bloque de planeacion";
-      if (window.BIBLIOTECA_MODE) {
-        const existingUnidad = unidadesDisponibles.find(
-          (u) => normalizeForCompare(u.nombre) === normalizeForCompare(unidadTecnicaNombre)
-        );
-        unidadSelection = existingUnidad
-          ? { id: existingUnidad.id, nombre: existingUnidad.nombre, isNew: false }
-          : { id: null, nombre: unidadTecnicaNombre, isNew: true };
-      }
+      const existingUnidad = unidadesDisponibles.find(
+        (u) => normalizeForCompare(u.nombre) === normalizeForCompare(unidadTecnicaNombre)
+      );
+      const unidadSelection = existingUnidad
+        ? { id: existingUnidad.id, nombre: existingUnidad.nombre, isNew: false }
+        : { id: null, nombre: unidadTecnicaNombre, isNew: true };
 
       unidadId = unidadSelection.id;
       if (!unidadId) {
@@ -1142,14 +1076,10 @@ async function submitQuickCreateForm(event) {
       unidad: null
     };
 
-    if (window.BIBLIOTECA_MODE && selectedConjunto?.id) {
+    if (selectedConjunto?.id) {
       window.biblioteca.pendingBatchId = selectedConjunto.id;
-      if (typeof window.biblioteca?.startPlaneacionesGeneration === "function") {
-        window.biblioteca.startPlaneacionesGeneration(selectedConjunto.id, explorerState.stagingTemas);
-      } else if (typeof window.biblioteca?.selectConjunto === "function") {
-        window.biblioteca.selectConjunto(selectedConjunto.id, { tab: "planeaciones" });
-      }
-    } else if (window.BIBLIOTECA_MODE && typeof window.biblioteca?.setPendingConjunto === "function") {
+      window.biblioteca.startPlaneacionesGeneration(selectedConjunto.id, explorerState.stagingTemas);
+    } else {
       window.biblioteca.setPendingConjunto({
         tempId:  `tmp-${Date.now()}`,
         titulo:  explorerState.stagingTituloConjunto || "Bloque de planeacion",
@@ -1157,9 +1087,7 @@ async function submitQuickCreateForm(event) {
         materia: materiaSelection?.nombre  || "",
         unidad:  null
       });
-      if (typeof window.renderBibliotecaContent === "function") {
-        window.renderBibliotecaContent();
-      }
+      BibliotecaRender.renderContent();
     }
 
     await generatePlaneacionesFromStaging();
@@ -1277,36 +1205,11 @@ function initQuickComboboxes() {
   gradoCombobox.setDisabled(true);
 
   materiaCombobox = createQuickCombobox("quick-materia-combobox", {
-    placeholder: window.BIBLIOTECA_MODE ? "Selecciona o escribe una materia" : "Escribe o selecciona una materia",
-    disabledPlaceholder: window.BIBLIOTECA_MODE ? "Selecciona o escribe una materia" : "Primero selecciona o crea un grado",
-    onChange: async (val) => {
-      if (window.BIBLIOTECA_MODE) {
-        return;
-      }
-
-      if (val.typing) {
-        if (val.nombre) unidadCombobox?.setDisabled(false);
-        else unidadCombobox?.setDisabled(true);
-        return;
-      }
-
-      unidadCombobox?.reset();
-
-      if (!val.nombre) {
-        unidadCombobox?.setDisabled(true);
-        return;
-      }
-
-      unidadCombobox?.setDisabled(false);
-
-      if (val.id) {
-        await fillQuickUnidadOptions(val.id).catch((error) => console.error("Error cargando unidades:", error));
-      } else {
-        unidadCombobox?.setItems([]);
-      }
-    }
+    placeholder: "Selecciona o escribe una materia",
+    disabledPlaceholder: "Selecciona o escribe una materia",
+    onChange: async () => {}
   });
-  materiaCombobox.setDisabled(!window.BIBLIOTECA_MODE);
+  materiaCombobox.setDisabled(false);
 
   unidadCombobox = createQuickCombobox("quick-unidad-combobox", {
     placeholder: "Escribe o selecciona una unidad",
@@ -1335,7 +1238,6 @@ function bindQuickCreate() {
 
     document.getElementById("quick-nivel-educativo-select")?.addEventListener("change", (event) => {
       syncQuickSelectVisualState("quick-nivel-educativo-select");
-      if (!window.BIBLIOTECA_MODE) return;
       if (explorerState.quickCreate.selectedConjunto) {
         clearQuickExistingConjuntoSelection();
       }
@@ -1399,8 +1301,6 @@ function bindQuickCreate() {
   window.QuickCreate = Object.freeze({
     open: openQuickCreatePanel,
     close: closeQuickCreatePanel,
-    bind: bindQuickCreate,
-    setPanelVisibility: setQuickPanelVisibility,
-    generateFromStaging: generatePlaneacionesFromStaging
+    bind: bindQuickCreate
   });
 })();

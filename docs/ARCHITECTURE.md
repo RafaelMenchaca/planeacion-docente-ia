@@ -15,8 +15,10 @@ aprobada manualmente, retiró Batch y quedó commiteada en `9496303`. La Sesión
 manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
 jerárquico, fue aprobada manualmente y quedó commiteada en `7393909`. La
 auditoría 9.4 aprobó formalmente el cierre de Fase 9 en `b6eb40e` y el cierre
-acumulativo real es `aa56e06`. La auditoría 10.0 pasó el gate y abrió Fase 10,
-que queda **En progreso**, sin implementación funcional iniciada. El inventario ejecutable
+acumulativo real es `aa56e06`. La auditoría 10.0 pasó el gate y abrió Fase 10.
+La Sesión 10.1 fue aprobada manualmente y quedó commiteada en `17f4ce1`; la
+Sesión 10.2 deja implementado el cierre funcional de la frontera clásica y
+pendiente únicamente de su manual. Fase 10 queda **En progreso**. El inventario ejecutable
 se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -1240,3 +1242,46 @@ exactamente los mismos 20 emitters. Las publicaciones explícitas `window.*` no
 cambian; los tokens productivos `window.` bajan de 422 a 418 por retirar hojas
 sin entrada. El smoke específico valida dispatch e IDs. La implementación
 queda técnicamente PASS y pendiente de la manual 10.1 antes de commit/cierre.
+
+## Fase 10 — Sesión 10.2: frontera clásica final explícita
+
+El gate abrió limpio en `refactor-front`/`17f4ce1`, commit real de 10.1 ya
+aprobada manualmente. El backend permaneció limpio y de solo lectura en
+`refactor-back`/`fe25abe`.
+
+La frontera final conserva contratos reales y elimina únicamente intermediarios
+pasivos. Los cinco wrappers Loader/Reconcile fueron sustituidos por llamadas a
+`window.BibliotecaLoader`; los consumers de render usan el owner léxico
+`BibliotecaRender.renderContent`; los consumers de UI usan `window.AppUI`; y
+Bootstrap/ExamDownload usan `window.ExamDownload.download`. Por ello ya no se
+publican `window.renderBibliotecaContent`, `window.statusLabelFromTone`,
+`window.renderProgressPill` ni `window.downloadExamWord`.
+
+Quick sigue consumiendo la facade `window.biblioteca`, pero su contrato queda
+reducido a cinco miembros reales: `pendingBatchId`, `getConjuntos`,
+`startPlaneacionesGeneration`, `setPendingConjunto` y
+`finishPlaneacionesGeneration`. `selectConjunto` y `refresh` eran fallbacks sin
+entrada productiva. La API `window.QuickCreate` queda explícita en `open`,
+`close` y `bind`; `setPanelVisibility` y `generateFromStaging` permanecen como
+funciones privadas, no como API pública.
+
+Dashboard es el único HTML que carga Quick y Bootstrap fijaba siempre
+`BIBLIOTECA_MODE = true` antes de enlazarlo. Se retiró el flag y sus ramas false
+sin tocar el flujo vigente: jerarquía técnica, creación de IDs, staging,
+pending y reconcile siguen activos. `explorerState` conserva las mismas 17
+propiedades top-level y sus cinco slices compartidos; no se renombra ni se
+introduce otro store.
+
+`main.js` ya no mapea `planeacion.html` a `planeacionPage.init`: esa página es
+un redirect que no carga `main.js`. El redirect y sus assets permanecen fuera
+de este corte. El orden de los 43 scripts Dashboard no cambia. Tampoco se añade
+guard a `BibliotecaEvents.bind`, porque el único entry productivo lo ejecuta
+una vez. Sí se corrigió el listener del backdrop de confirmación: cerrar por
+Cancel/OK ahora retira el listener pendiente y evita que una apertura posterior
+ejecute un closure viejo.
+
+Resultado automatizado: 10/10 suites y 32/32 pruebas PASS. Los wrappers y
+aliases de compatibilidad auditados pasan de 6/2 a 0/0; globals explícitos de
+174 a 169; métodos públicos Quick de 5 a 3; facade de 7 a 5; referencias
+productivas a `BIBLIOTECA_MODE` de 25 a 0. La manual 10.2 es obligatoria y queda
+pendiente antes de abrir la auditoría formal 10.3.

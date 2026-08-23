@@ -34,7 +34,7 @@
 
       setSelectedConjunto(safeBatchId, { tab: "planeaciones" });
       renderBibliotecaDetailInPlace();
-      await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "planeaciones" });
+      await window.BibliotecaLoader.load({ silent: true, targetBatchId: safeBatchId, activeTab: "planeaciones" });
     } catch (error) {
       console.error("[biblioteca] Error eliminando planeacion:", error);
       alert(error.message || "No se pudo eliminar la planeación. Intenta nuevamente.");

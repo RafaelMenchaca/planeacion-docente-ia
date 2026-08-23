@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const initMap = {
     "dashboard.html": window.initDashboardPage,
-    "planeacion.html": window.planeacionPage?.init,
     "detalle.html": window.initDetallePage,
     "archivados.html": window.initArchivadosPage,
     "login.html": window.initLoginPage,

@@ -1324,8 +1324,9 @@ apertura sin modificar código productivo. El gate pasó sobre
 `refactor-back`/`fe25abe` limpio y solo lectura. 10.0 quedó commiteada en
 `ec03f94`, con manual no requerida. La Sesión 10.1 implementó el dispatch
 directo de 12 actions hacia sus owners, retiró 15 wrappers, tres handlers sin
-emitter y dos implementaciones Anexo sin entrada. La validación técnica pasa;
-la manual 10.1 está pendiente y 10.2 no ha iniciado.
+emitter y dos implementaciones Anexo sin entrada; fue aprobada manualmente y
+commiteada en `17f4ce1`. La Sesión 10.2 está implementada y automatizadamente
+aprobada; su manual final queda pendiente.
 
 ### Dependencias
 
@@ -1386,7 +1387,7 @@ sus dos implementaciones de Anexo sin entrada. No incluye loader/reconcile,
 `BIBLIOTECA_MODE`, `explorerState`, orden de scripts, generación, payloads ni
 listeners. La búsqueda posterior debe conservar 20 emitters con 20 handlers.
 
-**Implementada, manual pendiente.** `BibliotecaEvents` despacha preview,
+**Completada, manual aprobada y commiteada en `17f4ce1`.** `BibliotecaEvents` despacha preview,
 download y delete directamente a los namespaces propietarios con las mismas
 fuentes dataset e IDs. Permanecen seis wrappers: cinco Loader/Reconcile y
 `downloadExamWord`, todos reservados para 10.2. El smoke específico confirma
@@ -1403,12 +1404,24 @@ renombra, no se crea otro store y no se convierte el frontend a ESM. Los 164
 símbolos léxicos no son una orden de migración masiva: se mantienen los
 contratos útiles y solo se toca compatibilidad redundante demostrada.
 
+**Implementada, manual pendiente.** Los cinco wrappers Loader/Reconcile, los
+dos aliases AppUI, el bridge `window.renderBibliotecaContent` y
+`window.downloadExamWord` fueron migrados a sus owners y retirados. Quick queda
+con tres métodos públicos y la facade Biblioteca con cinco miembros activos.
+`BIBLIOTECA_MODE` y el mapping inalcanzable de Planeación en `main.js` fueron
+retirados con sus consumers cero. `explorerState`, sus 17 propiedades y el
+orden de 43 scripts permanecen. Se corrigió únicamente el listener de backdrop
+con riesgo reproducible. Jest: 10 suites/32 pruebas PASS.
+
 #### 10.3 — Auditoría formal de cierre
 
 Repetir globals, wrappers, aliases, bridges, shape de estado, contratos
 léxicos, orden de 43 scripts, handlers/emitters, listeners, suite completa y
 matriz manual. Cerrar Fase 10 únicamente si todo contrato restante tiene owner,
 consumer y motivo documentados.
+
+**No iniciada.** Requiere primero la manual integral de 10.2; no debe incluir
+implementación salvo blocker crítico demostrado.
 
 ## Reglas de avance
 

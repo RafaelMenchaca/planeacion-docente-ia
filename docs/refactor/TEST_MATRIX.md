@@ -2206,19 +2206,55 @@ restante tenga owner, consumer y motivo documentado.
 | Jest final | 9 suites/27 pruebas, 0 snapshots | PASS |
 | Scope | state, Quick, Loader, Mode, main, order y backend sin cambio | PASS |
 
-### Manual 10.1 pendiente
+### Manual 10.1 aprobada
 
 | Área | Pasos | Estado |
 | --- | --- | --- |
-| Dashboard/Biblioteca | carga, bloques, tabs, búsqueda, reload | Pendiente |
-| Quick Create | abrir/cerrar, crear bloque, Agregar Tema | Pendiente |
-| Preview | abrir/cerrar/reabrir Examen, Lista y Anexo | Pendiente |
-| Download | Examen, Lista, Anexo y Planeación si es práctico; validar nombre | Pendiente |
-| Delete | Examen, Lista, Anexo, Planeación y bloque si se crea uno | Pendiente |
-| Generation | Planeación, Anexo, Lista y Examen | Pendiente |
-| Detalle/back | abrir Planeación y volver a Biblioteca | Pendiente |
-| Consola/red | sin ReferenceError, owner undefined, 404, duplicados o error nuevo | Pendiente |
+| Dashboard/Biblioteca | carga, bloques, tabs, búsqueda, reload | Aprobada |
+| Quick Create | abrir/cerrar, crear bloque, Agregar Tema | Aprobada |
+| Preview/download/detalle | flujos normales disponibles | Aprobada |
+| Delete | bloque success | Aprobada |
+| Planeación | success 1 / error 0 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen/consola | 11/11, 0 fallidas, 2 retries, sin errores nuevos | Aprobada |
 
 El error conocido de `public.ia_metrics` permanece fuera de alcance y no
-bloquea. La manual es el único gate pendiente antes de cerrar/commitear 10.1;
-10.2 no debe iniciarse todavía.
+bloquea. 10.1 quedó commiteada en `17f4ce1` y habilitó 10.2.
+
+## Fase 10 — Sesión 10.2: frontera final de compatibilidad
+
+### Validación automatizada
+
+| Caso | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front` limpio en `17f4ce1`; backend solo lectura | PASS |
+| Baseline | 9 suites/27 pruebas | PASS |
+| Loader/Reconcile | cinco wrappers ausentes; consumers usan owner | PASS |
+| Render/AppUI/Exam | bridge, dos aliases y download wrapper ausentes | PASS |
+| Quick/facade | 3 métodos públicos / 5 miembros reales | PASS |
+| Mode | 0 refs productivas; flujo Biblioteca preservado | PASS |
+| Main | mapping Planeación ausente; redirect intacto | PASS |
+| Actions | 20 emitters/20 handlers y owners cargados | PASS |
+| Estado | 17 propiedades `explorerState`, shape intacto | PASS |
+| Scripts/listeners | 43 scripts; 102 sites; backdrop cleanup cubierto | PASS |
+| Smoke final | 1 suite/5 pruebas | PASS |
+| Jest final | 10 suites/32 pruebas | PASS |
+| Sintaxis | todo JS modificado | PASS |
+
+### Manual 10.2 pendiente
+
+| Área | Pasos | Estado |
+| --- | --- | --- |
+| Login/Biblioteca | bloques, tabs, search, switch, reload | Pendiente |
+| Quick | abrir/cerrar, nuevo bloque, Agregar Tema | Pendiente |
+| Detalle | abrir Planeación y volver | Pendiente |
+| Preview | Examen, Lista y Anexo | Pendiente |
+| Download | Planeación, Examen, Lista y Anexo disponibles | Pendiente |
+| Generation | Planeación, Anexo, Lista y Examen | Pendiente |
+| Delete | Examen, Lista, Anexo, Planeación y bloque según datos | Pendiente |
+| Navegación | hard reload y back/forward si aplica | Pendiente |
+| Consola/red | sin globals undefined, 404, requests/listeners/render duplicados | Pendiente |
+
+La manual es el único gate funcional pendiente antes de 10.3. El issue
+`public.ia_metrics` sigue siendo conocido, externo y no bloqueante.

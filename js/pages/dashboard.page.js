@@ -23,7 +23,6 @@ const explorerState = {
   listaCotejoPreview: { open: false, listaId: null, listaData: null, loading: false, error: "" }
 };
 
-const GRADO_NIVEL_OPTIONS = new Set(["primaria", "secundaria", "preparatoria", "universidad"]);
 const QUICK_NIVELES_EDUCATIVOS = [
   { value: "primaria", label: "Primaria" },
   { value: "secundaria", label: "Secundaria" },
@@ -448,17 +447,6 @@ function syncQuickSelectVisualState(selectId) {
   const hasValue = Boolean(select.value);
   select.classList.toggle("text-slate-400", !hasValue);
   select.classList.toggle("text-slate-900", hasValue);
-}
-
-function requireNivelBaseValue(selectId, label) {
-  const select = document.getElementById(selectId);
-  const value = typeof select?.value === "string" ? select.value.trim().toLowerCase() : "";
-
-  if (!GRADO_NIVEL_OPTIONS.has(value)) {
-    throw new Error(`Selecciona una opcion para ${label}.`);
-  }
-
-  return value;
 }
 
 window.explorerState = explorerState;

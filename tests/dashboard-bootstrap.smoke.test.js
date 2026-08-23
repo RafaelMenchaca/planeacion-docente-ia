@@ -59,7 +59,7 @@ describe("Dashboard bootstrap/bindings owner smoke", () => {
     expect(window.initPrivateChrome).toHaveBeenCalledTimes(1);
     expect(window.QuickCreate.bind).toHaveBeenCalledTimes(1);
     expect(window.initBiblioteca).toHaveBeenCalledTimes(1);
-    expect(window.BIBLIOTECA_MODE).toBe(true);
+    expect(window.BIBLIOTECA_MODE).toBeUndefined();
     expect(window.document.getElementById("explorer-content")).not.toBeNull();
     expect(window.document.getElementById("btn-hero-quick-create")).not.toBeNull();
     expect(vm.runInContext('isActividadDidacticaValida("Debate académico")', context)).toBe(true);

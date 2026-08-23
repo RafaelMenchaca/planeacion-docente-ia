@@ -1,8 +1,8 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` después de la auditoría 10.0. Las Fases
-0–9 están completadas; Fase 10 está en progreso, sin implementación funcional
-iniciada. Este
+Estado observado en `refactor-front` después de implementar la Sesión 10.2.
+Las Fases 0–9 están completadas; Fase 10 está en progreso, con 10.1 aprobada y
+commiteada en `17f4ce1` y la manual 10.2 pendiente. Este
 documento conserva inventarios históricos y registra la arquitectura
 ejecutable y las consolidaciones internas sin cambiar contratos públicos.
 
@@ -4743,3 +4743,85 @@ queda pendiente.
 de `window.biblioteca`, Quick public surface, `BIBLIOTECA_MODE`, mapping
 Planeación de `main.js`, frontera léxica/global y guards de listeners si la
 evidencia lo justifica. No se inició ninguna de esas tareas.
+
+## Fase 10 — Sesión 10.2: mapa de frontera final
+
+### Contratos migrados o conservados
+
+| Superficie | Antes | Decisión final | Consumer/owner vigente |
+| --- | --- | --- | --- |
+| cinco wrappers Loader/Reconcile | funciones bare de page | retirados | `window.BibliotecaLoader.*` |
+| render bridge | `window.renderBibliotecaContent` | retirado | `BibliotecaRender.renderContent` léxico |
+| aliases AppUI | dos funciones `window.*` | retirados | `window.AppUI.*` |
+| Examen download wrapper | `window.downloadExamWord` | retirado | `window.ExamDownload.download` |
+| facade Biblioteca | siete miembros | conservada con cinco | Quick/Create y reconcile |
+| Quick public API | cinco métodos | tres públicos | Bootstrap/DOM: `open`, `close`, `bind` |
+| `BIBLIOTECA_MODE` | 25 refs productivas | retirado | Dashboard único conserva flujo true |
+| mapping Planeación | branch de `main.js` | retirado | redirect HTML intacto |
+| `explorerState` | 17 propiedades | conservado sin cambio de shape | jerarquía, Quick, generation y previews |
+
+Los cinco wrappers Loader eran passthroughs sin adaptación:
+
+| Wrapper retirado | Owner/método | Consumers migrados | Firma preservada |
+| --- | --- | --- | --- |
+| `normalizeGeneratedPlaneaciones` | `BibliotecaLoader.normalizeGeneratedPlaneaciones` | Planeacion Generation | `(raw, pending)` |
+| `applyOptimisticPlaneacionesToConjunto` | `BibliotecaLoader.applyOptimisticPlaneacionesToConjunto` | Planeacion Generation | `(conjunto, pending)` |
+| `applyGenerationResultToPendingItems` | `BibliotecaLoader.applyGenerationResultToPendingItems` | Planeacion Generation | `(pending, normalized)` |
+| `finishBibliotecaPlaneacionesGeneration` | `BibliotecaLoader.finishPlaneacionesGeneration` | facade | `(batchId)` |
+| `loadAndRenderBiblioteca` | `BibliotecaLoader.load` | init, retry, generation y delete owners | `()` |
+
+### Surface pública final
+
+```text
+window.QuickCreate
+├─ open
+├─ close
+└─ bind
+
+window.biblioteca
+├─ pendingBatchId (get/set)
+├─ getConjuntos
+├─ startPlaneacionesGeneration
+├─ setPendingConjunto
+└─ finishPlaneacionesGeneration
+```
+
+Quick continúa requiriendo la facade para coordinar estado de page y pending;
+no es compatibilidad decorativa. `selectConjunto` y `refresh` no tenían
+consumers productivos fuera de ramas false del mode. Las funciones privadas
+Quick `setPanelVisibility` y `generateFromStaging` permanecen intactas.
+
+### Métricas antes/después
+
+| Métrica | Baseline 10.2 | Implementado 10.2 |
+| --- | ---: | ---: |
+| Wrappers auditados | 6 | 0 |
+| Aliases directos | 2 | 0 |
+| Bridges cross-feature relevantes | 4 | 2 requeridos |
+| Publicaciones explícitas `window.*` | 174 | 169 |
+| Tokens productivos `window.` | 418 | 386 |
+| `BIBLIOTECA_MODE` refs | 25 | 0 |
+| Quick public methods | 5 | 3 |
+| Facade methods/properties | 7 | 5 |
+| `explorerState` refs productivas | 207 | 202 |
+| Dashboard scripts | 43 | 43 |
+| Listener sites repo | 102 | 102 |
+
+Los dos bridges que permanecen son integraciones reales: Quick → facade
+Biblioteca y Bootstrap → Quick/Biblioteca. Se eliminaron los intermediarios de
+render y Loader/Reconcile. El orden clásico no cambió; `BibliotecaRender`
+sigue siendo namespace léxico y no se publicó artificialmente en `window`.
+
+### Estado y listeners
+
+Todas las propiedades top-level de `explorerState` conservan readers/writers;
+no surgió una propiedad con cero consumidores. `BibliotecaEvents.bind` tiene un
+único caller productivo desde el lifecycle normal, por lo que no se añade guard.
+El backdrop de confirmación sí tenía duplicación reproducible tras cerrar por
+botón; `close()` retira ahora el handler pendiente antes de ocultar el modal.
+
+Consumer audit: cero refs productivas a `BIBLIOTECA_MODE`, al bridge render, a
+los dos aliases AppUI, a `downloadExamWord`, a los dos miembros retirados de
+Quick/facade o al mapping `planeacionPage` en `main.js`. Los nombres internos de
+owners y las menciones históricas documentales no son consumidores del contrato
+retirado.

@@ -41,7 +41,7 @@
         const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
         if (filename === null) return;
 
-        await downloadExamWord(examenId, filename);
+        await window.ExamDownload.download(examenId, filename);
         notifyDashboard("Examen exportado a Word.", "success");
       } catch (error) {
         console.error("Error exportando examen:", error);
@@ -69,8 +69,6 @@
   }
 
   async function initDashboardPage() {
-    window.BIBLIOTECA_MODE = true;
-
     try {
       await injectComponent("dashboard-layout-root", "../components/layout.html");
       await (window.initPrivateChrome ? window.initPrivateChrome() : Promise.resolve());

@@ -93,8 +93,8 @@ function applyGenerationResultToPendingItems(batchId, result) {
     const target = pending.items[itemIndex];
     if (!target) return;
     target.status = record.status || "ready";
-    target.statusLabel = typeof statusLabelFromTone === "function"
-      ? statusLabelFromTone(target.status)
+    target.statusLabel = typeof window.AppUI?.statusLabelFromTone === "function"
+      ? window.AppUI.statusLabelFromTone(target.status)
       : target.status;
     target.message = record.message || "";
   });
@@ -103,7 +103,9 @@ function applyGenerationResultToPendingItems(batchId, result) {
     pending.items.forEach(item => {
       if (item.status === "pending" || item.status === "generating") {
         item.status = "ready";
-        item.statusLabel = typeof statusLabelFromTone === "function" ? statusLabelFromTone("ready") : "Listo";
+        item.statusLabel = typeof window.AppUI?.statusLabelFromTone === "function"
+          ? window.AppUI.statusLabelFromTone("ready")
+          : "Listo";
       }
     });
   }
@@ -141,7 +143,7 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
     BibliotecaTabs.setActiveTab(batchId, "planeaciones");
   }
 
-  renderBibliotecaContent();
+  BibliotecaRender.renderContent();
 
   await loadAndRenderBiblioteca({
     silent: true,
@@ -167,7 +169,7 @@ async function loadAndRenderBiblioteca(options = {}) {
     bibliotecaState.loading = true;
   }
   bibliotecaState.error   = "";
-  if (!silent) renderBibliotecaContent();
+  if (!silent) BibliotecaRender.renderContent();
 
   try {
     const session = await window.requireSession();
@@ -214,12 +216,12 @@ async function loadAndRenderBiblioteca(options = {}) {
       }
     }
 
-    renderBibliotecaContent();
+    BibliotecaRender.renderContent();
   } catch (error) {
     console.error("[biblioteca] Error al cargar conjuntos:", error);
     bibliotecaState.loading = false;
     bibliotecaState.error   = error.message || "Error al cargar la biblioteca.";
-    renderBibliotecaContent();
+    BibliotecaRender.renderContent();
   }
 }
 

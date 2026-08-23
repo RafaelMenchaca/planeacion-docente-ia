@@ -11,8 +11,8 @@
 function renderBibliotecaProgressCard(titulo, meta, status, opts) {
   opts = opts || {};
   const resolvedStatus = (status === "pending" || !status) ? "generating" : status;
-  const pill = typeof renderProgressPill === "function"
-    ? renderProgressPill(resolvedStatus, resolvedStatus === "generating" ? "Generando" : undefined)
+  const pill = typeof window.AppUI?.renderProgressPill === "function"
+    ? window.AppUI.renderProgressPill(resolvedStatus, resolvedStatus === "generating" ? "Generando" : undefined)
     : `<span>${resolvedStatus}</span>`;
   const rowExtra = resolvedStatus === "generating" ? " bib-item-generating"
     : resolvedStatus === "error"     ? " bib-item-error"
@@ -592,7 +592,7 @@ function renderBibliotecaSidebarListInPlace() {
 
 // ---- MAIN RENDER ----
 
-function renderBibliotecaContent() {
+const renderBibliotecaContent = function renderBibliotecaContent() {
   const container = document.getElementById("explorer-content");
   if (!container) return;
 
@@ -638,11 +638,9 @@ function renderBibliotecaContent() {
       if (list) list.scrollTop = prevSidebarScroll;
     });
   }
-}
+};
 
-window.renderBibliotecaContent = renderBibliotecaContent;
-
-// Superficie léxica de ownership; los nombres globales existentes permanecen compatibles.
+// Superficie léxica de ownership para scripts clásicos cargados antes del init.
 const BibliotecaRender = Object.freeze({
   renderContent: renderBibliotecaContent,
   renderDetailInPlace: renderBibliotecaDetailInPlace,

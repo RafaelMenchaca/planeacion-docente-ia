@@ -14,14 +14,16 @@
 - **Última fase cerrada:** 9 — eliminación controlada de legacy.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
 - **Fase 9:** Completada; auditoría formal 9.4 aprobada.
-- **Fase 10:** En progreso; 10.0 completada sin implementación funcional.
+- **Fase 10:** En progreso; 10.2 implementada y pendiente de manual.
 - **Sesión 9.0:** auditoría aprobada y commiteada en `73d52b4`; manual no requerida.
 - **Sesión 9.1:** Batch retirado; manual aprobada y commit `9496303`.
 - **Sesión 9.2:** aprobada manualmente y commiteada en `7cca74e`.
 - **Sesión 9.3:** fallback visual retirado; manual aprobada y commit `7393909`.
 - **Sesión 9.4:** auditoría formal completada y commit documental real `b6eb40e`; cierre acumulativo F9 `aa56e06`.
-- **Sesión 10.0:** auditoría técnica/documental de apertura completada; manual no requerida; commit y push pendientes.
-- **Siguiente acción:** revisar/commitear 10.0 cuando el usuario lo decida; 10.1 no iniciada.
+- **Sesión 10.0:** auditoría completada; manual no requerida; commit `ec03f94`.
+- **Sesión 10.1:** manual aprobada y commit real `17f4ce1`.
+- **Sesión 10.2:** implementación y suite completas; manual, commit y push pendientes.
+- **Siguiente acción:** ejecutar la manual 10.2; después abrir 10.3 solo como auditoría formal de cierre.
 - **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
 - **Sesión 8.1:** explorer visual/navegación aislados; manual aprobada y commit `1aa1599`.
 - **Sesión 8.2:** bridges preview/download trasladados a owners existentes; manual acumulada aprobada y commit `6fb39ab`.
@@ -6675,4 +6677,191 @@ Manual 10.1: pendiente
 Commit: no
 Push: no
 10.2: no iniciada
+```
+
+## Fase 10 — Sesión 10.2: cierre de frontera global y clásica
+
+### A. Gate
+
+```text
+rama: refactor-front
+HEAD/hash 10.1: 17f4ce1
+working tree al abrir: limpio
+backend: refactor-back / fe25abe / limpio / solo lectura
+puerta: PASS
+```
+
+### B. Reconciliación 10.1
+
+10.0 está completada en `ec03f94`. 10.1 fue aprobada manualmente y commiteada
+en `17f4ce1`. Evidencia recibida: delete bloque success; Planeación success 1,
+error 0, skipped 0; Anexo generate success; Lista created 1, skipped 0; Examen
+11/11, cero fallidas y dos retries; sin errores nuevos.
+
+### C. Baseline
+
+Jest: 9 suites/27 pruebas PASS. Seis wrappers, dos aliases, 174 publicaciones
+explícitas `window.*`, 25 refs productivas a `BIBLIOTECA_MODE`, cinco métodos
+Quick, siete miembros facade, 207 refs a `explorerState`, 43 scripts Dashboard
+y 102 listener sites.
+
+### D. Loader/Reconcile wrappers
+
+Los cinco eran passthroughs sin adapter de argumentos, estado, errores o flujo
+async. Planeacion Generation, facade, init, retry y los owners generation/delete
+llaman ahora `window.BibliotecaLoader` directamente. Pending y reconcile no
+cambian.
+
+### E. `window.biblioteca`
+
+Se conserva porque Quick la consume productivamente. Surface final:
+`pendingBatchId`, `getConjuntos`, `startPlaneacionesGeneration`,
+`setPendingConjunto` y `finishPlaneacionesGeneration`. `selectConjunto` y
+`refresh` se retiraron tras confirmar que solo sostenían fallbacks sin entry.
+
+### F. Render bridge
+
+Quick y todos los cruces productivos usan `BibliotecaRender.renderContent`.
+`window.renderBibliotecaContent` fue retirado. El owner continúa léxico y no se
+publicó un global nuevo.
+
+### G. AppUI aliases
+
+Quick/Loader usan `window.AppUI.statusLabelFromTone`; Render usa
+`window.AppUI.renderProgressPill`. Los dos aliases globales fueron retirados.
+
+### H. `downloadExamWord`
+
+Bootstrap llama `window.ExamDownload.download`; `downloadFromBiblioteca` llama
+la función owner interna. Cero consumers después de migrar; wrapper retirado.
+
+### I. Quick public API
+
+Antes: `open`, `close`, `bind`, `setPanelVisibility`, `generateFromStaging`.
+Después: `open`, `close`, `bind`. Las dos funciones internas permanecen y no se
+alteró su comportamiento.
+
+### J. `BIBLIOTECA_MODE`
+
+Dashboard era el único entry, Bootstrap siempre lo fijaba true y no existía
+HTML con branch false alcanzable. Se conservó exactamente el flujo true y se
+retiró el flag/ramas false, junto con dos helpers que quedaron cero-consumer.
+Jerarquía, IDs, force-new-batch, staging, pending y reconcile siguen activos.
+
+### K. `main.js`
+
+Retirado únicamente el mapping inalcanzable `planeacion.html →
+window.planeacionPage?.init`. `planeacion.html` sigue como redirect y no carga
+`main.js`; sus assets no fueron eliminados.
+
+### L. Globals
+
+Retirados cinco globals explícitos: `BIBLIOTECA_MODE`,
+`renderBibliotecaContent`, `statusLabelFromTone`, `renderProgressPill` y
+`downloadExamWord`. El resto conserva consumer o contrato clásico.
+
+### M. Lexical contracts
+
+Se eliminaron solo edges ligados al corte: cinco wrappers Loader, dos aliases
+AppUI, un wrapper download, el helper cross-file `requireNivelBaseValue` y el
+bridge render. No se migró masivamente el inventario de scripts clásicos ni se
+alteró el orden.
+
+### N. Listeners
+
+`BibliotecaEvents.bind` no recibe guard: solo existe un init productivo. El
+backdrop confirm sí acumulaba un handler si Cancel/OK cerraba antes del click en
+backdrop; `close()` elimina ahora ese listener pendiente. Conteo de sites sin
+cambio.
+
+### O. `explorerState`
+
+Shape intacto: 17 propiedades top-level, todas con referencias después del
+corte. No se renombró, no se creó store y no se movieron preview/generation
+slices. Refs productivas: 207 → 202 por retirar ramas.
+
+### P. Implementación
+
+Se modificaron exclusivamente callsites de page/Quick/Bootstrap/UI,
+Loader/Render/Events/Modal, owners generation/delete para llamar Loader/Render,
+Exam Download, `main.js`, tests y los cinco documentos autorizados. No cambian
+internals de generación, preview o delete ni sus payloads/endpoints.
+
+### Q. Metrics
+
+```text
+wrappers: 6 → 0
+aliases: 2 → 0
+bridges relevantes: 4 → 2 requeridos
+window publications: 174 → 169
+window. tokens: 418 → 386
+BIBLIOTECA_MODE refs: 25 → 0
+Quick public methods: 5 → 3
+facade members: 7 → 5
+explorerState refs: 207 → 202
+dashboard scripts: 43 → 43
+listener sites: 102 → 102
+```
+
+### R. Consumer audit
+
+Cero referencias productivas residuales a los globals, wrappers, aliases,
+miembros públicos/facade o mapping retirados. Las menciones en pruebas son
+assertions de ausencia; las documentales son historia. Owners activos y 20
+actions Biblioteca permanecen cargados.
+
+### S. Tests
+
+Baseline: 9 suites/27 pruebas PASS. Final: 10 suites/32 pruebas PASS, cero
+snapshots. `node --check` pasa para todo JS modificado.
+
+### T. Smoke
+
+`final-compatibility-boundary.smoke.test.js`: cinco pruebas PASS. Cubre globals
+activos/retirados, superficies Quick/facade, 20 actions y orden de owners,
+mapping Planeación/redirect y limpieza del listener backdrop.
+
+### U. Manual pendiente
+
+Login; Biblioteca bloques/tabs/search/switch/reload; Quick abrir/cerrar/nuevo
+bloque/Agregar Tema; Detalle/back; previews Examen/Lista/Anexo; cuatro
+downloads; cuatro generaciones; cinco deletes según datos; hard reload y
+back/forward; consola/red sin ReferenceError, undefined, 404, listeners,
+requests o renders duplicados. `public.ia_metrics` no bloquea.
+
+### V. Scope protegido
+
+Sin cambios en backend, DB, APIs, payloads, `wordExport.js`, Archivados,
+Dashboard Tailwind, Batch, assets Planeación, arquitectura de generation,
+preview/delete ni orden de scripts.
+
+### W. Riesgos
+
+Sin blocker técnico. No bloqueantes: manual 10.2 pendiente; assets Planeación
+sin entry conservados como deuda futura; frontera clásica restante requiere
+reconteo formal en 10.3. `BibliotecaEvents.bind` queda documentado como seguro
+bajo el único lifecycle actual.
+
+### X. Handoff 10.3
+
+No iniciada. Debe ejecutar únicamente auditoría formal de cierre F10 y roadmap
+0–10 después de aprobar la manual 10.2; implementación solo ante blocker
+crítico demostrado.
+
+### Y. Documentación
+
+Actualizados los cinco archivos autorizados: Arquitectura, mapa frontend,
+roadmap, handoff y matriz de pruebas.
+
+### Z. Estado final
+
+```text
+Fase 10: En progreso
+10.0: completada
+10.1: completada/commiteada/manual aprobada
+10.2: implementada
+Manual 10.2: pendiente
+Commit: no
+Push: no
+10.3: no iniciada
 ```

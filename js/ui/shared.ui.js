@@ -1,7 +1,7 @@
 // js/ui/shared.ui.js
 // Funciones de UI compartidas entre dashboard.page.js y biblioteca.page.js.
 // Cargado antes que ambos archivos de página para romper la dependencia circular.
-// Expone window.AppUI (namespace) y aliases directos en window para compatibilidad.
+// Expone window.AppUI como namespace compartido.
 
 window.AppUI = window.AppUI || {};
 
@@ -43,10 +43,6 @@ window.AppUI.renderProgressPill = function renderProgressPill(status, label) {
     </span>
   `;
 };
-
-// Aliases directos en window para compatibilidad con código existente
-window.statusLabelFromTone = window.AppUI.statusLabelFromTone;
-window.renderProgressPill = window.AppUI.renderProgressPill;
 
 // ---- DOWNLOAD NAME MODAL ----
 

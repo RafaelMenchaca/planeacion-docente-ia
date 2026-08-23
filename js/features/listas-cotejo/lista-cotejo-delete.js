@@ -28,7 +28,7 @@
 
       setSelectedConjunto(safeBatchId, { tab: "listas" });
       renderBibliotecaDetailInPlace();
-      await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "listas" });
+      await window.BibliotecaLoader.load({ silent: true, targetBatchId: safeBatchId, activeTab: "listas" });
     } catch (error) {
       console.error("[biblioteca] Error eliminando lista de cotejo:", error);
       alert(error.message || "No se pudo eliminar la lista de cotejo. Intenta nuevamente.");

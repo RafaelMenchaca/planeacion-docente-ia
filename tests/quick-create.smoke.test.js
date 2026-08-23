@@ -31,12 +31,10 @@ function createHarness({ generationResult, generationError } = {}) {
 
   window.requestAnimationFrame = (callback) => callback();
   window.alert = jest.fn();
-  window.BIBLIOTECA_MODE = true;
   window.AppUI = {
     renderProgressPill: (status, label) => `<span>${label || status}</span>`,
     statusLabelFromTone: (status) => ({ ready: "Listo", skipped: "No realizado", error: "Error", generating: "Generando", pending: "Pendiente" }[status] || status)
   };
-  window.statusLabelFromTone = window.AppUI.statusLabelFromTone;
   window.escapeHtml = (value) => String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")

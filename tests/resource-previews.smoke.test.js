@@ -100,7 +100,7 @@ describe("Resource preview/download owners and compatibility smoke", () => {
     window.document.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(window.explorerState.examPreview.open).toBe(false);
 
-    await window.downloadExamWord("exam-1", "examen-prueba");
+    await window.ExamDownload.download("exam-1", "examen-prueba");
     expect(window.obtenerExamenDetalle).toHaveBeenCalledTimes(2);
     expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(window.URL.revokeObjectURL).toHaveBeenCalledWith("blob:exam");
@@ -135,7 +135,8 @@ describe("Resource preview/download owners and compatibility smoke", () => {
       expect(typeof window.ExamPreview[name]).toBe("function");
       expect(typeof window.ListaCotejoPreview[name]).toBe("function");
     });
-    expect(typeof window.downloadExamWord).toBe("function");
+    expect(typeof window.ExamDownload.download).toBe("function");
+    expect(window.downloadExamWord).toBeUndefined();
   });
 
   test("Biblioteca conserva los fallbacks de error de Examen y Lista", async () => {

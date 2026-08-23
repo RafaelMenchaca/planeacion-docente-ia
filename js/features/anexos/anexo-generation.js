@@ -86,7 +86,7 @@
 
       // Reload silencioso para confirmar datos reales del servidor
       if (anySuccess) {
-        await loadAndRenderBiblioteca({ silent: true, targetBatchId: conjuntoId, activeTab: "anexos" });
+        await window.BibliotecaLoader.load({ silent: true, targetBatchId: conjuntoId, activeTab: "anexos" });
         BibliotecaAnexosPending.deleteBatch(conjuntoId);
       }
     })();

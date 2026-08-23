@@ -310,11 +310,6 @@ window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
   set pendingBatchId(v) { bibliotecaState.pendingBatchId = v; },
   getConjuntos: () => Array.isArray(bibliotecaState.conjuntos) ? bibliotecaState.conjuntos : [],
-  selectConjunto: (conjuntoId, options = {}) => {
-    setSelectedConjunto(conjuntoId, { tab: options.tab || "planeaciones" });
-    updateBibliotecaSidebarActive();
-    renderBibliotecaDetailInPlace();
-  },
   startPlaneacionesGeneration: (conjuntoId, temas = []) => {
     const safeId = normalizeBibliotecaId(conjuntoId);
     if (!safeId) return;
@@ -327,7 +322,7 @@ window.biblioteca = {
       })),
       error: ""
     });
-    renderBibliotecaContent();
+    BibliotecaRender.renderContent();
   },
   setPendingConjunto: (data) => {
     const tempId = data.tempId || `tmp-${Date.now()}`;
@@ -351,8 +346,7 @@ window.biblioteca = {
     BibliotecaSelection.setSelectedConjuntoId(tempId);
     BibliotecaTabs.setActiveTab(tempId, "planeaciones");
   },
-  refresh: (options = {}) => loadAndRenderBiblioteca(options),
-  finishPlaneacionesGeneration: (result) => finishBibliotecaPlaneacionesGeneration(result)
+  finishPlaneacionesGeneration: (result) => window.BibliotecaLoader.finishPlaneacionesGeneration(result)
 };
 
 // ---- HELPERS ----
@@ -475,29 +469,6 @@ function setSelectedConjunto(conjuntoId, { tab } = {}) {
 
 function getSelectedConjunto() {
   return findConjuntoById(BibliotecaSelection.getSelectedConjuntoId());
-}
-
-// Wrappers de compatibilidad para generadores, deletes, eventos e init que se
-// cargan como scripts clásicos. La implementación canónica vive en el owner de
-// loader/reconcile y estas firmas se conservan hasta migrar sus consumidores.
-function normalizeGeneratedPlaneaciones(result) {
-  return window.BibliotecaLoader.normalizeGeneratedPlaneaciones(result);
-}
-
-function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
-  return window.BibliotecaLoader.applyOptimisticPlaneacionesToConjunto(batchId, planeaciones);
-}
-
-function applyGenerationResultToPendingItems(batchId, result) {
-  return window.BibliotecaLoader.applyGenerationResultToPendingItems(batchId, result);
-}
-
-function finishBibliotecaPlaneacionesGeneration(result) {
-  return window.BibliotecaLoader.finishPlaneacionesGeneration(result);
-}
-
-function loadAndRenderBiblioteca(options = {}) {
-  return window.BibliotecaLoader.load(options);
 }
 
 // ---- ANEXOS CREATE MODAL ----
@@ -857,7 +828,7 @@ async function initBiblioteca() {
 
   BibliotecaEvents.bind();
 
-  await loadAndRenderBiblioteca();
+  await window.BibliotecaLoader.load();
 }
 
 window.initBiblioteca = initBiblioteca;
