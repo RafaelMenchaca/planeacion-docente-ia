@@ -11,10 +11,11 @@
 
 ## Estado del roadmap
 
-- **Última fase cerrada:** 9 — eliminación controlada de legacy.
+- **Última fase cerrada:** 10 — consolidación final.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
 - **Fase 9:** Completada; auditoría formal 9.4 aprobada.
-- **Fase 10:** En progreso; 10.2 implementada y pendiente de manual.
+- **Fase 10:** Completada; auditoría formal 10.3 aprobada.
+- **Roadmap 0–10:** Completado.
 - **Sesión 9.0:** auditoría aprobada y commiteada en `73d52b4`; manual no requerida.
 - **Sesión 9.1:** Batch retirado; manual aprobada y commit `9496303`.
 - **Sesión 9.2:** aprobada manualmente y commiteada en `7cca74e`.
@@ -22,8 +23,9 @@
 - **Sesión 9.4:** auditoría formal completada y commit documental real `b6eb40e`; cierre acumulativo F9 `aa56e06`.
 - **Sesión 10.0:** auditoría completada; manual no requerida; commit `ec03f94`.
 - **Sesión 10.1:** manual aprobada y commit real `17f4ce1`.
-- **Sesión 10.2:** implementación y suite completas; manual, commit y push pendientes.
-- **Siguiente acción:** ejecutar la manual 10.2; después abrir 10.3 solo como auditoría formal de cierre.
+- **Sesión 10.2:** manual aprobada y commit real `da618c7`.
+- **Sesión 10.3:** auditoría formal completada; commit y push pendientes.
+- **Siguiente acción:** checkpoint/push y PR/merge a `main` cuando el usuario lo decida; no abrir otra fase.
 - **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
 - **Sesión 8.1:** explorer visual/navegación aislados; manual aprobada y commit `1aa1599`.
 - **Sesión 8.2:** bridges preview/download trasladados a owners existentes; manual acumulada aprobada y commit `6fb39ab`.
@@ -6864,4 +6866,149 @@ Manual 10.2: pendiente
 Commit: no
 Push: no
 10.3: no iniciada
+```
+
+## Fase 10 — Sesión 10.3: auditoría formal de cierre
+
+### A. Gate
+
+`refactor-front` limpio en `da618c7`; 10.0 `ec03f94`, 10.1 `17f4ce1`,
+10.2 `da618c7`; cierre F9 `aa56e06`. Backend `refactor-back`/`fe25abe`, limpio
+y solo lectura. Puerta PASS.
+
+### B. Reconciliación manual 10.2
+
+Aplicación funcionando correctamente después del cleanup y sin regresiones
+detectadas. Evidencia exacta: Planeación success 1/error 0/skipped 0; Anexo
+generate success; Lista created 1/skipped 0; Examen 1 11/11, cero fallidas,
+cero retries; segunda ronda Anexo success y Lista success; Examen 2 10/10,
+cero fallidas, cero retries; deletes Examen success, Anexo success y varios
+bloques success. No se atribuyen manuales adicionales a 10.2.
+
+### C–E. Objetivo, sesiones y métricas F10
+
+F10 cerró la frontera clásica sin reemplazarla: 10.0 auditó; 10.1 retiró 15
+wrappers action y tres handlers sin emitter; 10.2 retiró cinco wrappers Loader,
+dos aliases, cuatro globals/bridges adicionales y el flag Mode, redujo Quick y
+facade, y corrigió el backdrop; 10.3 solo audita/documenta. Métricas F10:
+wrappers 21→0, aliases 2→0, Dashboard 464→452 LOC, globals explícitos 174→169,
+tokens `window.` 418→386, state refs 207→202, Quick 5→3 y facade 7→5.
+
+### F–I. Estado, jerarquía y surfaces
+
+`explorerState`: decisión A, state técnico compartido clásico. Sus 17
+propiedades permanecen activas. Jerarquía (`planteles`, cuatro caches, current,
+loading/errors y `ensure*`) es necesaria para IDs/Quick y no legacy eliminable.
+Quick expone `open`, `close`, `bind`; sus dos coordinadores siguen privados.
+Facade Biblioteca conserva `pendingBatchId`, `getConjuntos`,
+`startPlaneacionesGeneration`, `setPendingConjunto` y
+`finishPlaneacionesGeneration`, todos consumidos por Quick.
+
+### J–M. Globals, wrappers, bridges y namespaces
+
+169 publicaciones globales explícitas: 167 `window.*` y dos vía parámetro
+`global`; 386 tokens `window.`. Se agrupan en core/auth, APIs/services, entries,
+state/facade, feature owners, Archivados y páginas directas/históricas. Cero
+wrappers F10 o aliases redundantes. Adapters service→API restantes agregan
+sesión/token/error/retry. Bridges activos: Quick→facade; Bootstrap→Quick/
+Biblioteca; generation/delete→Loader/Render; Events→owners. Hay 19 namespaces
+owner explícitos y tres léxicos internos: Render, Modal Render y Events.
+
+### N–P. Léxicos, scripts y `main.js`
+
+AST: 143 símbolos cross-file, 74 edges, 32 late-provider y cero hazards
+inmediatos. Todos los internos tienen provider; Supabase proviene del CDN.
+Dashboard: 43 tags, 42 locales existentes + CDN, cero modules/import/export,
+`main.js` último. Main despacha Dashboard/Detalle/Archivados/Login; no contiene
+Planeación, Batch ni Explorer mappings.
+
+### Q–R. Actions y listeners
+
+20 emitters, 20 handlers, cero mismatch; delegación y dispatch directo
+intactos. `BibliotecaEvents.bind()` posee un único init productivo: riesgo
+aceptado/no blocker. `showBibConfirm.close()` elimina `handleBackdrop`, por lo
+que Cancel/OK retiran el listener pendiente.
+
+### S–W. UI y owners funcionales
+
+DOM Dashboard contiene Biblioteca, Quick, previews, chrome/footer y UI
+compartida; cero Explorer/CRUD activo. CSS Dashboard 1841 LOC, sin hooks
+críticos de los assets retirados; nombres históricos restantes tienen consumer
+real o pertenecen a Archivados/shared UI. Generation, pending/reconcile,
+previews, downloads y deletes mantienen owners reales. Events despacha deletes
+directamente a Bloque, Planeación, Examen, Lista y Anexo. Detalle/back conserva
+la evidencia acumulada anterior; no se atribuye como manual nueva 10.2.
+
+### X–Z. Redirects, Tailwind y Archivados
+
+`batch.html` redirect presente; implementación Batch eliminada. `planeacion.html`
+redirect presente y tres assets sin entry conservados como deuda separada.
+Dashboard Tailwind sigue como URL directa ejecutable, sin cambios. Archivados,
+registry/localStorage y services permanecen; su integración futura real con
+Biblioteca es feature de producto, no refactor pendiente.
+
+### AA. Backend/contracts
+
+F10 no modificó backend, DB, API, auth/config/services ni `wordExport.js`.
+`unidad_id`, `planeacion_ids`, `tema_ids`, `batch_id` y `force_new_batch`
+conservan firmas y fuentes.
+
+### AB–AC. Tests y consumer audit
+
+`npm test -- --runInBand`: 10/10 suites y 32/32 tests PASS, cero snapshots.
+Diecinueve JS críticos pasan `node --check`. Smokes vigentes: Batch,
+Dashboard-no-legacy, Biblioteca action owners, final boundary, Quick,
+previews/resources, Loader, Bootstrap y zero-consumer. Cero test exige que el
+legacy eliminado exista; las assertions de ausencia son válidas. Cero refs
+productivas a contratos deliberadamente retirados. `renderBibliotecaContent`
+solo es implementación interna del namespace; métodos AppUI solo existen bajo
+`AppUI`; `planeacionPage` solo vive en el asset huérfano documentado.
+
+### AD–AF. Roadmap, arquitectura y métricas globales
+
+Las Fases 0–10 están Completadas. El mapa de commits/cierres vive en Roadmap.
+Arquitectura: monolito Dashboard/Biblioteca/Quick/generation/Explorer y
+ownership ambiguo → Dashboard técnico 452 LOC + owners Biblioteca, Quick,
+Generation, Preview/Download, Delete y Loader/Reconcile, sin legacy visual.
+Métricas verificadas: Dashboard 5690 (inicio F7) → 2564 (cierre F8) → 464
+(cierre F9) → 452; Explorer 1183→0, CRUD 234→0, CSS 2257→1841; Jest 1 suite/2
+tests al inicio documentado → 10/32 final.
+
+### AG–AH. Riesgos y trabajo separado
+
+- Blockers: ninguno.
+- Compatibilidad aceptada: scripts clásicos, globals/namespaces con contrato,
+  state compartido y supuesto de init único.
+- Deuda técnica futura: nombre `explorerState`, 143 contratos léxicos, assets
+  Planeación sin entry y Dashboard Tailwind directo.
+- Producto futuro: Archivados real para Biblioteca.
+- Externo: `public.ia_metrics` ausente y temas huérfanos; backend/DB, no blocker.
+- Post-roadmap: checkpoint/push, PR/merge, regresión sobre main y deploy.
+
+### AI–AJ. Documentación y contradicciones
+
+Actualizados únicamente Arquitectura, mapa, Roadmap, Handoff y Test Matrix.
+Las tablas antiguas que describen compatibilidad ya retirada son snapshots
+históricos de su sesión; la fotografía final está en las secciones 10.3. No hay
+contradicción vigente entre código, manual, suite y estado canónico.
+
+### AK. Decisión F10
+
+**A. Fase 10 puede cerrarse.**
+
+### AL. Decisión roadmap
+
+**A. Roadmap 0–10 puede declararse completado.**
+
+### AM. Estado final
+
+```text
+Fase 10: Completada
+Sesión 10.3: Completada
+Auditoría de cierre F10: Aprobada
+Roadmap 0–10: Completado
+Commit: no
+Push: no
+Merge: no
+Working tree: cinco documentos autorizados
 ```

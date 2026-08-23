@@ -2242,19 +2242,52 @@ bloquea. 10.1 quedó commiteada en `17f4ce1` y habilitó 10.2.
 | Jest final | 10 suites/32 pruebas | PASS |
 | Sintaxis | todo JS modificado | PASS |
 
-### Manual 10.2 pendiente
+### Manual 10.2 aprobada
 
 | Área | Pasos | Estado |
 | --- | --- | --- |
-| Login/Biblioteca | bloques, tabs, search, switch, reload | Pendiente |
-| Quick | abrir/cerrar, nuevo bloque, Agregar Tema | Pendiente |
-| Detalle | abrir Planeación y volver | Pendiente |
-| Preview | Examen, Lista y Anexo | Pendiente |
-| Download | Planeación, Examen, Lista y Anexo disponibles | Pendiente |
-| Generation | Planeación, Anexo, Lista y Examen | Pendiente |
-| Delete | Examen, Lista, Anexo, Planeación y bloque según datos | Pendiente |
-| Navegación | hard reload y back/forward si aplica | Pendiente |
-| Consola/red | sin globals undefined, 404, requests/listeners/render duplicados | Pendiente |
+| Aplicación | funcionando correctamente después del cleanup; sin regresiones detectadas | Aprobada |
+| Planeación | success 1 / error 0 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen 1 | 11/11 / 0 fallidas / 0 retries | Aprobada |
+| Segunda ronda | Anexo success / Lista success | Aprobada |
+| Examen 2 | 10/10 / 0 fallidas / 0 retries | Aprobada |
+| Deletes | Examen success / Anexo success / varios bloques success | Aprobada |
 
-La manual es el único gate funcional pendiente antes de 10.3. El issue
-`public.ia_metrics` sigue siendo conocido, externo y no bloqueante.
+No se atribuyen a 10.2 manuales adicionales a las informadas. El issue
+`public.ia_metrics` sigue siendo conocido, externo y no bloqueante. Esta
+evidencia habilitó la auditoría 10.3.
+
+## Fase 10 — Sesión 10.3: cierre formal
+
+| Verificación | Evidencia real | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front` limpio en `da618c7` | PASS |
+| Commits F10 | 10.0 `ec03f94`; 10.1 `17f4ce1`; 10.2 `da618c7` | reconciliado |
+| Backend | `refactor-back`/`fe25abe`, limpio, solo lectura | PASS |
+| Manual 10.2 | evidencia exacta anterior | Aprobada |
+| Globals retirados | cero refs productivas | PASS |
+| Quick/facade | tres métodos / cinco miembros con consumers | PASS |
+| `explorerState` | 17 propiedades activas / 202 refs | PASS |
+| Léxicos | 143 símbolos / 74 edges / cero hazard inmediato | PASS |
+| Scripts | 43 tags / 42 locales / cero missing / main último | PASS |
+| Classic model | cero ESM; providers internos presentes | PASS |
+| Actions | 20 emitters / 20 handlers / cero mismatch | PASS |
+| Listeners | bind con init único; backdrop cleanup presente | PASS |
+| Redirects | Batch/Planeación intactos; Batch assets ausentes | PASS |
+| Owners | Generation/Preview/Download/Delete/Loader activos | PASS |
+| Protected scope | API/auth/config/wordExport/Archivados/Tailwind/backend sin cambios F10 | PASS |
+| Tests obsoletos | cero test exige legacy presente | PASS |
+| `node --check` | 19 JS críticos | PASS |
+| Jest | 10 suites / 32 tests / 0 snapshots | PASS |
+
+Smokes finales relevantes: `batch-compatibility`,
+`dashboard-no-legacy-fallback`, `biblioteca-action-owners`,
+`final-compatibility-boundary`, `quick-create`, `resource-previews`,
+`biblioteca-loader`, `dashboard-bootstrap` y
+`legacy-zero-consumer-removal`. Las assertions de ausencia protegen decisiones
+vigentes y no mantienen código eliminado.
+
+Decisión A: Fase 10 puede cerrarse. Decisión A: roadmap 0–10 puede declararse
+completado. No se abre Fase 11.

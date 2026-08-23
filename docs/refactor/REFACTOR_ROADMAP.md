@@ -33,7 +33,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Completada |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Completada |
 | 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Completada |
-| 10 | Consolidación final | Retirar wrappers y deuda | Medio | En progreso |
+| 10 | Consolidación final | Retirar wrappers y deuda | Medio | Completada |
 
 Los únicos estados válidos son `Pendiente`, `En progreso`, `Completada`, `Bloqueada` y `Cancelada`. No se marca una fase como completada sin evidencia de todos sus criterios de salida.
 
@@ -1325,8 +1325,9 @@ apertura sin modificar código productivo. El gate pasó sobre
 `ec03f94`, con manual no requerida. La Sesión 10.1 implementó el dispatch
 directo de 12 actions hacia sus owners, retiró 15 wrappers, tres handlers sin
 emitter y dos implementaciones Anexo sin entrada; fue aprobada manualmente y
-commiteada en `17f4ce1`. La Sesión 10.2 está implementada y automatizadamente
-aprobada; su manual final queda pendiente.
+commiteada en `17f4ce1`. La Sesión 10.2 fue aprobada manualmente y commiteada
+en `da618c7`. La auditoría 10.3 aprueba el cierre de Fase 10 y del roadmap
+completo 0–10.
 
 ### Dependencias
 
@@ -1404,7 +1405,7 @@ renombra, no se crea otro store y no se convierte el frontend a ESM. Los 164
 símbolos léxicos no son una orden de migración masiva: se mantienen los
 contratos útiles y solo se toca compatibilidad redundante demostrada.
 
-**Implementada, manual pendiente.** Los cinco wrappers Loader/Reconcile, los
+**Completada, manual aprobada y commiteada en `da618c7`.** Los cinco wrappers Loader/Reconcile, los
 dos aliases AppUI, el bridge `window.renderBibliotecaContent` y
 `window.downloadExamWord` fueron migrados a sus owners y retirados. Quick queda
 con tres métodos públicos y la facade Biblioteca con cinco miembros activos.
@@ -1420,8 +1421,35 @@ léxicos, orden de 43 scripts, handlers/emitters, listeners, suite completa y
 matriz manual. Cerrar Fase 10 únicamente si todo contrato restante tiene owner,
 consumer y motivo documentados.
 
-**No iniciada.** Requiere primero la manual integral de 10.2; no debe incluir
-implementación salvo blocker crítico demostrado.
+**Completada y aprobada.** La auditoría reconcilia la manual 10.2, revalida
+state, globals, wrappers, aliases, bridges, namespaces, contratos léxicos,
+orden de scripts, actions, listeners, DOM/CSS, owners, redirects, suite y
+documentación. No incorpora implementación funcional.
+
+### Cierre formal de Fase 10 y roadmap 0–10
+
+| Fase | Objetivo | Estado | Resultado principal | Commit/cierre verificable |
+| ---: | --- | --- | --- | --- |
+| 0 | línea base y protección | Completada | repos/tags/matriz protegidos | tag `pre-biblioteca-modular-refactor` (`588cb15`) |
+| 1 | extracciones aisladas | Completada | preview/download owners iniciales | cierre 1.4 `fa0f3b1` |
+| 2 | acciones por dominio | Completada | acciones separadas por recurso | cierre `7414292` |
+| 3 | capa API frontend | Completada | fronteras HTTP consolidadas | cierre `ecb1785` |
+| 4 | generación y polling | Completada | cuatro generation owners | cierre `8dcba86` |
+| 5 | estado de Biblioteca | Completada | state/selection/tabs/pending con owner | cierre `23da300`; integración `b5348dd` |
+| 6 | render y eventos | Completada | Render/Modal/Events separados | documental `8ad0b0d`; funcional `295d7ed` |
+| 7 | Dashboard y Quick | Completada | Quick, Loader y Bootstrap owners | documental `7cd8726`; funcional `3a5cf94` |
+| 8 | aislamiento legacy | Completada | Explorer/CRUD aislados | `bf97b1a`/`378ac30`; merge `41f933e` |
+| 9 | eliminación legacy | Completada | Batch/Explorer/CRUD/fallback retirados | `b6eb40e`; acumulativo `aa56e06` |
+| 10 | frontera final | Completada | wrappers/aliases redundantes retirados | 10.0 `ec03f94`; 10.1 `17f4ce1`; 10.2 `da618c7`; 10.3 documental pendiente de commit |
+
+Evidencia final: manual 10.2 aprobada, Jest 10/10 suites y 32/32 pruebas,
+consumer audit sin referencias productivas retiradas, 43 scripts/0 missing y
+contratos activos con owner. Decisiones: **A. Fase 10 puede cerrarse** y
+**A. Roadmap 0–10 puede declararse completado**.
+
+No se abre Fase 11. El trabajo posterior queda fuera del roadmap: checkpoint y
+push, PR/merge a `main`, regresión final sobre el merge, verificación de deploy
+y backlog separado de features/deuda.
 
 ## Reglas de avance
 

@@ -1,8 +1,8 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` después de implementar la Sesión 10.2.
-Las Fases 0–9 están completadas; Fase 10 está en progreso, con 10.1 aprobada y
-commiteada en `17f4ce1` y la manual 10.2 pendiente. Este
+Estado observado en `refactor-front` durante la auditoría final 10.3. Las Fases
+0–10 y el roadmap completo están cerrados: 10.1 fue commiteada en `17f4ce1`,
+10.2 en `da618c7` y su manual fue aprobada. Este
 documento conserva inventarios históricos y registra la arquitectura
 ejecutable y las consolidaciones internas sin cambiar contratos públicos.
 
@@ -4825,3 +4825,126 @@ los dos aliases AppUI, a `downloadExamWord`, a los dos miembros retirados de
 Quick/facade o al mapping `planeacionPage` en `main.js`. Los nombres internos de
 owners y las menciones históricas documentales no son consumidores del contrato
 retirado.
+
+## Fase 10 — Sesión 10.3: inventario final ejecutable
+
+### `explorerState`: decisión final A
+
+| Propiedad | Owner conceptual | Consumers productivos | Activo | Compatibility | Decisión |
+| --- | --- | --- | --- | --- | --- |
+| `planteles` | jerarquía técnica | Dashboard loaders, Quick | sí | técnica | conservar |
+| `gradosByPlantel` | jerarquía técnica | Dashboard loaders, Quick | sí | técnica | conservar |
+| `materiasByGrado` | jerarquía técnica | Dashboard loaders, Quick | sí | técnica | conservar |
+| `unidadesByMateria` | jerarquía técnica | Dashboard loaders, Quick | sí | técnica | conservar |
+| `temasByUnidad` | jerarquía técnica | Dashboard loaders | sí | técnica | conservar |
+| `examenDetalleById` | cache Examen | Preview, Download, Bootstrap | sí | compartida | conservar |
+| `loading` | Dashboard técnico | loaders jerárquicos | sí | técnica | conservar |
+| `errors` | Dashboard técnico | loaders jerárquicos | sí | técnica | conservar |
+| `current` | IDs técnicos | Dashboard, Quick | sí | compartida | conservar |
+| `stagingTemas` | Quick | Quick | sí | no | conservar |
+| `stagingTituloConjunto` | Quick | Quick | sí | no | conservar |
+| `stagingContext` | Quick | Quick | sí | no | conservar |
+| `progress` | Quick/generation | Quick, Loader, Dashboard helpers | sí | compartida | conservar |
+| `quickCreate` | Quick | Quick, Bootstrap, previews | sí | compartida | conservar |
+| `generating` | Quick | Quick | sí | no | conservar |
+| `examPreview` | Exam Preview | Preview, Bootstrap, Lista Preview | sí | compartida | conservar |
+| `listaCotejoPreview` | Lista Preview | Preview, Bootstrap, Exam Preview | sí | compartida | conservar |
+
+Conclusión: `explorerState` es un estado técnico compartido clásico con slices
+de owners conceptuales distintos. Sus 17 propiedades tienen consumers; se
+conserva sin rename, store nuevo ni movimiento de slices.
+
+### Superficies públicas finales
+
+| Contrato | Surface | Consumer/motivo | Estado |
+| --- | --- | --- | --- |
+| `QuickCreate` | `open`, `close`, `bind` | Events y Bootstrap | explícito activo |
+| `window.biblioteca` | `pendingBatchId`, `getConjuntos`, `startPlaneacionesGeneration`, `setPendingConjunto`, `finishPlaneacionesGeneration` | coordinación Quick/Biblioteca | facade activa |
+| Generation | Planeación, Examen, Lista, Anexo | modales Biblioteca | owner explícito |
+| Preview | Examen, Lista, Anexo | Events/Bootstrap | owner explícito |
+| Download | Planeación, Examen, Lista, Anexo | Events/previews/Bootstrap | owner explícito |
+| Delete | Bloque, Planeación, Examen, Lista, Anexo | Events | owner explícito |
+| `AppUI` | toast, labels, pills y nombres de descarga | UI compartida | namespace activo |
+| `BibliotecaLoader` | load/reconcile y normalización | init, Quick, generation/delete | namespace activo |
+| `BibliotecaRender` | render completo/parcial | Biblioteca/features | namespace léxico interno |
+| `BibliotecaModalRender` | modales/confirmación | Biblioteca/deletes | namespace léxico interno |
+| `BibliotecaEvents` | bind/dispatch/search | init/Render | namespace léxico interno |
+
+`setPanelVisibility` y `generateFromStaging` siguen como funciones privadas de
+Quick. No existen `window.BibliotecaRender`, `window.BibliotecaModalRender` ni
+`window.BibliotecaEvents` y no se necesitan.
+
+### Globals, wrappers, aliases y bridges
+
+| Grupo global | Owner/consumer | Necesario | Compatibilidad |
+| --- | --- | --- | --- |
+| config/Supabase/auth | core, APIs, private pages | sí | classic shared |
+| APIs y services | HTTP, sesión, pages/features | sí | API técnica clásica |
+| page init globals | `main.js` y rutas directas | sí | entry contract |
+| `explorerState` | Dashboard/Quick/previews | sí | state clásico compartido |
+| facade Biblioteca | Quick | sí | bridge explícito |
+| feature namespaces | Events/Bootstrap/page | sí | owner API |
+| Archivados registry/localStorage | Archivados/services | sí | flujo separado |
+| Planeación/Tailwind sin entry canónico | assets directos/históricos | no para Dashboard | deuda futura aceptada |
+
+Métrica exacta: 167 nombres asignados mediante `window.X =` y dos mediante el
+parámetro IIFE `global` (`BibliotecaLoader`, `initDashboardPage`): 169
+publicaciones explícitas; 386 tokens `window.`. Hay 19 namespaces owner
+explícitos y tres internos léxicos. Los wrappers action de 10.1 y los cinco
+wrappers Loader/Reconcile de 10.2 están ausentes. Cero aliases directos
+redundantes permanecen. Los 17 return-sites service→API encontrados son
+adapters activos de sesión/token/error/retry, no wrappers de compatibilidad.
+
+Bridges activos y justificados: Quick→facade Biblioteca; Bootstrap→Quick e
+`initBiblioteca`; Generation/Delete→`BibliotecaLoader`/Render; y
+BibliotecaEvents→Preview/Download/Delete owners. Todos son contratos explícitos.
+
+### Contratos léxicos y orden
+
+El recuento AST final sobre los 42 scripts locales Dashboard encuentra 143
+símbolos cross-file y 74 edges. Treinta y dos edges tienen provider posterior,
+pero cero referencias late-provider se ejecutan en top-level: las llamadas son
+diferidas hasta init/eventos. Hay 33 scripts consumers. Todos los símbolos
+internos tienen provider; los unresolved restantes son built-ins JS/DOM y
+`supabase` del CDN.
+
+`dashboard.html` contiene 43 tags: 42 locales existentes y un CDN. Cero paths
+faltantes, cero `type="module"`, cero `import/export`, cero scripts Explorer/CRUD
+y `main.js` al final. El modelo classic script es deliberado, coherente y
+estable; su orden no se modificó en F10.
+
+### Actions, listeners y rutas
+
+- `data-bib-action`: 20 emitters, 20 handlers, cero mismatch.
+- Events conserva delegación y owner directo; `bind()` tiene un solo init
+  productivo y el supuesto se acepta como no blocker.
+- `showBibConfirm.close()` retira `handleBackdrop`; Cancel/OK no dejan el
+  listener pendiente de 10.2.
+- `main.js` solo despacha Dashboard, Detalle, Archivados y Login. No contiene
+  Planeación, Batch ni Explorer mappings.
+- `batch.html` y `planeacion.html` son redirects sin implementación cargada.
+  Batch page/UI/CSS están eliminados; los tres assets Planeación sin entry se
+  conservan como deuda separada.
+- `dashboard_tailwind.html` conserva URL directa y stack propio; no es blocker.
+
+### Métricas finales
+
+| Métrica | Resultado |
+| --- | ---: |
+| Dashboard | 452 LOC |
+| `explorerState` | 17 propiedades / 202 refs |
+| globals explícitos | 169 |
+| tokens `window.` | 386 |
+| namespaces | 19 explícitos + 3 léxicos |
+| wrappers F10 | 0 |
+| aliases redundantes | 0 |
+| bridges activos | 5 familias explícitas |
+| símbolos/edges léxicos | 143 / 74 |
+| late edges / hazards inmediatos | 32 / 0 |
+| scripts Dashboard | 43 / 0 missing |
+| actions | 20 emitters / 20 handlers |
+| Jest | 10 suites / 32 tests PASS |
+
+Decisión A: Fase 10 puede cerrarse. Decisión A: roadmap 0–10 puede declararse
+completado. El inventario histórico previo se conserva como evidencia de cada
+fase; esta sección es la fotografía canónica final.

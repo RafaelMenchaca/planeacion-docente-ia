@@ -17,8 +17,9 @@ jerárquico, fue aprobada manualmente y quedó commiteada en `7393909`. La
 auditoría 9.4 aprobó formalmente el cierre de Fase 9 en `b6eb40e` y el cierre
 acumulativo real es `aa56e06`. La auditoría 10.0 pasó el gate y abrió Fase 10.
 La Sesión 10.1 fue aprobada manualmente y quedó commiteada en `17f4ce1`; la
-Sesión 10.2 deja implementado el cierre funcional de la frontera clásica y
-pendiente únicamente de su manual. Fase 10 queda **En progreso**. El inventario ejecutable
+Sesión 10.2 quedó aprobada manualmente y commiteada en `da618c7`. La auditoría
+10.3 aprueba el cierre de Fase 10 y del roadmap 0–10. Fase 10 queda
+**Completada** y el roadmap **Completado**. El inventario ejecutable
 se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -205,17 +206,17 @@ globals. El detalle propiedad-consumidor está en
 
 `pages/dashboard.html` carga, entre otros, `dashboard.page.js`, `biblioteca.page.js` y `main.js`, en ese orden. `main.js` invoca `window.initDashboardPage()`.
 
-Como `biblioteca.page.js` ya publicó `window.initBiblioteca`, `initDashboardPage()`:
-
-1. establece `window.BIBLIOTECA_MODE = true`;
-2. inyecta el layout y componentes privados;
-3. registra los eventos compartidos;
-4. llama `window.initBiblioteca()`;
-5. retorna antes de ejecutar `hydrateExplorerData()`.
+Como `biblioteca.page.js` ya publicó `window.initBiblioteca`,
+`initDashboardPage()` inyecta el layout y componentes privados, registra los
+eventos compartidos y llama `window.initBiblioteca()`. No existe modo dual ni
+fallback hacia Explorer; `BIBLIOTECA_MODE` fue retirado en 10.2.
 
 Biblioteca controla el render principal: carga conjuntos, renderiza sidebar y detalle, conserva el tab por conjunto y coordina planeaciones, anexos, listas y exámenes. Toda funcionalidad visual nueva debe incorporarse a este flujo.
 
-`dashboard.page.js` todavía contiene utilidades, creación rápida, estado y previews consumidos por Biblioteca. Es deuda técnica de compatibilidad, no un segundo modo de uso. El objetivo del refactor es separar las dependencias activas y retirar gradualmente el código visual obsoleto; nunca mover lógica de Biblioteca hacia el explorador antiguo.
+`dashboard.page.js` contiene únicamente estado técnico compartido, loaders y
+caches jerárquicos, helpers de actividades y progreso/previews consumidos por
+Quick y los owners. Quick vive en su feature propio. Es compatibilidad técnica
+clásica, no un segundo modo visual.
 
 ## Fase 6: render, DOM y eventos de Biblioteca
 
@@ -233,8 +234,8 @@ initDashboardPage
  └─ initBiblioteca
      ├─ injectBibliotecaModals
      ├─ document.click -> onBibliotecaClick
-     └─ loadAndRenderBiblioteca
-         └─ renderBibliotecaContent
+     └─ BibliotecaLoader.load
+         └─ BibliotecaRender.renderContent
              ├─ loading / error
              └─ shell
                  ├─ renderBibliotecaSidebar
@@ -261,15 +262,12 @@ La frontera con Dashboard permanece activa y contractual:
 
 - `components/layout.html` aporta `#explorer-content`, Quick Create y los DOM
   estables de preview de Exámenes/Listas.
-- `dashboard.page.js` enlaza el shell antes de `initBiblioteca`, conserva Quick
-  Create, `window.explorerState`, previews y wrappers, y despacha
-  `renderExplorerContent()` hacia `window.renderBibliotecaContent` cuando
-  `BIBLIOTECA_MODE` está activo.
+- `dashboard.page.js` aporta `window.explorerState` y helpers técnicos; Quick,
+  previews, generación, descargas y deletes tienen owners separados.
 - Biblioteca consume los bindings léxicos compartidos
   `MOMENTOS_ACTIVIDADES_DIDACTICAS`, `buildActividadDidacticaOptions`,
   `isActividadDidacticaValida`, `normalizeActividadesMomentos`,
-  `renderProgressPill` y `statusLabelFromTone`. Esta dependencia por orden de
-  scripts corresponde principalmente a Fase 7, no debe absorberse en Fase 6.
+  `window.AppUI.renderProgressPill` y `window.AppUI.statusLabelFromTone`.
 - Quick Create consume `window.biblioteca` y puede provocar renders/refetch de
   Biblioteca. Su estado, staging, SSE y reconciliación permanecen protegidos.
 
@@ -1285,3 +1283,55 @@ aliases de compatibilidad auditados pasan de 6/2 a 0/0; globals explícitos de
 174 a 169; métodos públicos Quick de 5 a 3; facade de 7 a 5; referencias
 productivas a `BIBLIOTECA_MODE` de 25 a 0. La manual 10.2 es obligatoria y queda
 pendiente antes de abrir la auditoría formal 10.3.
+
+## Fase 10 — Sesión 10.3: cierre formal del roadmap 0–10
+
+La auditoría abre sobre `refactor-front` limpio en `da618c7`; backend
+`refactor-back`/`fe25abe` permanece limpio y de solo lectura. La manual 10.2
+confirma aplicación correcta y sin regresiones: Planeación 1/0/0; Anexo
+success; Lista 1/0; Examen 11/11 sin fallidas ni retries; segunda ronda Anexo y
+Lista success; segundo Examen 10/10 sin fallidas ni retries; deletes de Examen,
+Anexo y varios bloques success.
+
+La arquitectura final conserva deliberadamente scripts clásicos. Dashboard
+carga 43 tags (42 locales y Supabase CDN), con cero paths faltantes y `main.js`
+al final. El análisis AST encuentra 143 símbolos léxicos cross-file y 74 edges;
+32 tienen provider posterior, pero ninguno se evalúa inmediatamente en
+top-level. Todos los contratos internos tienen provider; el único provider no
+local es `supabase` desde el CDN.
+
+`explorerState` se conserva por decisión A como estado técnico compartido
+clásico. Sus 17 propiedades sostienen jerarquía/current/loading/errors, Quick,
+progreso y caches de preview. El nombre histórico no justifica otro store ni un
+rename. `window.QuickCreate` expone `open`, `close` y `bind`;
+`window.biblioteca` expone cinco miembros de coordinación real. Los 20
+`data-bib-action` tienen exactamente 20 handlers y dispatch directo a owners.
+
+Métricas finales defendibles: `dashboard.page.js` 452 LOC frente a 5690 al
+inicio de F7, 2564 al cierre F8 y 464 al cierre F9; 169 publicaciones globales
+explícitas (167 `window.*` y dos mediante parámetro `global`), 386 tokens
+`window.`, 202 refs a `explorerState`, cero wrappers/aliases redundantes del
+corte F10, 19 namespaces owner explícitos y tres namespaces internos léxicos.
+Jest pasa 10/10 suites y 32/32 pruebas; 19 JS críticos pasan `node --check`.
+
+El modelo final es:
+
+```text
+Dashboard técnico reducido
+├─ QuickCreate
+├─ Biblioteca page/state/facade
+│  ├─ BibliotecaLoader
+│  ├─ BibliotecaRender (léxico)
+│  ├─ BibliotecaModalRender (léxico)
+│  └─ BibliotecaEvents (léxico)
+├─ Generation owners
+├─ Preview/Download owners
+└─ Delete owners
+```
+
+No son blockers: contratos clásicos justificados, nombre `explorerState`,
+assets Planeación sin entry, URL directa Dashboard Tailwind, supuesto de init
+único de Events, Archivados futuro, temas huérfanos ni `public.ia_metrics`.
+Decisiones formales: **A. Fase 10 puede cerrarse** y **A. Roadmap 0–10 puede
+declararse completado**. El trabajo posterior es checkpoint/push, PR/merge,
+regresión sobre main y verificación de deploy; no se abre Fase 11.
