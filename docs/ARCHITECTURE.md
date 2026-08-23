@@ -14,8 +14,9 @@ aprobada manualmente, retiró Batch y quedó commiteada en `9496303`. La Sesión
 9.2 retiró hojas cero-consumer y siete acciones sin emitter; fue aprobada
 manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
 jerárquico, fue aprobada manualmente y quedó commiteada en `7393909`. La
-auditoría 9.4 aprobó formalmente el cierre de Fase 9. Fase 10 permanece pendiente
-y no iniciada. El inventario ejecutable
+auditoría 9.4 aprobó formalmente el cierre de Fase 9 en `b6eb40e` y el cierre
+acumulativo real es `aa56e06`. La auditoría 10.0 pasó el gate y abrió Fase 10,
+que queda **En progreso**, sin implementación funcional iniciada. El inventario ejecutable
 se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
@@ -1129,3 +1130,69 @@ Fase 9.
 
 Decisión: **Fase 9 completada; auditoría de cierre aprobada.** Fase 10 queda
 pendiente y no iniciada.
+
+## Fase 10 — Sesión 10.0: arquitectura de compatibilidad auditada
+
+El gate real de apertura fue `refactor-front` limpio en `aa56e06`, alineado con
+`origin/refactor-front`; backend `refactor-back` limpio en `fe25abe` y solo
+lectura. Los cierres reales son 9.0 `73d52b4`, 9.1 `9496303`, 9.2 `7cca74e`,
+9.3 `7393909`, 9.4 documental `b6eb40e` y cierre acumulativo F9 `aa56e06`.
+
+La arquitectura ya no tiene Explorer visual ni CRUD jerárquico, pero continúa
+siendo una aplicación de scripts clásicos. La compatibilidad final no es un
+bloque homogéneo:
+
+```text
+Dashboard técnico
+├─ explorerState: 17 propiedades top-level / 53 paths declarados
+├─ jerarquía técnica → Quick Create
+├─ progreso Quick → Loader/Render de Biblioteca
+└─ caches de preview → owners de Examen/Lista
+
+Biblioteca
+├─ state/page coordinador
+├─ BibliotecaLoader (window explícito)
+├─ BibliotecaRender (namespace léxico)
+├─ BibliotecaModalRender (namespace léxico)
+├─ BibliotecaEvents (namespace léxico)
+└─ renderBibliotecaContent (bridge window explícito)
+```
+
+`explorerState` sigue siendo un contenedor mutable realmente compartido por
+ocho archivos productivos, pero no es un store de dominio coherente. Es el
+contenedor histórico de cinco slices con owner conceptual ya identificable:
+jerarquía técnica/current IDs, Quick/staging/progress, generación Quick,
+preview de Examen y preview de Lista. Se conserva en 10.0; renombrarlo o crear
+otro store no resolvería los contratos y está fuera de alcance.
+
+La auditoría distingue 174 publicaciones explícitas `window.*` en todo el
+frontend, 147 de ellas cargadas por Dashboard, y 164 símbolos usados
+léxicamente entre archivos del stack Dashboard. De sus 42 scripts locales, 33
+consumen al menos un contrato léxico cross-file, cinco dependen solo de globals
+o namespaces explícitos y cuatro no consumen contratos internos. Existen 74
+edges léxicos archivo→archivo; 31 usan un provider que aparece después en el
+HTML y son seguros únicamente porque la ejecución se difiere hasta después de
+cargar los scripts. Por ello no se cambia el orden en 10.0 ni se propone ESM.
+
+Hallazgo de precisión: `BibliotecaRender`, `BibliotecaModalRender` y
+`BibliotecaEvents` son `const` léxicos, no propiedades de `window`.
+`BibliotecaLoader` sí se publica en `window`. Quick contiene cinco llamadas
+opcionales a `window.BibliotecaRender?.renderContent()`, pero no existe writer
+de esa propiedad; esas llamadas son no-op defensivos. El bridge real aún
+publicado es `window.renderBibliotecaContent`, con un caller Quick vigente.
+
+La superficie de compatibilidad prioritaria queda acotada a 21 wrappers
+pass-through, dos aliases directos de `AppUI`, seis familias de bridges y tres
+handlers Biblioteca sin emitter. Los 20 emitters `data-bib-action` vigentes sí
+tienen handler. La auditoría también detectó dos riesgos de duplicabilidad sin
+corregir: `BibliotecaEvents.bind()` no posee guard interno aunque el entry normal
+lo llama una vez, y los listeners `{ once: true }` del backdrop de confirmación
+pueden acumular closures si el modal se cierra por otro botón.
+
+Fase 10 se limita a dos cortes funcionales y cierre: 10.1 migra el dispatch de
+acciones Biblioteca a owners reales y retira wrappers/handlers demostrados;
+10.2 resuelve la frontera global restante (`BibliotecaLoader`, `AppUI`, render,
+`BIBLIOTECA_MODE`, Quick y `main.js`) sin tocar contratos activos; 10.3 repite
+auditoría, suite y manual completa. El mapa exhaustivo y las clasificaciones
+A–G están en [`FRONTEND_MAP.md`](FRONTEND_MAP.md) y
+[`SESSION_HANDOFF.md`](refactor/SESSION_HANDOFF.md).

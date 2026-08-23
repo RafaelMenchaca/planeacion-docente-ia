@@ -14,13 +14,14 @@
 - **Última fase cerrada:** 9 — eliminación controlada de legacy.
 - **Estado de Fase 5:** Completada mediante la auditoría de cierre 5.8.
 - **Fase 9:** Completada; auditoría formal 9.4 aprobada.
-- **Fase 10:** Pendiente / no iniciada.
+- **Fase 10:** En progreso; 10.0 completada sin implementación funcional.
 - **Sesión 9.0:** auditoría aprobada y commiteada en `73d52b4`; manual no requerida.
 - **Sesión 9.1:** Batch retirado; manual aprobada y commit `9496303`.
 - **Sesión 9.2:** aprobada manualmente y commiteada en `7cca74e`.
 - **Sesión 9.3:** fallback visual retirado; manual aprobada y commit `7393909`.
-- **Sesión 9.4:** auditoría formal completada; cambios únicamente documentales, sin commit ni push.
-- **Siguiente acción:** revisar/commitear el cierre documental cuando el usuario lo decida; no iniciar Fase 10.
+- **Sesión 9.4:** auditoría formal completada y commit documental real `b6eb40e`; cierre acumulativo F9 `aa56e06`.
+- **Sesión 10.0:** auditoría técnica/documental de apertura completada; manual no requerida; commit y push pendientes.
+- **Siguiente acción:** revisar/commitear 10.0 cuando el usuario lo decida; 10.1 no iniciada.
 - **Sesión 8.0:** auditoría completada y commiteada en `9b8ede5`.
 - **Sesión 8.1:** explorer visual/navegación aislados; manual aprobada y commit `1aa1599`.
 - **Sesión 8.2:** bridges preview/download trasladados a owners existentes; manual acumulada aprobada y commit `6fb39ab`.
@@ -6191,4 +6192,309 @@ Fase 10: Pendiente / no iniciada
 Commit 9.4: no
 Push: no
 Working tree: cinco documentos autorizados
+```
+
+## Fase 10 — Sesión 10.0: auditoría técnica/documental de apertura
+
+### A. Gate
+
+```text
+rama: refactor-front
+HEAD: aa56e06 (igual a origin/refactor-front)
+cierre F9: 9.0 73d52b4; 9.1 9496303; 9.2 7cca74e; 9.3 7393909; 9.4 b6eb40e; cierre acumulativo aa56e06
+working tree: limpio al abrir
+backend: refactor-back / fe25abe / limpio / solo lectura
+puerta: PASS; Fase 10 pasa de Pendiente a En progreso
+```
+
+### B. Objetivo F10
+
+Cerrar la arquitectura de compatibilidad posterior al retiro del Explorer,
+eliminando únicamente wrappers, aliases, bridges, globals, handlers y branches
+redundantes con evidencia de consumer; conservar contratos útiles, jerarquía
+técnica y owners vigentes. No es reescritura, migración de módulos/framework ni
+rewrite de estado.
+
+### C. Baseline
+
+| Superficie | Métrica real |
+| --- | ---: |
+| Dashboard | 464 LOC / 32 funciones |
+| Quick Create | 1406 LOC / 54 funciones |
+| Dashboard Bootstrap | 99 LOC / 4 funciones |
+| Biblioteca page / Loader / Render / Modal / Events | 1110 / 233 / 651 / 683 / 160 LOC |
+| Exam Preview / Download | 256 / 248 LOC |
+| Lista Preview / Download | 108 / 36 LOC |
+| Explorer / CRUD | archivos eliminados |
+| Jest | 8 suites / 24 tests PASS |
+
+Evidencia manual acumulada aprobada de F9, no repetida en 10.0: Dashboard y
+Biblioteca cargan; bloques y Quick correctos; Agregar Tema correcto; Planeación
+1/0/0; Anexo success; Lista 1/0; Examen 11/11, 0 fallidas, 1 retry; cinco deletes
+de recursos/bloque success; sin errores nuevos.
+
+### D. `explorerState`
+
+| Grupo / propiedad | Writer | Reader | Owner conceptual | Estado F10 |
+| --- | --- | --- | --- | --- |
+| `planteles`, cuatro caches jerárquicos | Dashboard loaders | Dashboard/Quick | technical Dashboard | F, activo |
+| `loading`, `errors`, `current` y cinco IDs | Dashboard/Quick | Dashboard/Quick | technical Dashboard + Quick | F, activo |
+| `stagingTemas`, `stagingTituloConjunto`, `stagingContext` | Quick | Quick/generation | Quick | A |
+| `progress` completo | Quick/Dashboard helper | Quick/Loader/Render | Quick + generation | B/F |
+| `quickCreate` completo | Quick | Quick/Bootstrap/previews | Quick | A |
+| `generating` | Quick | Quick guard | generation Quick | A |
+| `examenDetalleById`, `examPreview` | Exam owners | Exam/Bootstrap | Preview owner | B/F |
+| `listaCotejoPreview` | Lista Preview | Lista/Bootstrap | Preview owner | B/F |
+
+Shape completo: 17 top-level, 53 paths declarados y 207 referencias
+productivas. Es store real compartido físicamente por ocho archivos y, a la
+vez, contenedor histórico de cinco slices conceptuales. No se mueve, renombra
+ni sustituye en 10.0. La tabla de cada path está en `FRONTEND_MAP.md`.
+
+### E. Globals
+
+| Alcance | Resultado |
+| --- | ---: |
+| Publicaciones explícitas `window.*` repo | 174 |
+| Publicaciones cargadas por Dashboard | 147 |
+| Tokens `window.` JS / HTML / tests | 422 / 2 / 166 |
+| Publicaciones sin consumer externo | 35; requieren revisión individual |
+| Inline HTML consumers | 0 |
+
+Owners y nombres completos están inventariados por archivo en
+`FRONTEND_MAP.md`. Prioritarios: `explorerState` F; `BIBLIOTECA_MODE` C;
+`biblioteca` B; `renderBibliotecaContent` B; `QuickCreate` A/D;
+`BibliotecaLoader` A/B; `initBiblioteca` e `initDashboardPage` A.
+`window.BibliotecaRender`, `window.BibliotecaModalRender` y
+`window.BibliotecaEvents` no existen: sus owners son léxicos.
+
+### F. Namespaces
+
+| Namespace | Surface | Clasificación |
+| --- | --- | --- |
+| Generation x4 | un `generateFromBiblioteca` por owner | A |
+| Exam Preview/Download | 3 / 2 métodos | A |
+| Lista Preview/Download | 3 / 2 métodos | A |
+| AppUI | 6 métodos | A |
+| QuickCreate | 5 métodos; dos sin consumer | A/D |
+| BibliotecaLoader | 5 métodos | A/B |
+| BibliotecaRender/ModalRender/Events | 4 / 6 / 4 métodos léxicos | A; no `window` |
+
+### G. Wrappers
+
+Hay 21 wrappers de compatibilidad: cinco Loader/Reconcile; 15 de actions
+Biblioteca (preview/download/delete, incluidos dos sin consumer); y
+`downloadExamWord`. Todos tienen owner real identificado. 10.1 puede retirar
+los 15 de actions tras migrar Events/modal; 10.2 recibe los cinco Loader y el
+wrapper de Examen. Ninguno se retiró en 10.0.
+
+### H. Aliases
+
+| Alias | Target | Consumer | Estado |
+| --- | --- | --- | --- |
+| `statusLabelFromTone` | `AppUI.statusLabelFromTone` | Quick/Loader | B→C tras migración |
+| `renderProgressPill` | `AppUI.renderProgressPill` | Render | B→C tras migración |
+
+No se cuentan namespace methods ni publicaciones homónimas como aliases.
+
+### I. Bridges
+
+Seis familias: Quick→facade Biblioteca; Quick→render Biblioteca;
+Biblioteca→Preview; Biblioteca→Download; Generation→Loader/Reconcile; y
+Bootstrap→Quick/Biblioteca. El bridge de render contiene el hallazgo más
+importante: cinco calls opcionales a `window.BibliotecaRender` sin writer y un
+caller real de `window.renderBibliotecaContent`.
+
+### J. Lexical cross-script contracts
+
+164 símbolos, 74 edges archivo→archivo; 31 edges usan provider cargado después
+y afectan 13 consumers. Dashboard/API/service/Biblioteca dependen del scope
+clásico. La tabla agrupada completa está en `FRONTEND_MAP.md`. No se convierte
+a ESM ni se fuerza migración global.
+
+### K. Script order
+
+`dashboard.html`: 43 tags, 42 locales + CDN; cero rutas faltantes. 33 scripts
+consumen bindings implícitos; cinco consumen solo globals/namespaces explícitos;
+cuatro no tienen dependencia interna como consumer. Nueve son léxicamente
+desacoplados como consumers, pero varios son providers y no se mueven. Orden
+intacto en 10.0.
+
+### L. `main.js`
+
+Pages: Dashboard, Planeación, Detalle, Archivados, Login. `isPrivatePage`
+incluye Dashboard, Planeación, Detalle, Batch y Archivados. Cuatro mappings son
+alcanzables; `planeacion.html → planeacionPage.init` es huérfano porque el HTML
+redirige y no carga `main.js`. Batch conserva solo su clasificación privada y
+redirect; no se toca.
+
+### M. Dashboard Bootstrap
+
+Owner de init, layout injection, private chrome, bind Quick, previews,
+downloads, Escape, `BIBLIOTECA_MODE` e init Biblioteca. `isDashboardBound`
+protege el binding. No contiene fallback Explorer ni wrappers históricos. Sí
+consume cuatro bindings bare (`explorerState`, `downloadExamWord`,
+`notifyDashboard`, `formatFetchError`).
+
+### N. Quick Create public surface
+
+| Method | Consumer | Internal/external | Required | Candidate private |
+| --- | --- | --- | --- | --- |
+| `open` | Events + smoke | external | sí | no |
+| `close` | Bootstrap + smoke | external | sí | no |
+| `bind` | Bootstrap + smoke | external | sí | no |
+| `setPanelVisibility` | ninguno | export de helper activo interno | no externo | sí, D |
+| `generateFromStaging` | ninguno | export de flujo activo interno | no externo | sí, D |
+
+### O. Biblioteca public surface
+
+`window.biblioteca` es facade de siete miembros requerida por Quick; tres
+miembros principales (`getConjuntos`, start/set pending, finish/pending ID) son
+activos y `selectConjunto`/`refresh` son fallbacks redundantes probables.
+Bootstrap necesita `initBiblioteca`; Quick necesita facade y el bridge de
+render; HTML no consume globals inline; generation/delete owners necesitan
+state y helpers léxicos. Loader es `window`; Render/Modal/Events son léxicos.
+
+### P. Preview/download compatibility
+
+De siete bridges preservados en F8 solo `downloadExamWord` existe hoy; los
+otros seis fueron retirados en F9. Los namespaces Preview/Download tienen
+consumers reales. Biblioteca conserva cinco wrappers de apertura/descarga y un
+wrapper de cierre Anexo migrables en 10.1. Lista Word depende de
+`wordExport.js`, protegido.
+
+### Q. Generation compatibility
+
+Los cuatro namespaces generation son owners activos y consumidos por
+Biblioteca. Internamente dependen de state/render/Loader léxicos declarados más
+tarde. Quick usa su flujo de jerarquía técnica y facade Biblioteca, no reabre
+F4. Payloads, polling, SSE, jobs y métricas permanecen intactos.
+
+### R. AppUI compatibility
+
+`AppUI` es owner público real. Quick/Loader/Render todavía usan dos aliases
+bare; pueden migrarse a `window.AppUI` en 10.2 y retirar aliases después. Los
+otros cuatro métodos ya se consumen desde el namespace.
+
+### S. Handlers/emitters
+
+20 emitters con handler; cero emitters huérfanos; tres handlers sin emitter:
+`toggle-expand`, `generar-anexo`, `regenerar-anexo`. Búsqueda exhaustiva en
+HTML, templates, innerHTML, `data-*`, tests y globals: zero-emitter confirmed,
+clasificación D, candidatos 10.1.
+
+### T. Listeners
+
+102 sites repo / 72 Dashboard. `BibliotecaEvents.bind()` no tiene guard interno:
+se llama una vez en el entry normal, pero una segunda llamada pública a
+`initBiblioteca` duplicaría el listener. Preview Examen/Lista y Bootstrap tienen
+guard; Anexo reemplaza nodos. `showBibConfirm` puede acumular listener backdrop
+`once` si se cierra por otro botón. Riesgos no corregidos en 10.0.
+
+### U. `BIBLIOTECA_MODE`
+
+Un writer y 23 referencias; Quick es su único reader productivo. Siempre es
+`true` en Dashboard tras F9. Contract histórico C y candidato 10.2; no se
+elimina todavía.
+
+### V. Defensive compatibility branches
+
+Activos/legítimos: guard de `initBiblioteca`, private chrome, Supabase y
+Archivados. Históricos/redundantes: fallbacks de facade siempre completa,
+optional Quick→`window.BibliotecaRender` sin provider, aliases download/AppUI y
+ramas false de `BIBLIOTECA_MODE`. No hay catch dedicado solo a ocultar un owner
+ausente.
+
+### W. Zero-consumer candidates
+
+Dos wrappers page, tres handler branches y dos implementaciones Anexo, dos
+exports Quick, mapping `planeacionPage`, assets Planeación sin entry y 35
+publicaciones sin consumer externo. No se borran en lote: algunos owners siguen
+activos internamente y algunas páginas son G/outside.
+
+### X. Redundant compatibility candidates
+
+15 wrappers de action después de migrar Events; dos aliases AppUI; facade
+`select/refresh` fallback; `downloadExamWord`; cinco calls al namespace Render
+inexistente; bridge render global después de migrar caller; branches
+`BIBLIOTECA_MODE`; miembros Quick sin consumer.
+
+### Y. Active contracts
+
+Jerarquía técnica/current IDs, Quick open/close/bind, facade principal,
+Loader, entry globals, generation/preview/download/delete owners, AppUI, 20
+actions, 164 bindings mientras tengan consumers, Detalle, Archivados y redirects
+protegidos.
+
+### Z. Metrics
+
+```text
+dashboard: 464 LOC / 32 functions
+explorerState: 17 top-level / 53 paths / 207 product refs
+window globals: 174 repo / 147 Dashboard
+explicit object surfaces: 21 repo / 20 Dashboard
+wrappers: 21
+aliases: 2
+bridges: 6 families
+lexical cross-file symbols: 164 / 74 edges
+dashboard scripts: 43
+listeners: 102 repo / 72 Dashboard
+handlers without emitter: 3
+emitters without handler: 0
+test-only references among candidates: 2
+```
+
+### AA. Roadmap F10
+
+10.1 dispatch Biblioteca→owners y retiro de actions/wrappers demostrados;
+10.2 frontera global/Loader/AppUI/render/Quick/Mode/main; 10.3 auditoría formal
+de cierre. Máximo dos sesiones funcionales y cierre.
+
+### AB. 10.1 recomendada
+
+Un corte: migrar `BibliotecaEvents` y el backdrop Anexo a namespaces reales;
+retirar los 15 wrappers de actions resultantes, los tres handlers sin emitter y
+las dos implementaciones Anexo sin entrada. Dejar Loader/Reconcile,
+`explorerState`, Mode, script order y listeners fuera del corte.
+
+### AC. Manual futura
+
+- Dashboard/Biblioteca y bloques.
+- Quick Create: conjunto existente y nuevo.
+- Agregar Tema y Detalle/back.
+- Preview/download de Planeación, Anexo, Lista y Examen.
+- Generación de los cuatro recursos.
+- Deletes de cinco recursos/bloque.
+- Reload, consola, red, un clic→una acción y ausencia de duplicados.
+
+### AD. Riesgos
+
+No hay blocker para abrir 10.1. Riesgos no bloqueantes: 164 contratos léxicos;
+31 late-provider edges; namespace Render fantasma; listener Events sin guard;
+backdrop confirm acumulable; estado Quick/Biblioteca duplicado coordinado;
+mapping/asset Planeación sin entry; tests que fijan compatibilidad histórica.
+
+### AE. Documentación
+
+Modificados únicamente: `docs/ARCHITECTURE.md`, `docs/FRONTEND_MAP.md`,
+`docs/refactor/REFACTOR_ROADMAP.md`, `docs/refactor/SESSION_HANDOFF.md` y
+`docs/refactor/TEST_MATRIX.md`.
+
+### AF. Validaciones
+
+`npm test -- --runInBand`: PASS, 8/8 suites y 24/24 tests. Manual: no requerida.
+Gate y búsquedas AST/ripgrep: PASS. Source checks finales se registran al cerrar
+el diff; no se modificó código productivo ni backend.
+
+### AG. Estado final
+
+```text
+Fase 9: Completada
+Fase 10: En progreso
+10.0: Auditoría completada
+Implementación funcional: no
+Manual: no requerida
+Commit: no
+Push: no
+10.1: no iniciada
 ```

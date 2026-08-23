@@ -1,7 +1,8 @@
 # Mapa ejecutable del frontend
 
-Estado observado en `refactor-front` después de la auditoría formal 9.4. Las
-Fases 0–9 están completadas; Fase 10 está pendiente y no iniciada. Este
+Estado observado en `refactor-front` después de la auditoría 10.0. Las Fases
+0–9 están completadas; Fase 10 está en progreso, sin implementación funcional
+iniciada. Este
 documento conserva inventarios históricos y registra la arquitectura
 ejecutable y las consolidaciones internas sin cambiar contratos públicos.
 
@@ -4130,3 +4131,509 @@ Consumer audit final: cero referencias productivas a `legacy-explorer`,
 `refreshExplorerAfterReturn`, `educativo.dashboard.last-location`,
 `initBatchPage` o los tres assets Batch retirados. Las menciones anteriores de
 este documento son inventario histórico.
+
+## Fase 10 — Sesión 10.0: mapa final de compatibilidad y contratos
+
+### Gate y baseline real
+
+| Dato | Evidencia 10.0 |
+| --- | --- |
+| Frontend | `refactor-front`, `HEAD aa56e06`, limpio, igual a `origin/refactor-front` |
+| F9 real | 9.0 `73d52b4`; 9.1 `9496303`; 9.2 `7cca74e`; 9.3 `7393909`; 9.4 `b6eb40e`; cierre acumulativo `aa56e06` |
+| Backend | `refactor-back`, `HEAD fe25abe`, limpio, solo lectura |
+| Estado | Fases 0–9 completadas; Fase 10 abierta y en progreso; 10.0 sin implementación funcional |
+| Jest | 8/8 suites, 24/24 pruebas, 0 snapshots, PASS |
+
+| Archivo | LOC | Funciones declaradas | Tokens `explorerState` | Tokens `window.` |
+| --- | ---: | ---: | ---: | ---: |
+| `dashboard.page.js` | 464 | 32 | 57 | 3 |
+| `quick-create.js` | 1406 | 54 | 97 | 51 |
+| `dashboard-bootstrap.js` | 99 | 4 | 6 | 14 |
+| `biblioteca.page.js` | 1110 | 50 | 0 | 31 |
+| `biblioteca-loader.js` | 233 | 7 | 2 | 3 |
+| `biblioteca-render.js` | 651 | 20 | 1 | 2 |
+| `biblioteca-modal-render.js` | 683 | 7 | 0 | 0 |
+| `biblioteca-events.js` | 160 | 2 | 0 | 1 |
+| `exam-preview.js` | 256 | 14 | 23 | 6 |
+| `exam-download.js` | 248 | 11 | 5 | 10 |
+| `lista-cotejo-preview.js` | 108 | 5 | 16 | 10 |
+| `lista-cotejo-download.js` | 36 | 2 | 0 | 10 |
+| `legacy-explorer.js` / `legacy-hierarchy-crud.js` | eliminados | 0 | 0 | 0 |
+
+El conteo de funciones usa declarations con keyword `function`, igual al
+baseline de F9. En todo JS productivo hay 207 tokens `explorerState`; 160 están
+en Dashboard/Bootstrap/Quick y 47 en Loader/Render/previews/download. Existen
+422 tokens `window.` en JS productivo, dos en HTML y 166 en tests.
+
+### Shape completo y ownership de `explorerState`
+
+El objeto declara 17 propiedades top-level y 53 paths si se cuentan
+contenedores y miembros anidados.
+
+| Propiedad | Writer | Reader | Owner conceptual | Vigente | Compatibilidad | Candidato F10 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `planteles` | `loadPlanteles` | loader Dashboard, Quick | Dashboard technical state | sí | F. Technical shared | conservar |
+| `gradosByPlantel` | `ensureGrados` | Dashboard current helpers, Quick | Dashboard technical state | sí | F | conservar |
+| `materiasByGrado` | `ensureMaterias` | Dashboard current helpers, Quick | Dashboard technical state | sí | F | conservar |
+| `unidadesByMateria` | `ensureUnidades` | Dashboard current helpers, Quick | Dashboard technical state | sí | F | conservar |
+| `temasByUnidad` | `ensureTemas` | guard/cache de `ensureTemas`, Quick | Dashboard technical state | sí | F | revisar, no retirar en 10.0 |
+| `examenDetalleById` | `ExamPreview`, `ExamDownload` | ambos owners y Bootstrap | Preview owners | sí | F | posible movimiento solo si no duplica cache |
+| `loading.{root,grados,materias,unidades,temas}` | cinco loaders técnicos | guards de los mismos loaders | Dashboard technical state | sí | F | conservar |
+| `errors.{root,grados,materias,unidades,temas}` | cinco loaders técnicos | loaders/diagnóstico | Dashboard technical state | sí | F | revisar consumer visible |
+| `current.{level,plantelId,gradoId,materiaId,unidadId}` | Dashboard reset, Quick selección | Dashboard helpers, Quick | Dashboard technical IDs + Quick | sí | F | conservar shape; no renombrar |
+| `stagingTemas` | Quick | Quick generation/facade Biblioteca | Quick Create | sí | A. Active contract | owner conceptual Quick |
+| `stagingTituloConjunto` | Quick | payload Quick | Quick Create | sí | A | owner conceptual Quick |
+| `stagingContext` | Quick | contexto de generación Quick | Quick Create | sí | A | owner conceptual Quick |
+| `progress.{total,completed,items,finalMessage,finalTone}` | Quick + helper Dashboard | Quick, Loader, Render | Quick + generation coordination | sí | B/F | revisar duplicación con pending Biblioteca |
+| `quickCreate.{open,temas,requestVersion.{grado,materia,unidad},selectedConjunto}` | Quick | Quick, Bootstrap, preview scroll locks | Quick Create | sí | A | owner conceptual Quick |
+| `generating` | Quick | guard Quick | Generation owner de Quick | sí | A | mantener junto al flujo |
+| `examPreview.{open,examenId,loading,error}` | `ExamPreview` | Preview, Bootstrap, scroll locks | Preview owner | sí | B/F | candidato a owner interno futuro, no 10.1 |
+| `listaCotejoPreview.{open,listaId,listaData,loading,error}` | `ListaCotejoPreview` | Preview, Bootstrap, scroll locks | Preview owner | sí | B/F | candidato a owner interno futuro, no 10.1 |
+
+Conclusión: sí es un store compartido en sentido físico —ocho archivos lo leen
+o escriben—, pero conceptualmente es un contenedor histórico de slices con
+owners claros. No se reemplaza por otro store y no se renombra por estética.
+
+Duplicación real: `progress.items` de Quick y
+`bibliotecaState.pendingPlaneacionesByBatchId` representan vistas coordinadas
+del mismo proceso; Loader/reconcile y `window.biblioteca` las sincronizan. El
+detalle de Examen también existe como card en `bibliotecaState.conjuntos` y
+como cache completa en `examenDetalleById`; son snapshots con finalidad
+distinta. No se confirmó un segundo estado Quick independiente ni otra fuente
+persistente de preview de Lista.
+
+### Inventario de publicaciones `window.*`
+
+Se encontraron 174 nombres publicados explícitamente en todo el frontend; 147
+pertenecen a los 42 scripts locales cargados por Dashboard. No hay handlers
+inline `onclick`, `onchange` ni `onsubmit`, por lo que ningún global se justifica
+por HTML inline. La columna “HTML” indica consumo por `main.js`/script tags, no
+handler inline.
+
+| Global o grupo completo | Definición / owner | Readers | Writers | HTML | Cross-script | Test-only | Estado |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `API_BASE_URL` | `core/config.js` | seis APIs, bare lexical | config | tags | sí | no | F |
+| `supabase` | `core/supabase.client.js` | auth/private chrome/pages | cliente | tags | sí | no | A/F |
+| `escapeHtml` | `core/utils.js` | 11 archivos Dashboard + otras páginas | utils | tags | sí | no | F |
+| `protegerRuta`, `requireSession`, `currentUser` | `auth.service.js` | main/features; `currentUser` sin reader externo | auth | main | sí | no | A; `currentUser` D |
+| `AppUI`, `statusLabelFromTone`, `renderProgressPill` | `shared.ui.js` | auth/downloads/Quick/Loader/Render | shared UI | tag | sí | mocks | `AppUI` A; aliases B/C |
+| `apiPlaneaciones{List,Delete,Archive,Restore,ArchiveBatch,RestoreBatch,Archived,PermanentDelete,PermanentDeleteBatch,Generate,GenerateWithProgress,Batch,Get,ByTema,Update,ExportExcel}` | `planeaciones.api.js` | service y features | API | tag | sí | mocks parciales | A/F |
+| `apiPlanteles{List,Create,Delete}`, `apiGrados{ListByPlantel,Create,Delete}`, `apiMaterias{ListByGrado,Create,Delete}`, `apiUnidades{ListByMateria,Create,Delete}`, `apiTemas{ListByUnidad,Create,Delete}`, `apiUnidadGenerar`, `apiUnidadGenerarConProgreso`, `apiTemaPlaneacion` | `jerarquia.api.js` | service jerarquía | API | tag | sí | mocks parciales | A/F |
+| `apiExamenesGenerate`, `apiExamenGenerationStatus`, `apiExamenesListByUnidad`, `apiExamenById` | `examenes.api.js` | service/generation | API | tag | sí | no | A/F |
+| `apiListasCoTejoGenerate`, `apiListasCoTejoByUnidad`, `apiListaCoTejoById` | `listas_cotejo.api.js` | service/generation | API | tag | sí | no | A/F |
+| `apiBibliotecaConjuntos`, `apiBibliotecaConjuntoById`, `apiBibliotecaDeleteBloque`, `apiDeletePlaneacionDirecta`, `apiDeleteExamen`, `apiDeleteListaCotejo`, `apiDeleteAnexo` | `biblioteca.api.js` | Loader/Detalle/delete owners | API | tag | sí | mocks | A/F |
+| `apiGenerarAnexo`, `apiObtenerAnexosPorBatch`, `apiObtenerAnexoPorPlaneacion`, `apiObtenerAnexoDetalle`, `apiRegenerarAnexo` | `anexos.api.js` | page/feature owners | API | tag | sí | no | A/F; dos sin reader externo D |
+| `obtenerPlaneaciones`, `registerArchivedHierarchyScope`, `restoreArchivedHierarchyScope`, `restoreArchivedHierarchyScopeByPlaneacionId`, `restoreArchivedHierarchyScopeByBatchId`, `isArchivedHierarchyScopeHidden`, `getArchivedHierarchyRegistrySnapshot`, `restoreArchivedHierarchyBranch`, `eliminarPlaneacionApi`, `archivarPlaneacionApi`, `restaurarPlaneacionApi`, `archivarRutaBatchApi`, `restaurarRutaBatchApi`, `obtenerArchivadosPlaneaciones`, `eliminarPlaneacionPermanentementeApi`, `eliminarRutaBatchPermanentementeApi`, `generarPlaneacionApi`, `generarPlaneacionApiConProgreso`, `obtenerBatchPlaneaciones`, `obtenerPlaneacionDetalle`, `obtenerPlaneacionPorTema`, `actualizarPlaneacion`, `exportarPlaneacionExcel` | `planeaciones.service.js` | Dashboard/Detalle/Archivados/features | service | tags | sí | mocks | A/F; exposiciones sin consumer separadas abajo |
+| `obtenerPlanteles`, `crearPlantel`, `actualizarPlantel`, `archivarPlantel`, `eliminarPlantel`, `obtenerGradosPorPlantel`, `crearGrado`, `actualizarGrado`, `archivarGrado`, `eliminarGrado`, `obtenerMateriasPorGrado`, `crearMateria`, `archivarMateria`, `eliminarMateria`, `obtenerUnidadesPorMateria`, `crearUnidad`, `actualizarUnidad`, `archivarUnidad`, `eliminarUnidad`, `obtenerTemasPorUnidad`, `crearTemas`, `eliminarTema`, `generarPlaneacionesUnidad`, `generarPlaneacionesUnidadConProgreso`, `obtenerPlaneacionTema` | `jerarquia.service.js` | Dashboard/Quick/Archivados | service | tags | sí | mocks | A/F; exposiciones sin consumer separadas abajo |
+| `generarExamenUnidad`, `obtenerEstadoGeneracionExamen`, `obtenerExamenesPorUnidad`, `obtenerExamenDetalle` | `examenes.service.js` | preview/download/generation | service | tag | sí | mocks | `obtenerExamenDetalle` A; otras exposiciones D |
+| `generarListasCotejoUnidad`, `obtenerListasCotejoPorUnidad`, `obtenerListaCoTejoDetalle` | `listas_cotejo.service.js` | preview/download/generation | service | tag | sí | mocks | detalle A; otras exposiciones D |
+| `descargarWord`, `descargarListaCotejoWord` | `wordExport.js` | Detalle/Lista download | export owner | tags | sí | mock | A; archivo protegido |
+| `PlaneacionGeneration`, `PlaneacionDownload`, `PlaneacionDelete` | feature owners | Biblioteca page/Events | namespace owner | tag | sí | no | A |
+| `AnexoGeneration`, `AnexoDownload`, `AnexoPreview`, `AnexoDelete` | feature owners | Biblioteca page/Events/modal | namespace owner | tag | sí | no | A |
+| `ExamGeneration`, `ExamDownload`, `ExamPreview`, `ExamDelete`, `downloadExamWord` | feature owners | Biblioteca/Bootstrap | namespace + wrapper | tag | sí | smoke | owners A; wrapper B/C |
+| `ListaCotejoGeneration`, `ListaCotejoDownload`, `ListaCotejoPreview`, `ListaCotejoDelete` | feature owners | Biblioteca/Bootstrap | namespace owner | tag | sí | smoke | A |
+| `BibliotecaBlockDelete`, `BibliotecaLoader`, `renderBibliotecaContent` | Biblioteca owners | Events/features/Quick | owner/bridge | tags | sí | Loader smoke | A/B |
+| `explorerState`, `BIBLIOTECA_MODE`, `QuickCreate`, `initDashboardPage` | Dashboard owners | Quick/Bootstrap/previews/main | Dashboard | tags/main | sí | smokes | F, C, A, A |
+| `biblioteca`, `initBiblioteca` | `biblioteca.page.js` | Quick/Bootstrap | facade/entry | main indirect | sí | smokes | B/A |
+| `initPrivateChrome`, `closeProfileMenu`, `closePrivateNavMenu` | `components.private.js` | Bootstrap/internal | private chrome | DOMContentLoaded | sí | no | A; dos publicaciones D |
+| `initDetallePage`, `cargarDetallePlaneacion`, `guardarCambios` | `detalle.page.js` | main/internal | Detalle | main | sí | no | init A; dos publicaciones D |
+| `initArchivadosPage`, `initLoginPage`, `planeacionPage` | pages | main | page owners | main | sí | no | dos A; `planeacionPage` D/G |
+| `renderInfo`, `renderTablaIA`, `setDetalleModoEdicion`, `actualizarEstadoEdicion`, `marcarCeldaComoEditada`, `animarGuardadoCeldas`, `obtenerDatosTablaIA`, `mostrarToast` | `detalle.ui.js` | Detalle page | UI Detalle | tag Detalle | sí | no | A/F |
+| `bloquearFormulario`, `iniciarProgresoPlaneaciones`, `actualizarProgresoDesdeEvento`, `completarProgresoPlaneaciones`, `mostrarErrorProgreso`, `mostrarResultadoBatch`, `renderTemas`, `bloquearCamposGlobales` | `planeacion.ui.js` | implementación sin entry | UI Planeación | no | cadena interna | no | D/G |
+| `BASE_PATH`, `applySelectPlaceholderState` | `components.public.js` | mismo archivo/DOM público | public UI | tags defer | no externo | no | A interno / D publicación |
+| `renderBatchesTable`, `renderBatchesEmpty` | `dashboard.ui.js` | ningún HTML | UI histórica | no | no | no | D/G |
+| `validateForm` | `js/planeacion.js` | module export/test; ningún HTML | helper histórico | no | no producto | sí | E/G |
+
+No existen publicaciones reales `window.BibliotecaRender`,
+`window.BibliotecaModalRender` ni `window.BibliotecaEvents`. Sí existen los
+namespaces léxicos del mismo nombre. Las cinco lecturas opcionales de
+`window.BibliotecaRender` en Quick no tienen writer.
+
+Publicaciones sin consumer externo productivo detectadas (35):
+`BASE_PATH`, `actualizarGrado`, `actualizarPlantel`, `actualizarUnidad`,
+`apiObtenerAnexoPorPlaneacion`, `apiObtenerAnexosPorBatch`,
+`applySelectPlaceholderState`, `archivarGrado`, `archivarMateria`,
+`archivarPlaneacionApi`, `archivarPlantel`, `archivarRutaBatchApi`,
+`archivarUnidad`, `cargarDetallePlaneacion`, `closePrivateNavMenu`,
+`closeProfileMenu`, `crearTemas`, `currentUser`, `eliminarPlaneacionApi`,
+`eliminarTema`, `generarExamenUnidad`, `generarListasCotejoUnidad`,
+`generarPlaneacionApi`, `generarPlaneacionesUnidad`, `guardarCambios`,
+`obtenerBatchPlaneaciones`, `obtenerEstadoGeneracionExamen`,
+`obtenerExamenesPorUnidad`, `obtenerListasCotejoPorUnidad`,
+`obtenerPlaneacionTema`, `registerArchivedHierarchyScope`,
+`renderBatchesEmpty`, `renderBatchesTable`, `restoreArchivedHierarchyScope` y
+`validateForm`. “Sin consumer externo” no implica que la implementación sea
+dead: varias funciones siguen activas localmente. Cada publicación debe
+retirarse solo tras separar ese caso; `dashboard_tailwind`, Batch, Archivados y
+`wordExport.js` permanecen protegidos.
+
+### Namespaces y superficies públicas vigentes
+
+| Namespace | Métodos públicos | Consumer real | Tipo | Clasificación |
+| --- | --- | --- | --- | --- |
+| `PlaneacionGeneration` | `generateFromBiblioteca` | modal Agregar Tema | API pública real del owner | A |
+| `ExamGeneration` | `generateFromBiblioteca` | modal Examen | API pública real del owner | A |
+| `ListaCotejoGeneration` | `generateFromBiblioteca` | modal Lista | API pública real del owner | A |
+| `AnexoGeneration` | `generateFromBiblioteca` | modal Anexos | API pública real del owner | A |
+| `ExamPreview` | `render`, `openBiblioteca`, `close` | Events/Bootstrap | API pública real del owner | A |
+| `ExamDownload` | `download`, `downloadFromBiblioteca` | wrapper/Events/Bootstrap | API pública real del owner | A |
+| `ListaCotejoPreview` | `render`, `openBiblioteca`, `close` | Events/Bootstrap | API pública real del owner | A |
+| `ListaCotejoDownload` | `download`, `downloadBiblioteca` | Events/Bootstrap | API pública real del owner | A |
+| `AppUI` | `showToast`, `statusLabelFromTone`, `renderProgressPill`, `buildDownloadSuggestedName`, `sanitizeDownloadFilename`, `openDownloadNameModal` | auth, render y downloads | API UI compartida | A |
+| `QuickCreate` | `open`, `close`, `bind`, `setPanelVisibility`, `generateFromStaging` | Events/Bootstrap; dos últimos sin caller | API pública + dos miembros candidatos | A/D |
+| `BibliotecaLoader` | `load`, `finishPlaneacionesGeneration`, `normalizeGeneratedPlaneaciones`, `applyOptimisticPlaneacionesToConjunto`, `applyGenerationResultToPendingItems` | wrappers page/tests | namespace explícito | A/B |
+| `BibliotecaRender` | cuatro métodos | solo consumers léxicos; Quick usa por error `window.*` | namespace interno léxico | A + inconsistencia C |
+| `BibliotecaModalRender` | seis métodos | consumers léxicos | namespace interno léxico | A |
+| `BibliotecaEvents` | `bind`, `bindSearch`, `handleClick`, `handleSearch` | page/render | namespace interno léxico | A; dos métodos públicos sin consumer externo |
+
+Otros namespaces de owner activos y no prioritarios: `PlaneacionDownload`,
+`PlaneacionDelete`, `AnexoDownload`, `AnexoPreview`, `AnexoDelete`,
+`ExamDelete`, `ListaCotejoDelete` y `BibliotecaBlockDelete`. No se confunden
+con wrappers: contienen la implementación real.
+
+### Superficie de `window.biblioteca`
+
+`window.biblioteca` sigue siendo una compatibility facade y bridge Quick →
+Biblioteca; no la consume HTML.
+
+| Miembro | Consumer | Interno/externo | Requerido | Candidato |
+| --- | --- | --- | --- | --- |
+| `pendingBatchId` getter/setter | Quick payload/cleanup | cross-feature | sí | conservar hasta mover coordinación |
+| `getConjuntos` | Quick combobox | cross-feature | sí | conservar |
+| `selectConjunto` | fallback si falta `startPlaneacionesGeneration` | compatibility | branch redundante probable | C |
+| `startPlaneacionesGeneration` | Quick conjunto existente | cross-feature | sí | conservar |
+| `setPendingConjunto` | Quick bloque nuevo | cross-feature | sí | conservar |
+| `refresh` | fallback si falta `finishPlaneacionesGeneration` | compatibility | branch redundante probable | C |
+| `finishPlaneacionesGeneration` | Quick success | cross-feature | sí | migrable a Loader en 10.2 |
+
+Bootstrap necesita `window.initBiblioteca`; `main.js` necesita
+`window.initDashboardPage`; HTML no llama ningún método inline. Otra feature
+necesita Loader/reconcile y los owners de generación, preview, download y
+delete mediante scripts clásicos.
+
+### Wrappers de compatibilidad
+
+Definición usada: wrapper es una función distinta que invoca al owner real y
+devuelve su resultado. No incluye funciones ordinarias de API/service, aliases
+de identidad ni métodos que contienen implementación. Hay 21 wrappers de
+compatibilidad.
+
+| Wrapper | Owner real | Consumers | Global | Lexical | Puede migrar | Retirable |
+| --- | --- | --- | --- | --- | --- | --- |
+| `normalizeGeneratedPlaneaciones` | `BibliotecaLoader.normalizeGeneratedPlaneaciones` | `PlaneacionGeneration` | implícito | sí | sí | tras migrar |
+| `applyOptimisticPlaneacionesToConjunto` | Loader homónimo | `PlaneacionGeneration` | implícito | sí | sí | tras migrar |
+| `applyGenerationResultToPendingItems` | Loader homónimo | `PlaneacionGeneration` | implícito | sí | sí | tras migrar |
+| `finishBibliotecaPlaneacionesGeneration` | `BibliotecaLoader.finishPlaneacionesGeneration` | facade `biblioteca` → Quick | implícito | sí | sí | tras migrar |
+| `loadAndRenderBiblioteca` | `BibliotecaLoader.load` | init, Events y 9 feature owners | implícito | sí | sí, coordinado | tras migrar todos |
+| `bibDescargarAnexo` | `AnexoDownload.downloadBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `descargarAnexoWord` de page | `AnexoDownload.download` | ninguno; el owner tiene una función interna homónima | implícito | sí | no consumer | D, 10.1 |
+| `openBibliotecaAnexoPreview` de page | `AnexoPreview.open` | Events | implícito | sí | sí | 10.1 |
+| `closeBibliotecaAnexoModal` de page | `AnexoPreview.close` | backdrop inyectado | implícito | sí | sí | 10.1 |
+| `renderBibliotecaAnexoModal` de page | `AnexoPreview.render` | ninguno | implícito | sí | no consumer | D, 10.1 |
+| `bibDescargarPlaneacion` | `PlaneacionDownload.downloadFromBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `bibDescargarExamen` | `ExamDownload.downloadFromBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `bibDescargarLista` | `ListaCotejoDownload.downloadBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `openBibliotecaExamenPreview` | `ExamPreview.openBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `openBibliotecaListaPreview` | `ListaCotejoPreview.openBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `bibEliminarBloque` | `BibliotecaBlockDelete.deleteFromBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `bibEliminarPlaneacion` | `PlaneacionDelete.deleteFromBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `bibEliminarExamen` | `ExamDelete.deleteFromBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `bibEliminarLista` | `ListaCotejoDelete.deleteFromBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `bibEliminarAnexo` | `AnexoDelete.deleteFromBiblioteca` | Events | implícito | sí | sí | 10.1 |
+| `downloadExamWord` | `ExamDownload.download` | Bootstrap, `ExamDownload.downloadFromBiblioteca`, smoke | explícito | sí por global object env | sí | 10.2 |
+
+### Aliases
+
+Definición usada: alias es una segunda referencia a la misma función, sin
+crear otra función. Solo hay dos aliases directos de compatibilidad prioritaria.
+
+| Alias | Target | Consumers | Razón histórica | Aún necesario | Candidate F10 |
+| --- | --- | --- | --- | --- | --- |
+| `window.statusLabelFromTone` | `AppUI.statusLabelFromTone` | Quick, Loader | API previa al namespace | sí hoy | migrar consumers en 10.2; C después |
+| `window.renderProgressPill` | `AppUI.renderProgressPill` | Biblioteca Render | API previa al namespace | sí hoy | migrar consumer en 10.2; C después |
+
+Las asignaciones `window.apiX = apiX` son publicaciones globales explícitas,
+no aliases de compatibilidad con nombre alternativo. Los métodos shorthand de
+un namespace son métodos públicos del owner, no aliases. Los siete bridges de
+preview/download preservados en F8 se reconciliaron contra código actual: seis
+(`renderExamPreviewModal`, `openExamPreview`, `closeExamPreviewModal`,
+`renderListaCotejoPreviewModal`, `openListaCotejoPreview`,
+`closeListaCotejoPreview`) ya fueron retirados con el fallback en F9; solo
+`downloadExamWord` permanece y tiene dos consumers productivos.
+
+### Bridges cross-feature
+
+Definición usada: bridge es una superficie intencional de coordinación entre
+owners; no es pass-through de una sola firma ni una segunda referencia. Se
+contabilizan seis familias.
+
+| Bridge | Contrato actual | Estado |
+| --- | --- | --- |
+| Quick → Biblioteca | facade `window.biblioteca` | B. requerido, con dos fallbacks C |
+| Quick → Biblioteca Render | `window.renderBibliotecaContent`; cinco `window.BibliotecaRender?.renderContent()` sin provider | uno B; cinco calls C/no-op |
+| Biblioteca → Preview | wrappers de apertura + namespaces Preview | migrable a owners en 10.1 |
+| Biblioteca → Download | wrappers `bibDescargar*` + namespaces Download | migrable a owners en 10.1 |
+| Generation → Loader/Reconcile | cinco wrappers Loader y estado léxico Biblioteca | B; migrar coordinadamente en 10.2 |
+| Bootstrap → Quick/Biblioteca | `QuickCreate.bind/close`, `initBiblioteca`, preview hooks | A |
+
+`namespace method` es, en cambio, el método publicado por el owner bajo su
+propio objeto (`ExamPreview.close`, por ejemplo). Estas cuatro categorías no se
+mezclan en los conteos.
+
+### Contratos léxicos cross-script
+
+El análisis AST de los 42 scripts locales de Dashboard encontró 164 símbolos
+definidos en un archivo y usados bare desde otro. Una publicación `window.*`
+del mismo nombre no vuelve explícito el call site: si el caller usa el
+identificador bare, el contrato continúa dependiendo del scope de scripts
+clásicos.
+
+| Símbolo o grupo completo | Defined in | Used in | Explicit global | Implicit lexical contract | Risk | Candidate |
+| --- | --- | --- | --- | --- | --- | --- |
+| `API_BASE_URL` | config | seis APIs | sí | sí | bajo; provider primero | F |
+| `escapeHtml` | utils | 11 archivos Dashboard | sí | sí | alto fan-out | F; conservar |
+| 16 `apiPlaneaciones*` | API Planeaciones | service Planeaciones | sí | sí | orden API→service | F |
+| 25 `api{Planteles,Grados,Materias,Unidades,Temas,Unidad}*` incluidas variantes archive/update no publicadas explícitamente | API Jerarquía | service Jerarquía | parcial | sí | orden API→service | F |
+| `apiExamenesGenerate`, `apiExamenGenerationStatus`, `apiExamenesListByUnidad`, `apiExamenById` | API Exámenes | service/generation | sí | sí | orden API→consumer | F |
+| `apiListasCoTejoGenerate`, `apiListasCoTejoByUnidad`, `apiListaCoTejoById` | API Lista | service/generation | sí | sí | orden API→consumer | F |
+| `apiBibliotecaConjuntos`, `apiBibliotecaDeleteBloque`, `apiDeletePlaneacionDirecta`, `apiDeleteExamen`, `apiDeleteListaCotejo`, `apiDeleteAnexo` | API Biblioteca | Loader/delete owners | sí | sí | varios owners cargan antes del provider pero ejecutan después | B/F |
+| `apiGenerarAnexo`, `apiObtenerAnexoDetalle`, `apiRegenerarAnexo` | API Anexo | page/generation/download/preview | sí | sí | provider posterior a algunos owners | B/F |
+| `obtenerPlanteles`, `obtenerGradosPorPlantel`, `obtenerMateriasPorGrado`, `obtenerUnidadesPorMateria`, `obtenerTemasPorUnidad` | service Jerarquía | Dashboard technical loaders | sí | sí | activo | F |
+| `crearPlantel`, `crearGrado`, `crearMateria`, `crearUnidad`, `generarPlaneacionesUnidadConProgreso` | service Jerarquía | Quick/PlaneacionGeneration | sí | sí | activo | A/F |
+| `explorerState`, `formatFetchError`, `notifyDashboard` | Dashboard page | Bootstrap/Quick | state explícito solo para el primero | sí | alto; init diferido | F |
+| `buildActividadesMomentosPayload`, `buildTemaActividadesPayload`, `ensureGrados`, `ensureMaterias`, `ensureTemas`, `ensureUnidades`, `friendlyProgressMessage`, `getActividadCierreLegacy`, `getCurrentGrado`, `getCurrentMateria`, `getCurrentUnidad`, `getNextOrder`, `isDuplicateTemaMessage`, `loadPlanteles`, `normalizeActividadDidactica`, `normalizeImagenMomentoKey`, `renderActividadesMomentosControl`, `renderTrashIcon`, `requireNivelBaseValue`, `syncBodyScrollLock`, `syncQuickSelectVisualState`, `updateProgressCounters` | Dashboard page | Quick | no | sí | owner técnico compartido | F; no migración masiva |
+| `isActividadDidacticaValida`, `MOMENTOS_ACTIVIDADES_DIDACTICAS`, `normalizeActividadesMomentos`, `buildActividadDidacticaOptions` | Dashboard page | Quick/Biblioteca/modal render | no | sí | dominio compartido | F |
+| `BibliotecaEvents` | Events | page/render | no | sí | provider aparece después | B |
+| `injectBibliotecaModals`, cuatro `renderBiblioteca*Modal`, `showBibConfirm` | Modal Render | page y cinco delete owners | no | sí | provider posterior; callbacks diferidos | B |
+| `renderBibliotecaContent`, `renderBibliotecaDetailInPlace`, `renderBibliotecaSidebarListInPlace`, `updateBibliotecaSidebarActive` | Render | page/Loader/Events/generation/delete | solo el primero | sí | fan-out y ciclo de carga | B/F |
+| `bibliotecaState`, `BibliotecaSelection`, `BibliotecaTabs`, cuatro owners Pending y cuatro owners Modal State | Biblioteca page | Loader/Render/Modal/features | no | sí | state técnico activo | F |
+| `normalizeBibliotecaId`, `findConjuntoById`, `setSelectedConjunto`, `getSelectedConjunto`, `getGenerationBatchId`, `getAllConjuntosForSidebar`, display/date helpers | Biblioteca page | owners Biblioteca | no | sí | fan-out | F |
+| cinco wrappers Loader/Reconcile | Biblioteca page | generation/facade/features | Loader sí, wrappers no | sí | compatibilidad migrable | C tras 10.2 |
+| 18 acciones `bib*`/`openBiblioteca*` | Biblioteca page | Events | no | sí | wrappers o handlers | C/D en 10.1 |
+| cuatro submitters + `addBibliotecaAgregarTema` + cuatro closers | Biblioteca page | Modal Render/generation | no | sí | callbacks diferidos | B/F |
+| `BIB_EXAM_GENERIC_FAILURE_MESSAGE` | Biblioteca page | ExamGeneration | no | sí | constante compartida | F |
+
+Totales por contrato: 74 edges archivo→archivo; 31 edges apuntan a un provider
+cargado después del consumer y afectan 13 scripts. No hay `import`, `export` ni
+`type="module"`. Riesgo: un cambio de orden puede producir ReferenceError al
+ejecutar una función antes de que el provider posterior haya corrido, aunque la
+carga normal difiera la ejecución hasta `DOMContentLoaded`.
+
+### Orden de `dashboard.html`
+
+| # | Script | Owner | Dependencias principales | Consumers | Must load before | Can load later |
+| ---: | --- | --- | --- | --- | --- | --- |
+| 1 | `config.js` | core config | navegador | seis APIs | APIs | no después de APIs |
+| 2 | Supabase CDN | externo | red | cliente Supabase | `supabase.client` | no |
+| 3 | `supabase.client.js` | core auth client | SDK | auth/chrome | auth | no |
+| 4 | `auth.service.js` | auth | Supabase; AppUI opcional | services/features/main | init runtime | sí respecto a AppUI por guard, no respecto a consumers |
+| 5 | `utils.js` | escaping | ninguna interna | render/downloads | todos sus callers | no |
+| 6 | `planeaciones.api.js` | HTTP | config | service Planeaciones | #7 | no |
+| 7 | `planeaciones.service.js` | service | #4/#6 | Dashboard/Detalle/Archivados | consumers | no |
+| 8 | `jerarquia.api.js` | HTTP | config | service Jerarquía | #9 | no |
+| 9 | `jerarquia.service.js` | service | #4/#8 | Dashboard/Quick | consumers | no |
+| 10 | `examenes.api.js` | HTTP | config | service/generation | #11/#18 | no |
+| 11 | `examenes.service.js` | service | auth/API | preview/download | #15/#16 | no |
+| 12 | `listas_cotejo.api.js` | HTTP | config | service/generation | #13/#14 | no |
+| 13 | `listas_cotejo.service.js` | service | auth/API | preview/download | #20/#21 | no |
+| 14 | `lista-cotejo-generation.js` | generation owner | API + Biblioteca lexicals posteriores | Biblioteca page | runtime del modal | puede moverse tras page si se preserva init |
+| 15 | `wordExport.js` | export owner | DOM | Lista/Detalle | lista download | no |
+| 16 | `exam-download.js` | download owner | service, AppUI posterior, Biblioteca posterior | Bootstrap/Events | runtime preview | sí, antes de init |
+| 17 | `exam-preview.js` | preview owner | service/utils/state posterior | Bootstrap/Events | runtime preview | sí, antes de init |
+| 18 | `exam-delete.js` | delete owner | API/Modal/State posteriores | Events | runtime click | sí, antes de init |
+| 19 | `exam-generation.js` | generation owner | API/State/Render posteriores | page | runtime modal | sí, antes de init |
+| 20 | `lista-cotejo-download.js` | download owner | service/AppUI/Word | Bootstrap/Events | runtime | sí, antes de init |
+| 21 | `lista-cotejo-preview.js` | preview owner | service/utils/state posterior | Bootstrap/Events | runtime | sí, antes de init |
+| 22 | `lista-cotejo-delete.js` | delete owner | API/Modal/State posteriores | Events | runtime | sí, antes de init |
+| 23 | `components.private.js` | private chrome | Supabase | Bootstrap + DOMContentLoaded | Bootstrap runtime | sí con guards |
+| 24 | `shared.ui.js` | AppUI | utils | downloads/render/auth | runtime downloads | antes de uso |
+| 25 | `biblioteca.api.js` | HTTP | config | Loader/delete/Detalle | consumers runtime | provider tardío hoy |
+| 26 | `anexos.api.js` | HTTP | config | Anexo features/page | consumers runtime | provider tardío hoy |
+| 27 | `anexo-generation.js` | generation owner | API + Biblioteca posterior | page | runtime modal | sí, antes de init |
+| 28 | `anexo-download.js` | download owner | API/AppUI | Events/preview | runtime | sí, antes de init |
+| 29 | `anexo-preview.js` | preview owner | API/AppUI/Modal DOM | Events | runtime | sí, antes de init |
+| 30 | `anexo-delete.js` | delete owner | API/Modal/State posteriores | Events | runtime | sí, antes de init |
+| 31 | `planeacion-download.js` | download owner | service/AppUI | Events | runtime | sí, antes de init |
+| 32 | `planeacion-delete.js` | delete owner | API/Modal/State posteriores | Events | runtime | sí, antes de init |
+| 33 | `planeacion-generation.js` | generation owner | service + Biblioteca posterior | page | runtime modal | sí, antes de init |
+| 34 | `biblioteca-block-delete.js` | delete owner | API/Modal/State posteriores | Events | runtime | sí, antes de init |
+| 35 | `dashboard.page.js` | technical state/helpers | Jerarquía/utils | Quick/Bootstrap/Biblioteca | #36/#37 runtime | no |
+| 36 | `dashboard-bootstrap.js` | page init/bind | state; Quick/Biblioteca posteriores | main | #43 | provider puede preceder consumers por init diferido |
+| 37 | `quick-create.js` | Quick owner | Dashboard/service; Biblioteca posterior | Bootstrap/Events | init runtime | antes de main event |
+| 38 | `biblioteca.page.js` | state/coordinator/facade | owners previos; Render/Modal/Events posteriores | features/Bootstrap | init runtime | no sin resolver ciclos |
+| 39 | `biblioteca-loader.js` | loader/reconcile | page state; Render posterior | wrappers/tests | init runtime | no sin bridge render |
+| 40 | `biblioteca-render.js` | render owner | page state; Events posterior | page/features | init runtime | no sin page state |
+| 41 | `biblioteca-modal-render.js` | modal owner | page/Dashboard helpers | page/delete owners | init runtime | no sin page state |
+| 42 | `biblioteca-events.js` | events owner | page/owners previos | page/render | init runtime | debe existir antes de `initBiblioteca` |
+| 43 | `main.js` | dispatch | init globals | cinco pages | ninguno | mantener último por claridad |
+
+Respuesta cuantitativa: 33 scripts locales dependen de orden por bindings
+implícitos; cinco dependen solo de globals/namespaces explícitos; cuatro no
+consumen contratos internos. Nueve tags locales están libres de dependencias
+léxicas como consumers, pero eso no autoriza moverlos sin respetar su papel de
+provider. Los 43 tags resuelven a assets presentes (42 locales + CDN).
+
+### `main.js` y Dashboard Bootstrap
+
+`main.js` registra un solo `DOMContentLoaded`. Obtiene la página, protege las
+cinco rutas privadas declaradas (`dashboard`, `planeacion`, `detalle`, `batch`,
+`archivados`) y resuelve cinco branches de init: Dashboard, Planeación,
+Detalle, Archivados y Login. Dashboard/Detalle/Archivados/Login tienen HTML que
+carga `main.js`; `planeacion.html` es redirect y no carga `main.js`, por lo que
+`planeacion.html → window.planeacionPage?.init` es mapping huérfano. `batch`
+solo aparece en `isPrivatePage`, no tiene mapping y su redirect queda protegido
+fuera del cleanup. `planeacion.page.js`, `planeacion.ui.js` y `js/planeacion.js`
+no tienen tag productivo; el último solo entra por Jest.
+
+`dashboard-bootstrap.js` es owner de: inyección de `layout.html`; invocación de
+private chrome; guard `isDashboardBound`; `QuickCreate.bind`; seis hooks de
+preview/download y un Escape; escritura de `BIBLIOTECA_MODE`; comprobación e
+invocación de `initBiblioteca`; y manejo de error de init. No conserva fallback
+Explorer, wrappers ni aliases. Sus contratos léxicos son `explorerState`,
+`downloadExamWord`, `notifyDashboard` y `formatFetchError`; sus namespaces
+explícitos son Quick, Preview, Download y AppUI.
+
+### Handler map de Biblioteca
+
+| Action | Emitter | Handler | Owner | Active | Compatibility |
+| --- | --- | --- | --- | --- | --- |
+| `select-conjunto` | sidebar | select/render | Biblioteca | sí | A |
+| `switch-tab` | tabs | select/render | Biblioteca | sí | A |
+| `agregar-planeacion` | detalle | modal Agregar | Biblioteca | sí | A |
+| `generar-examen` | tab Examen | modal Examen | Biblioteca/ExamGeneration | sí | A |
+| `generar-lista` | tab Lista | modal Lista | Biblioteca/ListaGeneration | sí | A |
+| `crear-planeaciones` | empty state | `QuickCreate.open` | Quick | sí | A |
+| `retry` | error state | Loader wrapper | Loader | sí | B/C |
+| `ver-examen`, `ver-lista`, `ver-anexo` | cards | preview wrappers | Preview owners | sí | B/C |
+| `descargar-planeacion`, `descargar-examen`, `descargar-lista`, `descargar-anexo` | cards | download wrappers | Download owners | sí | B/C |
+| `abrir-modal-anexos` | tab Anexos | modal Anexo | Biblioteca | sí | A |
+| `eliminar-bloque`, `eliminar-planeacion`, `eliminar-examen`, `eliminar-lista`, `eliminar-anexo` | cards/header | delete wrappers | Delete owners | sí | B/C |
+| `toggle-expand` | ninguno en HTML/templates/innerHTML/tests | branch equivalente a select | Biblioteca | no | D |
+| `generar-anexo` | ninguno en HTML/templates/innerHTML/tests | `bibGenerarAnexo` | page legacy de Biblioteca | no | D |
+| `regenerar-anexo` | ninguno en HTML/templates/innerHTML/tests | `bibRegenerarAnexo` | page legacy de Biblioteca | no | D |
+
+Hay 20 valores emitidos y los 20 tienen branch; existen 23 branches y tres no
+tienen emitter; emitters sin handler: cero. La búsqueda incluyó `data-action`,
+`data-bib-action`, todos los `data-*`, HTML, templates, `innerHTML`, globals y
+tests. Los tres sobrantes son zero-emitter confirmed, no hidden path ni future
+contract demostrado.
+
+### Listeners y hooks globales
+
+| File | Listener call sites | Target | Purpose | Guard | Possible duplicate | Owner |
+| --- | ---: | --- | --- | --- | --- | --- |
+| `config.js` | 1 | `window` | links/config en DOMContentLoaded | no | página una vez | core |
+| `components.public.js` | 6 | DOM/window | nav/select/resize/keydown/init | DOM de página | bajo | public UI |
+| `components.private.js` | 9 | DOM/document | nav/profile/global close/init | dataset + boolean global | bajo | private chrome |
+| `main.js` | 1 | document | dispatch DOMContentLoaded | evento único | no normal | bootstrap |
+| `dashboard-bootstrap.js` | 5 sites / 7 registros por loops | modal/document | preview/download/Escape | `isDashboardBound` | no normal | Dashboard |
+| `quick-create.js` | 17 | panel, comboboxes, document | Quick UI | depende del guard Bootstrap | si se llama `bind` directo dos veces | Quick |
+| `biblioteca-events.js` | 1 + `oninput` | document/search | dispatch delegado/search | **sin guard interno** | sí si `initBiblioteca` corre dos veces | Biblioteca Events |
+| `biblioteca-modal-render.js` | 29 | nodos regenerados/backdrops | modales | DOM replace / existencia / `once` | backdrop confirm puede acumular closure | Modal Render |
+| `anexo-preview.js` | 4 | nodos regenerados | preview/download | DOM replace | bajo | Anexo Preview |
+| `detalle.page.js` | 8 | DOM | edición/download | init de página | si init manual repetido | Detalle |
+| `archivados.page.js` | 7 | DOM/document | filters/actions/confirm/Escape | init de página | si init manual repetido | Archivados (fuera F10) |
+| `dashboard-tailwind.page.js` | 4 | DOM/document | página histórica | DOMContentLoaded | fuera de alcance | G |
+| `login.page.js` / `planeacion.page.js` | 1 / 4 | forms/buttons | páginas | init | Planeación sin entry | Login A / Planeación G |
+| `shared.ui.js` | 4 | modal dinámico | filename modal | nodos regenerados/once | backdrop puede quedar si cierra por otro control | AppUI |
+
+Total repositorio: 101 call sites `addEventListener` + una asignación `oninput`
+= 102. En el stack Dashboard: 71 `addEventListener` + una `oninput` = 72.
+Eventos: `DOMContentLoaded` 5, `click` 66, `change` 12, `keydown` 7, `input`
+4, `submit` 2, `mousedown` 2, `focus` 1, `blur` 1 y `resize` 1. `pageshow` y
+`popstate`: cero. El binding normal de `BibliotecaEvents` ocurre una vez porque
+`main.js` dispara un init y Bootstrap guarda su propio bind; no obstante, una
+segunda llamada pública a `initBiblioteca()` sí duplicaría el listener delegado.
+
+Preview Examen/Lista pertenece a Bootstrap con guard; preview Anexo reemplaza
+sus nodos internos antes de volver a enlazar. El riesgo de `showBibConfirm` es
+real pero no bloqueante: al cerrar por Cancel/OK, el listener `{once:true}` del
+backdrop persistente no se consume y puede quedar acumulado para una apertura
+posterior.
+
+### `BIBLIOTECA_MODE` y compatibilidad defensiva
+
+`window.BIBLIOTECA_MODE` tiene un writer (`initDashboardPage`) y 23 referencias
+productivas, todas en Quick salvo el writer. Quick solo se carga desde
+`dashboard.html`; Bootstrap escribe `true` antes de enlazar/abrir Quick y ya no
+existe fallback. Por tanto, en producto normal siempre es `true`. Sigue siendo
+un contract de compatibilidad para ramas no-Biblioteca y tests, clasificado C:
+candidato 10.2, no eliminado en 10.0.
+
+Branches defensivos relevantes:
+
+- `typeof window.initBiblioteca`: defensa legítima de asset faltante; conserva
+  error controlado, A/B.
+- `window.initPrivateChrome ? ...`: la integración existe en Dashboard; defensa
+  tolerante compartida con otras páginas, B.
+- `window.biblioteca?.getConjuntos/start/finish/refresh/select/setPending`:
+  facade requerida con fallbacks internos redundantes probables, B/C.
+- cinco `window.BibliotecaRender?.renderContent()`: historical defensive
+  compatibility sin provider; C y no-op.
+- `typeof window.renderBibliotecaContent`: bridge real con un caller, B.
+- `window.QuickCreate?.open`: integración obligatoria cargada; defensa histórica
+  pero inocua, B/C.
+- `typeof window.downloadExamWord` y `descargarListaCotejoWord`: wrappers de
+  descarga cargados; migrables a owners, B/C.
+- optional chaining de Supabase/Archivados/Detalle: integración legítima o flujo
+  separado; A/G, no cleanup indiscriminado.
+- fallbacks bare de `statusLabelFromTone`, `renderProgressPill`, actividades y
+  normalización: compatibilidad con script order, B/C.
+
+No se encontró un `try/catch` cuya única finalidad sea ocultar un global
+ausente. Los catches auditados manejan fetch, generación, preview, download o
+init. No deben eliminarse como compatibilidad.
+
+### Clasificación final A–G y candidatos
+
+- **A. Active contract:** owners de generación/preview/download/delete,
+  `QuickCreate.open/close/bind`, `AppUI`, `initDashboardPage`,
+  `initBiblioteca`, 20 actions emitidas y APIs/services con callers.
+- **B. Compatibility still required:** facade `window.biblioteca`, cinco
+  wrappers Loader/Reconcile, bridge `renderBibliotecaContent`, wrapper
+  `downloadExamWord`, entry globals clásicos y defensas de asset/init.
+- **C. Redundant compatibility:** 15 wrappers de action tras migrar Events, dos
+  aliases AppUI tras migrar sus consumers, fallbacks `select/refresh` de la
+  facade, `BIBLIOTECA_MODE`/ramas always-true y cinco calls al namespace
+  `window.BibliotecaRender` inexistente.
+- **D. Zero-consumer:** dos wrappers page (`descargarAnexoWord`,
+  `renderBibliotecaAnexoModal`), tres handler branches y sus dos implementaciones
+  Anexo, dos métodos públicos Quick (`setPanelVisibility`,
+  `generateFromStaging`), mapping Planeación inalcanzable y publicaciones sin
+  consumer externo listadas arriba. Requieren corte por owner, no borrado masivo.
+- **E. Test-only:** `validateForm` pertenece a un asset sin entry cargado solo
+  por Jest; `obtenerPlaneacionTema` solo aparece como fixture `window.*` en el
+  smoke Quick. El test textual que exige
+  `window.BibliotecaRender?.renderContent()` protege una integración sin
+  provider y debe cambiar junto con el contrato, no gobernar producción.
+- **F. Technical shared:** `explorerState`, jerarquía/caches/current IDs,
+  helpers de actividades, state/selection/tabs/pending Biblioteca,
+  `API_BASE_URL`, `escapeHtml` y contratos API/service clásicos.
+- **G. Future debt outside F10:** `public.ia_metrics`, temas huérfanos,
+  Archivados futuro, `dashboard_tailwind.html`, redirect `batch.html`, backend,
+  DB/API/payloads, `wordExport.js` y cualquier decisión de retirar redirects.
+
+### Métricas y roadmap resultante
+
+| Métrica 10.0 | Resultado real |
+| --- | ---: |
+| Dashboard LOC / funciones | 464 / 32 |
+| `explorerState` | 17 top-level / 53 paths / 207 refs productivas |
+| Publicaciones explícitas `window.*` | 174 repo / 147 stack Dashboard |
+| Namespaces/objetos publicados | 21 repo; 20 en Dashboard |
+| Wrappers de compatibilidad | 21 |
+| Aliases directos | 2 |
+| Bridges cross-feature | 6 familias |
+| Símbolos léxicos cross-file | 164 / 74 edges |
+| Scripts Dashboard | 43 tags / 42 locales |
+| Listener sites | 102 repo / 72 stack Dashboard |
+| Handlers sin emitter | 3 |
+| Emitters sin handler | 0 |
+| Globals con referencia solo de test entre candidatos | 2; ninguno justifica conservar producción por sí solo |
+
+Roadmap máximo: 10.1 dispatch Biblioteca → owners y retiro de wrappers/actions
+demostrados; 10.2 frontera global/Loader/AppUI/render/Quick/
+`BIBLIOTECA_MODE`/`main.js`; 10.3 cierre formal. El primer corte recomendado es
+10.1 porque modifica un solo dispatcher y sus adaptadores, mantiene
+`explorerState`, loader/reconcile y orden de scripts intactos, y deja una
+búsqueda verificable de 20 emitters/20 handlers.

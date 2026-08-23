@@ -33,7 +33,7 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Completada |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Completada |
 | 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Completada |
-| 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
+| 10 | Consolidación final | Retirar wrappers y deuda | Medio | En progreso |
 
 Los únicos estados válidos son `Pendiente`, `En progreso`, `Completada`, `Bloqueada` y `Cancelada`. No se marca una fase como completada sin evidencia de todos sus criterios de salida.
 
@@ -1215,8 +1215,9 @@ flujo vigente ni los contratos técnicos.
 aprobada manualmente y quedó commiteada en `9496303`. 9.2 fue aprobada
 manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
 Explorer/CRUD tras migrar los cruces vigentes; fue aprobada manualmente y quedó
-commiteada en `7393909`. 9.4 aprobó formalmente el cierre. Fase 10 permanece
-pendiente y no iniciada.
+commiteada en `7393909`. 9.4 aprobó formalmente el cierre documental en
+`b6eb40e`; `aa56e06` completó la Fase 9 y coincide con
+`origin/refactor-front`. Fase 10 fue abierta por la auditoría 10.0.
 
 ### Dependencias
 
@@ -1317,7 +1318,11 @@ Retirar compatibilidad ya innecesaria y cerrar una Biblioteca modular con docume
 
 ### Estado
 
-**Pendiente.**
+**En progreso.** La Sesión 10.0 completó la auditoría técnica/documental de
+apertura sin modificar código productivo. El gate pasó sobre
+`refactor-front`/`aa56e06`, alineado con `origin/refactor-front`, y backend
+`refactor-back`/`fe25abe` limpio y solo lectura. La suite base pasa 8/8 suites y
+24/24 pruebas. La implementación funcional de 10.1 no ha iniciado.
 
 ### Dependencias
 
@@ -1366,6 +1371,35 @@ Inventario final de globals/wrappers, pruebas, estado de repositorios, documenta
 ### Condición para avanzar
 
 No hay fase posterior: el roadmap se marca completado solo cuando todos los criterios finales tienen evidencia y los pendientes quedan fuera del refactor con propietario.
+
+### Sesiones definidas por la auditoría 10.0
+
+#### 10.1 — Dispatch de acciones de Biblioteca hacia owners reales
+
+Migrar en un único corte los consumers activos de wrappers de preview,
+download y delete a sus namespaces propietarios; retirar después esos wrappers,
+las dos hojas wrapper sin consumer y los tres handlers sin emitter junto con
+sus dos implementaciones de Anexo sin entrada. No incluye loader/reconcile,
+`BIBLIOTECA_MODE`, `explorerState`, orden de scripts, generación, payloads ni
+listeners. La búsqueda posterior debe conservar 20 emitters con 20 handlers.
+
+#### 10.2 — Frontera global y contratos clásicos
+
+Resolver la compatibilidad restante solo con evidencia: wrappers de
+`BibliotecaLoader`, alias de `AppUI`, `downloadExamWord`, el bridge de render de
+Quick, branches siempre-true de `BIBLIOTECA_MODE`, miembros públicos sin
+consumer y mapping huérfano de `main.js`. `explorerState` se conserva como
+estado técnico compartido mientras sus cinco slices sigan activos; no se
+renombra, no se crea otro store y no se convierte el frontend a ESM. Los 164
+símbolos léxicos no son una orden de migración masiva: se mantienen los
+contratos útiles y solo se toca compatibilidad redundante demostrada.
+
+#### 10.3 — Auditoría formal de cierre
+
+Repetir globals, wrappers, aliases, bridges, shape de estado, contratos
+léxicos, orden de 43 scripts, handlers/emitters, listeners, suite completa y
+matriz manual. Cerrar Fase 10 únicamente si todo contrato restante tiene owner,
+consumer y motivo documentados.
 
 ## Reglas de avance
 

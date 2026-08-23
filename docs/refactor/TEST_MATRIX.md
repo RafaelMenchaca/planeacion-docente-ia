@@ -2125,3 +2125,61 @@ Tres branches de Biblioteca sin emitter (`toggle-expand`, `generar-anexo`,
 `regenerar-anexo`) quedan clasificadas como compatibilidad para Fase 10; no son
 actions ni emitters del fallback eliminado. Decisión de auditoría:
 **A. Fase 9 puede cerrarse.**
+
+## Fase 10 — Sesión 10.0: auditoría de apertura
+
+10.0 no modifica JavaScript, HTML, CSS ni backend y no requiere manual. La
+evidencia manual acumulada de 9.3/9.4 permanece como baseline aprobado.
+
+| Verificación | Evidencia real 10.0 | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front`/`aa56e06`, limpio e igual a origin | PASS |
+| Cierre F9 | 9.0 `73d52b4`; 9.1 `9496303`; 9.2 `7cca74e`; 9.3 `7393909`; 9.4 `b6eb40e`; final `aa56e06` | reconciliado |
+| Backend | `refactor-back`/`fe25abe`, limpio, solo lectura | PASS |
+| Dashboard | 464 LOC/32 funciones; Explorer/CRUD ausentes | PASS |
+| `explorerState` | 17 top-level, 53 paths, 207 refs productivas | inventariado |
+| Globals | 174 publicaciones repo / 147 Dashboard | inventariado |
+| Wrappers/aliases/bridges | 21 / 2 / 6 familias | inventariado |
+| Lexical contracts | 164 símbolos / 74 edges / 31 late-provider | inventariado |
+| Scripts | 43 tags, 42 locales + CDN, 0 rutas locales faltantes | PASS |
+| Actions | 20 emitters con handler; 3 handlers sin emitter; 0 emitters sin handler | confirmado |
+| Listeners | 102 sites repo / 72 Dashboard; dos riesgos de duplicabilidad documentados | auditado |
+| Inline handlers | 0 `onclick`, `onchange`, `onsubmit` | PASS |
+| Hooks históricos | 0 `pageshow`, 0 `popstate` | PASS |
+| Jest | `npm test -- --runInBand`: 8 suites/24 pruebas | PASS |
+| Manual 10.0 | auditoría sin cambios funcionales | no requerida |
+| Scope | solo cinco documentos autorizados | PASS sujeto a diff final |
+
+### Matriz futura 10.1 — dispatch Biblioteca hacia owners
+
+| Caso | Verificación obligatoria |
+| --- | --- |
+| Actions | 20 emitters / 20 handlers; cero `toggle-expand`, `generar-anexo`, `regenerar-anexo` |
+| Preview | Examen, Lista y Anexo abren/cierran una vez desde cards |
+| Download | Planeación, Examen, Lista y Anexo descargan desde cards/previews |
+| Delete | bloque y cuatro recursos conservan confirmación, request y refresh |
+| Retry | error Biblioteca vuelve a cargar mediante Loader real |
+| Consumer audit | 15 wrappers action ausentes y namespaces owners con callers |
+| Scope | Loader/Reconcile, Mode, state, order y listeners sin cambio |
+| Suite/manual | Jest completo + checklist AC |
+
+### Matriz futura 10.2 — frontera global y clásica
+
+| Caso | Verificación obligatoria |
+| --- | --- |
+| Quick/Biblioteca | progreso visible durante conjunto nuevo/existente; sin calls no-op a namespace inexistente |
+| Loader | generation/delete/retry/init usan owner explícito; cero wrappers retirados |
+| AppUI | status/progress usan namespace; aliases retirados solo con búsqueda cero |
+| Mode | Quick conserva exclusivamente el flujo Biblioteca ya aprobado |
+| Main | redirects Batch/Planeación intactos; mappings alcanzables coherentes |
+| State | 17 propiedades auditadas preservadas o cambio justificado sin store nuevo |
+| Scripts | 43 tags o delta explícito; 0 asset faltante/ReferenceError |
+| Listeners | un init/un click/una acción; sin duplicados nuevos |
+| Suite/manual | Jest completo + Dashboard, Quick, Agregar Tema, Detalle/back, preview/download, generación, delete, reload y consola |
+
+### Cierre futuro 10.3
+
+Repetir gate, hashes, globals, wrappers, aliases, bridges, namespaces,
+`explorerState`, contratos léxicos, script order, handlers/emitters, listeners,
+suite y manual acumulada. Fase 10 solo puede cerrarse cuando todo contrato
+restante tenga owner, consumer y motivo documentado.
