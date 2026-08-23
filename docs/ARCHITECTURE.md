@@ -6,11 +6,21 @@ Este documento describe la arquitectura frontend observada en el código actual.
 
 La arquitectura descrita desde esta sección hasta “Arquitectura objetivo” corresponde al estado observado. Incluye dependencias temporales que todavía no representan el diseño deseado.
 
-Las Fases 0–7 están completadas. Fase 6 cerró mediante la auditoría 6.4 y Fase
-7 mediante la auditoría 7.4. Los commits funcionales de Fase 7 son `97b798c`,
-`a6840a4` y `bcd361e`; su manual acumulada está aprobada. La auditoría 8.0 abrió
-documentalmente Fase 8, sin implementación funcional ni manual requerida. El inventario ejecutable se conserva en
-[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+Las Fases 0–8 están completadas. Fase 8 cerró mediante la auditoría 8.4;
+sus commits funcionales reales son `1aa1599`, `6fb39ab` y `cf48637`, el cierre
+documental es `bf97b1a`, y el merge acumulativo es `41f933e`. La auditoría 9.0
+abrió documentalmente Fase 9 y quedó commiteada en `73d52b4`. La Sesión 9.1,
+aprobada manualmente, retiró Batch y quedó commiteada en `9496303`. La Sesión
+9.2 retiró hojas cero-consumer y siete acciones sin emitter; fue aprobada
+manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
+jerárquico, fue aprobada manualmente y quedó commiteada en `7393909`. La
+auditoría 9.4 aprobó formalmente el cierre de Fase 9 en `b6eb40e` y el cierre
+acumulativo real es `aa56e06`. La auditoría 10.0 pasó el gate y abrió Fase 10.
+La Sesión 10.1 fue aprobada manualmente y quedó commiteada en `17f4ce1`; la
+Sesión 10.2 quedó aprobada manualmente y commiteada en `da618c7`. La auditoría
+10.3 aprueba el cierre de Fase 10 y del roadmap 0–10. Fase 10 queda
+**Completada** y el roadmap **Completado**. El inventario ejecutable
+se conserva en [`FRONTEND_MAP.md`](FRONTEND_MAP.md).
 
 ## Regla arquitectónica central
 
@@ -196,17 +206,17 @@ globals. El detalle propiedad-consumidor está en
 
 `pages/dashboard.html` carga, entre otros, `dashboard.page.js`, `biblioteca.page.js` y `main.js`, en ese orden. `main.js` invoca `window.initDashboardPage()`.
 
-Como `biblioteca.page.js` ya publicó `window.initBiblioteca`, `initDashboardPage()`:
-
-1. establece `window.BIBLIOTECA_MODE = true`;
-2. inyecta el layout y componentes privados;
-3. registra los eventos compartidos;
-4. llama `window.initBiblioteca()`;
-5. retorna antes de ejecutar `hydrateExplorerData()`.
+Como `biblioteca.page.js` ya publicó `window.initBiblioteca`,
+`initDashboardPage()` inyecta el layout y componentes privados, registra los
+eventos compartidos y llama `window.initBiblioteca()`. No existe modo dual ni
+fallback hacia Explorer; `BIBLIOTECA_MODE` fue retirado en 10.2.
 
 Biblioteca controla el render principal: carga conjuntos, renderiza sidebar y detalle, conserva el tab por conjunto y coordina planeaciones, anexos, listas y exámenes. Toda funcionalidad visual nueva debe incorporarse a este flujo.
 
-`dashboard.page.js` todavía contiene utilidades, creación rápida, estado y previews consumidos por Biblioteca. Es deuda técnica de compatibilidad, no un segundo modo de uso. El objetivo del refactor es separar las dependencias activas y retirar gradualmente el código visual obsoleto; nunca mover lógica de Biblioteca hacia el explorador antiguo.
+`dashboard.page.js` contiene únicamente estado técnico compartido, loaders y
+caches jerárquicos, helpers de actividades y progreso/previews consumidos por
+Quick y los owners. Quick vive en su feature propio. Es compatibilidad técnica
+clásica, no un segundo modo visual.
 
 ## Fase 6: render, DOM y eventos de Biblioteca
 
@@ -224,8 +234,8 @@ initDashboardPage
  └─ initBiblioteca
      ├─ injectBibliotecaModals
      ├─ document.click -> onBibliotecaClick
-     └─ loadAndRenderBiblioteca
-         └─ renderBibliotecaContent
+     └─ BibliotecaLoader.load
+         └─ BibliotecaRender.renderContent
              ├─ loading / error
              └─ shell
                  ├─ renderBibliotecaSidebar
@@ -252,15 +262,12 @@ La frontera con Dashboard permanece activa y contractual:
 
 - `components/layout.html` aporta `#explorer-content`, Quick Create y los DOM
   estables de preview de Exámenes/Listas.
-- `dashboard.page.js` enlaza el shell antes de `initBiblioteca`, conserva Quick
-  Create, `window.explorerState`, previews y wrappers, y despacha
-  `renderExplorerContent()` hacia `window.renderBibliotecaContent` cuando
-  `BIBLIOTECA_MODE` está activo.
+- `dashboard.page.js` aporta `window.explorerState` y helpers técnicos; Quick,
+  previews, generación, descargas y deletes tienen owners separados.
 - Biblioteca consume los bindings léxicos compartidos
   `MOMENTOS_ACTIVIDADES_DIDACTICAS`, `buildActividadDidacticaOptions`,
   `isActividadDidacticaValida`, `normalizeActividadesMomentos`,
-  `renderProgressPill` y `statusLabelFromTone`. Esta dependencia por orden de
-  scripts corresponde principalmente a Fase 7, no debe absorberse en Fase 6.
+  `window.AppUI.renderProgressPill` y `window.AppUI.statusLabelFromTone`.
 - Quick Create consume `window.biblioteca` y puede provocar renders/refetch de
   Biblioteca. Su estado, staging, SSE y reconciliación permanecen protegidos.
 
@@ -918,3 +925,413 @@ Archivados permaneció congelado: Biblioteca usa delete directo; page, registry,
 storage, restore y delete histórico no cambiaron. Un Archivados propio de
 Biblioteca será diseño futuro posterior al refactor, no trabajo implícito de
 Fase 9.
+
+## Fase 9 — Sesión 9.0: auditoría de apertura
+
+La arquitectura ejecutable confirma una entrada normal única:
+
+```text
+main.js
+→ initDashboardPage
+→ initBiblioteca existe
+→ BIBLIOTECA_MODE = true
+→ initBiblioteca
+→ return
+```
+
+`dashboard.html` usa scripts clásicos bloqueantes y carga
+`biblioteca.page.js` antes de `main.js`; si todos los assets cargan normalmente,
+`window.initBiblioteca` ya existe cuando se ejecuta el init. No hay otro HTML de
+producto que cargue `dashboard-bootstrap.js` sin Biblioteca. El fallback
+`hydrateExplorerData → restore/select → renderAll` es ejecutable en los smokes y
+ante ausencia/fallo del asset de Biblioteca, pero no constituye una ruta de
+producto soportada.
+
+Ese resultado no permite retirar todavía `legacy-explorer.js` completo. Sus
+bindings top-level siguen cruzando owners: `loadPlanteles()` puede llamar
+`setCurrentLevel()`, Quick Create conserva una rama no-Biblioteca que llama
+`selectUnidad()`, el CRUD usa los cuatro `select*`, Dashboard usa `select*` y
+`renderAll()` en callbacks de delete/archive/generación, y Bootstrap registra
+handlers, `pageshow` e hidratación. Primero deben cortarse o reasignarse esos
+consumidores.
+
+La superficie con cero entry point más clara es la implementación histórica de
+Batch: `batch.html` redirige sin cargar scripts, mientras `batch.page.js`,
+`batch.ui.js` y `batch.css` no aparecen en ningún tag HTML. El redirect se
+mantiene como compatibilidad de bookmarks; los assets antiguos son el primer
+corte recomendado para 9.1. `dashboard_tailwind.html`, en cambio, sí es una
+página standalone ejecutable por URL directa y consume su JS/CSS: queda
+clasificada como legacy huérfana, pero requiere una decisión explícita antes de
+eliminarse.
+
+La jerarquía técnica, Quick Create, Biblioteca, previews/downloads, Detalle y
+Archivados permanecen protegidos. El mapa completo de owners, acciones,
+estado, DOM, globals y candidatos está en
+[`FRONTEND_MAP.md`](FRONTEND_MAP.md).
+
+## Fase 9 — Sesión 9.1: retiro de implementación Batch
+
+`pages/batch.html` permanece byte a byte como entrada de compatibilidad. No
+carga hojas ni scripts de la implementación anterior: aplica meta refresh,
+`window.location.replace("dashboard.html")` y ofrece el mismo enlace dentro de
+`noscript`. La URL destino explícita no conserva query ni hash; 9.1 documenta
+ese comportamiento histórico sin modificarlo.
+
+La segunda búsqueda de consumers confirmó que ningún HTML cargaba
+`js/pages/batch.page.js`, `js/ui/batch.ui.js` o `css/batch.css`. Los dos links
+históricos encontrados apuntan a `batch.html`, no a sus assets, y por ello
+siguen resolviendo mediante el redirect. `batch.html` tampoco carga `main.js`,
+de modo que el registro `"batch.html": window.initBatchPage` era inalcanzable.
+
+Se retiraron exclusivamente los tres assets y ese registro. `main.js` conserva
+`batch.html` en la lista de páginas privadas; no es un dispatch y mantiene el
+concepto de compatibilidad si el bootstrap cambiara en el futuro. El smoke
+`batch-compatibility.smoke.test.js` fija la existencia y destino del redirect,
+la ausencia de tags Batch, assets y `initBatchPage`.
+
+Arquitectura resultante:
+
+```text
+URL/bookmark pages/batch.html
+→ meta refresh / location.replace
+→ pages/dashboard.html
+→ Biblioteca vigente
+```
+
+No se modificaron Dashboard, Biblioteca, Quick Create, Detalle, Explorer/CRUD,
+generación, Archivados, API, backend ni contratos durante 9.1.
+
+## Fase 9 — Sesión 9.2: hojas y acciones inaccesibles
+
+La auditoría repetida confirmó que las seis funciones candidatas no tenían
+caller, emitter HTML/data, global/alias, callback ni test. Su eliminación dejó
+dos helpers de tamaño de select y `findTemaById` sin consumidores; los tres se
+sometieron a la misma búsqueda y también se retiraron. En total desaparecieron
+nueve hojas privadas.
+
+Las acciones `archive-batch` y las seis `delete-*` jerárquicas tampoco tenían
+emitter productivo ni de test. Se eliminó su cadena completa: aceptación en
+`handleContentClick`, configuración del modal, dispatch API y refresh delete.
+El estado y DOM de `confirmDelete` permanecen porque los cinco archives
+realmente emitidos los siguen usando:
+
+```text
+archive-{plantel,grado,materia,unidad,planeacion}
+→ requestArchiveAction
+→ openDeleteConfirm
+→ confirmDelete
+→ submitDeleteConfirm
+→ archive service / registry / refresh
+```
+
+No se modificaron services, endpoints, registry, Archivados ni deletes de
+Biblioteca. `confirmDelete` conserva su shape, render, close, submit, busy/error
+y listeners Bootstrap; solo admite ahora las cinco rutas archive demostradas.
+
+Dashboard queda en 2274 LOC, 108 funciones y 273 referencias a
+`explorerState`; el owner Explorer queda en 1183 LOC. 9.3 no está iniciada y
+todavía debe resolver Quick → `selectUnidad`/`renderExplorerContent`, archive →
+`select*` y `pageshow → refreshExplorerAfterReturn` antes de retirar el
+fallback visual.
+
+## Fase 9 — Sesión 9.3: arquitectura sin fallback visual
+
+9.2 fue aprobada manualmente y commiteada en `7cca74e`. La evidencia real fue:
+Planeación `success 1 / error 0 / skipped 0`; Anexo `generate success`; Lista
+`created 1 / skipped 0`; Examen `11/11`, cero fallidas y un retry; Agregar Tema
+en batch existente `success 1 / skipped 0`; sin errores nuevos.
+
+La auditoría de cruces permitió el retiro completo. Las cinco llamadas de Quick
+a `renderExplorerContent()` eran únicamente un puente hacia Biblioteca y ahora
+invocan `BibliotecaRender.renderContent()`. La selección de unidad de Quick
+conserva el mismo shape técnico en `explorerState.current`, sin tree,
+breadcrumbs ni navegación visual. `loadPlanteles()` restablece ese shape
+directamente cuando desaparece el plantel actual.
+
+```text
+Dashboard
+└─ dashboard-bootstrap
+   ├─ QuickCreate
+   ├─ Biblioteca
+   │  ├─ Loader
+   │  ├─ Render
+   │  ├─ Modal render
+   │  └─ Events
+   └─ previews/downloads vigentes
+
+Jerarquía técnica preservada
+└─ planteles → grados → materias → unidades → temas
+   └─ IDs, caches, loaders y contratos backend
+```
+
+Se retiraron `legacy-explorer.js`, `legacy-hierarchy-crud.js`, sidebar, tree,
+breadcrumbs, onboarding CRUD, archive visual, modales de generación legacy,
+sessionStorage `educativo.dashboard.last-location`, refresh `pageshow`, DOM y
+CSS exclusivos. Los cinco archive actions perdieron su único emitter junto con
+el fallback; sus services, registry, localStorage y Archivados permanecen.
+
+Biblioteca ya poseía loader/reconciliation y el retorno bfcache no necesitaba
+rehidratar jerarquía visual. Por ello `pageshow → refreshExplorerAfterReturn`
+se retiró sin crear un coordinador sustituto. Los owners vigentes
+`PlaneacionGeneration`, `ExamGeneration`, `ListaCotejoGeneration`,
+`AnexoGeneration`, previews y downloads permanecen cargados.
+
+Estado preservado: caches jerárquicos, `current`, staging técnico, `progress`,
+`quickCreate`, `generating`, `examenDetalleById`, `examPreview` y
+`listaCotejoPreview`. Estado retirado: `expanded*`, search del Explorer,
+generación/modal legacy, listas/exámenes por unidad del render antiguo,
+`confirmDelete` y modal CRUD. 9.3 fue aprobada manualmente y quedó commiteada en
+`7393909`.
+
+## Fase 9 — Sesión 9.4: cierre arquitectónico formal
+
+La auditoría de cierre se ejecutó sobre `refactor-front` limpio en `7393909` y
+el backend `refactor-back` limpio en `fe25abe`, solo lectura. La búsqueda global
+confirmó cero referencias productivas a los archivos, funciones, navegación,
+refresh `pageshow`, storage y dispatch Batch retirados. Los 43 scripts de
+`dashboard.html` resuelven a archivos existentes y conservan el orden de los
+scripts clásicos.
+
+```text
+Dashboard
+└─ dashboard-bootstrap
+   ├─ QuickCreate
+   │  └─ jerarquía técnica: IDs, caches y ensure*
+   ├─ Biblioteca (UI principal obligatoria)
+   │  ├─ State / Selection / Tabs / Pending
+   │  ├─ Loader
+   │  ├─ Render / Modal Render
+   │  └─ Events
+   └─ generation + preview/download owners
+
+Compatibilidad preservada
+├─ pages/batch.html → dashboard.html
+├─ pages/dashboard_tailwind.html (URL directa)
+└─ Archivados + registry/localStorage + services
+```
+
+`dashboard.page.js` queda como soporte técnico compartido: shape físico de
+`explorerState`, caches y loaders jerárquicos, helpers de payload/actividad,
+staging y progreso de Quick, y estado de previews. No contiene tree,
+breadcrumbs, CRUD jerárquico, onboarding, archive Dashboard, generación visual
+legacy, `pageshow` Explorer ni su sessionStorage.
+
+La jerarquía técnica continúa activa y no es legacy eliminable: `planteles`,
+`gradosByPlantel`, `materiasByGrado`, `unidadesByMateria`, `temasByUnidad`,
+`current`, `loadPlanteles()` y `ensureGrados/Materias/Unidades/Temas()` sostienen
+Quick Create y sus contratos de IDs/caches. Biblioteca mantiene su estado y
+loader propios; generation y previews consumen sus owners vigentes.
+
+Fase 10 recibe únicamente consolidación de compatibilidad: el nombre residual
+`explorerState`, globals `window.*`, wrappers/aliases de Biblioteca y AppUI,
+bridges clásicos, dependencias léxicas entre scripts y revisión final del orden
+de carga. Esos elementos están activos o son compatibilidad y no se eliminan en
+Fase 9.
+
+Decisión: **Fase 9 completada; auditoría de cierre aprobada.** Fase 10 queda
+pendiente y no iniciada.
+
+## Fase 10 — Sesión 10.0: arquitectura de compatibilidad auditada
+
+El gate real de apertura fue `refactor-front` limpio en `aa56e06`, alineado con
+`origin/refactor-front`; backend `refactor-back` limpio en `fe25abe` y solo
+lectura. Los cierres reales son 9.0 `73d52b4`, 9.1 `9496303`, 9.2 `7cca74e`,
+9.3 `7393909`, 9.4 documental `b6eb40e` y cierre acumulativo F9 `aa56e06`.
+
+La arquitectura ya no tiene Explorer visual ni CRUD jerárquico, pero continúa
+siendo una aplicación de scripts clásicos. La compatibilidad final no es un
+bloque homogéneo:
+
+```text
+Dashboard técnico
+├─ explorerState: 17 propiedades top-level / 53 paths declarados
+├─ jerarquía técnica → Quick Create
+├─ progreso Quick → Loader/Render de Biblioteca
+└─ caches de preview → owners de Examen/Lista
+
+Biblioteca
+├─ state/page coordinador
+├─ BibliotecaLoader (window explícito)
+├─ BibliotecaRender (namespace léxico)
+├─ BibliotecaModalRender (namespace léxico)
+├─ BibliotecaEvents (namespace léxico)
+└─ renderBibliotecaContent (bridge window explícito)
+```
+
+`explorerState` sigue siendo un contenedor mutable realmente compartido por
+ocho archivos productivos, pero no es un store de dominio coherente. Es el
+contenedor histórico de cinco slices con owner conceptual ya identificable:
+jerarquía técnica/current IDs, Quick/staging/progress, generación Quick,
+preview de Examen y preview de Lista. Se conserva en 10.0; renombrarlo o crear
+otro store no resolvería los contratos y está fuera de alcance.
+
+La auditoría distingue 174 publicaciones explícitas `window.*` en todo el
+frontend, 147 de ellas cargadas por Dashboard, y 164 símbolos usados
+léxicamente entre archivos del stack Dashboard. De sus 42 scripts locales, 33
+consumen al menos un contrato léxico cross-file, cinco dependen solo de globals
+o namespaces explícitos y cuatro no consumen contratos internos. Existen 74
+edges léxicos archivo→archivo; 31 usan un provider que aparece después en el
+HTML y son seguros únicamente porque la ejecución se difiere hasta después de
+cargar los scripts. Por ello no se cambia el orden en 10.0 ni se propone ESM.
+
+Hallazgo de precisión: `BibliotecaRender`, `BibliotecaModalRender` y
+`BibliotecaEvents` son `const` léxicos, no propiedades de `window`.
+`BibliotecaLoader` sí se publica en `window`. Quick contiene cinco llamadas
+opcionales a `window.BibliotecaRender?.renderContent()`, pero no existe writer
+de esa propiedad; esas llamadas son no-op defensivos. El bridge real aún
+publicado es `window.renderBibliotecaContent`, con un caller Quick vigente.
+
+La superficie de compatibilidad prioritaria queda acotada a 21 wrappers
+pass-through, dos aliases directos de `AppUI`, seis familias de bridges y tres
+handlers Biblioteca sin emitter. Los 20 emitters `data-bib-action` vigentes sí
+tienen handler. La auditoría también detectó dos riesgos de duplicabilidad sin
+corregir: `BibliotecaEvents.bind()` no posee guard interno aunque el entry normal
+lo llama una vez, y los listeners `{ once: true }` del backdrop de confirmación
+pueden acumular closures si el modal se cierra por otro botón.
+
+Fase 10 se limita a dos cortes funcionales y cierre: 10.1 migra el dispatch de
+acciones Biblioteca a owners reales y retira wrappers/handlers demostrados;
+10.2 resuelve la frontera global restante (`BibliotecaLoader`, `AppUI`, render,
+`BIBLIOTECA_MODE`, Quick y `main.js`) sin tocar contratos activos; 10.3 repite
+auditoría, suite y manual completa. El mapa exhaustivo y las clasificaciones
+A–G están en [`FRONTEND_MAP.md`](FRONTEND_MAP.md) y
+[`SESSION_HANDOFF.md`](refactor/SESSION_HANDOFF.md).
+
+## Fase 10 — Sesión 10.1: actions de Biblioteca entregadas a sus owners
+
+El gate abrió sobre `refactor-front` limpio en `ec03f94`, commit real de la
+auditoría 10.0. Backend permaneció limpio y de solo lectura en
+`refactor-back`/`fe25abe`. La sesión no altera el orden de los 43 scripts ni la
+frontera de estado/globales reservada para 10.2.
+
+El dispatch vigente queda simplificado sin introducir otra capa:
+
+```text
+data-bib-action
+  → BibliotecaEvents
+    → Preview owner
+    → Download owner
+    → Delete owner
+```
+
+Doce branches activos llaman directamente a `ExamPreview`,
+`ListaCotejoPreview`, `AnexoPreview`, los cuatro Download owners y los cinco
+Delete owners. Los nombres de action, las fuentes dataset, IDs y orden del
+`switch` permanecen; los owners conservan íntegramente confirmación, pending,
+selección, render, reconcile, errores, logs y filenames.
+
+Se retiraron 15 wrappers pass-through de `biblioteca.page.js`. Dos de ellos
+(`descargarAnexoWord` y `renderBibliotecaAnexoModal`) no tenían consumer; el
+wrapper de cierre Anexo tenía un solo consumer y el mismo listener de backdrop
+ahora invoca `AnexoPreview.close()`. También se retiraron las implementaciones
+`bibGenerarAnexo` y `bibRegenerarAnexo`, junto con los branches
+`toggle-expand`, `generar-anexo` y `regenerar-anexo`, después de confirmar cero
+emitters y cero callers productivos.
+
+Quedan seis wrappers de compatibilidad: los cinco de `BibliotecaLoader`/
+Reconcile y el global `downloadExamWord`. El segundo continúa requerido por
+Bootstrap, `ExamDownload.downloadFromBiblioteca` y pruebas; todos pasan a 10.2.
+`window.biblioteca`, `window.renderBibliotecaContent`, aliases AppUI,
+`BIBLIOTECA_MODE`, Quick public API y `explorerState` permanecen sin cambios.
+
+Resultado técnico: `biblioteca.page.js` pasa de 1110 LOC/50 funciones a
+863/33; `biblioteca-events.js`, de 160 a 143 LOC; 23 branches pasan a 20,
+exactamente los mismos 20 emitters. Las publicaciones explícitas `window.*` no
+cambian; los tokens productivos `window.` bajan de 422 a 418 por retirar hojas
+sin entrada. El smoke específico valida dispatch e IDs. La implementación
+queda técnicamente PASS y pendiente de la manual 10.1 antes de commit/cierre.
+
+## Fase 10 — Sesión 10.2: frontera clásica final explícita
+
+El gate abrió limpio en `refactor-front`/`17f4ce1`, commit real de 10.1 ya
+aprobada manualmente. El backend permaneció limpio y de solo lectura en
+`refactor-back`/`fe25abe`.
+
+La frontera final conserva contratos reales y elimina únicamente intermediarios
+pasivos. Los cinco wrappers Loader/Reconcile fueron sustituidos por llamadas a
+`window.BibliotecaLoader`; los consumers de render usan el owner léxico
+`BibliotecaRender.renderContent`; los consumers de UI usan `window.AppUI`; y
+Bootstrap/ExamDownload usan `window.ExamDownload.download`. Por ello ya no se
+publican `window.renderBibliotecaContent`, `window.statusLabelFromTone`,
+`window.renderProgressPill` ni `window.downloadExamWord`.
+
+Quick sigue consumiendo la facade `window.biblioteca`, pero su contrato queda
+reducido a cinco miembros reales: `pendingBatchId`, `getConjuntos`,
+`startPlaneacionesGeneration`, `setPendingConjunto` y
+`finishPlaneacionesGeneration`. `selectConjunto` y `refresh` eran fallbacks sin
+entrada productiva. La API `window.QuickCreate` queda explícita en `open`,
+`close` y `bind`; `setPanelVisibility` y `generateFromStaging` permanecen como
+funciones privadas, no como API pública.
+
+Dashboard es el único HTML que carga Quick y Bootstrap fijaba siempre
+`BIBLIOTECA_MODE = true` antes de enlazarlo. Se retiró el flag y sus ramas false
+sin tocar el flujo vigente: jerarquía técnica, creación de IDs, staging,
+pending y reconcile siguen activos. `explorerState` conserva las mismas 17
+propiedades top-level y sus cinco slices compartidos; no se renombra ni se
+introduce otro store.
+
+`main.js` ya no mapea `planeacion.html` a `planeacionPage.init`: esa página es
+un redirect que no carga `main.js`. El redirect y sus assets permanecen fuera
+de este corte. El orden de los 43 scripts Dashboard no cambia. Tampoco se añade
+guard a `BibliotecaEvents.bind`, porque el único entry productivo lo ejecuta
+una vez. Sí se corrigió el listener del backdrop de confirmación: cerrar por
+Cancel/OK ahora retira el listener pendiente y evita que una apertura posterior
+ejecute un closure viejo.
+
+Resultado automatizado: 10/10 suites y 32/32 pruebas PASS. Los wrappers y
+aliases de compatibilidad auditados pasan de 6/2 a 0/0; globals explícitos de
+174 a 169; métodos públicos Quick de 5 a 3; facade de 7 a 5; referencias
+productivas a `BIBLIOTECA_MODE` de 25 a 0. La manual 10.2 es obligatoria y queda
+pendiente antes de abrir la auditoría formal 10.3.
+
+## Fase 10 — Sesión 10.3: cierre formal del roadmap 0–10
+
+La auditoría abre sobre `refactor-front` limpio en `da618c7`; backend
+`refactor-back`/`fe25abe` permanece limpio y de solo lectura. La manual 10.2
+confirma aplicación correcta y sin regresiones: Planeación 1/0/0; Anexo
+success; Lista 1/0; Examen 11/11 sin fallidas ni retries; segunda ronda Anexo y
+Lista success; segundo Examen 10/10 sin fallidas ni retries; deletes de Examen,
+Anexo y varios bloques success.
+
+La arquitectura final conserva deliberadamente scripts clásicos. Dashboard
+carga 43 tags (42 locales y Supabase CDN), con cero paths faltantes y `main.js`
+al final. El análisis AST encuentra 143 símbolos léxicos cross-file y 74 edges;
+32 tienen provider posterior, pero ninguno se evalúa inmediatamente en
+top-level. Todos los contratos internos tienen provider; el único provider no
+local es `supabase` desde el CDN.
+
+`explorerState` se conserva por decisión A como estado técnico compartido
+clásico. Sus 17 propiedades sostienen jerarquía/current/loading/errors, Quick,
+progreso y caches de preview. El nombre histórico no justifica otro store ni un
+rename. `window.QuickCreate` expone `open`, `close` y `bind`;
+`window.biblioteca` expone cinco miembros de coordinación real. Los 20
+`data-bib-action` tienen exactamente 20 handlers y dispatch directo a owners.
+
+Métricas finales defendibles: `dashboard.page.js` 452 LOC frente a 5690 al
+inicio de F7, 2564 al cierre F8 y 464 al cierre F9; 169 publicaciones globales
+explícitas (167 `window.*` y dos mediante parámetro `global`), 386 tokens
+`window.`, 202 refs a `explorerState`, cero wrappers/aliases redundantes del
+corte F10, 19 namespaces owner explícitos y tres namespaces internos léxicos.
+Jest pasa 10/10 suites y 32/32 pruebas; 19 JS críticos pasan `node --check`.
+
+El modelo final es:
+
+```text
+Dashboard técnico reducido
+├─ QuickCreate
+├─ Biblioteca page/state/facade
+│  ├─ BibliotecaLoader
+│  ├─ BibliotecaRender (léxico)
+│  ├─ BibliotecaModalRender (léxico)
+│  └─ BibliotecaEvents (léxico)
+├─ Generation owners
+├─ Preview/Download owners
+└─ Delete owners
+```
+
+No son blockers: contratos clásicos justificados, nombre `explorerState`,
+assets Planeación sin entry, URL directa Dashboard Tailwind, supuesto de init
+único de Events, Archivados futuro, temas huérfanos ni `public.ia_metrics`.
+Decisiones formales: **A. Fase 10 puede cerrarse** y **A. Roadmap 0–10 puede
+declararse completado**. El trabajo posterior es checkpoint/push, PR/merge,
+regresión sobre main y verificación de deploy; no se abre Fase 11.

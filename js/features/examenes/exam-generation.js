@@ -17,7 +17,7 @@
     closeBibliotecaExamModal();
     setSelectedConjunto(conjuntoId, { tab: "examenes" });
     BibliotecaExamPending.set(conjuntoId, { message: "Iniciando generacion de examen...", error: "" });
-    renderBibliotecaContent();
+    BibliotecaRender.renderContent();
 
     // Poll in background
     ;(async () => {
@@ -35,7 +35,7 @@
               message: statusRes.current_step,
               error: ""
             });
-            renderBibliotecaContent();
+            BibliotecaRender.renderContent();
           }
           if (statusRes?.status === "completed") break;
           if (statusRes?.status === "failed") {
@@ -48,7 +48,7 @@
         console.debug("[polling] examen:finished", { jobId, batchId: conjuntoId, polls });
 
         BibliotecaExamPending.delete(conjuntoId);
-        await loadAndRenderBiblioteca({
+        await window.BibliotecaLoader.load({
           silent: true,
           targetBatchId: conjuntoId,
           activeTab: "examenes"
@@ -59,7 +59,7 @@
           message: "",
           error: BIB_EXAM_GENERIC_FAILURE_MESSAGE
         });
-        renderBibliotecaContent();
+        BibliotecaRender.renderContent();
       }
     })();
   }

@@ -13,10 +13,6 @@ function run(context, relativePath) {
   return vm.runInContext(read(relativePath), context, { filename: relativePath });
 }
 
-async function flushEvents() {
-  await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
 function createHarness() {
   const dom = new JSDOM('<!doctype html><html><body><div id="dashboard-layout-root"></div></body></html>', {
     runScripts: "outside-only",
@@ -76,8 +72,6 @@ function createHarness() {
   run(context, "js/features/listas-cotejo/lista-cotejo-download.js");
   run(context, "js/features/listas-cotejo/lista-cotejo-preview.js");
   run(context, "js/pages/dashboard.page.js");
-  run(context, "js/features/dashboard/legacy-explorer.js");
-  run(context, "js/features/dashboard/legacy-hierarchy-crud.js");
   run(context, "js/features/dashboard/dashboard-bootstrap.js");
 
   return { dom, window, context, examen, lista };
@@ -98,21 +92,21 @@ describe("Resource preview/download owners and compatibility smoke", () => {
     expect(window.document.getElementById("unit-exam-preview-title").textContent).toBe("Examen Algebra");
     expect(window.document.getElementById("unit-exam-preview-body").textContent).toContain("Dos mas dos");
 
-    window.closeExamPreviewModal();
+    window.ExamPreview.close();
     expect(window.explorerState.examPreview.open).toBe(false);
-    await window.openExamPreview("exam-1");
-    expect(window.obtenerExamenDetalle).toHaveBeenCalledTimes(1);
+    await window.ExamPreview.openBiblioteca("exam-1");
+    expect(window.obtenerExamenDetalle).toHaveBeenCalledTimes(2);
 
     window.document.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(window.explorerState.examPreview.open).toBe(false);
 
-    await window.downloadExamWord("exam-1", "examen-prueba");
-    expect(window.obtenerExamenDetalle).toHaveBeenCalledTimes(1);
+    await window.ExamDownload.download("exam-1", "examen-prueba");
+    expect(window.obtenerExamenDetalle).toHaveBeenCalledTimes(2);
     expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(window.URL.revokeObjectURL).toHaveBeenCalledWith("blob:exam");
   });
 
-  test("Lista conserva Biblioteca, legacy caller, render, cierre, Escape y download", async () => {
+  test("Lista conserva Biblioteca, render, cierre, Escape y download", async () => {
     const { window, lista } = createHarness();
     await window.initDashboardPage();
 
@@ -124,16 +118,8 @@ describe("Resource preview/download owners and compatibility smoke", () => {
     expect(window.document.getElementById("lista-cotejo-preview-title").textContent).toBe("Lista Algebra");
     expect(window.document.getElementById("lista-cotejo-preview-body").textContent).toContain("Resuelve");
 
-    window.closeListaCotejoPreview();
-    window.explorerState.current = { level: "unidad", plantelId: null, gradoId: null, materiaId: null, unidadId: "unidad-1" };
-    window.explorerState.listasCotejoByUnidad["unidad-1"] = [lista];
-    const content = window.document.getElementById("explorer-content");
-    const legacyButton = window.document.createElement("button");
-    legacyButton.dataset.contentAction = "preview-lista-cotejo";
-    legacyButton.dataset.listaId = "lista-1";
-    content.appendChild(legacyButton);
-    legacyButton.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
-    await flushEvents();
+    window.ListaCotejoPreview.close();
+    await window.ListaCotejoPreview.openBiblioteca("lista-1");
     expect(window.explorerState.listaCotejoPreview.listaData.id).toBe("lista-1");
 
     window.document.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
@@ -143,34 +129,14 @@ describe("Resource preview/download owners and compatibility smoke", () => {
     expect(window.descargarListaCotejoWord).toHaveBeenCalledWith(lista, "recurso");
   });
 
-  test("los siete globals conservan firma y delegan a los owners existentes", async () => {
+  test("los owners vigentes conservan sus contratos canónicos", () => {
     const { window } = createHarness();
-    const names = [
-      "renderExamPreviewModal",
-      "openExamPreview",
-      "closeExamPreviewModal",
-      "downloadExamWord",
-      "renderListaCotejoPreviewModal",
-      "openListaCotejoPreview",
-      "closeListaCotejoPreview"
-    ];
-    names.forEach((name) => expect(typeof window[name]).toBe("function"));
-
-    window.ExamPreview.render = jest.fn(() => "exam-render");
-    window.ExamPreview.open = jest.fn(async () => "exam-open");
-    window.ExamPreview.close = jest.fn(() => "exam-close");
-    window.ExamDownload.download = jest.fn(async () => "exam-download");
-    window.ListaCotejoPreview.render = jest.fn(() => "lista-render");
-    window.ListaCotejoPreview.open = jest.fn(() => "lista-open");
-    window.ListaCotejoPreview.close = jest.fn(() => "lista-close");
-
-    expect(window.renderExamPreviewModal()).toBe("exam-render");
-    await expect(window.openExamPreview("exam-1")).resolves.toBe("exam-open");
-    expect(window.closeExamPreviewModal()).toBe("exam-close");
-    await expect(window.downloadExamWord("exam-1", "archivo")).resolves.toBe("exam-download");
-    expect(window.renderListaCotejoPreviewModal()).toBe("lista-render");
-    expect(window.openListaCotejoPreview("lista-1")).toBe("lista-open");
-    expect(window.closeListaCotejoPreview()).toBe("lista-close");
+    ["render", "openBiblioteca", "close"].forEach((name) => {
+      expect(typeof window.ExamPreview[name]).toBe("function");
+      expect(typeof window.ListaCotejoPreview[name]).toBe("function");
+    });
+    expect(typeof window.ExamDownload.download).toBe("function");
+    expect(window.downloadExamWord).toBeUndefined();
   });
 
   test("Biblioteca conserva los fallbacks de error de Examen y Lista", async () => {

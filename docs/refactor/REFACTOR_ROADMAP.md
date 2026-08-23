@@ -32,8 +32,8 @@ El backlog histórico del backend no es un plan operativo del frontend. Las deci
 | 6 | Render y eventos | Dividir `biblioteca.page.js` | Medio/alto | Completada |
 | 7 | Desacoplar dashboard | Quitar dependencias activas | Alto | Completada |
 | 8 | Aislar legacy visual | Separar explorador antiguo | Medio | Completada |
-| 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Pendiente |
-| 10 | Consolidación final | Retirar wrappers y deuda | Medio | Pendiente |
+| 9 | Eliminar legacy confirmado | Borrar código sin consumidores | Alto | Completada |
+| 10 | Consolidación final | Retirar wrappers y deuda | Medio | Completada |
 
 Los únicos estados válidos son `Pendiente`, `En progreso`, `Completada`, `Bloqueada` y `Cancelada`. No se marca una fase como completada sin evidencia de todos sus criterios de salida.
 
@@ -1206,11 +1206,18 @@ El legacy está aislado. Fase 9 no puede retirar una superficie hasta demostrar 
 
 ### Objetivo
 
-Eliminar únicamente código del explorador visual obsoleto demostrado sin consumidores.
+Eliminar únicamente legacy obsoleto demostrado sin consumidores, sin romper el
+flujo vigente ni los contratos técnicos.
 
 ### Estado
 
-**Pendiente.**
+**Completada.** 9.0 quedó commiteada en `73d52b4`; 9.1 retiró Batch, fue
+aprobada manualmente y quedó commiteada en `9496303`. 9.2 fue aprobada
+manualmente y quedó commiteada en `7cca74e`. 9.3 retiró el fallback visual
+Explorer/CRUD tras migrar los cruces vigentes; fue aprobada manualmente y quedó
+commiteada en `7393909`. 9.4 aprobó formalmente el cierre documental en
+`b6eb40e`; `aa56e06` completó la Fase 9 y coincide con
+`origin/refactor-front`. Fase 10 fue abierta por la auditoría 10.0.
 
 ### Dependencias
 
@@ -1263,6 +1270,46 @@ Búsquedas antes/después, alcance exacto eliminado, commit previo, plan de reve
 
 La aplicación debe permanecer estable sin el legacy eliminado y sin referencias residuales; de lo contrario se revierte y la fase continúa.
 
+### Sesiones propuestas después de 9.0
+
+#### 9.1 — Implementación Batch sin entry point
+
+**Completada, manual aprobada y commiteada en `9496303`.** Se retiraron `js/pages/batch.page.js`,
+`js/ui/batch.ui.js`, `css/batch.css` y el registro inalcanzable
+`batch.html → initBatchPage` de `main.js`. `pages/batch.html` quedó sin cambios
+como redirect de compatibilidad. La búsqueda posterior confirma cero referencias
+productivas a los assets o al init; el smoke textual y la suite completa pasan.
+La validación manual confirmó Dashboard/Biblioteca, bloques y ausencia de errores
+posteriores al retiro.
+
+#### 9.2 — Hojas cero-consumer y ramas sin emitter
+
+**Completada, manual aprobada y commiteada en `7cca74e`.** Se retiraron las seis funciones confirmadas,
+los helpers derivados `getActividadCierreSelectLabel`,
+`getActividadCierreSelectWidth` y `findTemaById`, y la cadena de seis acciones
+`delete-*` más `archive-batch`. Los cinco archives emitidos, `confirmDelete`,
+registry, Archivados y deletes de Biblioteca permanecen. Suite final: 9
+suites/27 pruebas. La evidencia manual acumulada cubrió Planeación, Anexo,
+Lista, Examen y Agregar Tema sin errores nuevos.
+
+#### 9.3 — Fallback visual coordinado
+
+**Completada, manual aprobada y commiteada en `7393909`.** Quick llama directamente a
+`BibliotecaRender.renderContent()` y conserva los IDs técnicos en
+`explorerState.current`. Bootstrap monta exclusivamente Biblioteca. Se retiraron
+Explorer/CRUD, archive y generación visual legacy, `pageshow`, sessionStorage,
+DOM/CSS exclusivos y sus smokes. Jerarquía técnica, owners de generación,
+previews, Biblioteca, Archivados y contratos backend permanecen.
+
+#### 9.4 — Auditoría formal de cierre
+
+**Completada; auditoría de cierre aprobada.** Se repitieron mapas de consumers,
+rutas, script order, DOM/CSS, globals, wrappers y estado técnico. La suite pasa
+8/8 suites y 24/24 pruebas; ocho JS críticos pasan `node --check`; no existen
+referencias productivas a superficies retiradas. La manual acumulada de 9.3
+confirma Dashboard/Biblioteca, generación, Agregar Tema y deletes. Fase 10
+permanece pendiente/no iniciada.
+
 ## Fase 10 — Consolidación final
 
 ### Objetivo
@@ -1271,7 +1318,16 @@ Retirar compatibilidad ya innecesaria y cerrar una Biblioteca modular con docume
 
 ### Estado
 
-**Pendiente.**
+**En progreso.** La Sesión 10.0 completó la auditoría técnica/documental de
+apertura sin modificar código productivo. El gate pasó sobre
+`refactor-front`/`aa56e06`, alineado con `origin/refactor-front`, y backend
+`refactor-back`/`fe25abe` limpio y solo lectura. 10.0 quedó commiteada en
+`ec03f94`, con manual no requerida. La Sesión 10.1 implementó el dispatch
+directo de 12 actions hacia sus owners, retiró 15 wrappers, tres handlers sin
+emitter y dos implementaciones Anexo sin entrada; fue aprobada manualmente y
+commiteada en `17f4ce1`. La Sesión 10.2 fue aprobada manualmente y commiteada
+en `da618c7`. La auditoría 10.3 aprueba el cierre de Fase 10 y del roadmap
+completo 0–10.
 
 ### Dependencias
 
@@ -1320,6 +1376,80 @@ Inventario final de globals/wrappers, pruebas, estado de repositorios, documenta
 ### Condición para avanzar
 
 No hay fase posterior: el roadmap se marca completado solo cuando todos los criterios finales tienen evidencia y los pendientes quedan fuera del refactor con propietario.
+
+### Sesiones definidas por la auditoría 10.0
+
+#### 10.1 — Dispatch de acciones de Biblioteca hacia owners reales
+
+Migrar en un único corte los consumers activos de wrappers de preview,
+download y delete a sus namespaces propietarios; retirar después esos wrappers,
+las dos hojas wrapper sin consumer y los tres handlers sin emitter junto con
+sus dos implementaciones de Anexo sin entrada. No incluye loader/reconcile,
+`BIBLIOTECA_MODE`, `explorerState`, orden de scripts, generación, payloads ni
+listeners. La búsqueda posterior debe conservar 20 emitters con 20 handlers.
+
+**Completada, manual aprobada y commiteada en `17f4ce1`.** `BibliotecaEvents` despacha preview,
+download y delete directamente a los namespaces propietarios con las mismas
+fuentes dataset e IDs. Permanecen seis wrappers: cinco Loader/Reconcile y
+`downloadExamWord`, todos reservados para 10.2. El smoke específico confirma
+20 emitters/20 handlers, owners cargados y ausencia de los wrappers page.
+
+#### 10.2 — Frontera global y contratos clásicos
+
+Resolver la compatibilidad restante solo con evidencia: wrappers de
+`BibliotecaLoader`, alias de `AppUI`, `downloadExamWord`, el bridge de render de
+Quick, branches siempre-true de `BIBLIOTECA_MODE`, miembros públicos sin
+consumer y mapping huérfano de `main.js`. `explorerState` se conserva como
+estado técnico compartido mientras sus cinco slices sigan activos; no se
+renombra, no se crea otro store y no se convierte el frontend a ESM. Los 164
+símbolos léxicos no son una orden de migración masiva: se mantienen los
+contratos útiles y solo se toca compatibilidad redundante demostrada.
+
+**Completada, manual aprobada y commiteada en `da618c7`.** Los cinco wrappers Loader/Reconcile, los
+dos aliases AppUI, el bridge `window.renderBibliotecaContent` y
+`window.downloadExamWord` fueron migrados a sus owners y retirados. Quick queda
+con tres métodos públicos y la facade Biblioteca con cinco miembros activos.
+`BIBLIOTECA_MODE` y el mapping inalcanzable de Planeación en `main.js` fueron
+retirados con sus consumers cero. `explorerState`, sus 17 propiedades y el
+orden de 43 scripts permanecen. Se corrigió únicamente el listener de backdrop
+con riesgo reproducible. Jest: 10 suites/32 pruebas PASS.
+
+#### 10.3 — Auditoría formal de cierre
+
+Repetir globals, wrappers, aliases, bridges, shape de estado, contratos
+léxicos, orden de 43 scripts, handlers/emitters, listeners, suite completa y
+matriz manual. Cerrar Fase 10 únicamente si todo contrato restante tiene owner,
+consumer y motivo documentados.
+
+**Completada y aprobada.** La auditoría reconcilia la manual 10.2, revalida
+state, globals, wrappers, aliases, bridges, namespaces, contratos léxicos,
+orden de scripts, actions, listeners, DOM/CSS, owners, redirects, suite y
+documentación. No incorpora implementación funcional.
+
+### Cierre formal de Fase 10 y roadmap 0–10
+
+| Fase | Objetivo | Estado | Resultado principal | Commit/cierre verificable |
+| ---: | --- | --- | --- | --- |
+| 0 | línea base y protección | Completada | repos/tags/matriz protegidos | tag `pre-biblioteca-modular-refactor` (`588cb15`) |
+| 1 | extracciones aisladas | Completada | preview/download owners iniciales | cierre 1.4 `fa0f3b1` |
+| 2 | acciones por dominio | Completada | acciones separadas por recurso | cierre `7414292` |
+| 3 | capa API frontend | Completada | fronteras HTTP consolidadas | cierre `ecb1785` |
+| 4 | generación y polling | Completada | cuatro generation owners | cierre `8dcba86` |
+| 5 | estado de Biblioteca | Completada | state/selection/tabs/pending con owner | cierre `23da300`; integración `b5348dd` |
+| 6 | render y eventos | Completada | Render/Modal/Events separados | documental `8ad0b0d`; funcional `295d7ed` |
+| 7 | Dashboard y Quick | Completada | Quick, Loader y Bootstrap owners | documental `7cd8726`; funcional `3a5cf94` |
+| 8 | aislamiento legacy | Completada | Explorer/CRUD aislados | `bf97b1a`/`378ac30`; merge `41f933e` |
+| 9 | eliminación legacy | Completada | Batch/Explorer/CRUD/fallback retirados | `b6eb40e`; acumulativo `aa56e06` |
+| 10 | frontera final | Completada | wrappers/aliases redundantes retirados | 10.0 `ec03f94`; 10.1 `17f4ce1`; 10.2 `da618c7`; 10.3 documental pendiente de commit |
+
+Evidencia final: manual 10.2 aprobada, Jest 10/10 suites y 32/32 pruebas,
+consumer audit sin referencias productivas retiradas, 43 scripts/0 missing y
+contratos activos con owner. Decisiones: **A. Fase 10 puede cerrarse** y
+**A. Roadmap 0–10 puede declararse completado**.
+
+No se abre Fase 11. El trabajo posterior queda fuera del roadmap: checkpoint y
+push, PR/merge a `main`, regresión final sobre el merge, verificación de deploy
+y backlog separado de features/deuda.
 
 ## Reglas de avance
 
@@ -1389,3 +1519,24 @@ protegida; actividades y jerarquía tienen consumidores compartidos;
 delete/archive cruza el sistema congelado; wrappers/globals/estado pertenecen a
 Fase 10. La auditoría de cierre confirmó estas fronteras y marca Fase 8
 completada, sin abrir Fase 9.
+
+## Actualización Fase 9 — cierre 9.4
+
+Decisión A: retiro completo del fallback posible y ejecutado. Los cruces
+vigentes se resolvieron sin mover la jerarquía técnica ni crear otro owner:
+Quick renderiza por Biblioteca, mantiene los IDs técnicos y Bootstrap deja de
+ofrecer ruta alternativa. Archive no tiene entrada en Biblioteca; su UI y
+dispatcher desaparecen con Explorer, mientras Archivados y services quedan
+congelados.
+
+Se retiraron Explorer/CRUD, sidebar, generación visual antigua, tree,
+breadcrumbs, onboarding, modal CRUD/archive, sessionStorage y `pageshow` legacy.
+Dashboard pasa de 2274 a 464 LOC; Explorer 1183→0; CRUD 234→0; CSS 2257→1841.
+La suite final queda en 8 suites/24 pruebas PASS. La manual 9.3 fue aprobada y
+el corte quedó commiteado en `7393909`.
+
+9.4 verificó consumers, rutas, script order, DOM/CSS, globals, suite y evidencia
+manual acumulada. Decisión A: **Fase 9 puede cerrarse**. Fase 10 queda pendiente
+y no iniciada; su handoff se limita a `explorerState` residual, globals,
+wrappers, aliases, bridges, contratos léxicos de scripts clásicos, orden de
+carga y compatibilidad Biblioteca/Quick/previews.

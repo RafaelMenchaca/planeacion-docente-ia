@@ -26,9 +26,14 @@ function createHarness({ data = [], error = null, session = { access_token: "tes
     if (error) throw error;
     return data;
   });
-  window.renderBibliotecaContent = jest.fn();
-  window.statusLabelFromTone = (status) => status;
+  window.__renderBibliotecaContent = jest.fn();
+  window.AppUI = { statusLabelFromTone: (status) => status };
   window.explorerState = { progress: { items: [] } };
+  vm.runInContext(`
+    const BibliotecaRender = Object.freeze({
+      renderContent: (...args) => window.__renderBibliotecaContent(...args)
+    });
+  `, context);
 
   run(context, "js/pages/biblioteca.page.js");
   run(context, "js/features/biblioteca/biblioteca-loader.js");
@@ -63,7 +68,7 @@ describe("Biblioteca loader/reconcile owner smoke", () => {
 
     expect(first.window.requireSession).toHaveBeenCalledTimes(1);
     expect(first.window.apiBibliotecaConjuntos).toHaveBeenCalledTimes(1);
-    expect(first.window.renderBibliotecaContent).toHaveBeenCalledTimes(2);
+    expect(first.window.__renderBibliotecaContent).toHaveBeenCalledTimes(2);
     expect(first.state().loading).toBe(false);
     expect(first.state().error).toBe("");
     expect(first.state().conjuntos.map((item) => item.id)).toEqual(["batch-1", "batch-2"]);
@@ -74,7 +79,7 @@ describe("Biblioteca loader/reconcile owner smoke", () => {
     await empty.window.BibliotecaLoader.load();
     expect(empty.state().conjuntos).toEqual([]);
     expect(empty.selection()).toBeNull();
-    expect(empty.window.renderBibliotecaContent).toHaveBeenCalledTimes(2);
+    expect(empty.window.__renderBibliotecaContent).toHaveBeenCalledTimes(2);
   });
 
   test("preserva selección válida, target/tab explícitos y fallback inválido", async () => {
@@ -89,7 +94,7 @@ describe("Biblioteca loader/reconcile owner smoke", () => {
     expect(valid.selection()).toBe("batch-2");
     expect(valid.activeTab("batch-2")).toBe("anexos");
     expect(valid.state().pendingBatchId).toBe("batch-2");
-    expect(valid.window.renderBibliotecaContent).toHaveBeenCalledTimes(1);
+    expect(valid.window.__renderBibliotecaContent).toHaveBeenCalledTimes(1);
 
     await valid.window.BibliotecaLoader.load({
       silent: true,
@@ -166,7 +171,7 @@ describe("Biblioteca loader/reconcile owner smoke", () => {
     });
 
     expect(finished.window.apiBibliotecaConjuntos).toHaveBeenCalledTimes(1);
-    expect(finished.window.renderBibliotecaContent).toHaveBeenCalledTimes(2);
+    expect(finished.window.__renderBibliotecaContent).toHaveBeenCalledTimes(2);
     expect(finished.state().pendingConjunto).toBeNull();
     expect(finished.state().pendingPlaneacionesByBatchId["batch-real"].error)
       .toBe("1 planeacion(es) no se pudieron generar.");
@@ -181,7 +186,7 @@ describe("Biblioteca loader/reconcile owner smoke", () => {
     expect(failed.state().loading).toBe(false);
     expect(failed.state().error).toBe("network down");
     expect(failed.window.apiBibliotecaConjuntos).toHaveBeenCalledTimes(1);
-    expect(failed.window.renderBibliotecaContent).toHaveBeenCalledTimes(2);
+    expect(failed.window.__renderBibliotecaContent).toHaveBeenCalledTimes(2);
     expect(errorLog).toHaveBeenCalledWith("[biblioteca] Error al cargar conjuntos:", expect.any(Error));
   });
 });

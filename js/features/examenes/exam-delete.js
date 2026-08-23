@@ -28,7 +28,7 @@
 
       setSelectedConjunto(safeBatchId, { tab: "examenes" });
       renderBibliotecaDetailInPlace();
-      await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "examenes" });
+      await window.BibliotecaLoader.load({ silent: true, targetBatchId: safeBatchId, activeTab: "examenes" });
     } catch (error) {
       console.error("[biblioteca] Error eliminando examen:", error);
       alert(error.message || "No se pudo eliminar el examen. Intenta nuevamente.");

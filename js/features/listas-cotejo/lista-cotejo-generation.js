@@ -15,7 +15,7 @@
       result: null,
       error:  ""
     });
-    renderBibliotecaContent();
+    BibliotecaRender.renderContent();
 
     // Generate in background
     ;(async () => {
@@ -30,7 +30,7 @@
         // Keep cards visible until real data loads (1.5s grace)
         await new Promise(r => setTimeout(r, 1500));
         BibliotecaListaPending.delete(conjuntoId);
-        await loadAndRenderBiblioteca({
+        await window.BibliotecaLoader.load({
           silent: true,
           targetBatchId: conjuntoId,
           activeTab: "listas"
@@ -43,7 +43,7 @@
           result:  null,
           error:   genError.message || "No se pudieron generar las listas de cotejo."
         });
-        renderBibliotecaContent();
+        BibliotecaRender.renderContent();
       }
     })();
   }

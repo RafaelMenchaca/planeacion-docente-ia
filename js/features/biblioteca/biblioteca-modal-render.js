@@ -601,7 +601,7 @@ function injectBibliotecaModals() {
     `;
     document.body.appendChild(div);
     document.getElementById("bib-anexo-backdrop")
-      ?.addEventListener("click", closeBibliotecaAnexoModal);
+      ?.addEventListener("click", () => window.AnexoPreview.close());
   }
 
   if (!document.getElementById("biblioteca-anexo-create-modal")) {
@@ -658,16 +658,22 @@ function showBibConfirm(title, message) {
 
     modal.classList.remove("hidden");
     document.body.classList.add("overflow-hidden");
+    const backdrop = document.getElementById("bib-confirm-backdrop");
 
     function close(result) {
+      backdrop?.removeEventListener("click", handleBackdrop);
       modal.classList.add("hidden");
       document.body.classList.remove("overflow-hidden");
       resolve(result);
     }
 
+    function handleBackdrop() {
+      close(false);
+    }
+
     document.getElementById("bib-confirm-cancel")?.addEventListener("click", () => close(false), { once: true });
     document.getElementById("bib-confirm-ok")?.addEventListener("click",     () => close(true),  { once: true });
-    document.getElementById("bib-confirm-backdrop")?.addEventListener("click", () => close(false), { once: true });
+    backdrop?.addEventListener("click", handleBackdrop, { once: true });
   });
 }
 
@@ -680,4 +686,3 @@ const BibliotecaModalRender = Object.freeze({
   showConfirm: showBibConfirm,
   inject: injectBibliotecaModals
 });
-

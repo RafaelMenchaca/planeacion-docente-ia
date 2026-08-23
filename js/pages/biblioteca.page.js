@@ -310,11 +310,6 @@ window.biblioteca = {
   get pendingBatchId() { return bibliotecaState.pendingBatchId; },
   set pendingBatchId(v) { bibliotecaState.pendingBatchId = v; },
   getConjuntos: () => Array.isArray(bibliotecaState.conjuntos) ? bibliotecaState.conjuntos : [],
-  selectConjunto: (conjuntoId, options = {}) => {
-    setSelectedConjunto(conjuntoId, { tab: options.tab || "planeaciones" });
-    updateBibliotecaSidebarActive();
-    renderBibliotecaDetailInPlace();
-  },
   startPlaneacionesGeneration: (conjuntoId, temas = []) => {
     const safeId = normalizeBibliotecaId(conjuntoId);
     if (!safeId) return;
@@ -327,7 +322,7 @@ window.biblioteca = {
       })),
       error: ""
     });
-    renderBibliotecaContent();
+    BibliotecaRender.renderContent();
   },
   setPendingConjunto: (data) => {
     const tempId = data.tempId || `tmp-${Date.now()}`;
@@ -351,8 +346,7 @@ window.biblioteca = {
     BibliotecaSelection.setSelectedConjuntoId(tempId);
     BibliotecaTabs.setActiveTab(tempId, "planeaciones");
   },
-  refresh: (options = {}) => loadAndRenderBiblioteca(options),
-  finishPlaneacionesGeneration: (result) => finishBibliotecaPlaneacionesGeneration(result)
+  finishPlaneacionesGeneration: (result) => window.BibliotecaLoader.finishPlaneacionesGeneration(result)
 };
 
 // ---- HELPERS ----
@@ -477,29 +471,6 @@ function getSelectedConjunto() {
   return findConjuntoById(BibliotecaSelection.getSelectedConjuntoId());
 }
 
-// Wrappers de compatibilidad para generadores, deletes, eventos e init que se
-// cargan como scripts clásicos. La implementación canónica vive en el owner de
-// loader/reconcile y estas firmas se conservan hasta migrar sus consumidores.
-function normalizeGeneratedPlaneaciones(result) {
-  return window.BibliotecaLoader.normalizeGeneratedPlaneaciones(result);
-}
-
-function applyOptimisticPlaneacionesToConjunto(batchId, planeaciones) {
-  return window.BibliotecaLoader.applyOptimisticPlaneacionesToConjunto(batchId, planeaciones);
-}
-
-function applyGenerationResultToPendingItems(batchId, result) {
-  return window.BibliotecaLoader.applyGenerationResultToPendingItems(batchId, result);
-}
-
-function finishBibliotecaPlaneacionesGeneration(result) {
-  return window.BibliotecaLoader.finishPlaneacionesGeneration(result);
-}
-
-function loadAndRenderBiblioteca(options = {}) {
-  return window.BibliotecaLoader.load(options);
-}
-
 // ---- ANEXOS CREATE MODAL ----
 
 function openBibliotecaAnexoCreateModal(conjunto) {
@@ -573,212 +544,6 @@ async function submitBibliotecaAnexoCreateModal() {
     BibliotecaAnexoModalState.setError(error.message || "No se pudieron generar los anexos.");
     renderBibliotecaAnexoCreateModal();
   }
-}
-
-// ---- ANEXOS ACTIONS ----
-
-async function bibGenerarAnexo(planeacionId, conjuntoId) {
-  const safePlanId  = normalizeBibliotecaId(planeacionId);
-  const safeBatchId = normalizeBibliotecaId(conjuntoId);
-  if (!safePlanId || !safeBatchId) return;
-
-  // Obtener info de la planeación para la card temporal
-  const conjunto = findConjuntoById(safeBatchId);
-  const plan = (Array.isArray(conjunto?.planeaciones) ? conjunto.planeaciones : [])
-    .find((p) => normalizeBibliotecaId(p.id) === safePlanId);
-
-  if (!BibliotecaAnexosPending.getBatch(safeBatchId)) {
-    BibliotecaAnexosPending.setBatch(safeBatchId, {});
-  }
-  BibliotecaAnexosPending.setItem(safeBatchId, safePlanId, {
-    titulo:  plan?.tema || plan?.custom_title || "Sin titulo",
-    materia: plan?.materia || null,
-    nivel:   plan?.nivel   || null,
-    status:  "generating",
-    errorMessage: ""
-  });
-  setSelectedConjunto(safeBatchId, { tab: "anexos" });
-  renderBibliotecaDetailInPlace();
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    const res = await apiGenerarAnexo(safePlanId, session.access_token);
-
-    // Update optimista
-    const conjuntoObj = bibliotecaState.conjuntos.find(
-      (c) => normalizeBibliotecaId(c.id) === safeBatchId
-    );
-    if (conjuntoObj) {
-      if (!Array.isArray(conjuntoObj.anexos)) conjuntoObj.anexos = [];
-      const item = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
-      conjuntoObj.anexos.push({
-        id:           res?.anexo_id || `tmp-${safePlanId}`,
-        planeacion_id: safePlanId,
-        titulo:        item?.titulo  || "Anexo",
-        materia:       item?.materia || null,
-        nivel:         item?.nivel   || null,
-        status:        "generated",
-        created_at:    new Date().toISOString()
-      });
-      conjuntoObj.total_anexos = conjuntoObj.anexos.length;
-    }
-
-    if (BibliotecaAnexosPending.getBatch(safeBatchId)) {
-      BibliotecaAnexosPending.deleteItem(safeBatchId, safePlanId);
-      if (Object.keys(BibliotecaAnexosPending.getBatch(safeBatchId)).length === 0) {
-        BibliotecaAnexosPending.deleteBatch(safeBatchId);
-      }
-    }
-
-    renderBibliotecaDetailInPlace();
-    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
-  } catch (error) {
-    console.error("[biblioteca] Error generando anexo:", error);
-    const pendingItem = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
-    if (pendingItem) {
-      pendingItem.status       = "error";
-      pendingItem.errorMessage = error.message || "No se pudo generar el anexo.";
-    }
-    renderBibliotecaDetailInPlace();
-  }
-}
-
-async function bibRegenerarAnexo(anexoId, conjuntoId, planeacionId) {
-  const safeAnexoId  = normalizeBibliotecaId(anexoId);
-  const safeBatchId  = normalizeBibliotecaId(conjuntoId);
-  const safePlanId   = normalizeBibliotecaId(planeacionId);
-  if (!safeAnexoId || !safeBatchId) return;
-
-  if (!BibliotecaAnexosPending.getBatch(safeBatchId)) {
-    BibliotecaAnexosPending.setBatch(safeBatchId, {});
-  }
-  BibliotecaAnexosPending.setItem(safeBatchId, safePlanId, {
-    titulo:  "Regenerando...",
-    materia: null,
-    nivel:   null,
-    status:  "generating",
-    errorMessage: ""
-  });
-  setSelectedConjunto(safeBatchId, { tab: "anexos" });
-  renderBibliotecaDetailInPlace();
-
-  try {
-    const session = await window.requireSession();
-    if (!session) return;
-
-    await apiRegenerarAnexo(safeAnexoId, session.access_token);
-
-    if (BibliotecaAnexosPending.getBatch(safeBatchId)) {
-      BibliotecaAnexosPending.deleteItem(safeBatchId, safePlanId);
-      if (Object.keys(BibliotecaAnexosPending.getBatch(safeBatchId)).length === 0) {
-        BibliotecaAnexosPending.deleteBatch(safeBatchId);
-      }
-    }
-    await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
-  } catch (error) {
-    console.error("[biblioteca] Error regenerando anexo:", error);
-    const pendingItem = BibliotecaAnexosPending.getItem(safeBatchId, safePlanId);
-    if (pendingItem) {
-      pendingItem.status       = "error";
-      pendingItem.errorMessage = error.message || "No se pudo regenerar el anexo.";
-    }
-    renderBibliotecaDetailInPlace();
-  }
-}
-
-// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
-// Motivo: mantener el handler data-bib-action="descargar-anexo" sin cambiar su contrato.
-// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
-// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
-// Fase prevista de retiro: Fase 10.
-async function bibDescargarAnexo(anexoId) {
-  return window.AnexoDownload.downloadBiblioteca(anexoId);
-}
-
-// Compatibilidad temporal: conserva la firma local usada por la card y el preview.
-// Motivo: mantener el exportador actual mientras los consumidores migran al módulo canónico.
-// Consumidores actuales: bibDescargarAnexo y botón del preview de Biblioteca.
-// Condición para retirarlo: migrar ambos consumidores y confirmar búsqueda global sin referencias.
-// Fase prevista de retiro: Fase 10.
-function descargarAnexoWord(anexo, filenameOverride) {
-  return window.AnexoDownload.download(anexo, filenameOverride);
-}
-
-// ---- ANEXO PREVIEW MODAL ----
-
-// Compatibilidad temporal: conserva la apertura desde cards de Biblioteca.
-// Motivo: mantener el handler data-bib-action="ver-anexo" sin cambiar su contrato.
-// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
-// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
-// Fase prevista de retiro: Fase 10.
-async function openBibliotecaAnexoPreview(anexoId) {
-  return window.AnexoPreview.open(anexoId);
-}
-
-// Compatibilidad temporal: conserva el cierre del modal dinámico existente.
-// Motivo: mantener backdrop y botones de cierre sin cambiar su contrato.
-// Consumidores actuales: modal dinámico de Biblioteca y render del preview.
-// Condición para retirarlo: migrar listeners y confirmar búsqueda global sin consumidores.
-// Fase prevista de retiro: Fase 10.
-function closeBibliotecaAnexoModal() {
-  return window.AnexoPreview.close();
-}
-
-// Compatibilidad temporal: conserva el renderer local usado por la apertura.
-// Motivo: mantener la firma durante la extracción literal del preview.
-// Consumidores actuales: openBibliotecaAnexoPreview y compatibilidad local.
-// Condición para retirarlo: migrar consumidores y confirmar búsqueda global sin referencias.
-// Fase prevista de retiro: Fase 10.
-function renderBibliotecaAnexoModal(anexo) {
-  return window.AnexoPreview.render(anexo);
-}
-
-// ---- DOWNLOAD HELPERS ----
-
-// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
-// Motivo: mantener el handler data-bib-action="descargar-planeacion" sin cambiar su contrato.
-// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
-// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
-// Fase prevista de retiro: Fase 10.
-async function bibDescargarPlaneacion(planeacionId) {
-  return window.PlaneacionDownload.downloadFromBiblioteca(planeacionId);
-}
-
-// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
-// Motivo: compatibilidad con el handler actual de Biblioteca.
-// Consumidor: data-bib-action="descargar-examen".
-// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
-async function bibDescargarExamen(examenId) {
-  return window.ExamDownload.downloadFromBiblioteca(examenId);
-}
-
-// Compatibilidad temporal: conserva la descarga desde cards de Biblioteca.
-// Motivo: mantener el handler data-bib-action="descargar-lista" sin cambiar su contrato.
-// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
-// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
-// Fase prevista de retiro: Fase 10.
-async function bibDescargarLista(listaId) {
-  return window.ListaCotejoDownload.downloadBiblioteca(listaId);
-}
-
-// Compatibilidad temporal: conserva la apertura local de Biblioteca durante la extracción.
-// Motivo: mantener el handler data-bib-action="ver-examen" sin cambiar su contrato.
-// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
-// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
-// Fase prevista de retiro: Fase 10.
-async function openBibliotecaExamenPreview(examenId) {
-  return window.ExamPreview.openBiblioteca(examenId);
-}
-
-// Compatibilidad temporal: conserva la apertura local de Biblioteca durante la extracción.
-// Motivo: mantener el handler data-bib-action="ver-lista" sin cambiar su contrato.
-// Consumidores actuales: onBibliotecaClick y cards activas de Biblioteca.
-// Condición para retirarlo: migrar el handler y confirmar búsqueda global sin consumidores.
-// Fase prevista de retiro: Fase 10.
-async function openBibliotecaListaPreview(listaId) {
-  return window.ListaCotejoPreview.openBiblioteca(listaId);
 }
 
 // ---- BIBLIOTECA EXAM GENERATION MODAL ----
@@ -1056,47 +821,6 @@ async function submitBibliotecaAgregarModal() {
   });
 }
 
-// ---- DELETE ACTIONS ----
-
-// Motivo: compatibilidad con el handler actual de Biblioteca.
-// Consumidor: data-bib-action="eliminar-bloque".
-// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
-async function bibEliminarBloque(conjuntoId) {
-  return window.BibliotecaBlockDelete.deleteFromBiblioteca(conjuntoId);
-}
-
-// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
-// Motivo: compatibilidad con el handler actual de Biblioteca.
-// Consumidor: data-bib-action="eliminar-planeacion".
-// Retiro: Fase 10, tras migrar el handler y confirmar búsqueda global limpia.
-async function bibEliminarPlaneacion(planeacionId, conjuntoId) {
-  return window.PlaneacionDelete.deleteFromBiblioteca(planeacionId, conjuntoId);
-}
-
-// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
-// Motivo: compatibilidad con el handler actual de Biblioteca.
-// Consumidor: data-bib-action="eliminar-examen".
-// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
-async function bibEliminarExamen(examenId, conjuntoId) {
-  return window.ExamDelete.deleteFromBiblioteca(examenId, conjuntoId);
-}
-
-// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
-// Motivo: compatibilidad con el handler actual de Biblioteca.
-// Consumidor: data-bib-action="eliminar-lista".
-// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
-async function bibEliminarLista(listaId, conjuntoId) {
-  return window.ListaCotejoDelete.deleteFromBiblioteca(listaId, conjuntoId);
-}
-
-// Compatibilidad temporal: conserva la eliminación desde cards de Biblioteca.
-// Motivo: compatibilidad con el handler actual de Biblioteca.
-// Consumidor: data-bib-action="eliminar-anexo".
-// Retiro: Fase 10, después de migrar el handler y confirmar búsqueda global limpia.
-async function bibEliminarAnexo(anexoId, conjuntoId) {
-  return window.AnexoDelete.deleteFromBiblioteca(anexoId, conjuntoId);
-}
-
 // ---- INIT ----
 
 async function initBiblioteca() {
@@ -1104,15 +828,7 @@ async function initBiblioteca() {
 
   BibliotecaEvents.bind();
 
-  // Hide path bar / sidebar for biblioteca layout
-  const pathBar = document.getElementById("explorer-path-bar");
-  const sidebar  = document.getElementById("dashboard-sidebar-slot");
-  const grid     = document.getElementById("explorer-workspace-grid");
-  if (pathBar) pathBar.style.display = "none";
-  if (sidebar)  sidebar.classList.add("hidden");
-  if (grid)     grid.style.display = "block";
-
-  await loadAndRenderBiblioteca();
+  await window.BibliotecaLoader.load();
 }
 
 window.initBiblioteca = initBiblioteca;

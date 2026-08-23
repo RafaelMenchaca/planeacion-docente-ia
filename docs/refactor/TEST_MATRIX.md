@@ -1917,3 +1917,377 @@ cierre y permanece fuera de alcance.
 
 Decisión: Fase 8 completada; Sesión 8.4 y auditoría de cierre aprobadas. Fase 9
 permanece pendiente/no iniciada.
+
+## Fase 9 — Sesión 9.0: auditoría de apertura
+
+9.0 no modifica código, HTML ni CSS y no requiere prueba manual. La evidencia
+estática define qué pruebas deben acompañar cada eliminación futura.
+
+| Revisión | Evidencia 9.0 | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front`/`41f933e`, limpio al abrir | PASS |
+| Cierre Fase 8 | `bf97b1a`, `378ac30`, merge `41f933e` | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio, solo lectura | PASS |
+| Ruta vigente | script order garantiza `initBiblioteca`; init retorna antes de hydrate | PASS |
+| Ruta alternativa | ningún HTML carga Bootstrap sin Biblioteca; fallback solo en smokes/asset failure | confirmado |
+| Explorer/CRUD | consumers cross-script listados; no eliminables como bloque todavía | protegido |
+| Jerarquía técnica | cuatro loaders y caches tienen consumers Quick/legacy | protegido |
+| Cero consumer | seis funciones sin JS/HTML/data/global/callback/test | confirmado |
+| Actions | 34 emitidas con handler; 7 handlers sin emitter; 0 emitters sin handler | confirmado |
+| Batch | redirect ejecutable; assets antiguos sin tag HTML | candidato 9.1 |
+| Tailwind | sin enlaces entrantes, pero ejecutable por URL directa | requiere decisión |
+| DOM/CSS | 57 hooks legacy; selectores compartidos separados de exclusivos | clasificado, intacto |
+| Session/pageshow | key con reader/writer; listener activo con requests/rerender | no retirar aislado |
+| Protegidos | Biblioteca, Quick, Detalle, previews, generación, Archivados y backend | sin cambios |
+| Jest acumulativo | `npm test -- --runInBand`: 7 suites/22 pruebas | PASS |
+| Diff | `git diff --check`; solo cinco documentos autorizados | PASS |
+
+### Matriz futura 9.1 — Batch sin entry point
+
+| Caso | Verificación |
+| --- | --- |
+| Redirect | abrir `batch.html?batch_id=ficticio` redirige a `dashboard.html` |
+| Scripts | ningún HTML ni JS productivo referencia assets Batch retirados o `initBatchPage` |
+| Dashboard | Biblioteca carga normalmente desde URL directa y tras redirect |
+| Detalle | cards vigentes conservan `detalle.html?id=` |
+| Suite | tests existentes completos; smoke estático del redirect si se incorpora |
+| Consola/red | sin 404 de assets, global undefined o request Batch inesperada |
+
+Los links históricos que apuntan a `batch.html` pueden mantenerse porque el
+redirect es precisamente el contrato conservado. No se prueba la UI Batch
+retirada.
+
+### Matriz futura 9.2 — hojas y handlers sin emitter
+
+| Caso | Verificación |
+| --- | --- |
+| Búsqueda posterior | seis nombres cero-consumer ausentes y sin referencias rotas |
+| Dispatcher | cinco acciones archive emitidas siguen atendidas |
+| Delete vigente | deletes de Biblioteca por sus feature owners siguen funcionando |
+| Confirmación | modal archive conserva open/cancel/submit/error/cleanup |
+| Archivados | page/registry/restore/delete sin cambio |
+| Suite | adaptar solo tests que modelaban deliberadamente la rama retirada |
+
+### Matriz futura 9.3 — fallback visual coordinado
+
+| Caso | Verificación |
+| --- | --- |
+| Entrada | Dashboard monta exclusivamente Biblioteca sin scripts Explorer/CRUD |
+| Quick | crear en conjunto existente y nuevo; loaders/IDs intactos |
+| Agregar Tema | modal vigente, actividades, SSE, pending y refetch |
+| Detalle/back | navegar a Detalle y volver sin requests/render legacy |
+| Preview/download | Examen y Lista abren/cierran/descargan con owners vigentes |
+| Generación | Planeación, Anexo, Lista y Examen mantienen contratos |
+| Deletes | recursos y bloque de Biblioteca conservan comportamiento |
+| Reload | no tree, breadcrumbs, session location ni `pageshow` legacy |
+| Tests legacy | retirar smokes Explorer/CRUD si ya no representan producción; sustituir por smoke Biblioteca-only |
+| Consola/red | cero ReferenceError, listener/render/request duplicado o 404 |
+
+### Plan histórico de cierre 9.4 (ejecutado más abajo)
+
+El plan exigía repetir búsqueda global, rutas, scripts, DOM/CSS, globals, suite
+completa y manual acumulada antes de abrir Fase 10. La evidencia ejecutada se
+registra en la sección 9.4 al final del documento.
+
+## Fase 9 — Sesión 9.1: compatibilidad Batch
+
+9.1 retiró únicamente la implementación Batch sin entry point. Al entregar el
+corte, la validación manual permanecía pendiente; su aprobación real se registra
+más abajo. Los resultados siguientes son la evidencia técnica de esa entrega.
+
+| Verificación técnica | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`73d52b4`, limpio al abrir | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio y solo lectura | PASS |
+| Baseline Jest | 7 suites/22 pruebas | PASS |
+| Redirect | meta refresh, `location.replace` y `noscript` a `dashboard.html` | PASS estático |
+| HTML | Batch no carga main ni ninguno de los tres assets retirados | PASS |
+| Assets | page JS, UI JS y CSS ya no existen | PASS |
+| Main | cero dispatch/mapping a `initBatchPage` | PASS |
+| Referencias | cero referencias productivas a assets/init retirados | PASS |
+| Sintaxis | `node --check` en `js/main.js` y smoke | PASS |
+| Smoke específico | 1 suite/2 pruebas | PASS |
+| Jest final | 8 suites/24 pruebas | PASS |
+| Scope | Batch redirect y dominios protegidos sin diff | PASS |
+
+### Manual 9.1 aprobada
+
+La evidencia real aprobada confirmó que Dashboard/Biblioteca y sus bloques
+cargaron correctamente y que no aparecieron errores después del retiro Batch.
+No se atribuyen a 9.1 pruebas manuales más específicas que las informadas. El
+redirect y ausencia de assets/init quedan cubiertos por el smoke automatizado.
+
+La UI Batch eliminada no se prueba. Las seis funciones cero-consumer, siete
+handlers sin emitter y fallback visual pertenecen a 9.2/9.3 y permanecen
+intactos.
+
+## Fase 9 — Sesión 9.2: cero-consumer y actions sin emitter
+
+9.1 quedó aprobada manualmente y commiteada en `9496303`. 9.2 fue aprobada
+manualmente y commiteada en `7cca74e`; la evidencia acumulada cubrió Planeación,
+Anexo, Lista, Examen y Agregar Tema sin errores nuevos.
+
+| Verificación técnica | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`9496303`, limpio al abrir | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio/solo lectura | PASS |
+| Baseline | 8 suites/24 pruebas | PASS |
+| Grupo A | seis candidatas con solo definición | ZERO_CONSUMER |
+| Hojas derivadas | tres helpers quedan sin caller y se revalidan | ZERO_CONSUMER |
+| Grupo B emitters | siete acciones: cero productivo/test/dinámico | confirmado |
+| Post-search | nueve hojas y siete actions: cero producción | PASS |
+| Archive vigente | cinco emitters + config + submit + refresh | PASS source/smoke |
+| `confirmDelete` | shape/render/open/close/submit/listeners intactos | PASS |
+| Biblioteca delete | cinco emitters y handlers vigentes | PASS source/smoke |
+| Sintaxis | Dashboard, Explorer y smoke | PASS |
+| Smoke específico | 1 suite/3 pruebas | PASS |
+| Jest final | 9 suites/27 pruebas | PASS |
+| Scope | solo Dashboard, Explorer, smoke y cinco docs | PASS |
+
+### Manual 9.2 aprobada
+
+| Caso | Evidencia esperada | Estado |
+| --- | --- | --- |
+| Planeación | success 1 / error 0 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen | 11/11 preguntas, 0 fallidas, 1 retry | Aprobada |
+| Agregar Tema | batch existente; success 1 / skipped 0 | Aprobada |
+| Consola/red | sin errores nuevos | Aprobada |
+
+9.2 quedó cerrada y habilitó la apertura de 9.3.
+
+## Fase 9 — Sesión 9.3: Dashboard sin fallback visual
+
+| Verificación técnica | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front`/`7cca74e`, limpio al abrir | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio/solo lectura | PASS |
+| Baseline | 9 suites/27 pruebas | PASS |
+| Quick render | 5 cruces migrados a `BibliotecaRender.renderContent` | PASS |
+| Quick selección | mismo shape `current`; cero `selectUnidad` | PASS |
+| Dashboard entry | Bootstrap siempre inicializa Biblioteca | PASS |
+| Explorer/CRUD | archivos y tags ausentes | PASS |
+| `pageshow`/storage | listener y key legacy ausentes | PASS |
+| Archive visual | 0 emitter/handler Dashboard; services/Archivados sin cambio | PASS |
+| DOM/CSS | 53 IDs y 59 reglas exclusivas retiradas | PASS |
+| Owners vigentes | generation, previews, downloads y Biblioteca cargados | PASS |
+| Batch | redirect a Dashboard intacto | PASS |
+| Consumer audit | cero nombres del fallback en producción | PASS |
+| Sintaxis | todos los JS productivos modificados | PASS |
+| Smoke nuevo | 1 suite/4 pruebas | PASS |
+| Jest final | 8 suites/24 pruebas | PASS |
+
+Se retiraron `legacy-explorer.smoke.test.js` (3 pruebas) y
+`legacy-hierarchy-crud.smoke.test.js` (3 pruebas) porque modelaban una UI
+deliberadamente eliminada. `dashboard-no-legacy-fallback.smoke.test.js` cubre
+entrada Biblioteca-only, Quick sin Explorer, DOM/actions/storage ausentes,
+owners vigentes y redirect Batch. Los tests de Quick, Bootstrap y previews se
+actualizaron para invocar sus owners reales.
+
+### Manual 9.3 aprobada
+
+| Caso | Evidencia real | Estado |
+| --- | --- | --- |
+| Dashboard/Biblioteca | carga correcta; bloques donde deben; sin problemas posteriores | Aprobada |
+| Planeación nueva | success 1 / error 0 / skipped 0 | Aprobada |
+| Agregar Tema | batch reutilizado; success 1 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen | 11/11; 0 fallidas; 1 retry | Aprobada |
+| Deletes | Examen, Lista, Anexo, Planeación y Batch success | Aprobada |
+
+Archive legacy no se activó artificialmente. `public.ia_metrics` continúa como
+issue externo, preexistente, no bloqueante y fuera de F9.
+
+## Fase 9 — Sesión 9.4: auditoría formal de cierre
+
+| Verificación | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front` limpio en `7393909` | PASS |
+| Backend | `refactor-back` limpio en `fe25abe`, solo lectura | PASS |
+| Commits 9.0–9.3 | `73d52b4`, `9496303`, `7cca74e`, `7393909` | reconciliados |
+| Consumer audit | cero referencias productivas a Explorer/CRUD/Batch/init retirados | PASS |
+| Bootstrap | Biblioteca obligatoria; cero fallback/hydrate visual | PASS |
+| Quick | cero Explorer/select visual; IDs/caches/loaders preservados | PASS |
+| Jerarquía técnica | state, `loadPlanteles` y cuatro `ensure*` con consumers | PASS |
+| Scripts | 43 tags; cero rutas locales faltantes; orden clásico válido | PASS |
+| DOM | 51 IDs vigentes; cero hooks exclusivamente legacy | PASS |
+| CSS | 1841 LOC/235 reglas auditadas; reglas restantes con owner o compat | PASS |
+| Actions | 20 emitters Biblioteca con handler; cero emitter huérfano | PASS |
+| Batch | redirect intacto; smoke PASS; assets/init ausentes | PASS |
+| Generation/previews | owners cargados y con consumers | PASS |
+| `node --check` | 8 JS críticos | PASS |
+| Jest | 8 suites / 24 pruebas | PASS |
+| Scope | solo cinco documentos; código productivo/backend sin cambios | PASS |
+
+Tres branches de Biblioteca sin emitter (`toggle-expand`, `generar-anexo`,
+`regenerar-anexo`) quedan clasificadas como compatibilidad para Fase 10; no son
+actions ni emitters del fallback eliminado. Decisión de auditoría:
+**A. Fase 9 puede cerrarse.**
+
+## Fase 10 — Sesión 10.0: auditoría de apertura
+
+10.0 no modifica JavaScript, HTML, CSS ni backend y no requiere manual. La
+evidencia manual acumulada de 9.3/9.4 permanece como baseline aprobado.
+
+| Verificación | Evidencia real 10.0 | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front`/`aa56e06`, limpio e igual a origin | PASS |
+| Cierre F9 | 9.0 `73d52b4`; 9.1 `9496303`; 9.2 `7cca74e`; 9.3 `7393909`; 9.4 `b6eb40e`; final `aa56e06` | reconciliado |
+| Backend | `refactor-back`/`fe25abe`, limpio, solo lectura | PASS |
+| Dashboard | 464 LOC/32 funciones; Explorer/CRUD ausentes | PASS |
+| `explorerState` | 17 top-level, 53 paths, 207 refs productivas | inventariado |
+| Globals | 174 publicaciones repo / 147 Dashboard | inventariado |
+| Wrappers/aliases/bridges | 21 / 2 / 6 familias | inventariado |
+| Lexical contracts | 164 símbolos / 74 edges / 31 late-provider | inventariado |
+| Scripts | 43 tags, 42 locales + CDN, 0 rutas locales faltantes | PASS |
+| Actions | 20 emitters con handler; 3 handlers sin emitter; 0 emitters sin handler | confirmado |
+| Listeners | 102 sites repo / 72 Dashboard; dos riesgos de duplicabilidad documentados | auditado |
+| Inline handlers | 0 `onclick`, `onchange`, `onsubmit` | PASS |
+| Hooks históricos | 0 `pageshow`, 0 `popstate` | PASS |
+| Jest | `npm test -- --runInBand`: 8 suites/24 pruebas | PASS |
+| Manual 10.0 | auditoría sin cambios funcionales | no requerida |
+| Scope | solo cinco documentos autorizados | PASS sujeto a diff final |
+
+### Matriz futura 10.1 — dispatch Biblioteca hacia owners
+
+| Caso | Verificación obligatoria |
+| --- | --- |
+| Actions | 20 emitters / 20 handlers; cero `toggle-expand`, `generar-anexo`, `regenerar-anexo` |
+| Preview | Examen, Lista y Anexo abren/cierran una vez desde cards |
+| Download | Planeación, Examen, Lista y Anexo descargan desde cards/previews |
+| Delete | bloque y cuatro recursos conservan confirmación, request y refresh |
+| Retry | error Biblioteca vuelve a cargar mediante Loader real |
+| Consumer audit | 15 wrappers action ausentes y namespaces owners con callers |
+| Scope | Loader/Reconcile, Mode, state, order y listeners sin cambio |
+| Suite/manual | Jest completo + checklist AC |
+
+### Matriz futura 10.2 — frontera global y clásica
+
+| Caso | Verificación obligatoria |
+| --- | --- |
+| Quick/Biblioteca | progreso visible durante conjunto nuevo/existente; sin calls no-op a namespace inexistente |
+| Loader | generation/delete/retry/init usan owner explícito; cero wrappers retirados |
+| AppUI | status/progress usan namespace; aliases retirados solo con búsqueda cero |
+| Mode | Quick conserva exclusivamente el flujo Biblioteca ya aprobado |
+| Main | redirects Batch/Planeación intactos; mappings alcanzables coherentes |
+| State | 17 propiedades auditadas preservadas o cambio justificado sin store nuevo |
+| Scripts | 43 tags o delta explícito; 0 asset faltante/ReferenceError |
+| Listeners | un init/un click/una acción; sin duplicados nuevos |
+| Suite/manual | Jest completo + Dashboard, Quick, Agregar Tema, Detalle/back, preview/download, generación, delete, reload y consola |
+
+### Cierre futuro 10.3
+
+Repetir gate, hashes, globals, wrappers, aliases, bridges, namespaces,
+`explorerState`, contratos léxicos, script order, handlers/emitters, listeners,
+suite y manual acumulada. Fase 10 solo puede cerrarse cuando todo contrato
+restante tenga owner, consumer y motivo documentado.
+
+## Fase 10 — Sesión 10.1: actions hacia owners
+
+### Validación técnica ejecutada
+
+| Caso | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front` limpio en `ec03f94`; commit real 10.0 | PASS |
+| Backend | `refactor-back`/`fe25abe`, limpio y solo lectura | PASS |
+| Baseline Jest | 8 suites/24 pruebas | PASS |
+| Emitters/handlers | 20 valores emitidos / 20 branches | PASS |
+| Zero-emitter | tres branches y dos implementaciones Anexo ausentes | PASS |
+| Preview dispatch | Examen, Lista y Anexo llaman owner directo con mismo ID | PASS smoke |
+| Download dispatch | cuatro resources llaman owner directo con mismo ID | PASS smoke |
+| Delete dispatch | cinco owners reciben mismos resource/batch IDs | PASS smoke |
+| Wrappers page | 15 definiciones ausentes; cero caller residual | PASS |
+| Owners activos | doce assets siguen cargados por Dashboard | PASS |
+| Compatibilidad preservada | cinco wrappers Loader + `downloadExamWord` | PASS |
+| Sintaxis | tres JS productivos + smoke | PASS |
+| Smoke nuevo | 1 suite/3 pruebas | PASS |
+| Jest final | 9 suites/27 pruebas, 0 snapshots | PASS |
+| Scope | state, Quick, Loader, Mode, main, order y backend sin cambio | PASS |
+
+### Manual 10.1 aprobada
+
+| Área | Pasos | Estado |
+| --- | --- | --- |
+| Dashboard/Biblioteca | carga, bloques, tabs, búsqueda, reload | Aprobada |
+| Quick Create | abrir/cerrar, crear bloque, Agregar Tema | Aprobada |
+| Preview/download/detalle | flujos normales disponibles | Aprobada |
+| Delete | bloque success | Aprobada |
+| Planeación | success 1 / error 0 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen/consola | 11/11, 0 fallidas, 2 retries, sin errores nuevos | Aprobada |
+
+El error conocido de `public.ia_metrics` permanece fuera de alcance y no
+bloquea. 10.1 quedó commiteada en `17f4ce1` y habilitó 10.2.
+
+## Fase 10 — Sesión 10.2: frontera final de compatibilidad
+
+### Validación automatizada
+
+| Caso | Evidencia | Resultado |
+| --- | --- | --- |
+| Gate | `refactor-front` limpio en `17f4ce1`; backend solo lectura | PASS |
+| Baseline | 9 suites/27 pruebas | PASS |
+| Loader/Reconcile | cinco wrappers ausentes; consumers usan owner | PASS |
+| Render/AppUI/Exam | bridge, dos aliases y download wrapper ausentes | PASS |
+| Quick/facade | 3 métodos públicos / 5 miembros reales | PASS |
+| Mode | 0 refs productivas; flujo Biblioteca preservado | PASS |
+| Main | mapping Planeación ausente; redirect intacto | PASS |
+| Actions | 20 emitters/20 handlers y owners cargados | PASS |
+| Estado | 17 propiedades `explorerState`, shape intacto | PASS |
+| Scripts/listeners | 43 scripts; 102 sites; backdrop cleanup cubierto | PASS |
+| Smoke final | 1 suite/5 pruebas | PASS |
+| Jest final | 10 suites/32 pruebas | PASS |
+| Sintaxis | todo JS modificado | PASS |
+
+### Manual 10.2 aprobada
+
+| Área | Pasos | Estado |
+| --- | --- | --- |
+| Aplicación | funcionando correctamente después del cleanup; sin regresiones detectadas | Aprobada |
+| Planeación | success 1 / error 0 / skipped 0 | Aprobada |
+| Anexo | generate success | Aprobada |
+| Lista | created 1 / skipped 0 | Aprobada |
+| Examen 1 | 11/11 / 0 fallidas / 0 retries | Aprobada |
+| Segunda ronda | Anexo success / Lista success | Aprobada |
+| Examen 2 | 10/10 / 0 fallidas / 0 retries | Aprobada |
+| Deletes | Examen success / Anexo success / varios bloques success | Aprobada |
+
+No se atribuyen a 10.2 manuales adicionales a las informadas. El issue
+`public.ia_metrics` sigue siendo conocido, externo y no bloqueante. Esta
+evidencia habilitó la auditoría 10.3.
+
+## Fase 10 — Sesión 10.3: cierre formal
+
+| Verificación | Evidencia real | Resultado |
+| --- | --- | --- |
+| Gate frontend | `refactor-front` limpio en `da618c7` | PASS |
+| Commits F10 | 10.0 `ec03f94`; 10.1 `17f4ce1`; 10.2 `da618c7` | reconciliado |
+| Backend | `refactor-back`/`fe25abe`, limpio, solo lectura | PASS |
+| Manual 10.2 | evidencia exacta anterior | Aprobada |
+| Globals retirados | cero refs productivas | PASS |
+| Quick/facade | tres métodos / cinco miembros con consumers | PASS |
+| `explorerState` | 17 propiedades activas / 202 refs | PASS |
+| Léxicos | 143 símbolos / 74 edges / cero hazard inmediato | PASS |
+| Scripts | 43 tags / 42 locales / cero missing / main último | PASS |
+| Classic model | cero ESM; providers internos presentes | PASS |
+| Actions | 20 emitters / 20 handlers / cero mismatch | PASS |
+| Listeners | bind con init único; backdrop cleanup presente | PASS |
+| Redirects | Batch/Planeación intactos; Batch assets ausentes | PASS |
+| Owners | Generation/Preview/Download/Delete/Loader activos | PASS |
+| Protected scope | API/auth/config/wordExport/Archivados/Tailwind/backend sin cambios F10 | PASS |
+| Tests obsoletos | cero test exige legacy presente | PASS |
+| `node --check` | 19 JS críticos | PASS |
+| Jest | 10 suites / 32 tests / 0 snapshots | PASS |
+
+Smokes finales relevantes: `batch-compatibility`,
+`dashboard-no-legacy-fallback`, `biblioteca-action-owners`,
+`final-compatibility-boundary`, `quick-create`, `resource-previews`,
+`biblioteca-loader`, `dashboard-bootstrap` y
+`legacy-zero-consumer-removal`. Las assertions de ausencia protegen decisiones
+vigentes y no mantienen código eliminado.
+
+Decisión A: Fase 10 puede cerrarse. Decisión A: roadmap 0–10 puede declararse
+completado. No se abre Fase 11.

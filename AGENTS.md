@@ -1,4 +1,4 @@
-# Reglas para agentes del frontend.
+# Reglas para agentes del frontend...
 
 ## Propósito
 

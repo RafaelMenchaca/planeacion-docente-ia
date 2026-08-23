@@ -222,27 +222,15 @@
       const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
       if (filename === null) return;
 
-      if (typeof window.downloadExamWord === "function") {
-        await window.downloadExamWord(examenId, filename);
-      }
+      await download(examenId, filename);
       console.debug("[downloads] exam:success", { examenId });
     } catch (error) {
       console.error("[downloads] exam:error", { examenId, message: error?.message });
     }
   }
 
-  // Compatibilidad temporal: conserva la firma pública y el comportamiento de descarga.
-  // Motivo: mantener el contrato global mientras Biblioteca migra al módulo canónico.
-  // Consumidores actuales: cards de Biblioteca, preview y explorador jerárquico.
-  // Condición para retirarlo: búsqueda global sin consumidores de window.downloadExamWord.
-  // Fase prevista de retiro: Fase 10.
-  async function downloadExamWord(examenId, filenameOverride) {
-    return window.ExamDownload.download(examenId, filenameOverride);
-  }
-
   window.ExamDownload = {
     download,
     downloadFromBiblioteca
   };
-  window.downloadExamWord = downloadExamWord;
 })();

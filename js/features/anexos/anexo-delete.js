@@ -28,7 +28,7 @@
 
       setSelectedConjunto(safeBatchId, { tab: "anexos" });
       renderBibliotecaDetailInPlace();
-      await loadAndRenderBiblioteca({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
+      await window.BibliotecaLoader.load({ silent: true, targetBatchId: safeBatchId, activeTab: "anexos" });
     } catch (error) {
       console.error("[biblioteca] Error eliminando anexo:", error);
       alert(error.message || "No se pudo eliminar el anexo. Intenta nuevamente.");
