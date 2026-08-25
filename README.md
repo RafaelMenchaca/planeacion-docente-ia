@@ -2,6 +2,8 @@
 
 Frontend estático de Educativo IA para crear, consultar y descargar planeaciones, anexos, listas de cotejo y exámenes.
 
+La versión 3.0 se encuentra desplegada y estable después del cierre del refactor modular de Biblioteca.
+
 ## Flujo funcional vigente
 
 **Biblioteca es el único flujo visual principal vigente del área privada.** Se carga dentro de `pages/dashboard.html` y permite:
@@ -13,7 +15,7 @@ Frontend estático de Educativo IA para crear, consultar y descargar planeacione
 - mostrar progreso y feedback de generación;
 - navegar entre los tabs del bloque seleccionado.
 
-El antiguo explorador visual `plantel → grado → materia → unidad → tema` permanece parcialmente en código como legado y compatibilidad. No es una experiencia paralela soportada ni debe recibir funciones nuevas. Las tablas, IDs y endpoints jerárquicos pueden seguir activos como soporte técnico, persistencia o dependencia de Archivados.
+El flujo de coordinación vigente es **Dashboard → Biblioteca → Quick Create → owners por dominio**. El antiguo Explorer visual `plantel → grado → materia → unidad → tema`, su CRUD jerárquico y el fallback visual del Dashboard fueron retirados. Las tablas, IDs, caches, loaders y endpoints jerárquicos siguen activos cuando soportan Quick Create, persistencia, contratos técnicos o Archivados.
 
 ## Stack 
 
@@ -31,11 +33,30 @@ El antiguo explorador visual `plantel → grado → materia → unidad → tema`
 | `js/core/` | Configuración, cliente Supabase y utilidades. |
 | `js/api/` | Wrappers HTTP por recurso. |
 | `js/services/` | Autenticación y orquestación frontend. |
-| `js/pages/` | Estado e inicialización por página. |
-| `js/ui/` | Componentes, helpers, previews y descargas. |
+| `js/pages/` | Estado y coordinación por página. |
+| `js/features/` | Owners modulares de Biblioteca, Dashboard y recursos. |
+| `js/ui/` | Componentes y helpers compartidos, incluido `AppUI`. |
 | `tests/` | Pruebas automatizadas existentes. |
 
-La carpeta `js/features/` no existe en el estado auditado. No debe crearse con módulos vacíos; cualquier extracción debe responder a una responsabilidad real de Biblioteca.
+## Arquitectura modular de Biblioteca
+
+| Área | Owner actual |
+| --- | --- |
+| Biblioteca State / Selection / Tabs / Modal State / Pending | `js/pages/biblioteca.page.js` mantiene una fuente física por estado y la facade de coordinación `window.biblioteca`. |
+| Biblioteca Loader / Reconcile | `js/features/biblioteca/biblioteca-loader.js` carga conjuntos y reconcilia resultados de generación. |
+| Biblioteca Render | `js/features/biblioteca/biblioteca-render.js` renderiza sidebar, bloque seleccionado, tabs y cards. |
+| Biblioteca Modal Render | `js/features/biblioteca/biblioteca-modal-render.js` renderiza los modales del flujo. |
+| Biblioteca Events | `js/features/biblioteca/biblioteca-events.js` enlaza los `data-bib-action` con sus owners. |
+| Quick Create | `js/features/dashboard/quick-create.js` posee el flujo de creación rápida y coordina la jerarquía técnica necesaria. |
+| Dashboard Bootstrap | `js/features/dashboard/dashboard-bootstrap.js` inyecta el layout, enlaza eventos compartidos e inicia Biblioteca. |
+| Generation owners | `planeacion-generation.js`, `anexo-generation.js`, `lista-cotejo-generation.js` y `exam-generation.js` dentro de sus dominios en `js/features/`. |
+| Preview owners | `anexo-preview.js`, `lista-cotejo-preview.js` y `exam-preview.js` dentro de sus dominios. |
+| Download owners | `planeacion-download.js`, `anexo-download.js`, `lista-cotejo-download.js` y `exam-download.js` dentro de sus dominios. |
+| Delete owners | Owners de Planeación, Anexo, Lista de cotejo y Examen, más `biblioteca-block-delete.js` para bloques completos. |
+
+`dashboard.page.js` quedó reducido a estado técnico compartido, caches y loaders jerárquicos, helpers de actividades y soporte de progreso/previews. `window.explorerState` conserva ese contrato técnico clásico compartido; su nombre histórico no representa un Explorer visual vigente.
+
+El frontend conserva scripts clásicos. El orden declarado en `pages/dashboard.html` es contractual para las dependencias léxicas y los namespaces `window.*` que siguen justificados.
 
 ## Páginas relevantes
 
@@ -53,9 +74,9 @@ No existe `pages/biblioteca.html`: Biblioteca se inicializa desde `js/pages/bibl
 
 ## Inicio del dashboard
 
-`pages/dashboard.html` carga `dashboard.page.js`, después `biblioteca.page.js` y finalmente `main.js`. Al existir `window.initBiblioteca`, `initDashboardPage()` activa Biblioteca, llama su inicializador y retorna antes de hidratar el explorador visual antiguo.
+`pages/dashboard.html` carga los owners de recursos, `dashboard.page.js`, Dashboard Bootstrap, Quick Create, `biblioteca.page.js`, Loader, Render, Modal Render y Events de Biblioteca; `main.js` queda al final.
 
-`dashboard.page.js` sigue aportando estado y wrappers consumidos por Biblioteca. Esa dependencia es compatibilidad técnica y deuda de refactor, no evidencia de dos modos vigentes.
+`main.js` invoca `window.initDashboardPage()`. Dashboard Bootstrap inyecta `components/layout.html`, enlaza Quick Create y previews compartidos, y llama `window.initBiblioteca()`. Biblioteca enlaza sus eventos y carga los conjuntos mediante `window.BibliotecaLoader`; no existe modo dual ni fallback visual antiguo.
 
 ## Configuración
 

@@ -4,6 +4,45 @@
 
 Historial de cambios para la aplicación Educativo IA.
 
+## [v3.0-frontend-modular-biblioteca-refactor] - 2026-08-24
+
+### 🚀 Novedades
+- **Cierre del refactor modular del frontend y del roadmap Fases 0–10**, con Biblioteca consolidada como único workflow visual principal del Dashboard.
+- Flujo actual establecido como Dashboard → Biblioteca → Quick Create → owners por dominio para Planeaciones, Anexos, Listas de cotejo y Exámenes.
+
+### 🧠 Arquitectura Frontend
+- `dashboard.page.js` reducido de monolito de UI a capa técnica compartida de 452 líneas para jerarquía, caches, loaders, actividades, progreso y previews; Dashboard Bootstrap y Quick Create quedaron en owners separados.
+- Estado de Biblioteca delimitado mediante owners de Selection, Tabs, modales y Pending, conservando una sola fuente física en `biblioteca.page.js`.
+- Loader/Reconcile, Render, Modal Render y Events de Biblioteca separados en módulos con ownership explícito.
+- Generación separada por dominio para Planeación, Anexo, Lista de cotejo y Examen; previews, descargas y eliminaciones delegados directamente a sus owners de recurso.
+
+### 🛠️ Mejoras
+- Explorer visual legacy y CRUD jerárquico visual retirados después de aislar y verificar sus consumidores.
+- Fallback visual antiguo del Dashboard eliminado; `BIBLIOTECA_MODE` y sus ramas inactivas retirados.
+- Implementación Batch huérfana eliminada, manteniendo `pages/batch.html` como redirect histórico compatible a `dashboard.html`.
+- Wrappers, aliases, bridges y branches redundantes retirados al entregar las acciones de Biblioteca a sus owners reales.
+
+### 🧩 Compatibilidad
+- Jerarquía técnica preservada para IDs, caches, loaders, Quick Create, persistencia y Archivados, sin reactivar el Explorer visual antiguo.
+- `window.explorerState` preservado como state técnico compartido clásico y scripts clásicos mantenidos con su orden contractual.
+- Endpoints, payloads, jobs, polling y contratos del backend preservados sin cambios durante el refactor.
+
+### ✅ Validación
+- Suite automatizada final aprobada: **10 suites / 32 tests PASS**.
+- Regresión manual final validada, incluidos generación, polling, previews, descargas y eliminaciones por recurso.
+- Merge desplegado y producción confirmada funcionando correctamente y de forma estable.
+
+## [ready-biblioteca-modular-refactor] - 2026-07-23
+
+### 🏷️ Línea base
+- **Checkpoint de documentación y baseline preparado para gobernar el refactor modular de Biblioteca**, registrado con el tag anotado `ready-biblioteca-modular-refactor` sobre el commit `57c77c9`.
+- En ese momento la Fase 0 seguía En progreso y la línea base manual completa estaba pendiente; el tag no representaba el cierre del roadmap ni una fase funcional completada.
+
+### 🛠️ Preparación
+- Roadmap por Fases 0–10 agregado con objetivos, dependencias, alcance, criterios de salida, pruebas y condiciones de avance.
+- Biblioteca definida como único flujo visual principal y dirección del refactor; Explorer visual clasificado como legacy antes de cualquier aislamiento o eliminación.
+- Jerarquía técnica, contratos backend y validación manual protegidos como límites obligatorios para las extracciones posteriores.
+
 ## [pre-biblioteca-modular-refactor] - 2026-07-22
 
 ### 🏷️ Línea base
