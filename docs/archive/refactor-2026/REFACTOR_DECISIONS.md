@@ -1,6 +1,8 @@
 # Decisiones del refactor
 
-Registro breve de decisiones que gobiernan el roadmap. Las reglas obligatorias permanecen en [`AGENTS.md`](../../AGENTS.md); este archivo no las sustituye.
+> **ARCHIVED / COMPLETED:** referencia histórica del refactor frontend 2026. No contiene instrucciones activas para features o fixes actuales.
+
+Registro breve de decisiones que gobiernan el roadmap. Las reglas obligatorias permanecen en [`AGENTS.md`](../../../AGENTS.md); este archivo no las sustituye.
 
 | ID | Fecha | Decisión | Motivo | Impacto |
 | --- | --- | --- | --- | --- |

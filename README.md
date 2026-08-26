@@ -1,82 +1,76 @@
 # Educativo IA Frontend
 
-Frontend estático de Educativo IA para crear, consultar y descargar planeaciones, anexos, listas de cotejo y exámenes.
+Frontend estático de Educativo IA / Planea para crear, consultar y descargar planeaciones, anexos, listas de cotejo y exámenes.
 
-La versión 3.0 se encuentra desplegada y estable después del cierre del refactor modular de Biblioteca.
+La versión 3.0 está desplegada y estable. **Biblioteca es el único flujo visual principal del área privada.**
 
-## Flujo funcional vigente
+## Flujo funcional
 
-**Biblioteca es el único flujo visual principal vigente del área privada.** Se carga dentro de `pages/dashboard.html` y permite:
+Biblioteca se carga dentro de `pages/dashboard.html` y permite:
 
-- agrupar recursos en bloques o conjuntos;
-- crear temas y generar planeaciones;
-- consultar, previsualizar, descargar y eliminar recursos;
+- crear y seleccionar bloques o conjuntos;
+- agregar temas y generar planeaciones;
 - generar anexos, listas de cotejo y exámenes;
-- mostrar progreso y feedback de generación;
-- navegar entre los tabs del bloque seleccionado.
+- consultar previews, descargar y eliminar recursos;
+- mostrar progreso y reconciliar resultados de generación.
 
-El flujo de coordinación vigente es **Dashboard → Biblioteca → Quick Create → owners por dominio**. El antiguo Explorer visual `plantel → grado → materia → unidad → tema`, su CRUD jerárquico y el fallback visual del Dashboard fueron retirados. Las tablas, IDs, caches, loaders y endpoints jerárquicos siguen activos cuando soportan Quick Create, persistencia, contratos técnicos o Archivados.
+El flujo principal es:
 
-## Stack 
+```text
+Dashboard → Biblioteca → Quick Create → owner del recurso
+```
 
-- HTML y JavaScript Vanilla mediante scripts clásicos.
-- CSS propio, Tailwind CSS y Bootstrap donde el código actual los carga.
-- Supabase JS para autenticación y operaciones puntuales de Storage.
-- `fetch` para consumir el backend.
-- Jest y JSDOM para las pruebas existentes.
+El Explorer visual jerárquico antiguo fue retirado. Las tablas, IDs, caches, loaders y endpoints jerárquicos siguen activos cuando soportan Quick Create, persistencia, contratos técnicos o Archivados.
+
+## Stack
+
+- HTML multipágina y JavaScript Vanilla mediante scripts clásicos.
+- CSS propio, Tailwind CSS y Bootstrap donde los carga la página.
+- Supabase JS para autenticación y Storage puntual.
+- `fetch` para la API backend.
+- Jest y JSDOM para pruebas automatizadas.
 
 ## Estructura
 
 | Ruta | Responsabilidad |
 | --- | --- |
 | `pages/` | Páginas públicas, privadas, redirects y vistas auxiliares. |
-| `js/core/` | Configuración, cliente Supabase y utilidades. |
-| `js/api/` | Wrappers HTTP por recurso. |
-| `js/services/` | Autenticación y orquestación frontend. |
-| `js/pages/` | Estado y coordinación por página. |
-| `js/features/` | Owners modulares de Biblioteca, Dashboard y recursos. |
-| `js/ui/` | Componentes y helpers compartidos, incluido `AppUI`. |
-| `tests/` | Pruebas automatizadas existentes. |
+| `components/` | Fragmentos de layout público y privado. |
+| `css/` | Estilos compartidos y por página. |
+| `js/core/` | Configuración, Supabase y utilidades. |
+| `js/api/` | Transporte HTTP por dominio. |
+| `js/services/` | Sesión y orquestación compartida. |
+| `js/pages/` | Estado e inicialización por página. |
+| `js/features/` | Owners de Biblioteca, Dashboard y recursos. |
+| `js/ui/` | UI compartida y exportaciones. |
+| `tests/` | Pruebas Jest/JSDOM. |
 
-## Arquitectura modular de Biblioteca
+## Arquitectura de Biblioteca
 
-| Área | Owner actual |
-| --- | --- |
-| Biblioteca State / Selection / Tabs / Modal State / Pending | `js/pages/biblioteca.page.js` mantiene una fuente física por estado y la facade de coordinación `window.biblioteca`. |
-| Biblioteca Loader / Reconcile | `js/features/biblioteca/biblioteca-loader.js` carga conjuntos y reconcilia resultados de generación. |
-| Biblioteca Render | `js/features/biblioteca/biblioteca-render.js` renderiza sidebar, bloque seleccionado, tabs y cards. |
-| Biblioteca Modal Render | `js/features/biblioteca/biblioteca-modal-render.js` renderiza los modales del flujo. |
-| Biblioteca Events | `js/features/biblioteca/biblioteca-events.js` enlaza los `data-bib-action` con sus owners. |
-| Quick Create | `js/features/dashboard/quick-create.js` posee el flujo de creación rápida y coordina la jerarquía técnica necesaria. |
-| Dashboard Bootstrap | `js/features/dashboard/dashboard-bootstrap.js` inyecta el layout, enlaza eventos compartidos e inicia Biblioteca. |
-| Generation owners | `planeacion-generation.js`, `anexo-generation.js`, `lista-cotejo-generation.js` y `exam-generation.js` dentro de sus dominios en `js/features/`. |
-| Preview owners | `anexo-preview.js`, `lista-cotejo-preview.js` y `exam-preview.js` dentro de sus dominios. |
-| Download owners | `planeacion-download.js`, `anexo-download.js`, `lista-cotejo-download.js` y `exam-download.js` dentro de sus dominios. |
-| Delete owners | Owners de Planeación, Anexo, Lista de cotejo y Examen, más `biblioteca-block-delete.js` para bloques completos. |
+- `biblioteca.page.js`: state físico y coordinación.
+- `biblioteca-loader.js`: carga y reconciliación.
+- `biblioteca-render.js`: sidebar, detalle, tabs y cards.
+- `biblioteca-modal-render.js`: modales y confirmación.
+- `biblioteca-events.js`: búsqueda y actions.
+- `quick-create.js`: creación rápida y jerarquía técnica.
+- `dashboard-bootstrap.js`: layout, bindings e inicialización.
+- `js/features/{recurso}/`: generación, preview, download y delete por dominio.
 
-`dashboard.page.js` quedó reducido a estado técnico compartido, caches y loaders jerárquicos, helpers de actividades y soporte de progreso/previews. `window.explorerState` conserva ese contrato técnico clásico compartido; su nombre histórico no representa un Explorer visual vigente.
-
-El frontend conserva scripts clásicos. El orden declarado en `pages/dashboard.html` es contractual para las dependencias léxicas y los namespaces `window.*` que siguen justificados.
+`dashboard.page.js` conserva state técnico compartido, caches/loaders jerárquicos y helpers. `window.explorerState` es un contrato clásico compartido; su nombre no implica que exista un Explorer visual.
 
 ## Páginas relevantes
 
-| Página | Estado actual |
+| Página | Uso |
 | --- | --- |
 | `index.html` y páginas públicas | Sitio público. |
 | `pages/login.html` | Acceso con Supabase Auth. |
-| `pages/dashboard.html` | Contenedor del flujo principal Biblioteca. |
+| `pages/dashboard.html` | Contenedor de Biblioteca. |
 | `pages/detalle.html` | Detalle y edición de planeación. |
-| `pages/archivados.html` | Flujo separado con dependencias jerárquicas; no equivale al flujo principal. |
-| `pages/batch.html`, `pages/planeacion.html` | Redirigen a `dashboard.html`. |
-| `pages/dashboard_tailwind.html` | Página histórica sin consumidor de navegación confirmado; no activar ni eliminar sin auditoría. |
+| `pages/archivados.html` | Flujo separado de Archivados. |
+| `pages/batch.html`, `pages/planeacion.html` | Redirects compatibles al Dashboard. |
+| `pages/dashboard_tailwind.html` | URL directa histórica; no forma parte de la navegación principal. |
 
-No existe `pages/biblioteca.html`: Biblioteca se inicializa desde `js/pages/biblioteca.page.js` dentro del dashboard.
-
-## Inicio del dashboard
-
-`pages/dashboard.html` carga los owners de recursos, `dashboard.page.js`, Dashboard Bootstrap, Quick Create, `biblioteca.page.js`, Loader, Render, Modal Render y Events de Biblioteca; `main.js` queda al final.
-
-`main.js` invoca `window.initDashboardPage()`. Dashboard Bootstrap inyecta `components/layout.html`, enlaza Quick Create y previews compartidos, y llama `window.initBiblioteca()`. Biblioteca enlaza sus eventos y carga los conjuntos mediante `window.BibliotecaLoader`; no existe modo dual ni fallback visual antiguo.
+No existe `pages/biblioteca.html`.
 
 ## Configuración
 
@@ -85,25 +79,23 @@ No existe `pages/biblioteca.html`: Biblioteca se inicializa desde `js/pages/bibl
 - `localhost` o `127.0.0.1`: `http://localhost:3000`;
 - otros hosts: `https://api.educativoia.com`.
 
-No copiar claves, tokens ni valores privados a la documentación. La configuración pública de Supabase no autoriza exponer service role.
+No copiar secretos o credenciales a la documentación. La configuración pública de Supabase no autoriza exponer service role.
 
-## Desarrollo local.
+## Desarrollo local
 
 ```bash
 npm install
-npm test
+npm test -- --runInBand
 ```
 
-Para servir los archivos estáticos puede usarse un servidor local. El backend debe estar disponible en la URL configurada.
+Sirve los archivos estáticos con un servidor local y mantén disponible el backend en la URL configurada.
 
-## Documentación obligatoria
+## Developer documentation
 
-- Reglas: [`AGENTS.md`](AGENTS.md)
+- Reglas para agentes: [`AGENTS.md`](AGENTS.md)
 - Arquitectura actual: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- Método de refactor: [`docs/refactor/REFACTOR_PLAYBOOK.md`](docs/refactor/REFACTOR_PLAYBOOK.md)
-- Fases y criterios de avance: [`docs/refactor/REFACTOR_ROADMAP.md`](docs/refactor/REFACTOR_ROADMAP.md)
-- Decisiones del refactor: [`docs/refactor/REFACTOR_DECISIONS.md`](docs/refactor/REFACTOR_DECISIONS.md)
-- Estado de sesión: [`docs/refactor/SESSION_HANDOFF.md`](docs/refactor/SESSION_HANDOFF.md)
-- Pruebas manuales: [`docs/refactor/TEST_MATRIX.md`](docs/refactor/TEST_MATRIX.md)
+- Mapa de código: [`docs/FRONTEND_MAP.md`](docs/FRONTEND_MAP.md)
+- Pruebas: [`docs/TESTING.md`](docs/TESTING.md)
+- Historial de versiones: [`CHANGELOG.md`](CHANGELOG.md)
 
-Los contratos de datos, generación IA, jobs, métricas, RLS y persistencia viven en el repositorio backend enlazado desde `AGENTS.md`.
+El archivo histórico del refactor está separado en `docs/archive/refactor-2026/` y no es lectura requerida para desarrollo normal.

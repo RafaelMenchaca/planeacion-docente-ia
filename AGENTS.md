@@ -1,111 +1,97 @@
-# Reglas para agentes del frontend...
+# Reglas para agentes del frontend
 
-## Propósito
+## Proyecto
 
-Este archivo contiene las reglas obligatorias para cualquier agente que modifique el frontend de Educativo IA. Es la única fuente local de reglas de trabajo del repositorio frontend.
+Educativo IA / Planea es un frontend estático para crear y administrar planeaciones, anexos, listas de cotejo y exámenes. Usa HTML multipágina, JavaScript Vanilla, scripts clásicos, Supabase Auth/Storage y una API backend separada.
 
-## Alcance del frontend
+Este archivo es la entrada obligatoria para una IA que trabaje en el frontend. No es necesario leer el archivo histórico para realizar una feature o fix normal.
 
-El frontend es responsable de la UI, navegación, estado de interfaz, llamadas a la API, feedback de generación, polling frontend, previews, descargas, validación de formularios y compatibilidad temporal mediante `window`.
+## Workflow vigente
 
-El frontend no es la fuente de verdad del schema, RLS, prompts, modelos, retries backend, jobs backend, métricas IA ni relaciones persistentes. Esas definiciones viven en el repositorio backend.
+**Biblioteca es el único flujo visual principal del área privada.** Se ejecuta dentro de `pages/dashboard.html`.
 
-Repositorio canónico: `educativo_backend/Educativo-Backend`.
+El Explorer visual jerárquico antiguo fue retirado. No crear un modo dual, reintroducir su árbol/breadcrumbs/CRUD ni usar la jerarquía técnica como prueba de que esa UI sigue soportada.
 
-## Flujo visual canónico
+`pages/archivados.html` es un flujo separado. Sus dependencias jerárquicas no lo convierten en un segundo Dashboard.
 
-**Biblioteca es el único flujo visual principal vigente.** Toda función nueva del área privada debe integrarse a Biblioteca.
+## Fuentes de trabajo
 
-El explorador visual jerárquico antiguo (`plantel → grado → materia → unidad → tema`) es **legacy visual / obsoleto / no usar para nuevas implementaciones**. No es un segundo modo soportado y no debe recibir funciones nuevas, decidir dónde renderizar contenido ni compartir nuevos estados o eventos con Biblioteca.
-
-- Si una tarea puede resolverse usando Biblioteca o reutilizando el explorador jerárquico antiguo, se debe implementar en Biblioteca.
-- No crear un “modo dual”, nuevos flags para alternar Biblioteca y jerarquía ni reactivar el árbol visual por accidente.
-- No reutilizar funciones legacy solo porque ya existen; primero identificar su consumidor vigente.
-- Antes de extraer una función, clasificar su consumidor como Biblioteca, compartido activo, Archivados, compatibilidad temporal, explorador visual legacy o desconocido.
-- No mover ni eliminar una función desconocida.
-- No eliminar helpers jerárquicos sin buscar todos los consumidores: la jerarquía técnica puede seguir sosteniendo persistencia, selectores, creación o Archivados.
-- Archivados es un flujo separado; sus dependencias jerárquicas no convierten al explorador antiguo en flujo principal.
-- Durante un refactor, el código legacy solo puede conservarse como compatibilidad; no puede convertirse nuevamente en arquitectura principal.
-- No modificar contratos backend para adaptar Biblioteca a código legacy.
-
-## Fuentes obligatorias
+Siempre leer este archivo. Después consultar solo lo relacionado con la tarea:
 
 | Tema | Fuente |
 | --- | --- |
-| Reglas frontend | `AGENTS.md` |
-| Arquitectura frontend | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
-| Método de refactor | [`docs/refactor/REFACTOR_PLAYBOOK.md`](docs/refactor/REFACTOR_PLAYBOOK.md) |
-| Fases y criterios de avance | [`docs/refactor/REFACTOR_ROADMAP.md`](docs/refactor/REFACTOR_ROADMAP.md) |
-| Decisiones del refactor | [`docs/refactor/REFACTOR_DECISIONS.md`](docs/refactor/REFACTOR_DECISIONS.md) |
-| Estado de sesión | [`docs/refactor/SESSION_HANDOFF.md`](docs/refactor/SESSION_HANDOFF.md) |
-| Reglas backend | [repositorio backend: `AGENTS.md`](../../educativo_backend/Educativo-Backend/AGENTS.md) |
-| Schema y relaciones | [repositorio backend: `docs/DATABASE_SCHEMA.md`](../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md) |
-| Contratos IA | [repositorio backend: `docs/AI_GENERATION_CONTRACTS.md`](../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md) |
-| Arquitectura backend | [repositorio backend: `docs/03-backend-guide.md`](../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md) |
-| Logs backend | [repositorio backend: `docs/observability/LOG_CONVENTIONS.md`](../../educativo_backend/Educativo-Backend/docs/observability/LOG_CONVENTIONS.md) |
+| Producto, setup y estructura general | [`README.md`](README.md) |
+| Arquitectura y ownership | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| Archivos, surfaces y orden de carga | [`docs/FRONTEND_MAP.md`](docs/FRONTEND_MAP.md) |
+| Pruebas | [`docs/TESTING.md`](docs/TESTING.md) |
+| Backend y rutas | [`backend docs/03-backend-guide.md`](../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md) |
+| Schema, IDs y relaciones | [`backend docs/DATABASE_SCHEMA.md`](../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md) |
+| Generación IA | [`backend docs/AI_GENERATION_CONTRACTS.md`](../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md) |
+| Logs backend | [`backend docs/observability/LOG_CONVENTIONS.md`](../../educativo_backend/Educativo-Backend/docs/observability/LOG_CONVENTIONS.md) |
 
-El backend se encuentra en `../../educativo_backend/Educativo-Backend`, relativo a la raíz de este repositorio. Si una fuente documental contradice el código o las migraciones, detener el cambio y reportar la contradicción; no corregir el contrato sin autorización.
+El código ejecutable y los contratos backend especializados prevalecen sobre resúmenes. Si se contradicen, detener el cambio y reportar la evidencia.
 
-## Lectura obligatoria por tipo de cambio
+## Ownership actual
 
-- Para estilos o layout, leer `AGENTS.md` y `docs/ARCHITECTURE.md`.
-- Para payloads, IDs, generación, polling, jobs o persistencia, leer además `DATABASE_SCHEMA.md`, `AI_GENERATION_CONTRACTS.md` y la guía de arquitectura del backend.
-- Para logs relacionados con el backend, revisar sus convenciones de observabilidad.
-- Para extraer una función durante el refactor, revisar `REFACTOR_ROADMAP.md`, `REFACTOR_PLAYBOOK.md` y `SESSION_HANDOFF.md` antes de editar.
+- `js/pages/biblioteca.page.js`: state físico de Biblioteca y coordinación de selección, tabs, modales y pending.
+- `js/features/biblioteca/biblioteca-loader.js`: carga y reconciliación.
+- `js/features/biblioteca/biblioteca-render.js`: sidebar, detalle, tabs y cards.
+- `js/features/biblioteca/biblioteca-modal-render.js`: DOM de modales y confirmación.
+- `js/features/biblioteca/biblioteca-events.js`: búsqueda, delegación y dispatch de `data-bib-action`.
+- `js/features/dashboard/dashboard-bootstrap.js`: layout, bindings compartidos e inicialización.
+- `js/features/dashboard/quick-create.js`: Quick Create y coordinación de la jerarquía técnica necesaria.
+- `js/features/{planeaciones,anexos,listas-cotejo,examenes}/`: owners de generación, preview, download y delete según el recurso.
+- `js/pages/dashboard.page.js`: estado técnico compartido, caches/loaders jerárquicos y helpers de actividades, progreso y previews.
 
-## Roadmap obligatorio
+Extender el owner existente. No copiar su estado o lógica en `biblioteca.page.js`, Dashboard u otro dominio.
 
-Antes de iniciar cualquier refactor, leer:
+## State y compatibilidad clásica
 
-[`docs/refactor/REFACTOR_ROADMAP.md`](docs/refactor/REFACTOR_ROADMAP.md)
+`window.explorerState` sigue siendo un state técnico compartido clásico con consumidores reales. Su nombre es histórico; no representa un Explorer visual vigente.
 
-Cada tarea debe indicar:
+- No renombrarlo ni sustituirlo automáticamente.
+- No crear una segunda fuente de verdad.
+- No mover un slice sin identificar writers, readers y orden de carga.
+- No agregar globals cuando el owner actual puede exponer una operación explícita.
 
-- fase;
-- sesión;
-- alcance;
-- criterios de salida;
-- pruebas.
+El frontend usa scripts clásicos deliberadamente. El orden de `<script>` en `pages/dashboard.html` forma parte del contrato entre providers y consumers. No migrar a ESM, bundler, framework o TypeScript sin una tarea explícita.
 
-No se puede saltar directamente a eliminación de legacy. Biblioteca modular es la dirección del refactor.
+## Jerarquía técnica
 
-## Reglas de refactor
+Planteles, grados, materias, unidades y temas siguen activos cuando soportan IDs, caches, loaders, Quick Create, persistencia, contratos backend o Archivados.
 
-- No hacer reescrituras completas: extraer literalmente antes de mejorar.
-- No mezclar refactor y corrección de bugs ni cambiar comportamiento visible.
-- No cambiar contratos de API ni nombres de campos.
-- No eliminar compatibilidad `window` sin confirmar todos sus consumidores.
-- No eliminar código por parecer legacy ni inferir que lo es por su nombre.
-- Buscar consumidores en JS, HTML, atributos `data-*`, handlers inline y referencias `window.*`.
-- Mantener wrappers temporales cuando exista acoplamiento.
-- Cada wrapper temporal debe documentar su razón, consumidor y condición de retiro.
-- Mantener commits pequeños y actualizar `docs/refactor/SESSION_HANDOFF.md` después de cada sesión.
-- No tocar `js/ui/wordExport.js` salvo autorización explícita.
-- Las extracciones deben avanzar hacia una Biblioteca modular, no hacia restaurar o modularizar el explorador visual antiguo.
+No eliminar ni reinterpretar una pieza por tener nombre jerárquico. Buscar consumers en JS, HTML, `data-*`, listeners, handlers y `window.*`.
 
-## Reglas de datos e IA
+## Contratos protegidos
 
-- No reinterpretar `unidad_id`, `planeacion_ids`, `tema_id` ni `tema_ids`.
-- No tratar IDs de planeación como IDs de tema.
-- No cambiar payloads para facilitar un refactor.
-- No modificar prompts desde el frontend ni replicar lógica de generación backend.
-- No asumir relaciones que no estén documentadas en el backend.
-- Si frontend, backend y documentación se contradicen, detenerse y reportarlo.
+Conservar la semántica y el tipo de:
 
-## Reglas de seguridad
+- `unidad_id`;
+- `planeacion_ids`;
+- `tema_id` y `tema_ids`;
+- `batch_id`;
+- `force_new_batch`;
+- estados y polling de generation jobs;
+- rutas, métodos, headers y nombres de campos de la API.
+
+No tratar IDs de planeación como IDs de tema. No cambiar payloads, prompts, modelos, retries, parsing, schema o relaciones para facilitar una feature frontend.
+
+No modificar `js/ui/wordExport.js` salvo que la tarea lo autorice explícitamente y cubra todas las descargas afectadas.
+
+## Seguridad
 
 - No registrar tokens, headers `Authorization`, contraseñas, prompts ni respuestas completas.
-- No exponer service role ni guardar secretos en código.
-- No copiar datos reales de usuarios en documentación.
+- No exponer service role ni guardar secretos en código o documentación.
+- No copiar datos reales de usuarios a fixtures o docs.
 
-## Validación mínima
+## Workflow normal para features y fixes
 
-Antes de terminar una sesión:
+1. Leer `AGENTS.md` y la documentación relacionada con la tarea.
+2. Identificar el owner y todos sus consumers.
+3. Confirmar contratos frontend/backend afectados.
+4. Implementar el cambio mínimo dentro del owner correcto.
+5. Ejecutar las pruebas relevantes de [`docs/TESTING.md`](docs/TESTING.md).
+6. Hacer regresión manual si cambia UI, eventos, state, generación, polling, preview, download o delete.
+7. Actualizar documentación solo si cambió arquitectura, ownership, setup o un contrato autorizado.
 
-```bash
-git status
-git diff --stat
-git diff --check
-```
-
-Además, según el alcance: validar sintaxis, ejecutar las pruebas existentes, comprobar la consola, revisar que los scripts carguen en orden y actualizar `docs/refactor/SESSION_HANDOFF.md`. No declarar una validación como ejecutada si no ocurrió.
+No mezclar una feature/fix con reorganizaciones no solicitadas. No hacer commits o push salvo petición explícita.

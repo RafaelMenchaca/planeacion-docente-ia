@@ -1,5 +1,7 @@
 # Session Handoff
 
+> **ARCHIVED / COMPLETED:** bitácora histórica del refactor frontend 2026. Sus siguientes pasos y estados intermedios no son instrucciones vigentes.
+
 ## Estado funcional actual
 
 **Biblioteca es el flujo principal vigente y el único objetivo de nuevas implementaciones frontend.**
@@ -993,11 +995,11 @@ Todos permanecen disponibles globalmente por scripts clásicos.
 - [Roadmap](REFACTOR_ROADMAP.md)
 - [Playbook](REFACTOR_PLAYBOOK.md)
 - [Test matrix](TEST_MATRIX.md)
-- [Arquitectura frontend](../ARCHITECTURE.md)
+- [Arquitectura frontend](../../ARCHITECTURE.md)
 - [Decisiones](REFACTOR_DECISIONS.md)
-- Backend: [`DATABASE_SCHEMA.md`](../../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md)
-- Backend: [`AI_GENERATION_CONTRACTS.md`](../../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md)
-- Backend: [`03-backend-guide.md`](../../../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md)
+- Backend: [`DATABASE_SCHEMA.md`](../../../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md)
+- Backend: [`AI_GENERATION_CONTRACTS.md`](../../../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md)
+- Backend: [`03-backend-guide.md`](../../../../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md)
 
 ## Última sesión
 
@@ -1018,7 +1020,7 @@ HTTP. Sesión exclusivamente documental; no se modificó código funcional.
 
 El inventario exhaustivo, incluida cada función HTTP, wrapper, helper,
 consumidor, global y contrato, se conserva en
-[`docs/FRONTEND_MAP.md`](../FRONTEND_MAP.md). No quedan archivos, funciones ni
+[`docs/FRONTEND_MAP.md`](../../FRONTEND_MAP.md). No quedan archivos, funciones ni
 endpoints desconocidos.
 
 ### Inventario de archivos
@@ -3895,7 +3897,7 @@ eventos, orden de scripts y contratos de Fases 1–5.
 
 El inventario completo, matrices de render/eventos/DOM, líneas, estado,
 features y clasificación de riesgo están en
-[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+[`../../FRONTEND_MAP.md`](../../FRONTEND_MAP.md).
 
 ### Arquitectura y límites
 

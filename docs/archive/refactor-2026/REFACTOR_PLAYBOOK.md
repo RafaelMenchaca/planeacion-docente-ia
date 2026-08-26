@@ -1,6 +1,8 @@
 # Refactor Playbook
 
-Este playbook explica cómo ejecutar cada sesión de refactor. Debe leerse junto con [`AGENTS.md`](../../AGENTS.md), el [roadmap](REFACTOR_ROADMAP.md), la [arquitectura](../ARCHITECTURE.md) y el [handoff](SESSION_HANDOFF.md).
+> **ARCHIVED / COMPLETED:** método histórico del refactor frontend 2026. No usar como workflow de desarrollo actual.
+
+Este playbook explica cómo ejecutar cada sesión de refactor. Debe leerse junto con [`AGENTS.md`](../../../AGENTS.md), el [roadmap](REFACTOR_ROADMAP.md), la [arquitectura](../../ARCHITECTURE.md) y el [handoff](SESSION_HANDOFF.md).
 
 ## Dirección obligatoria
 

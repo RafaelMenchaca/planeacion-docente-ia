@@ -1,5 +1,7 @@
 # Test Matrix
 
+> **ARCHIVED / COMPLETED:** evidencia histórica de validación del refactor. Para pruebas actuales usar [`../../TESTING.md`](../../TESTING.md).
+
 Matriz manual post-refactor. Todas las pruebas principales corresponden a Biblioteca. Archivados se valida por separado; el explorador visual jerárquico antiguo es legacy y no es un flujo principal de prueba.
 
 | Flujo | Acción | Resultado esperado | Evidencia | Fase aplicable | Estado |

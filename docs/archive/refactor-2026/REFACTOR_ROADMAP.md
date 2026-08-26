@@ -1,5 +1,7 @@
 # Roadmap del refactor de Biblioteca
 
+> **ARCHIVED / COMPLETED:** roadmap histórico cerrado en v3.0. No es un plan operativo vigente.
+
 Este es el único roadmap operativo vigente del frontend. Define **qué** se ejecutará y qué evidencia permite avanzar. El [`REFACTOR_PLAYBOOK.md`](REFACTOR_PLAYBOOK.md) define **cómo** trabajar en cada sesión.
 
 **Biblioteca es el único flujo visual principal vigente y la dirección del refactor es Biblioteca modular.** El explorador visual jerárquico antiguo es legacy: se aísla antes de considerar su eliminación y nunca se convierte nuevamente en arquitectura principal. La jerarquía técnica se conserva cuando sostenga datos, relaciones, endpoints, selectores, compatibilidad o Archivados.
@@ -8,14 +10,14 @@ Este es el único roadmap operativo vigente del frontend. Define **qué** se eje
 
 | Documento | Responsabilidad |
 | --- | --- |
-| [`AGENTS.md`](../../AGENTS.md) | Reglas obligatorias para agentes. |
-| [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md) | Arquitectura actual y objetivo arquitectónico. |
+| [`AGENTS.md`](../../../AGENTS.md) | Reglas obligatorias para agentes. |
+| [`docs/ARCHITECTURE.md`](../../ARCHITECTURE.md) | Arquitectura actual y objetivo arquitectónico. |
 | [`REFACTOR_PLAYBOOK.md`](REFACTOR_PLAYBOOK.md) | Método para ejecutar cada sesión. |
 | `REFACTOR_ROADMAP.md` | Fases, orden, resultados y criterios de salida. |
 | [`SESSION_HANDOFF.md`](SESSION_HANDOFF.md) | Estado de la última sesión y siguiente paso. |
 | [`TEST_MATRIX.md`](TEST_MATRIX.md) | Validaciones funcionales acumulativas. |
-| Backend [`DATABASE_SCHEMA.md`](../../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md) | Datos y relaciones. |
-| Backend [`AI_GENERATION_CONTRACTS.md`](../../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md) | Prompts y contratos de generación IA. |
+| Backend [`DATABASE_SCHEMA.md`](../../../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md) | Datos y relaciones. |
+| Backend [`AI_GENERATION_CONTRACTS.md`](../../../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md) | Prompts y contratos de generación IA. |
 
 El backlog histórico del backend no es un plan operativo del frontend. Las decisiones transversales se registran en [`REFACTOR_DECISIONS.md`](REFACTOR_DECISIONS.md).
 
@@ -298,7 +300,7 @@ completada en documentación. Se inventariaron todas las funciones de
 sesión, headers, parsing, errores, aliases, globals, consumidores, Archivados y
 legacy. Los contratos se contrastaron con rutas, controllers y services del
 backend sin modificarlo. El mapa ejecutable está en
-[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+[`../../FRONTEND_MAP.md`](../../FRONTEND_MAP.md).
 
 La Sesión `3.1 — Consolidación de lecturas de Biblioteca` quedó completada y
 validada manualmente. `apiBibliotecaConjuntos(accessToken)` y
@@ -712,7 +714,7 @@ lectura limpio en `refactor-back`/`e08d6e4`. La auditoría levantó el árbol re
 de render, 20 acciones emitidas y 23 ramas delegadas, las superficies DOM, los
 listeners permanentes/recreados, las mutaciones durante render, los cruces con
 Quick Create/Dashboard y los límites con Fase 7. El detalle está en
-[`../FRONTEND_MAP.md`](../FRONTEND_MAP.md).
+[`../../FRONTEND_MAP.md`](../../FRONTEND_MAP.md).
 
 La reconciliación de 6.4 confirmó que 6.3 fue validada manualmente y commiteada
 en `4306903`: delegación documental, handler de 23 ramas y search wiring residen
