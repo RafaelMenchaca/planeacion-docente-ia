@@ -44,6 +44,184 @@ window.AppUI.renderProgressPill = function renderProgressPill(status, label) {
   `;
 };
 
+// ---- SEARCHABLE SELECT ----
+
+window.AppUI.enhanceSearchableSelect = function enhanceSearchableSelect(select, options) {
+  if (!select || select.dataset.searchableSelectEnhanced === "true") return null;
+
+  var settings = options || {};
+  var nativeOptions = Array.from(select.options).map(function (option) {
+    return {
+      value: option.value,
+      label: option.textContent.trim(),
+      disabled: option.disabled
+    };
+  });
+  var rowLabel = select.closest(".actividad-momento-row")
+    ?.querySelector(".actividad-momento-label")?.textContent.trim() || "Actividad";
+  var baseId = select.id || ("searchable-select-" + Math.random().toString(36).slice(2, 9));
+  var searchId = baseId + "-search";
+  var listId = baseId + "-options";
+
+  var wrapper = document.createElement("div");
+  wrapper.className = "actividad-searchable-select";
+  wrapper.dataset.searchableSelect = "";
+  wrapper.innerHTML =
+    '<button type="button" class="actividad-searchable-trigger" aria-haspopup="listbox" aria-expanded="false">' +
+      '<span data-searchable-selected></span>' +
+      '<span class="actividad-searchable-chevron" aria-hidden="true">&#9662;</span>' +
+    '</button>' +
+    '<div class="actividad-searchable-dropdown" data-searchable-dropdown hidden>' +
+      '<input type="search" class="actividad-searchable-input" autocomplete="off" ' +
+        'role="combobox" aria-autocomplete="list" aria-expanded="false" />' +
+      '<div class="actividad-searchable-options" role="listbox"></div>' +
+      '<p class="actividad-searchable-empty" data-searchable-empty role="status" aria-live="polite" hidden></p>' +
+    '</div>';
+
+  select.dataset.searchableSelectEnhanced = "true";
+  select.hidden = true;
+  select.setAttribute("aria-hidden", "true");
+  select.tabIndex = -1;
+  select.insertAdjacentElement("afterend", wrapper);
+
+  var trigger = wrapper.querySelector(".actividad-searchable-trigger");
+  var selectedLabel = wrapper.querySelector("[data-searchable-selected]");
+  var dropdown = wrapper.querySelector("[data-searchable-dropdown]");
+  var searchInput = wrapper.querySelector(".actividad-searchable-input");
+  var optionList = wrapper.querySelector(".actividad-searchable-options");
+  var emptyState = wrapper.querySelector("[data-searchable-empty]");
+
+  searchInput.id = searchId;
+  searchInput.placeholder = settings.searchPlaceholder || "Buscar...";
+  searchInput.setAttribute("aria-controls", listId);
+  searchInput.setAttribute("aria-label", "Buscar actividad para " + rowLabel);
+  trigger.setAttribute("aria-controls", listId);
+  optionList.id = listId;
+  emptyState.textContent = settings.emptyMessage || "No se encontraron opciones.";
+  trigger.disabled = select.disabled;
+
+  function normalizeSearch(value) {
+    return String(value || "")
+      .trim()
+      .toLocaleLowerCase("es")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function syncSelectedValue() {
+    var selected = nativeOptions.find(function (option) { return option.value === select.value; })
+      || nativeOptions[0]
+      || { label: "Seleccionar" };
+    selectedLabel.textContent = selected.label;
+    trigger.title = selected.label;
+    trigger.setAttribute("aria-label", rowLabel + ": " + selected.label);
+    wrapper.classList.toggle("is-filled", Boolean(select.value));
+  }
+
+  function renderOptions(queryValue) {
+    var query = normalizeSearch(queryValue);
+    var matchingActivities = nativeOptions.filter(function (option) {
+      return option.value && (!query || normalizeSearch(option.label).includes(query));
+    });
+    var emptyOption = nativeOptions.find(function (option) { return option.value === ""; });
+    var visibleOptions = emptyOption ? [emptyOption].concat(matchingActivities) : matchingActivities;
+
+    optionList.replaceChildren();
+    visibleOptions.forEach(function (option) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "actividad-searchable-option";
+      button.dataset.searchableOption = option.value;
+      button.textContent = option.label;
+      button.disabled = option.disabled;
+      button.setAttribute("role", "option");
+      button.setAttribute("aria-selected", option.value === select.value ? "true" : "false");
+      button.addEventListener("click", function () {
+        select.value = option.value;
+        syncSelectedValue();
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        closeDropdown(true);
+      });
+      optionList.appendChild(button);
+    });
+
+    emptyState.hidden = !query || matchingActivities.length > 0;
+  }
+
+  function openDropdown() {
+    dropdown.hidden = false;
+    trigger.setAttribute("aria-expanded", "true");
+    searchInput.setAttribute("aria-expanded", "true");
+    searchInput.value = "";
+    renderOptions("");
+    searchInput.focus();
+  }
+
+  function closeDropdown(restoreFocus) {
+    dropdown.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+    searchInput.setAttribute("aria-expanded", "false");
+    searchInput.value = "";
+    if (restoreFocus && wrapper.isConnected) trigger.focus();
+  }
+
+  trigger.addEventListener("click", function () {
+    if (dropdown.hidden) openDropdown();
+    else closeDropdown(false);
+  });
+
+  trigger.addEventListener("keydown", function (event) {
+    if (event.key !== "ArrowDown") return;
+    event.preventDefault();
+    openDropdown();
+  });
+
+  searchInput.addEventListener("input", function () {
+    renderOptions(searchInput.value);
+  });
+
+  searchInput.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeDropdown(true);
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      optionList.querySelector(".actividad-searchable-option")?.focus();
+      return;
+    }
+    if (event.key === "Enter") {
+      var candidates = Array.from(optionList.querySelectorAll(".actividad-searchable-option:not(:disabled)"));
+      var candidate = normalizeSearch(searchInput.value)
+        ? candidates.find(function (button) { return button.dataset.searchableOption; })
+        : candidates.find(function (button) { return button.getAttribute("aria-selected") === "true"; });
+      if (!candidate) candidate = candidates[0];
+      if (candidate) {
+        event.preventDefault();
+        candidate.click();
+      }
+    }
+  });
+
+  optionList.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    closeDropdown(true);
+  });
+
+  wrapper.addEventListener("focusout", function () {
+    setTimeout(function () {
+      if (wrapper.isConnected && !wrapper.contains(document.activeElement)) closeDropdown(false);
+    }, 0);
+  });
+
+  select.addEventListener("change", syncSelectedValue);
+  syncSelectedValue();
+
+  return wrapper;
+};
+
 // ---- DOWNLOAD NAME MODAL ----
 
 window.AppUI.buildDownloadSuggestedName = function buildDownloadSuggestedName(prefix, text) {

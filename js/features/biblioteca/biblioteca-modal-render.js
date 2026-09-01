@@ -415,16 +415,17 @@ function renderBibliotecaAgregarModal() {
                 ? buildActividadDidacticaOptions(curVal)
                 : "";
               return `
-                <label class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
+                <div class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
                   <span class="actividad-momento-label">${escapeHtml(m.label)}</span>
                   <select
+                    id="bib-agr-actividad-${escapeHtml(m.key)}-${escapeHtml(t.localId)}"
                     data-bib-agr-actividad
                     data-local-id="${escapeHtml(t.localId)}"
                     data-momento="${escapeHtml(m.key)}"
                     class="actividad-cierre-select actividad-didactica-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none">
                     ${opts}
                   </select>
-                </label>`;
+                </div>`;
             }).join("")
           : "";
 
@@ -524,6 +525,10 @@ function renderBibliotecaAgregarModal() {
 
   // Per-tema activity selects — update state without re-rendering
   modal.querySelectorAll("[data-bib-agr-actividad]").forEach(sel => {
+    window.AppUI.enhanceSearchableSelect(sel, {
+      searchPlaceholder: "Buscar actividad...",
+      emptyMessage: "No se encontraron actividades."
+    });
     sel.addEventListener("change", e => {
       const localId = e.target.dataset.localId;
       const momento = e.target.dataset.momento;

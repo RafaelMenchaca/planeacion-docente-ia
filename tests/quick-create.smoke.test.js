@@ -82,6 +82,7 @@ function createHarness({ generationResult, generationError } = {}) {
     anexos: []
   }]);
 
+  run(context, "js/ui/shared.ui.js");
   run(context, "js/features/examenes/exam-download.js");
   run(context, "js/features/examenes/exam-preview.js");
   run(context, "js/features/listas-cotejo/lista-cotejo-download.js");
@@ -127,6 +128,25 @@ async function submitNewBlock(harness, temas = [{ titulo: "Fracciones", duracion
     .dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
   await waitFor(() => window.generarPlaneacionesUnidadConProgreso.mock.calls.length === 1);
   await waitFor(() => harness.state().generating === false);
+}
+
+function addQuickTema(window, titulo) {
+  window.document.getElementById("quick-tema-title").value = titulo;
+  window.document.getElementById("quick-tema-duration").value = "50";
+  window.document.getElementById("quick-add-tema").click();
+}
+
+function chooseSearchableOption(window, control, query, labelStart) {
+  control.querySelector(".actividad-searchable-trigger").click();
+  const input = control.querySelector(".actividad-searchable-input");
+  input.value = query;
+  input.dispatchEvent(new window.Event("input", { bubbles: true }));
+  const option = [...control.querySelectorAll(".actividad-searchable-option")]
+    .find((button) => labelStart === "" || labelStart.startsWith("Sin actividad")
+      ? button.dataset.searchableOption === ""
+      : button.textContent.startsWith(labelStart));
+  expect(option).toBeDefined();
+  option.click();
 }
 
 describe("Quick Create owner smoke", () => {
@@ -196,5 +216,138 @@ describe("Quick Create owner smoke", () => {
     expect(failed.state().progress.finalMessage).toBe("network down");
     expect(failed.bibliotecaState().pendingBatchId).toBeNull();
     expect(failed.bibliotecaState().pendingConjunto).not.toBeNull();
+  });
+
+  test("convierte cada actividad de Quick Create en un selector buscable independiente", async () => {
+    const harness = createHarness();
+    const { window } = harness;
+
+    await window.QuickCreate.open();
+    addQuickTema(window, "Fracciones");
+
+    expect(window.document.querySelector("[data-actividad-search-input]")).toBeNull();
+    expect(window.document.body.textContent).not.toContain("Buscar actividad\n");
+
+    let nativeSelects = [...window.document.querySelectorAll("[data-quick-actividad-select]")];
+    let controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
+    expect(nativeSelects).toHaveLength(3);
+    expect(nativeSelects.every((select) => select.hidden)).toBe(true);
+    expect(controls).toHaveLength(3);
+    expect(controls.every((control) => control.querySelector("[data-searchable-selected]")
+      .textContent.startsWith("Sin actividad"))).toBe(true);
+
+    const resolutionValue = [...nativeSelects[0].options]
+      .find((option) => option.value.startsWith("Resoluci")).value;
+    const debateValue = [...nativeSelects[0].options]
+      .find((option) => option.value.startsWith("Debate acad")).value;
+
+    const firstControl = controls[0];
+    firstControl.querySelector(".actividad-searchable-trigger").click();
+    const firstSearch = firstControl.querySelector(".actividad-searchable-input");
+    firstSearch.value = "  DEBATE  ";
+    firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
+    const debateResults = [...firstControl.querySelectorAll(".actividad-searchable-option")];
+    expect(debateResults).toHaveLength(2);
+    expect(debateResults[0].dataset.searchableOption).toBe("");
+    expect(debateResults[1].textContent.startsWith("Debate acad")).toBe(true);
+
+    firstSearch.value = "";
+    firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
+    expect(firstControl.querySelectorAll(".actividad-searchable-option")).toHaveLength(nativeSelects[0].options.length);
+
+    firstSearch.value = "actividad inexistente";
+    firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
+    expect(firstControl.querySelector("[data-searchable-empty]").hidden).toBe(false);
+    expect(nativeSelects[0].value).toBe("");
+
+    firstSearch.value = "lluvia";
+    firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
+    [...firstControl.querySelectorAll(".actividad-searchable-option")]
+      .find((button) => button.textContent === "Lluvia de ideas").click();
+
+    controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
+    chooseSearchableOption(window, controls[1], "resolucion", "Resoluci");
+    controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
+    const closeControl = controls[2];
+    closeControl.querySelector(".actividad-searchable-trigger").click();
+    const closeSearch = closeControl.querySelector(".actividad-searchable-input");
+    closeSearch.value = "Debate";
+    closeSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
+    closeSearch.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+    expect(harness.state().quickCreate.temas[0].actividades_momentos).toEqual({
+      conocimientos_previos: "Lluvia de ideas",
+      desarrollo: resolutionValue,
+      cierre: debateValue
+    });
+
+    nativeSelects = [...window.document.querySelectorAll("[data-quick-actividad-select]")];
+    expect(nativeSelects.map((select) => select.value)).toEqual([
+      "Lluvia de ideas",
+      resolutionValue,
+      debateValue
+    ]);
+
+    controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
+    controls[0].querySelector(".actividad-searchable-trigger").click();
+    const reopenedSearch = controls[0].querySelector(".actividad-searchable-input");
+    reopenedSearch.value = "sin coincidencias";
+    reopenedSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
+    reopenedSearch.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(controls[0].querySelector("[data-searchable-dropdown]").hidden).toBe(true);
+    expect(nativeSelects[0].value).toBe("Lluvia de ideas");
+
+    chooseSearchableOption(window, controls[1], "", "Sin actividad especÃ­fica");
+    expect(harness.state().quickCreate.temas[0].actividades_momentos).toEqual({
+      conocimientos_previos: "Lluvia de ideas",
+      cierre: debateValue
+    });
+  });
+
+  test("mantiene comboboxes independientes entre temas y en el modal de Biblioteca", async () => {
+    const harness = createHarness();
+    const { window, context } = harness;
+
+    await window.QuickCreate.open();
+    addQuickTema(window, "Tema uno");
+    addQuickTema(window, "Tema dos");
+
+    let controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
+    expect(controls).toHaveLength(6);
+    controls[0].querySelector(".actividad-searchable-trigger").click();
+    const firstTemaSearch = controls[0].querySelector(".actividad-searchable-input");
+    firstTemaSearch.value = "lluvia";
+    firstTemaSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
+    controls[3].querySelector(".actividad-searchable-trigger").click();
+    expect(controls[3].querySelector(".actividad-searchable-input").value).toBe("");
+    expect(controls[3].querySelectorAll(".actividad-searchable-option").length).toBeGreaterThan(2);
+
+    vm.runInContext(`injectBibliotecaModals(); openBibliotecaAgregarModal({
+      id: "batch-1",
+      unidad_id: "unidad-1",
+      materia: "Matematicas",
+      nivel: "secundaria",
+      titulo: "Algebra"
+    })`, context);
+    window.document.getElementById("bib-agr-titulo").value = "Fracciones";
+    window.document.getElementById("bib-agr-add").click();
+
+    controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
+    expect(controls).toHaveLength(3);
+    chooseSearchableOption(window, controls[0], "trabajo COLAB", "Trabajo colaborativo");
+    expect(vm.runInContext(
+      "BibliotecaPlaneacionModalState.getState().temas[0].actividades_momentos.conocimientos_previos",
+      context
+    )).toBe("Trabajo colaborativo");
+
+    window.document.getElementById("bib-agr-titulo").value = "Ecuaciones";
+    window.document.getElementById("bib-agr-add").click();
+    const modalSelects = [...window.document.querySelectorAll("[data-bib-agr-actividad]")];
+    controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
+    expect(modalSelects).toHaveLength(6);
+    expect(controls).toHaveLength(6);
+    expect(modalSelects[0].value).toBe("Trabajo colaborativo");
+    expect(controls[0].querySelector("[data-searchable-selected]").textContent)
+      .toBe("Trabajo colaborativo");
   });
 });

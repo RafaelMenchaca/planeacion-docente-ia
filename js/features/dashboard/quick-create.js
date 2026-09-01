@@ -337,6 +337,13 @@ function renderQuickTemasList() {
       </div>
     `)
     .join("");
+
+  list.querySelectorAll("[data-quick-actividad-select]").forEach((select) => {
+    window.AppUI.enhanceSearchableSelect(select, {
+      searchPlaceholder: "Buscar actividad...",
+      emptyMessage: "No se encontraron actividades."
+    });
+  });
 }
 
 async function fillQuickGradoOptions(plantelId) {

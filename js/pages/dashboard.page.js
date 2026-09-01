@@ -180,7 +180,7 @@ function renderActividadesMomentosControl({ scope, localId, actividadesMomentos 
       <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividades did&aacute;cticas opcionales</p>
       <div class="mt-2 grid gap-2">
         ${MOMENTOS_ACTIVIDADES_DIDACTICAS.map(({ key, label }) => `
-          <label class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
+          <div class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
             <span class="actividad-momento-label">${escapeHtml(label)}</span>
             ${renderActividadDidacticaSelect({
               scope,
@@ -188,7 +188,7 @@ function renderActividadesMomentosControl({ scope, localId, actividadesMomentos 
               momentoKey: key,
               actividad: normalized[key] || ""
             })}
-          </label>
+          </div>
         `).join("")}
       </div>
     </div>
