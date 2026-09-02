@@ -236,20 +236,22 @@ describe("Quick Create owner smoke", () => {
     expect(controls.every((control) => control.querySelector("[data-searchable-selected]")
       .textContent.startsWith("Sin actividad"))).toBe(true);
 
-    const resolutionValue = [...nativeSelects[0].options]
-      .find((option) => option.value.startsWith("Resoluci")).value;
-    const debateValue = [...nativeSelects[0].options]
-      .find((option) => option.value.startsWith("Debate acad")).value;
+    const summaryValue = [...nativeSelects[0].options]
+      .find((option) => option.value === "Elaboración de resúmenes").value;
+    const translationValue = [...nativeSelects[0].options]
+      .find((option) => option.value === "Traducción de textos").value;
+    const kahootValue = [...nativeSelects[0].options]
+      .find((option) => option.value === "Kahoot o cuestionarios interactivos").value;
 
     const firstControl = controls[0];
     firstControl.querySelector(".actividad-searchable-trigger").click();
     const firstSearch = firstControl.querySelector(".actividad-searchable-input");
-    firstSearch.value = "  DEBATE  ";
+    firstSearch.value = "  RESUMEN  ";
     firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
-    const debateResults = [...firstControl.querySelectorAll(".actividad-searchable-option")];
-    expect(debateResults).toHaveLength(2);
-    expect(debateResults[0].dataset.searchableOption).toBe("");
-    expect(debateResults[1].textContent.startsWith("Debate acad")).toBe(true);
+    const summaryResults = [...firstControl.querySelectorAll(".actividad-searchable-option")];
+    expect(summaryResults).toHaveLength(2);
+    expect(summaryResults[0].dataset.searchableOption).toBe("");
+    expect(summaryResults[1].textContent).toBe("Elaboración de resúmenes");
 
     firstSearch.value = "";
     firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
@@ -260,32 +262,32 @@ describe("Quick Create owner smoke", () => {
     expect(firstControl.querySelector("[data-searchable-empty]").hidden).toBe(false);
     expect(nativeSelects[0].value).toBe("");
 
-    firstSearch.value = "lluvia";
+    firstSearch.value = "resumen";
     firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
     [...firstControl.querySelectorAll(".actividad-searchable-option")]
-      .find((button) => button.textContent === "Lluvia de ideas").click();
+      .find((button) => button.textContent === summaryValue).click();
 
     controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
-    chooseSearchableOption(window, controls[1], "resolucion", "Resoluci");
+    chooseSearchableOption(window, controls[1], "traduccion", translationValue);
     controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
     const closeControl = controls[2];
     closeControl.querySelector(".actividad-searchable-trigger").click();
     const closeSearch = closeControl.querySelector(".actividad-searchable-input");
-    closeSearch.value = "Debate";
+    closeSearch.value = "KAHOOT";
     closeSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
     closeSearch.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
     expect(harness.state().quickCreate.temas[0].actividades_momentos).toEqual({
-      conocimientos_previos: "Lluvia de ideas",
-      desarrollo: resolutionValue,
-      cierre: debateValue
+      conocimientos_previos: summaryValue,
+      desarrollo: translationValue,
+      cierre: kahootValue
     });
 
     nativeSelects = [...window.document.querySelectorAll("[data-quick-actividad-select]")];
     expect(nativeSelects.map((select) => select.value)).toEqual([
-      "Lluvia de ideas",
-      resolutionValue,
-      debateValue
+      summaryValue,
+      translationValue,
+      kahootValue
     ]);
 
     controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
@@ -295,12 +297,12 @@ describe("Quick Create owner smoke", () => {
     reopenedSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
     reopenedSearch.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(controls[0].querySelector("[data-searchable-dropdown]").hidden).toBe(true);
-    expect(nativeSelects[0].value).toBe("Lluvia de ideas");
+    expect(nativeSelects[0].value).toBe(summaryValue);
 
     chooseSearchableOption(window, controls[1], "", "Sin actividad especÃ­fica");
     expect(harness.state().quickCreate.temas[0].actividades_momentos).toEqual({
-      conocimientos_previos: "Lluvia de ideas",
-      cierre: debateValue
+      conocimientos_previos: summaryValue,
+      cierre: kahootValue
     });
   });
 
@@ -334,11 +336,11 @@ describe("Quick Create owner smoke", () => {
 
     controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
     expect(controls).toHaveLength(3);
-    chooseSearchableOption(window, controls[0], "trabajo COLAB", "Trabajo colaborativo");
+    chooseSearchableOption(window, controls[0], "  PELOTA  ", "Dinámica de preguntas con pelota");
     expect(vm.runInContext(
       "BibliotecaPlaneacionModalState.getState().temas[0].actividades_momentos.conocimientos_previos",
       context
-    )).toBe("Trabajo colaborativo");
+    )).toBe("Dinámica de preguntas con pelota");
 
     window.document.getElementById("bib-agr-titulo").value = "Ecuaciones";
     window.document.getElementById("bib-agr-add").click();
@@ -346,8 +348,8 @@ describe("Quick Create owner smoke", () => {
     controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
     expect(modalSelects).toHaveLength(6);
     expect(controls).toHaveLength(6);
-    expect(modalSelects[0].value).toBe("Trabajo colaborativo");
+    expect(modalSelects[0].value).toBe("Dinámica de preguntas con pelota");
     expect(controls[0].querySelector("[data-searchable-selected]").textContent)
-      .toBe("Trabajo colaborativo");
+      .toBe("Dinámica de preguntas con pelota");
   });
 });
