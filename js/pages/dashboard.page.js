@@ -37,6 +37,7 @@ const MOMENTOS_ACTIVIDADES_DIDACTICAS = [
 const ACTIVIDADES_DIDACTICAS = [
   { nombre: "Actividades interdisciplinarias", descripcion: "Integración de materias" },
   { nombre: "Análisis de estudio de caso", descripcion: "Análisis y decisiones" },
+  { nombre: "Análisis de textos", descripcion: "Interpretación crítica" },
   { nombre: "Análisis de videos", descripcion: "Interpretación audiovisual" },
   { nombre: "Aprendizaje basado en problemas (ABPr)", descripcion: "Solución de problemas" },
   { nombre: "Aprendizaje basado en proyectos (ABP)", descripcion: "Problemas reales" },
@@ -45,17 +46,22 @@ const ACTIVIDADES_DIDACTICAS = [
   { nombre: "Aprendizaje servicio", descripcion: "Acciones comunitarias" },
   { nombre: "Círculo de lectura", descripcion: "Discusión de textos" },
   { nombre: "Clase invertida (Flipped Classroom)", descripcion: "Aprendizaje autónomo" },
+  { nombre: "Concurso de preguntas", descripcion: "Repaso y competencia amistosa" },
   { nombre: "Creación de blogs educativos", descripcion: "Escritura digital" },
   { nombre: "Creación de infografías", descripcion: "Recursos visuales" },
   { nombre: "Creación de videos educativos", descripcion: "Creatividad digital" },
   { nombre: "Cuadros comparativos", descripcion: "Diferencias y semejanzas" },
   { nombre: "Debate académico", descripcion: "Pensamiento crítico" },
   { nombre: "Diarios de aprendizaje", descripcion: "Reflexión personal" },
+  { nombre: "Dinámica de preguntas con globos", descripcion: "Preguntas y retos grupales" },
+  { nombre: "Dinámica de preguntas con pelota", descripcion: "Participación oral grupal" },
   { nombre: "Dinámicas rompehielo", descripcion: "Integración grupal" },
   { nombre: "Diseño de experimentos", descripcion: "Método científico" },
   { nombre: "Diseño de prototipos", descripcion: "Innovación tecnológica" },
   { nombre: "Elaboración de maquetas", descripcion: "Modelos físicos" },
+  { nombre: "Elaboración de resúmenes", descripcion: "Síntesis de información" },
   { nombre: "Encuestas y entrevistas", descripcion: "Recopilación de datos" },
+  { nombre: "Ensayo académico", descripcion: "Argumentación escrita" },
   { nombre: "Escape room educativo", descripcion: "Trabajo en equipo" },
   { nombre: "Excursiones educativas", descripcion: "Experiencias reales" },
   { nombre: "Exposición oral", descripcion: "Comunicación y dominio" },
@@ -67,6 +73,8 @@ const ACTIVIDADES_DIDACTICAS = [
   { nombre: "Investigación documental", descripcion: "Análisis de fuentes" },
   { nombre: "Juegos de mesa educativos", descripcion: "Lógica y estrategia" },
   { nombre: "Juegos de rol", descripcion: "Perspectivas y contextos" },
+  { nombre: "Juegos y dinámicas de movimiento", descripcion: "Aprendizaje activo y físico" },
+  { nombre: "Kahoot o cuestionarios interactivos", descripcion: "Evaluación lúdica interactiva" },
   { nombre: "Lectura guiada", descripcion: "Comprensión lectora" },
   { nombre: "Líneas del tiempo", descripcion: "Organización cronológica" },
   { nombre: "Lluvia de ideas", descripcion: "Participación creativa" },
@@ -85,6 +93,7 @@ const ACTIVIDADES_DIDACTICAS = [
   { nombre: "Simulación de situaciones reales", descripcion: "Experiencia práctica" },
   { nombre: "Taller de escritura creativa", descripcion: "Expresión escrita" },
   { nombre: "Trabajo colaborativo", descripcion: "Cooperación efectiva" },
+  { nombre: "Traducción de textos", descripcion: "Producción en otro idioma" },
   { nombre: "Tutoría entre pares", descripcion: "Aprendizaje colaborativo" }
 ];
 const ACTIVIDADES_DIDACTICAS_MAP = new Map(
@@ -180,7 +189,7 @@ function renderActividadesMomentosControl({ scope, localId, actividadesMomentos 
       <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actividades did&aacute;cticas opcionales</p>
       <div class="mt-2 grid gap-2">
         ${MOMENTOS_ACTIVIDADES_DIDACTICAS.map(({ key, label }) => `
-          <label class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
+          <div class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">
             <span class="actividad-momento-label">${escapeHtml(label)}</span>
             ${renderActividadDidacticaSelect({
               scope,
@@ -188,7 +197,7 @@ function renderActividadesMomentosControl({ scope, localId, actividadesMomentos 
               momentoKey: key,
               actividad: normalized[key] || ""
             })}
-          </label>
+          </div>
         `).join("")}
       </div>
     </div>
