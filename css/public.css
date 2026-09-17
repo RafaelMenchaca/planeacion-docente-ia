@@ -451,6 +451,191 @@
   }
 }
 
+/* Mockups estáticos exclusivos de capacidades y pasos del sitio público. */
+.public-flow-mock {
+  min-width: 0;
+  padding: 1rem;
+  container-type: inline-size;
+  color: var(--public-ink);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.public-flow-mock__fields,
+.public-flow-mock__pair {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.public-flow-mock__fields,
+.public-flow-mock__inset,
+.public-flow-mock__label,
+.public-flow-mock__actions,
+.public-flow-mock__table,
+.public-flow-mock__notice {
+  margin-top: 1rem;
+}
+
+.public-flow-mock__field dt,
+.public-flow-mock__label {
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: var(--public-ink-soft);
+}
+
+.public-flow-mock__fields + .public-flow-mock__pair {
+  margin-top: 0.75rem;
+}
+
+.public-flow-mock__input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.public-flow-mock__select::after {
+  content: "";
+  flex: 0 0 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid #64748b;
+  border-bottom: 1.5px solid #64748b;
+  transform: rotate(45deg);
+}
+
+.public-flow-mock__inset {
+  padding: 0.85rem;
+  border: 1px solid var(--public-border);
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.public-flow-mock__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.public-flow-mock__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #67e8f9;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  color: #0e7490;
+  font-weight: 600;
+  text-align: center;
+}
+
+.public-flow-mock__button--primary {
+  border-color: #0e7490;
+  background: #0e7490;
+  color: #ffffff;
+}
+
+.public-flow-mock__resources {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  border-bottom: 1px solid var(--public-border);
+}
+
+.public-flow-mock__resources > span {
+  padding: 0.65rem 0.6rem;
+  border-bottom: 2px solid transparent;
+  color: var(--public-ink-soft);
+  font-weight: 600;
+}
+
+.public-flow-mock__resources > .is-active {
+  border-bottom-color: #0891b2;
+  color: #0e7490;
+  background: #ecfeff;
+}
+
+.public-flow-mock__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+}
+
+.public-flow-mock__table th,
+.public-flow-mock__table td {
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--public-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.public-flow-mock__table th {
+  background: #0e7490;
+  color: #ffffff;
+}
+
+.public-flow-mock__table th:first-child { border-radius: 0.65rem 0 0 0; }
+.public-flow-mock__table th:last-child { border-radius: 0 0.65rem 0 0; }
+.public-flow-mock__table th:nth-child(2) { width: 46%; }
+
+.public-flow-mock__notice {
+  padding: 0.85rem;
+  border-radius: 0.75rem;
+  background: #ecfeff;
+  color: #155e75;
+  font-weight: 600;
+}
+
+@container (min-width: 400px) {
+  .public-flow-mock__pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+.public-flow-mock__topic-row > dl > :last-child {
+  max-width: 4.5rem;
+}
+
+@container (min-width: 460px) {
+  .public-flow-mock__topic-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.75rem;
+  }
+
+  .public-flow-mock__topic-row > dl {
+    grid-template-columns: minmax(0, 1fr) 4.5rem;
+  }
+
+  .public-flow-mock__topic-row > dl > :first-child {
+    max-width: 15rem;
+  }
+
+  .public-flow-mock__topic-row > .public-flow-mock__actions {
+    margin-top: 0;
+  }
+}
+
+@container (max-width: 340px) {
+  .public-flow-mock__actions { flex-direction: column; }
+  .public-flow-mock__table thead { display: none; }
+  .public-flow-mock__table tbody,
+  .public-flow-mock__table tr,
+  .public-flow-mock__table td { display: block; }
+  .public-flow-mock__table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #0e7490;
+    font-weight: 700;
+  }
+}
+
 .public-dot {
   display: inline-flex;
   width: 0.6rem;
