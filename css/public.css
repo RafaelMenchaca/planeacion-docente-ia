@@ -451,6 +451,83 @@
   }
 }
 
+.public-how-summary {
+  display: grid;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.public-how-summary__steps {
+  display: grid;
+  gap: 1.25rem;
+  color: var(--public-ink);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.public-how-summary__steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-block: 0.35rem;
+}
+
+.public-how-summary__steps .public-step-badge {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.85rem;
+}
+
+.public-library-mock--full .public-library-mock__header {
+  position: relative;
+  padding-right: 3.5rem;
+}
+
+.public-library-mock--full .public-library-mock__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.6rem;
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+.public-library-mock--full .public-library-mock__header > .public-library-mock__delete {
+  position: absolute;
+  top: 1.1rem;
+  right: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .public-hero-layout {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .public-how-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 3rem;
+  }
+
+  .public-how-summary > figure {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .public-how-summary__steps {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+  }
+}
+
+.public-hero-layout .public-library-mock__item {
+  padding-block: 0.65rem;
+}
+
 /* Mockups estáticos exclusivos de capacidades y pasos del sitio público. */
 .public-flow-mock {
   min-width: 0;

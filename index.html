@@ -17,7 +17,7 @@
 
   <main class="public-page">
     <section class="mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 pb-12 sm:px-6 lg:px-8">
-      <div class="grid w-full items-center gap-8 lg:grid-cols-[minmax(0,1.12fr)_minmax(340px,0.88fr)] lg:gap-12">
+      <div class="public-hero-layout grid w-full items-center gap-8">
         <div class="public-fade-up">
           <span class="public-pill">PLANEACIÓN DOCENTE CON IA</span>
           <h1 class="public-display mt-6 max-w-4xl text-5xl font-semibold leading-[1.02] text-slate-950 sm:text-6xl lg:text-7xl">
@@ -33,24 +33,26 @@
           </div>
         </div>
 
-        <figure class="public-card-strong public-mock-panel public-library-mock public-fade-up p-4 sm:p-5" aria-label="Ejemplo de un bloque en Biblioteca con dos planeaciones" aria-describedby="hero-library-caption">
-          <figcaption id="hero-library-caption" hidden>Vista ilustrativa de Biblioteca. Las pestañas y acciones son de muestra.</figcaption>
+        <figure class="public-card-strong public-mock-panel public-library-mock public-library-mock--full public-fade-up p-4 sm:p-5" aria-label="Ejemplo de un bloque en Biblioteca con cuatro planeaciones" aria-describedby="hero-library-caption">
+            <figcaption id="hero-library-caption" hidden>Vista ilustrativa. Las pestañas y acciones son de muestra.</figcaption>
           <div class="public-mock-card public-library-mock__detail">
             <div class="public-library-mock__header">
+              <span class="public-library-mock__delete" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></span>
               <p class="public-kicker">Bloque seleccionado</p>
               <h2 class="mt-2 text-xl font-bold text-slate-900">4to Semestre Álgebra Lineal</h2>
               <div class="public-library-mock__metadata">
                 <span><strong>Nivel:</strong> Universidad</span>
                 <span><strong>Materia:</strong> Álgebra lineal</span>
+                <span><strong>Creado:</strong> 15 sep 2026, 07:03 p.m.</span>
               </div>
             </div>
 
             <!-- Representación visual: sin handlers ni roles de controles interactivos. -->
             <div class="public-library-mock__tabs" role="group" aria-label="Tipos de recursos de ejemplo; Planeaciones seleccionada" tabindex="0">
-              <span class="public-library-mock__tab is-active">Planeaciones <span class="public-library-mock__count">2</span></span>
-              <span class="public-library-mock__tab">Anexos <span class="public-library-mock__count">0</span></span>
-              <span class="public-library-mock__tab">Listas de cotejo <span class="public-library-mock__count">0</span></span>
-              <span class="public-library-mock__tab">Exámenes <span class="public-library-mock__count">0</span></span>
+              <span class="public-library-mock__tab is-active">Planeaciones <span class="public-library-mock__count">4</span></span>
+              <span class="public-library-mock__tab">Anexos <span class="public-library-mock__count">3</span></span>
+              <span class="public-library-mock__tab">Listas de cotejo <span class="public-library-mock__count">1</span></span>
+              <span class="public-library-mock__tab">Exámenes <span class="public-library-mock__count">1</span></span>
             </div>
 
             <div class="public-library-mock__content">
@@ -62,27 +64,51 @@
                 <li class="public-library-mock__item">
                   <div>
                     <p class="text-sm font-semibold text-slate-900">Introducción al álgebra</p>
-                    <p class="mt-1 text-xs text-slate-500">50 min · 15/09/26</p>
+                    <p class="mt-1 text-xs text-slate-500">50 min · 15/09/26, 7:03 p.m.</p>
                   </div>
                   <div class="public-library-mock__actions" aria-hidden="true">
                     <span>Ver</span>
                     <span>Descargar</span>
+                    <span class="public-library-mock__delete" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></span>
                   </div>
                 </li>
                 <li class="public-library-mock__item">
                   <div>
                     <p class="text-sm font-semibold text-slate-900">Álgebra de matrices</p>
-                    <p class="mt-1 text-xs text-slate-500">50 min · 15/09/26</p>
+                    <p class="mt-1 text-xs text-slate-500">50 min · 15/09/26, 7:03 p.m.</p>
                   </div>
                   <div class="public-library-mock__actions" aria-hidden="true">
                     <span>Ver</span>
                     <span>Descargar</span>
+                    <span class="public-library-mock__delete" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></span>
+                  </div>
+                </li>
+                <li class="public-library-mock__item">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">Matrices y determinantes</p>
+                    <p class="mt-1 text-xs text-slate-500">50 min · 16/09/26, 7:00 p.m.</p>
+                  </div>
+                  <div class="public-library-mock__actions" aria-hidden="true">
+                    <span>Ver</span>
+                    <span>Descargar</span>
+                    <span class="public-library-mock__delete" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></span>
+                  </div>
+                </li>
+                <li class="public-library-mock__item">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">Espacios vectoriales</p>
+                    <p class="mt-1 text-xs text-slate-500">50 min · 16/09/26, 7:00 p.m.</p>
+                  </div>
+                  <div class="public-library-mock__actions" aria-hidden="true">
+                    <span>Ver</span>
+                    <span>Descargar</span>
+                    <span class="public-library-mock__delete" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></span>
                   </div>
                 </li>
               </ul>
             </div>
           </div>
-        </figure>
+          </figure>
       </div>
     </section>
 
@@ -177,158 +203,71 @@
       <div class="public-card p-6 sm:p-8">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div class="max-w-3xl">
-            <p class="public-kicker">QUÉ PUEDES HACER CON PLANEA</p>
+            <p class="public-kicker">CÓMO FUNCIONA</p>
             <h2 class="public-display mt-3 text-3xl font-semibold text-slate-950 sm:text-4xl">Tu trabajo docente, organizado en un solo lugar.</h2>
             <p class="mt-4 text-sm leading-7 text-slate-600">Prepara tus bloques, adapta los temas a tu clase y crea materiales que puedes revisar y exportar.</p>
           </div>
           <a href="pages/como_funciona.html" class="public-cta-primary">Ver el flujo completo</a>
         </div>
 
-        <div class="mt-8 space-y-4">
-          <article class="public-card overflow-hidden p-0">
-            <div class="grid gap-0 lg:grid-cols-[minmax(220px,0.86fr)_minmax(0,1.14fr)]">
-              <div class="p-6 sm:p-7">
-                <p class="public-kicker">ORGANIZA</p>
-                <h3 class="mt-3 text-2xl font-bold text-slate-950">Prepara tu bloque de trabajo.</h3>
-                <p class="mt-4 text-sm leading-7 text-slate-600">Define el nivel, la materia y los temas que quieres desarrollar.</p>
-              </div>
-
-              <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
-                <div class="public-mock-card public-flow-mock" role="group" aria-label="Creación de bloque; vista ilustrativa">
-                  <p class="public-kicker">Crear bloque de planeación</p>
-                  <dl class="public-flow-mock__fields">
-                    <div class="public-flow-mock__field">
-                      <dt>Título</dt>
-                      <dd class="public-flow-mock__input">4to Semestre Álgebra Lineal</dd>
-                    </div>
-                  </dl>
-                  <dl class="public-flow-mock__pair">
-                    <div class="public-flow-mock__field">
-                      <dt>Nivel educativo</dt>
-                      <dd class="public-flow-mock__input public-flow-mock__select">Universidad</dd>
-                    </div>
-                    <div class="public-flow-mock__field">
-                      <dt>Materia</dt>
-                      <dd class="public-flow-mock__input public-flow-mock__select">Álgebra lineal</dd>
-                    </div>
-                  </dl>
-                  <div class="public-flow-mock__inset public-flow-mock__topic-row">
-                    <dl class="public-flow-mock__pair">
-                      <div class="public-flow-mock__field">
-                        <dt>Tema</dt>
-                        <dd class="public-flow-mock__input">Introducción al álgebra</dd>
-                      </div>
-                      <div class="public-flow-mock__field">
-                        <dt>Duración</dt>
-                        <dd class="public-flow-mock__input">50</dd>
-                      </div>
-                    </dl>
-                    <div class="public-flow-mock__actions">
-                      <span class="public-flow-mock__button">Agregar tema</span>
-                    </div>
-                  </div>
-                </div>
+        <div class="public-how-summary">
+          <ol class="public-how-summary__steps" aria-label="Resumen del proceso">
+            <li><span class="public-step-badge" aria-hidden="true">1</span><span>Define el punto de partida.</span></li>
+            <li><span class="public-step-badge" aria-hidden="true">2</span><span>Prepara los temas de trabajo.</span></li>
+            <li><span class="public-step-badge" aria-hidden="true">3</span><span>Elige qué recurso generar.</span></li>
+            <li><span class="public-step-badge" aria-hidden="true">4</span><span>Ajusta el contenido antes de usarlo.</span></li>
+            <li><span class="public-step-badge" aria-hidden="true">5</span><span>Exporta tus materiales.</span></li>
+          </ol>
+          <figure class="public-library-mock" aria-label="Ejemplo de Biblioteca con dos planeaciones" aria-describedby="flow-library-caption">
+          <figcaption id="flow-library-caption" hidden>Vista ilustrativa de Biblioteca. Las pestañas y acciones son de muestra.</figcaption>
+          <div class="public-mock-card public-library-mock__detail">
+            <div class="public-library-mock__header">
+              <p class="public-kicker">Bloque seleccionado</p>
+              <h3 class="mt-2 text-xl font-bold text-slate-900">4to Semestre Álgebra Lineal</h3>
+              <div class="public-library-mock__metadata">
+                <span><strong>Nivel:</strong> Universidad</span>
+                <span><strong>Materia:</strong> Álgebra lineal</span>
               </div>
             </div>
-          </article>
 
-          <article class="public-card overflow-hidden p-0">
-            <div class="grid gap-0 lg:grid-cols-[minmax(220px,0.86fr)_minmax(0,1.14fr)]">
-              <div class="p-6 sm:p-7">
-                <p class="public-kicker">PERSONALIZA</p>
-                <h3 class="mt-3 text-2xl font-bold text-slate-950">Adapta cada tema a tu clase.</h3>
-                <p class="mt-4 text-sm leading-7 text-slate-600">Agrega varios temas y selecciona actividades didácticas cuando las necesites.</p>
+            <!-- Representación visual: sin handlers ni roles de controles interactivos. -->
+            <div class="public-library-mock__tabs" role="group" aria-label="Tipos de recursos de ejemplo; Planeaciones seleccionada" tabindex="0">
+              <span class="public-library-mock__tab is-active">Planeaciones <span class="public-library-mock__count">2</span></span>
+              <span class="public-library-mock__tab">Anexos <span class="public-library-mock__count">0</span></span>
+              <span class="public-library-mock__tab">Listas de cotejo <span class="public-library-mock__count">0</span></span>
+              <span class="public-library-mock__tab">Exámenes <span class="public-library-mock__count">0</span></span>
+            </div>
+
+            <div class="public-library-mock__content">
+              <div class="public-library-mock__toolbar">
+                <h3 class="text-sm font-bold text-slate-900">Planeaciones</h3>
+                <span class="public-library-mock__add" aria-hidden="true">+ Agregar Tema</span>
               </div>
-
-              <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
-                <div class="public-mock-card public-flow-mock" role="group" aria-label="Tema añadido; vista ilustrativa">
-                  <p class="public-kicker">Temas añadidos</p>
-                  <div class="public-flow-mock__inset">
+              <ul class="public-library-mock__items">
+                <li class="public-library-mock__item">
+                  <div>
                     <p class="text-sm font-semibold text-slate-900">Introducción al álgebra</p>
-                    <p class="mt-1 text-xs text-slate-500">50 min</p>
-                    <p class="public-flow-mock__label">Actividades didácticas opcionales</p>
-                    <dl class="public-flow-mock__fields">
-                      <div class="public-flow-mock__field">
-                        <dt>Conocimientos previos</dt>
-                        <dd class="public-flow-mock__input public-flow-mock__select">Análisis de videos</dd>
-                      </div>
-                      <div class="public-flow-mock__field">
-                        <dt>Desarrollo</dt>
-                        <dd class="public-flow-mock__input public-flow-mock__select">Sin actividad específica</dd>
-                      </div>
-                    </dl>
+                    <p class="mt-1 text-xs text-slate-500">50 min · 15/09/26</p>
                   </div>
-                </div>
-              </div>
+                  <div class="public-library-mock__actions" aria-hidden="true">
+                    <span>Ver</span>
+                    <span>Descargar</span>
+                  </div>
+                </li>
+                <li class="public-library-mock__item">
+                  <div>
+                    <p class="text-sm font-semibold text-slate-900">Álgebra de matrices</p>
+                    <p class="mt-1 text-xs text-slate-500">50 min · 15/09/26</p>
+                  </div>
+                  <div class="public-library-mock__actions" aria-hidden="true">
+                    <span>Ver</span>
+                    <span>Descargar</span>
+                  </div>
+                </li>
+              </ul>
             </div>
-          </article>
-
-          <article class="public-card overflow-hidden p-0">
-            <div class="grid gap-0 lg:grid-cols-[minmax(220px,0.86fr)_minmax(0,1.14fr)]">
-              <div class="p-6 sm:p-7">
-                <p class="public-kicker">GENERA</p>
-                <h3 class="mt-3 text-2xl font-bold text-slate-950">Crea distintos recursos con IA.</h3>
-                <p class="mt-4 text-sm leading-7 text-slate-600">Genera planeaciones, anexos, listas de cotejo y exámenes desde el mismo lugar.</p>
-              </div>
-
-              <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
-                <div class="public-mock-card public-flow-mock" role="group" aria-label="Selección de recursos en Biblioteca; vista ilustrativa">
-                  <p class="public-kicker">Bloque seleccionado</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900">4to Semestre Álgebra Lineal</p>
-                  <div class="public-flow-mock__resources">
-                    <span class="is-active">Planeaciones</span>
-                    <span>Anexos</span>
-                    <span>Listas de cotejo</span>
-                    <span>Exámenes</span>
-                  </div>
-                  <div class="public-flow-mock__inset">
-                    <p class="text-sm font-semibold text-slate-900">Introducción al álgebra</p>
-                    <p class="mt-1 text-xs text-slate-500">50 min · Planeación</p>
-                  </div>
-                  <div class="public-flow-mock__actions">
-                    <span class="public-flow-mock__button public-flow-mock__button--primary">Generar recursos</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article class="public-card overflow-hidden p-0">
-            <div class="grid gap-0 lg:grid-cols-[minmax(220px,0.86fr)_minmax(0,1.14fr)]">
-              <div class="p-6 sm:p-7">
-                <p class="public-kicker">REVISA Y EXPORTA</p>
-                <h3 class="mt-3 text-2xl font-bold text-slate-950">Mantén el control del resultado.</h3>
-                <p class="mt-4 text-sm leading-7 text-slate-600">Revisa y edita el contenido antes de descargar tus materiales.</p>
-              </div>
-
-              <div class="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 lg:border-l lg:border-t-0">
-                <div class="public-mock-card public-flow-mock" role="group" aria-label="Detalle de planeación; vista ilustrativa">
-                  <p class="public-kicker">Planeación editable</p>
-                  <p class="mt-2 text-sm font-semibold text-slate-900">Propuesta generada por IA</p>
-                  <div class="public-flow-mock__actions">
-                    <span class="public-flow-mock__button">Editar planeación</span>
-                  </div>
-                  <table class="public-flow-mock__table" aria-label="Extracto de planeación">
-                    <thead>
-                      <tr>
-                        <th scope="col">Tiempo de la sesión</th>
-                        <th scope="col">Actividades</th>
-                        <th scope="col">Tiempo (min)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td data-label="Tiempo de la sesión">Conocimientos previos</td>
-                        <td data-label="Actividades">Analizar un video sobre expresiones algebraicas.</td>
-                        <td data-label="Tiempo (min)">10</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <p class="public-flow-mock__label">Descarga en Word / Excel</p>
-                </div>
-              </div>
-            </div>
-          </article>
+          </div>
+        </figure>
         </div>
       </div>
     </section>
