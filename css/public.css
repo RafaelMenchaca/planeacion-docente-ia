@@ -508,8 +508,8 @@
   }
 
   .public-how-summary {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 3rem;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 2rem;
   }
 
   .public-how-summary > figure {
@@ -711,6 +711,268 @@
     color: #0e7490;
     font-weight: 700;
   }
+}
+
+/* Popup de creación ilustrativo: reutiliza los campos del flujo público. */
+.public-create-mock {
+  padding: 0;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.public-create-mock__topic-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.public-create-mock__body {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+}
+
+.public-create-mock .public-flow-mock__input,
+.public-create-mock .public-flow-mock__button {
+  padding: 0.35rem 0.6rem;
+}
+
+.public-create-mock .public-flow-mock__field dt {
+  margin-bottom: 0.2rem;
+}
+
+.public-create-mock .public-flow-mock__inset {
+  padding: 0.6rem;
+}
+
+.public-create-mock__body > .public-flow-mock__inset {
+  margin-top: 0;
+}
+
+.public-create-mock__topic-entry,
+.public-create-mock__topic-fields {
+  display: grid;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.public-create-mock__topic-fields {
+  grid-template-columns: minmax(0, 1fr) 4rem;
+}
+
+.public-create-mock__placeholder {
+  color: #94a3b8;
+}
+
+.public-create-mock__topic {
+  margin-top: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid var(--public-border);
+  border-radius: 0.85rem;
+  background: #ffffff;
+}
+
+.public-create-mock__danger {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid #fda4af;
+  border-radius: 0.85rem;
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.public-create-mock__activities {
+  margin-top: 0.5rem;
+}
+
+.public-create-mock__eyebrow {
+  margin-bottom: 0.45rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.public-create-mock__activities dl {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.public-create-mock__activities dt {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.public-create-mock__activities dd {
+  border-color: #a5f3fc;
+  background: #ecfeff;
+  color: #155e75;
+}
+
+.public-create-mock__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.public-create-mock__cancel {
+  border-color: #cbd5e1;
+  color: var(--public-ink-soft);
+}
+
+@container (min-width: 480px) {
+  .public-create-mock__topic-entry {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .public-create-mock__activities .public-flow-mock__field {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .public-create-mock__activities dt { margin-bottom: 0; }
+}
+
+@container (max-width: 340px) {
+  .public-create-mock__body { padding: 0.75rem; }
+  .public-create-mock .public-flow-mock__inset,
+  .public-create-mock__topic { padding: 0.6rem; }
+  .public-create-mock__topic-fields { grid-template-columns: minmax(0, 1fr); }
+  .public-create-mock__footer { flex-direction: column; }
+}
+
+/* Mockups exclusivos de la página Cómo funciona. */
+.public-process-row {
+  display: grid;
+  align-items: center;
+}
+
+.public-process-row > div:first-child {
+  padding-block: 2.5rem;
+}
+
+.public-process-visual {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: stretch;
+  min-width: 0;
+  padding: 1.75rem 1.25rem;
+  border-top: 1px solid var(--public-border);
+  background: rgba(248, 250, 252, 0.7);
+}
+
+.public-process-visual > .public-create-mock,
+.public-process-visual > .public-process-download {
+  width: 100%;
+  max-width: 36rem;
+  margin-inline: auto;
+}
+
+.public-process-visual > .public-process-download {
+  max-width: 28rem;
+}
+
+.public-process-topic > .public-create-mock__topic {
+  margin: 0;
+  border: 0;
+  padding: 0.85rem;
+}
+
+.public-process-exam .public-library-mock__item > div:first-child {
+  min-width: 0;
+}
+
+.public-process-table {
+  padding: 0.75rem;
+  background: #ffffff;
+}
+
+.public-process-table__scroll {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+}
+
+.public-process-table__scroll:focus-visible {
+  outline: 2px solid #0891b2;
+  outline-offset: 2px;
+}
+
+.public-process-table table {
+  width: 100%;
+  min-width: 600px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--public-ink);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.public-process-table th,
+.public-process-table td {
+  padding: 0.7rem 0.25rem;
+  border-right: 1px solid #cbd5e1;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: center;
+  vertical-align: middle;
+  overflow-wrap: break-word;
+}
+
+.public-process-table thead th {
+  background: #0e7490;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.public-process-table thead th:nth-child(1) { width: 14%; }
+.public-process-table thead th:nth-child(2) { width: 20%; }
+.public-process-table thead th:nth-child(3) { width: 10%; }
+.public-process-table thead th:nth-child(4) { width: 15%; }
+.public-process-table thead th:nth-child(5) { width: 16%; }
+.public-process-table thead th:nth-child(6) { width: 14%; }
+.public-process-table thead th:nth-child(7) { width: 11%; }
+.public-process-table tbody tr:first-child { background: #f0f9ff; }
+.public-process-table tbody tr:nth-child(2) { background: #f8fafc; }
+.public-process-table tbody th { background: #f1f5f9; }
+.public-process-table tbody td:nth-child(2) { text-align: left; }
+.public-process-table tr > :last-child { border-right: 0; }
+
+.public-process-download .public-flow-mock__input {
+  border-color: #06b6d4;
+  overflow-wrap: anywhere;
+}
+
+.public-process-download__formats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .public-process-row {
+    grid-template-columns: minmax(0, 0.6fr) minmax(0, 1.4fr);
+    min-height: 26rem;
+  }
+
+  .public-process-visual {
+    padding-block: 2.75rem;
+    border-top: 0;
+    border-left: 1px solid var(--public-border);
+  }
+}
+
+@media (max-width: 390px) {
+  .public-process-visual { padding: 1.5rem 0.75rem; }
 }
 
 .public-dot {
