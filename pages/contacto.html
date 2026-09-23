@@ -59,9 +59,10 @@
 
       <div class="public-card p-6 sm:p-8">
         <h2 class="text-2xl font-bold text-slate-950">Escríbenos</h2>
-        <p class="mt-2 text-sm leading-7 text-slate-600">Cuéntanos qué necesitas y te responderemos con el siguiente paso.</p>
+        <p id="contacto-aviso" class="public-card-soft mt-6 p-4 text-sm text-slate-700">El envío de mensajes aún no está habilitado. No ingreses datos personales.</p>
 
-        <form class="mt-6 space-y-4">
+        <!-- Contención temporal: sin form ni name hasta integrar el contacto. -->
+        <div class="mt-6 space-y-4" role="group" aria-label="Contacto no disponible" aria-describedby="contacto-aviso">
           <div class="grid gap-4 sm:grid-cols-2">
             <div>
               <label for="nombre" class="mb-2 block text-sm font-semibold text-slate-700">Nombre</label>
@@ -97,8 +98,13 @@
             <textarea id="mensaje" rows="6" class="public-textarea" placeholder="Cuéntanos qué necesitas generar, cuántos usuarios lo usarían o qué duda quieres resolver."></textarea>
           </div>
 
-          <button type="submit" class="public-cta-primary">Enviar mensaje</button>
-        </form>
+          <button type="button" disabled aria-describedby="contacto-aviso" class="public-cta-primary">Envío no disponible</button>
+        </div>
+
+        <p class="mt-6 text-sm text-slate-600">
+          ¿Ya tienes acceso?
+          <a href="login.html" class="font-semibold text-cyan-800">Iniciar sesión</a>
+        </p>
       </div>
     </section>
   </main>

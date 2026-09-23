@@ -72,6 +72,12 @@ El Explorer visual jerárquico antiguo fue retirado. Las tablas, IDs, caches, lo
 
 No existe `pages/biblioteca.html`.
 
+### Contención temporal de formularios públicos
+
+Registro, recuperación y contacto aún no tienen integración. Sus controles se mantienen en grupos HTML sin `<form>` ni atributos `name`, con botones `type="button"` deshabilitados y avisos visibles asociados mediante `aria-describedby`. Así, clic y Enter no pueden producir un envío nativo, incluso sin JavaScript. Registro tampoco conserva los campos ocultos de autocompletado. Las tres páginas incluyen un enlace estático a login para usuarios existentes.
+
+Al conectar cada flujo, conservar los IDs y labels, definir su handler y destino real, y mantener una protección sin JavaScript antes de restaurar la capacidad de envío. Esta contención no implementa Auth, correo ni contacto. Verificación manual: completar solo con valores sintéticos; intentar clic y Enter en cada página con scripts habilitados y deshabilitados; comprobar que no hay navegación/envío ni valores en la URL, que el aviso es legible y que login sigue accesible por teclado.
+
 ## Configuración
 
 `js/core/config.js` define `window.API_BASE_URL`:
