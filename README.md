@@ -99,6 +99,7 @@ Sirve los archivos estáticos con un servidor local y mantén disponible el back
 ## Developer documentation
 
 - Entornos y esquema: [inventario y evidencia pendiente en backend](../backend/docs/ENVIRONMENT_SCHEMA_READINESS.md) (checkout hermano; inspección local, sin certificar aislamiento).
+- Storage y Auth de pruebas: [guía canónica de preparación 02D.1](../backend/docs/test-environment/STORAGE_AUTH_READINESS.md) (consumidores de carga manual, policies, bucket pendiente e inventario Auth; sin cambios funcionales).
 - Planes y consumo: [contrato canónico en el repositorio backend](../backend/docs/PRODUCT_PLANS_CONSUMPTION.md) (checkout hermano `backend/`; reglas documentadas, todavía no implementadas).
 - Reglas para agentes: [`AGENTS.md`](AGENTS.md)
 - Arquitectura actual: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
