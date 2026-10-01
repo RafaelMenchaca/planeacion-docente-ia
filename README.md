@@ -76,7 +76,16 @@ No existe `pages/biblioteca.html`.
 
 Registro, recuperación y contacto aún no tienen integración. Sus controles se mantienen en grupos HTML sin `<form>` ni atributos `name`, con botones `type="button"` deshabilitados y avisos visibles asociados mediante `aria-describedby`. Así, clic y Enter no pueden producir un envío nativo, incluso sin JavaScript. Registro tampoco conserva los campos ocultos de autocompletado. Las tres páginas incluyen un enlace estático a login para usuarios existentes.
 
-Al conectar cada flujo, conservar los IDs y labels, definir su handler y destino real, y mantener una protección sin JavaScript antes de restaurar la capacidad de envío. Esta contención no implementa Auth, correo ni contacto. Verificación manual: completar solo con valores sintéticos; intentar clic y Enter en cada página con scripts habilitados y deshabilitados; comprobar que no hay navegación/envío ni valores en la URL, que el aviso es legible y que login sigue accesible por teclado.
+Al conectar cada flujo, conservar los IDs y labels, definir su handler y destino real, y mantener una protección sin JavaScript antes de restaurar la capacidad de envío. Esta contención no implementa Auth, correo ni contacto: registro, recuperación y contacto siguen deliberadamente inactivos hasta sus sesiones funcionales.
+
+**Validación manual completada y aprobada — evidencia proporcionada por el usuario el 2026-09-30.** Contención del commit `b4314ce` (`fix(auth): prevent native submission of inactive public forms`), probada en [registro](pages/registro.html), [recuperación](pages/recuperar.html) y [contacto](pages/contacto.html), servidos desde `http://127.0.0.1:5500`, con Chrome de escritorio en Windows. Se probaron JavaScript habilitado y JavaScript deshabilitado desde DevTools, con los mismos resultados:
+
+- Avisos de función no disponible visibles; botones deshabilitados omitidos al navegar con Tab y sin posibilidad de activarlos.
+- Enter en inputs no envía ni navega; en selectores conserva la selección normal y en el textarea de contacto crea una nueva línea.
+- Enlaces a iniciar sesión accesibles y funcionales mediante Enter.
+- URLs limpias, sin emails, contraseñas ni datos de formularios; ninguna solicitud de registro, recuperación o contacto ni mensajes falsos de éxito.
+
+La protección se mantuvo sin JavaScript y no depende de `preventDefault`. En Network, con Preserve log, se observaron cargas de `login.html`, scripts Auth y una solicitud de refresh token **después de activar expresamente el enlace de inicio de sesión**. Corresponden al login existente, no a los botones contenidos ni a Enter en los controles. Esta evidencia aprueba únicamente la contención; no acredita implementación ni validación funcional de registro, recuperación o contacto. El agente registra la prueba aportada, sin atribuirse su ejecución.
 
 ## Configuración
 
