@@ -18,16 +18,17 @@
         <article class="public-card p-6 sm:p-8">
           <p class="public-kicker">Recuperar acceso</p>
           <h2 class="mt-3 text-3xl font-bold text-slate-950">Ingresa tu correo</h2>
-          <p class="mt-2 text-sm leading-7 text-slate-600">Te enviaremos instrucciones para recuperar tu contraseña.</p>
+          <p id="recuperar-aviso" class="public-card-soft mt-6 p-4 text-sm text-slate-700">La recuperación de contraseña aún no está habilitada. No ingreses datos personales.</p>
 
-          <form class="mt-8 space-y-4">
+          <!-- Contención temporal: sin form ni name hasta integrar la recuperación. -->
+          <div class="mt-8 space-y-4" role="group" aria-label="Recuperación no disponible" aria-describedby="recuperar-aviso">
             <div>
               <label for="email" class="mb-2 block text-sm font-semibold text-slate-700">Correo electrónico</label>
               <input id="email" type="email" class="public-input" placeholder="docente@escuela.edu" required />
             </div>
 
-            <button type="submit" class="public-cta-primary w-full">Enviar instrucciones</button>
-          </form>
+            <button type="button" disabled aria-describedby="recuperar-aviso" class="public-cta-primary w-full">Recuperación no disponible</button>
+          </div>
 
           <p class="mt-6 text-sm text-slate-600">
             ¿Recordaste tu contraseña?

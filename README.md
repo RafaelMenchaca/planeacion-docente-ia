@@ -72,6 +72,21 @@ El Explorer visual jerárquico antiguo fue retirado. Las tablas, IDs, caches, lo
 
 No existe `pages/biblioteca.html`.
 
+### Contención temporal de formularios públicos
+
+Registro, recuperación y contacto aún no tienen integración. Sus controles se mantienen en grupos HTML sin `<form>` ni atributos `name`, con botones `type="button"` deshabilitados y avisos visibles asociados mediante `aria-describedby`. Así, clic y Enter no pueden producir un envío nativo, incluso sin JavaScript. Registro tampoco conserva los campos ocultos de autocompletado. Las tres páginas incluyen un enlace estático a login para usuarios existentes.
+
+Al conectar cada flujo, conservar los IDs y labels, definir su handler y destino real, y mantener una protección sin JavaScript antes de restaurar la capacidad de envío. Esta contención no implementa Auth, correo ni contacto: registro, recuperación y contacto siguen deliberadamente inactivos hasta sus sesiones funcionales.
+
+**Validación manual completada y aprobada — evidencia proporcionada por el usuario el 2026-09-30.** Contención del commit `b4314ce` (`fix(auth): prevent native submission of inactive public forms`), probada en [registro](pages/registro.html), [recuperación](pages/recuperar.html) y [contacto](pages/contacto.html), servidos desde `http://127.0.0.1:5500`, con Chrome de escritorio en Windows. Se probaron JavaScript habilitado y JavaScript deshabilitado desde DevTools, con los mismos resultados:
+
+- Avisos de función no disponible visibles; botones deshabilitados omitidos al navegar con Tab y sin posibilidad de activarlos.
+- Enter en inputs no envía ni navega; en selectores conserva la selección normal y en el textarea de contacto crea una nueva línea.
+- Enlaces a iniciar sesión accesibles y funcionales mediante Enter.
+- URLs limpias, sin emails, contraseñas ni datos de formularios; ninguna solicitud de registro, recuperación o contacto ni mensajes falsos de éxito.
+
+La protección se mantuvo sin JavaScript y no depende de `preventDefault`. En Network, con Preserve log, se observaron cargas de `login.html`, scripts Auth y una solicitud de refresh token **después de activar expresamente el enlace de inicio de sesión**. Corresponden al login existente, no a los botones contenidos ni a Enter en los controles. Esta evidencia aprueba únicamente la contención; no acredita implementación ni validación funcional de registro, recuperación o contacto. El agente registra la prueba aportada, sin atribuirse su ejecución.
+
 ## Configuración
 
 `js/core/config.js` define `window.API_BASE_URL`:
@@ -92,6 +107,9 @@ Sirve los archivos estáticos con un servidor local y mantén disponible el back
 
 ## Developer documentation
 
+- Entornos y esquema: [inventario y evidencia pendiente en backend](../backend/docs/ENVIRONMENT_SCHEMA_READINESS.md) (checkout hermano; inspección local, sin certificar aislamiento).
+- Storage y Auth de pruebas: [guía canónica de preparación 02D.1](../backend/docs/test-environment/STORAGE_AUTH_READINESS.md) (consumidores de carga manual, policies, bucket pendiente e inventario Auth; sin cambios funcionales).
+- Planes y consumo: [contrato canónico en el repositorio backend](../backend/docs/PRODUCT_PLANS_CONSUMPTION.md) (checkout hermano `backend/`; reglas documentadas, todavía no implementadas).
 - Reglas para agentes: [`AGENTS.md`](AGENTS.md)
 - Arquitectura actual: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Mapa de código: [`docs/FRONTEND_MAP.md`](docs/FRONTEND_MAP.md)
