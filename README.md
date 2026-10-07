@@ -89,10 +89,9 @@ La protección se mantuvo sin JavaScript y no depende de `preventDefault`. En Ne
 
 ## Configuración
 
-`js/core/config.js` define `window.API_BASE_URL`:
+`js/core/config.js` valida una configuración explícita compartida por Login y páginas privadas. Local (`localhost:5500` o `127.0.0.1:5500`) exige `js/core/config.local.js`, copiado del [ejemplo público](js/core/config.local.example.js) y excluido de Git: solo proyecto Supabase de pruebas y API local en 3000. El placeholder impide arrancar hasta completarlo localmente; nunca poner claves privadas en frontend.
 
-- `localhost` o `127.0.0.1`: `http://localhost:3000`;
-- otros hosts: `https://api.educativoia.com`.
+Producción se limita a HTTPS en `educativoia.com`, `www.educativoia.com` y `planeacion-docente-ia.vercel.app`. Previews, LAN, IPv6, file: y hosts desconocidos fallan cerrados; no hay fallback productivo. Consultar el [contrato y procedimiento canónico 02E](../backend/docs/ENVIRONMENT_SCHEMA_READINESS.md#02e--aislamiento-operativo-en-código-2026-10-04) para variables, errores, comprobación sanitizada y pruebas manuales pendientes. `window.EDUCATIVO_ENVIRONMENT` muestra solo ambiente/proyecto/API; no imprimir EDUCATIVO_CONFIG ni claves.
 
 No copiar secretos o credenciales a la documentación. La configuración pública de Supabase no autoriza exponer service role.
 
@@ -105,10 +104,12 @@ npm test -- --runInBand
 
 Sirve los archivos estáticos con un servidor local y mantén disponible el backend en la URL configurada.
 
+Comprobación de configuración sin dependencias, red ni credenciales: `node --test tests/environment-config.cjs`. No iniciar pruebas conectadas hasta completar la configuración local de ambos repositorios y comprobar sus destinos siguiendo la guía 02E. Los scripts clásicos conservan el orden de los owners, precedidos por config.local.js → config.js → SDK → cliente → Auth.
+
 ## Developer documentation
 
 - Entornos y esquema: [inventario y evidencia pendiente en backend](../backend/docs/ENVIRONMENT_SCHEMA_READINESS.md) (checkout hermano; inspección local, sin certificar aislamiento).
-- Storage y Auth de pruebas: [guía canónica de preparación 02D.1](../backend/docs/test-environment/STORAGE_AUTH_READINESS.md) (consumidores de carga manual, policies, bucket pendiente e inventario Auth; sin cambios funcionales).
+- Storage y Auth de pruebas: [guía canónica 02D.2](../backend/docs/test-environment/STORAGE_AUTH_READINESS.md) (bucket configurado estructuralmente e inventario Auth; pruebas funcionales pendientes).
 - Planes y consumo: [contrato canónico en el repositorio backend](../backend/docs/PRODUCT_PLANS_CONSUMPTION.md) (checkout hermano `backend/`; reglas documentadas, todavía no implementadas).
 - Reglas para agentes: [`AGENTS.md`](AGENTS.md)
 - Arquitectura actual: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)

@@ -272,3 +272,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Public local runtime configuration; never deploy this override.
+/js/core/config.local.js
