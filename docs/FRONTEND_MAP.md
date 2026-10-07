@@ -109,10 +109,10 @@ No existe una slice de navegación visual legacy. No renombrar el objeto ni move
 
 ## Orden de carga del Dashboard
 
-`pages/dashboard.html` carga 42 scripts locales y el CDN de Supabase. El orden conceptual es:
+`pages/dashboard.html` conserva sus 42 scripts locales y el CDN de Supabase, precedidos ahora por el override opcional `core/config.local.js` (ignorado por Git). Login también carga el mismo provider `core/config.js`. El orden conceptual es:
 
 ```text
-core/Supabase/auth
+core/config.local → core/config → Supabase/client/auth
 → APIs y services
 → generation owners requeridos temprano
 → wordExport y preview/download owners
