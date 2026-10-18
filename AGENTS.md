@@ -24,10 +24,10 @@ Siempre leer este archivo. Después consultar solo lo relacionado con la tarea:
 | Arquitectura y ownership | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
 | Archivos, surfaces y orden de carga | [`docs/FRONTEND_MAP.md`](docs/FRONTEND_MAP.md) |
 | Pruebas | [`docs/TESTING.md`](docs/TESTING.md) |
-| Backend y rutas | [`backend docs/03-backend-guide.md`](../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md) |
-| Schema, IDs y relaciones | [`backend docs/DATABASE_SCHEMA.md`](../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md) |
-| Generación IA | [`backend docs/AI_GENERATION_CONTRACTS.md`](../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md) |
-| Logs backend | [`backend docs/observability/LOG_CONVENTIONS.md`](../../educativo_backend/Educativo-Backend/docs/observability/LOG_CONVENTIONS.md) |
+| Backend y rutas | [`backend docs/03-backend-guide.md`](../backend/docs/03-backend-guide.md) |
+| Schema, IDs y relaciones | [`backend docs/DATABASE_SCHEMA.md`](../backend/docs/DATABASE_SCHEMA.md) |
+| Generación IA | [`backend docs/AI_GENERATION_CONTRACTS.md`](../backend/docs/AI_GENERATION_CONTRACTS.md) |
+| Logs backend | [`backend docs/observability/LOG_CONVENTIONS.md`](../backend/docs/observability/LOG_CONVENTIONS.md) |
 
 El código ejecutable y los contratos backend especializados prevalecen sobre resúmenes. Si se contradicen, detener el cambio y reportar la evidencia.
 
@@ -58,9 +58,9 @@ El frontend usa scripts clásicos deliberadamente. El orden de `<script>` en `pa
 
 ## Jerarquía técnica
 
-Planteles, grados, materias, unidades y temas siguen activos cuando soportan IDs, caches, loaders, Quick Create, persistencia, contratos backend o Archivados.
+Planteles, grados, materias, unidades y temas forman una capa relacional heredada y congelada. Puede seguir sosteniendo IDs, caches, loaders, Quick Create, persistencia, contratos backend o Archivados, pero esos consumers técnicos no reactivan Explorer ni convierten la jerarquía en un flujo visual vigente.
 
-No eliminar ni reinterpretar una pieza por tener nombre jerárquico. Buscar consumers en JS, HTML, `data-*`, listeners, handlers y `window.*`.
+Toda funcionalidad nueva se diseña desde Biblioteca. No ampliar rutas o contratos jerárquicos, reconstruir su UI, añadir navegación, crear herramientas a su alrededor ni refactorizarla incidentalmente sin autorización explícita. Un cambio inevitable debe responder a una necesidad concreta de Biblioteca o seguridad, tener alcance mínimo, preservar contratos y demostrar mediante regresión que Biblioteca no se rompe. No retirar tablas, rutas o relaciones sin análisis. Si aparece una vulnerabilidad, documentarla y preparar una corrección mínima separada; no aplicarla automáticamente fuera del alcance autorizado.
 
 ## Contratos protegidos
 
