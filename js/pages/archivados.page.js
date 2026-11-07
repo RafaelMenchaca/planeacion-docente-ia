@@ -1,4 +1,5 @@
-const archivedState = {
+function buildEmptyArchivedState() {
+  return {
   loading: false,
   error: "",
   filter: "all",
@@ -23,7 +24,20 @@ const archivedState = {
     submitTone: "danger",
     busy: false
   }
-};
+  };
+}
+
+const archivedState = buildEmptyArchivedState();
+
+function resetArchivedSessionState() {
+  Object.keys(archivedState).forEach((key) => delete archivedState[key]);
+  Object.assign(archivedState, buildEmptyArchivedState());
+  renderArchivadosSidebar();
+  renderArchivadosContent();
+  renderConfirmModal();
+}
+
+window.BrowserSessionState?.registerReset(resetArchivedSessionState);
 
 const ARCHIVED_SCOPE_ORDER = ["plantel", "grado", "materia", "unidad"];
 const ARCHIVED_HIDDEN_COLLECTIONS = {
@@ -1089,6 +1103,9 @@ function getConfirmConfig(action, element) {
 }
 
 async function loadArchivedData() {
+  const session = await window.requireSession();
+  if (!session) return;
+  const context = window.BrowserSessionState?.captureContext?.();
   archivedState.loading = true;
   archivedState.error = "";
   renderArchivadosSidebar();
@@ -1096,6 +1113,7 @@ async function loadArchivedData() {
 
   try {
     const payload = await obtenerArchivadosPlaneaciones();
+    if (context && !window.BrowserSessionState.isCurrentContext(context)) return;
     const items = flattenArchivedPayload(payload);
     const branches = buildArchivedBranches(items);
     const scopeOnlyCount = branches.filter(
@@ -1109,6 +1127,7 @@ async function loadArchivedData() {
       branches
     };
   } catch (error) {
+    if (context && !window.BrowserSessionState.isCurrentContext(context)) return;
     archivedState.error = error?.message || "No se pudieron cargar los archivados.";
   } finally {
     archivedState.loading = false;

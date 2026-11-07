@@ -5,7 +5,8 @@
 
 const BIB_EXAM_GENERIC_FAILURE_MESSAGE = "No se pudo completar la generacion del examen. Intenta nuevamente.";
 
-const bibliotecaState = {
+function buildEmptyBibliotecaState() {
+  return {
   conjuntos: [],
   loading: false,
   error: "",
@@ -64,7 +65,18 @@ const bibliotecaState = {
     error: ""
     // generating/progress/done removed — progress tracked in pendingPlaneacionesByBatchId
   }
-};
+  };
+}
+
+const bibliotecaState = buildEmptyBibliotecaState();
+
+function resetBibliotecaSessionState() {
+  Object.keys(bibliotecaState).forEach((key) => delete bibliotecaState[key]);
+  Object.assign(bibliotecaState, buildEmptyBibliotecaState());
+  window.BibliotecaRender?.renderContent?.();
+}
+
+window.BrowserSessionState?.registerReset(resetBibliotecaSessionState);
 
 // Fase 5 — Sesión 5.1: ownership léxico de la selección vigente de Biblioteca.
 // La única fuente de verdad permanece en bibliotecaState.selectedConjuntoId.

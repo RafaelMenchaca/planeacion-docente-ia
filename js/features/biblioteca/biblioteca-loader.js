@@ -153,6 +153,9 @@ async function finishBibliotecaPlaneacionesGeneration(result) {
 }
 
 async function loadAndRenderBiblioteca(options = {}) {
+  const session = await window.requireSession();
+  if (!session) return;
+  const context = window.BrowserSessionState?.captureContext?.();
   const silent = options.silent === true;
   const targetBatchId = normalizeBibliotecaId(options.targetBatchId);
   const targetActiveTab = options.activeTab || "planeaciones";
@@ -172,10 +175,8 @@ async function loadAndRenderBiblioteca(options = {}) {
   if (!silent) BibliotecaRender.renderContent();
 
   try {
-    const session = await window.requireSession();
-    if (!session) return;
-
     const data    = await apiBibliotecaConjuntos(session.access_token);
+    if (context && !window.BrowserSessionState.isCurrentContext(context)) return;
     const newList = Array.isArray(data) ? data : [];
 
     // Reconciliation: map tempId expanded state to the newly created real conjunto
@@ -218,6 +219,7 @@ async function loadAndRenderBiblioteca(options = {}) {
 
     BibliotecaRender.renderContent();
   } catch (error) {
+    if (context && !window.BrowserSessionState.isCurrentContext(context)) return;
     console.error("[biblioteca] Error al cargar conjuntos:", error);
     bibliotecaState.loading = false;
     bibliotecaState.error   = error.message || "Error al cargar la biblioteca.";
