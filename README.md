@@ -20,7 +20,7 @@ El flujo principal es:
 Dashboard → Biblioteca → Quick Create → owner del recurso
 ```
 
-El Explorer visual jerárquico antiguo fue retirado. Las tablas, IDs, caches, loaders y endpoints jerárquicos siguen activos cuando soportan Quick Create, persistencia, contratos técnicos o Archivados.
+El Explorer visual jerárquico antiguo fue retirado. Las tablas, IDs, caches, loaders y endpoints jerárquicos se conservan como capa relacional congelada cuando soportan Quick Create, persistencia, contratos técnicos o Archivados; esa compatibilidad interna no constituye un flujo visual activo ni autoriza ampliarlo.
 
 ## Stack
 

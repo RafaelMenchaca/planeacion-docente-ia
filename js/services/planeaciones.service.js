@@ -15,6 +15,11 @@ function getArchivedHierarchyRegistryStorage() {
   }
 }
 
+function getArchivedHierarchyRegistryKey() {
+  const subjectId = window.BrowserSessionState?.getSubjectId?.();
+  return subjectId ? `${ARCHIVED_HIERARCHY_REGISTRY_KEY}.${subjectId}` : null;
+}
+
 function buildEmptyArchivedHierarchyRegistry() {
   return {
     hidden: {
@@ -214,10 +219,11 @@ function normalizeArchivedHierarchyRegistry(raw) {
 
 function readArchivedHierarchyRegistry() {
   const storage = getArchivedHierarchyRegistryStorage();
-  if (!storage) return buildEmptyArchivedHierarchyRegistry();
+  const registryKey = getArchivedHierarchyRegistryKey();
+  if (!storage || !registryKey) return buildEmptyArchivedHierarchyRegistry();
 
   try {
-    const raw = storage.getItem(ARCHIVED_HIERARCHY_REGISTRY_KEY);
+    const raw = storage.getItem(registryKey);
     return normalizeArchivedHierarchyRegistry(raw ? JSON.parse(raw) : null);
   } catch {
     return buildEmptyArchivedHierarchyRegistry();
@@ -226,11 +232,12 @@ function readArchivedHierarchyRegistry() {
 
 function writeArchivedHierarchyRegistry(registry) {
   const storage = getArchivedHierarchyRegistryStorage();
-  if (!storage) return;
+  const registryKey = getArchivedHierarchyRegistryKey();
+  if (!storage || !registryKey) return;
 
   try {
     storage.setItem(
-      ARCHIVED_HIERARCHY_REGISTRY_KEY,
+      registryKey,
       JSON.stringify(normalizeArchivedHierarchyRegistry(registry))
     );
   } catch {

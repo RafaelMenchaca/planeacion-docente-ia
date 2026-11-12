@@ -8,6 +8,12 @@ Este documento describe cómo funciona hoy el frontend de Educativo IA / Planea.
 
 El Explorer visual jerárquico antiguo fue eliminado. La jerarquía técnica de planteles, grados, materias, unidades y temas permanece cuando sostiene datos, IDs, Quick Create, persistencia, contratos backend o Archivados.
 
+### Capa relacional congelada
+
+La existencia de esos consumers no convierte la jerarquía en una experiencia visual activa. Planteles, grados, materias, unidades y temas forman una capa heredada cuya compatibilidad se preserva para los contratos internos vigentes. No debe recuperar navegación, CRUD visual, mejoras funcionales ni ownership de producto; tampoco debe dirigir el diseño de sesiones nuevas o desplazar o duplicar Biblioteca. Archivados continúa como flujo independiente.
+
+Toda funcionalidad nueva se diseña desde Biblioteca. Un cambio sobre la capa jerárquica solo procede con autorización explícita cuando una necesidad concreta de Biblioteca o seguridad lo exige; debe ser mínimo, preservar los contratos existentes y acompañarse de regresión que demuestre que Biblioteca sigue funcionando. Esta regla impide reconstruir la UI, ampliar rutas o contratos, refactorizar incidentalmente y crear un harness CRUD exhaustivo. También impide retirar tablas, rutas o relaciones por conveniencia. Una vulnerabilidad demostrada se documenta y recibe una corrección mínima separada.
+
 ## Modelo de ejecución
 
 - HTML multipágina.
@@ -120,9 +126,9 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
 
 Los contratos detallados viven en el backend:
 
-- [`DATABASE_SCHEMA.md`](../../../educativo_backend/Educativo-Backend/docs/DATABASE_SCHEMA.md)
-- [`AI_GENERATION_CONTRACTS.md`](../../../educativo_backend/Educativo-Backend/docs/AI_GENERATION_CONTRACTS.md)
-- [`03-backend-guide.md`](../../../educativo_backend/Educativo-Backend/docs/03-backend-guide.md)
+- [`DATABASE_SCHEMA.md`](../../backend/docs/DATABASE_SCHEMA.md)
+- [`AI_GENERATION_CONTRACTS.md`](../../backend/docs/AI_GENERATION_CONTRACTS.md)
+- [`03-backend-guide.md`](../../backend/docs/03-backend-guide.md)
 
 ## Páginas
 

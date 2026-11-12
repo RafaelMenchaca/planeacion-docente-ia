@@ -1,4 +1,5 @@
-const explorerState = {
+function buildEmptyExplorerState() {
+  return {
   planteles: [],
   gradosByPlantel: {},
   materiasByGrado: {},
@@ -21,7 +22,30 @@ const explorerState = {
   generating: false,
   examPreview: { open: false, examenId: null, loading: false, error: "" },
   listaCotejoPreview: { open: false, listaId: null, listaData: null, loading: false, error: "" }
-};
+  };
+}
+
+const explorerState = buildEmptyExplorerState();
+
+function resetExplorerSessionState() {
+  Object.keys(explorerState).forEach((key) => delete explorerState[key]);
+  Object.assign(explorerState, buildEmptyExplorerState());
+  window.QuickCreate?.close?.();
+  window.ExamPreview?.render?.();
+  window.ListaCotejoPreview?.render?.();
+}
+
+window.BrowserSessionState?.registerReset(resetExplorerSessionState);
+
+function captureExplorerSessionContext() {
+  return window.BrowserSessionState?.getSubjectId?.()
+    ? window.BrowserSessionState.captureContext()
+    : null;
+}
+
+function explorerSessionContextIsCurrent(context) {
+  return !context || window.BrowserSessionState.isCurrentContext(context);
+}
 
 const QUICK_NIVELES_EDUCATIVOS = [
   { value: "primaria", label: "Primaria" },
@@ -316,17 +340,20 @@ function friendlyProgressMessage(message) {
 }
 
 async function loadPlanteles() {
+  const context = captureExplorerSessionContext();
   explorerState.loading.root = true;
   explorerState.errors.root = "";
 
 
   try {
     const items = await obtenerPlanteles();
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.planteles = filterArchivedHierarchyItems(
       "plantel",
       sortEntities(items || [])
     );
   } catch (error) {
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.planteles = [];
     explorerState.errors.root = formatFetchError(error, "No se pudieron cargar los planteles.");
   } finally {
@@ -344,16 +371,19 @@ async function ensureGrados(plantelId, { force = false } = {}) {
   if (!plantelId) return;
   if (!force && explorerState.gradosByPlantel[plantelId]) return;
 
+  const context = captureExplorerSessionContext();
   explorerState.loading.grados[plantelId] = true;
   delete explorerState.errors.grados[plantelId];
 
   try {
     const items = await obtenerGradosPorPlantel(plantelId);
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.gradosByPlantel[plantelId] = filterArchivedHierarchyItems(
       "grado",
       sortEntities(items || [])
     );
   } catch (error) {
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.gradosByPlantel[plantelId] = [];
     explorerState.errors.grados[plantelId] = formatFetchError(error, "No se pudieron cargar los grados.");
   } finally {
@@ -365,16 +395,19 @@ async function ensureMaterias(gradoId, { force = false } = {}) {
   if (!gradoId) return;
   if (!force && explorerState.materiasByGrado[gradoId]) return;
 
+  const context = captureExplorerSessionContext();
   explorerState.loading.materias[gradoId] = true;
   delete explorerState.errors.materias[gradoId];
 
   try {
     const items = await obtenerMateriasPorGrado(gradoId);
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.materiasByGrado[gradoId] = filterArchivedHierarchyItems(
       "materia",
       sortEntities(items || [])
     );
   } catch (error) {
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.materiasByGrado[gradoId] = [];
     explorerState.errors.materias[gradoId] = formatFetchError(error, "No se pudieron cargar las materias.");
   } finally {
@@ -386,16 +419,19 @@ async function ensureUnidades(materiaId, { force = false } = {}) {
   if (!materiaId) return;
   if (!force && explorerState.unidadesByMateria[materiaId]) return;
 
+  const context = captureExplorerSessionContext();
   explorerState.loading.unidades[materiaId] = true;
   delete explorerState.errors.unidades[materiaId];
 
   try {
     const items = await obtenerUnidadesPorMateria(materiaId);
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.unidadesByMateria[materiaId] = filterArchivedHierarchyItems(
       "unidad",
       sortEntities(items || [])
     );
   } catch (error) {
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.unidadesByMateria[materiaId] = [];
     explorerState.errors.unidades[materiaId] = formatFetchError(error, "No se pudieron cargar las unidades.");
   } finally {
@@ -407,13 +443,16 @@ async function ensureTemas(unidadId, { force = false } = {}) {
   if (!unidadId) return;
   if (!force && explorerState.temasByUnidad[unidadId]) return;
 
+  const context = captureExplorerSessionContext();
   explorerState.loading.temas[unidadId] = true;
   delete explorerState.errors.temas[unidadId];
 
   try {
     const items = await obtenerTemasPorUnidad(unidadId);
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.temasByUnidad[unidadId] = sortEntities(items || []);
   } catch (error) {
+    if (!explorerSessionContextIsCurrent(context)) return;
     explorerState.temasByUnidad[unidadId] = [];
     explorerState.errors.temas[unidadId] = formatFetchError(error, "No se pudieron cargar los temas.");
   } finally {
