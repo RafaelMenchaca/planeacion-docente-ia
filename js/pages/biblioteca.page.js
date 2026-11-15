@@ -767,7 +767,7 @@ function addBibliotecaAgregarTema() {
     const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
     if (!tema) return;
     if (!tema.actividades_momentos) tema.actividades_momentos = {};
-    if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {
+    if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val, momento))) {
       tema.actividades_momentos[momento] = val;
     } else {
       delete tema.actividades_momentos[momento];

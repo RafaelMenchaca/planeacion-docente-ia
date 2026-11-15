@@ -124,6 +124,13 @@ async function submitNewBlock(harness, temas = [{ titulo: "Fracciones", duracion
     window.document.getElementById("quick-add-tema").click();
   });
 
+  temas.forEach((tema, index) => {
+    (tema.actividades || []).forEach(({ query, value }, momentoIndex) => {
+      const currentControls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
+      chooseSearchableOption(window, currentControls[(index * 3) + momentoIndex], query, value);
+    });
+  });
+
   window.document.getElementById("quick-create-form")
     .dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
   await waitFor(() => window.generarPlaneacionesUnidadConProgreso.mock.calls.length === 1);
@@ -187,6 +194,26 @@ describe("Quick Create owner smoke", () => {
     expect(harness.activeTab("batch-real-1")).toBe("planeaciones");
   });
 
+  test("transporta las selecciones específicas en el payload de Crear bloque", async () => {
+    const harness = createHarness();
+    await submitNewBlock(harness, [{
+      titulo: "Fracciones",
+      duracion: "50",
+      actividades: [
+        { query: "diagnostico", value: "Activación y diagnóstico" },
+        { query: "aplicacion", value: "Construcción y aplicación del conocimiento" },
+        { query: "retroalimentacion", value: "Evaluación y retroalimentación" }
+      ]
+    }]);
+    const tema = harness.window.generarPlaneacionesUnidadConProgreso.mock.calls[0][0].body.temas[0];
+    expect(tema.actividades_momentos).toEqual({
+      conocimientos_previos: "Activación y diagnóstico",
+      desarrollo: "Construcción y aplicación del conocimiento",
+      cierre: "Evaluación y retroalimentación"
+    });
+    expect(tema.actividad_cierre).toBe("Evaluación y retroalimentación");
+  });
+
   test("preserva partial success y cleanup de error", async () => {
     const partial = createHarness({
       generationResult: {
@@ -237,21 +264,22 @@ describe("Quick Create owner smoke", () => {
       .textContent.startsWith("Sin actividad"))).toBe(true);
 
     const summaryValue = [...nativeSelects[0].options]
-      .find((option) => option.value === "Elaboración de resúmenes").value;
-    const translationValue = [...nativeSelects[0].options]
-      .find((option) => option.value === "Traducción de textos").value;
-    const kahootValue = [...nativeSelects[0].options]
-      .find((option) => option.value === "Kahoot o cuestionarios interactivos").value;
+      .find((option) => option.value === "Activación y diagnóstico").value;
+    const translationValue = [...nativeSelects[1].options]
+      .find((option) => option.value === "Construcción y aplicación del conocimiento").value;
+    const kahootValue = [...nativeSelects[2].options]
+      .find((option) => option.value === "Evaluación y retroalimentación").value;
 
     const firstControl = controls[0];
     firstControl.querySelector(".actividad-searchable-trigger").click();
     const firstSearch = firstControl.querySelector(".actividad-searchable-input");
-    firstSearch.value = "  RESUMEN  ";
+    firstSearch.value = "  DIAGNOSTICO  ";
     firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
     const summaryResults = [...firstControl.querySelectorAll(".actividad-searchable-option")];
-    expect(summaryResults).toHaveLength(2);
+    expect(summaryResults).toHaveLength(3);
     expect(summaryResults[0].dataset.searchableOption).toBe("");
-    expect(summaryResults[1].textContent).toBe("Elaboración de resúmenes");
+    expect(summaryResults[1].textContent).toBe("Activación y diagnóstico");
+    expect(summaryResults[2].textContent).toBe("Cuestionario diagnóstico");
 
     firstSearch.value = "";
     firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
@@ -262,18 +290,18 @@ describe("Quick Create owner smoke", () => {
     expect(firstControl.querySelector("[data-searchable-empty]").hidden).toBe(false);
     expect(nativeSelects[0].value).toBe("");
 
-    firstSearch.value = "resumen";
+    firstSearch.value = "diagnostico";
     firstSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
     [...firstControl.querySelectorAll(".actividad-searchable-option")]
       .find((button) => button.textContent === summaryValue).click();
 
     controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
-    chooseSearchableOption(window, controls[1], "traduccion", translationValue);
+    chooseSearchableOption(window, controls[1], "aplicacion", translationValue);
     controls = [...window.document.querySelectorAll("#quick-temas-list [data-searchable-select]")];
     const closeControl = controls[2];
     closeControl.querySelector(".actividad-searchable-trigger").click();
     const closeSearch = closeControl.querySelector(".actividad-searchable-input");
-    closeSearch.value = "KAHOOT";
+    closeSearch.value = "RETROALIMENTACION";
     closeSearch.dispatchEvent(new window.Event("input", { bubbles: true }));
     closeSearch.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
@@ -336,11 +364,15 @@ describe("Quick Create owner smoke", () => {
 
     controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
     expect(controls).toHaveLength(3);
-    chooseSearchableOption(window, controls[0], "  PELOTA  ", "Dinámica de preguntas con pelota");
+    chooseSearchableOption(window, controls[0], "  IMAGENES  ", "Análisis de imágenes");
+    controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
+    chooseSearchableOption(window, controls[1], "mapa mental", "Mapa mental");
+    controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
+    chooseSearchableOption(window, controls[2], "ticket", "Ticket de salida");
     expect(vm.runInContext(
       "BibliotecaPlaneacionModalState.getState().temas[0].actividades_momentos.conocimientos_previos",
       context
-    )).toBe("Dinámica de preguntas con pelota");
+    )).toBe("Análisis de imágenes");
 
     window.document.getElementById("bib-agr-titulo").value = "Ecuaciones";
     window.document.getElementById("bib-agr-add").click();
@@ -348,8 +380,17 @@ describe("Quick Create owner smoke", () => {
     controls = [...window.document.querySelectorAll("#biblioteca-agregar-modal [data-searchable-select]")];
     expect(modalSelects).toHaveLength(6);
     expect(controls).toHaveLength(6);
-    expect(modalSelects[0].value).toBe("Dinámica de preguntas con pelota");
+    expect(modalSelects[0].value).toBe("Análisis de imágenes");
     expect(controls[0].querySelector("[data-searchable-selected]").textContent)
-      .toBe("Dinámica de preguntas con pelota");
+      .toBe("Análisis de imágenes");
+
+    window.PlaneacionGeneration = { generateFromBiblioteca: jest.fn() };
+    window.document.getElementById("bib-agr-submit").click();
+    const generated = window.PlaneacionGeneration.generateFromBiblioteca.mock.calls[0][0];
+    expect(generated.temasSnap[0].actividades_momentos).toEqual({
+      conocimientos_previos: "Análisis de imágenes",
+      desarrollo: "Mapa mental",
+      cierre: "Ticket de salida"
+    });
   });
 });

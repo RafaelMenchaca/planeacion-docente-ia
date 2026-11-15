@@ -412,7 +412,7 @@ function renderBibliotecaAgregarModal() {
           ? MOMENTOS_ACTIVIDADES_DIDACTICAS.map(m => {
               const curVal = t.actividades_momentos?.[m.key] || "";
               const opts   = typeof buildActividadDidacticaOptions === "function"
-                ? buildActividadDidacticaOptions(curVal)
+                ? buildActividadDidacticaOptions(curVal, m.key)
                 : "";
               return `
                 <div class="actividad-momento-row min-w-0 text-xs font-medium text-slate-600">

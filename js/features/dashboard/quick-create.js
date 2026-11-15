@@ -664,7 +664,7 @@ function updateQuickTemaActividad(localId, momentoKey, actividad) {
   explorerState.quickCreate.temas = explorerState.quickCreate.temas.map((tema) => {
     if (tema.localId !== localId) return tema;
     const actividadesMomentos = normalizeActividadesMomentos(tema.actividades_momentos);
-    if (safeMomento && isActividadDidacticaValida(actividadNormalizada)) {
+    if (safeMomento && isActividadDidacticaValida(actividadNormalizada, safeMomento)) {
       actividadesMomentos[safeMomento] = actividadNormalizada;
     } else if (safeMomento) {
       delete actividadesMomentos[safeMomento];

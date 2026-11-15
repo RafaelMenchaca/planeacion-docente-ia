@@ -56,6 +56,7 @@ function normalizarFilaTablaIa(row) {
   const fila = row && typeof row === "object" ? row : {};
   return {
     tiempo_sesion: fila.tiempo_sesion || "",
+    actividad_seleccionada: fila.actividad_seleccionada || "",
     actividades: fila.actividades || "",
     tiempo_min: fila.tiempo_min || "",
     producto: fila.producto || "",

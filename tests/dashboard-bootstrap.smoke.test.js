@@ -62,23 +62,23 @@ describe("Dashboard bootstrap/bindings owner smoke", () => {
     expect(window.BIBLIOTECA_MODE).toBeUndefined();
     expect(window.document.getElementById("explorer-content")).not.toBeNull();
     expect(window.document.getElementById("btn-hero-quick-create")).not.toBeNull();
-    expect(vm.runInContext('isActividadDidacticaValida("Debate académico")', context)).toBe(true);
+    expect(vm.runInContext(
+      'isActividadDidacticaValida("Activación y diagnóstico", "conocimientos_previos")',
+      context
+    )).toBe(true);
     const actividades = JSON.parse(vm.runInContext(
       "JSON.stringify(ACTIVIDADES_DIDACTICAS.map((actividad) => actividad.nombre))",
       context
     ));
-    expect(actividades).toHaveLength(59);
-    expect(new Set(actividades)).toHaveProperty("size", 59);
+    expect(actividades).toHaveLength(64);
+    expect(new Set(actividades)).toHaveProperty("size", 63);
     expect(actividades).toEqual(expect.arrayContaining([
-      "Elaboración de resúmenes",
+      "Activación y diagnóstico",
+      "Construcción y aplicación del conocimiento",
+      "Evaluación y retroalimentación",
+      "Mapa mental",
       "Análisis de textos",
-      "Ensayo académico",
-      "Traducción de textos",
-      "Kahoot o cuestionarios interactivos",
-      "Concurso de preguntas",
-      "Dinámica de preguntas con pelota",
-      "Dinámica de preguntas con globos",
-      "Juegos y dinámicas de movimiento"
+      "Portafolio de evidencias"
     ]));
 
     const content = window.document.getElementById("explorer-content");
