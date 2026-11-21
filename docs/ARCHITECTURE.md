@@ -124,7 +124,12 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
 - Anexos y listas conservan sus contratos de selección y duplicados.
 - Anexos obtiene sus tres modalidades de `cuadernillo-types.js`; el modal guarda
   un tipo por planeación y coordina requests individuales secuenciales. El
-  renderer y exportador v2 continúan pendientes y están protegidos por guardas.
+  owner `AnexoPreview` detecta el esquema y despacha sin fallback entre el
+  renderer histórico v1 y el renderer web v2. Este último presenta datos
+  generales y los bloques `texto`, `lista`, `conceptos`, `tabla`, `actividad`,
+  `procedimiento`, `ejemplo_resuelto`, `proyecto`, `registro`, `evaluacion` y
+  `espacio_respuesta`. El exportador Word v2 continúa pendiente y protegido por
+  una guarda.
 - Biblioteca recarga y reconcilia la colección después de operaciones persistentes.
 
 Los contratos detallados viven en el backend:

@@ -350,7 +350,7 @@ describe("Transporte, coordinación parcial y compatibilidad", () => {
     run(context, "js/features/anexos/anexo-preview.js");
     const v2 = { id: "a2", tipo_cuadernillo: "aprendizaje_guiado", contenido: { schema_version: 2, secciones: [] } };
     window.AnexoPreview.render(v2);
-    expect(window.document.querySelector(".biblioteca-modal-card").textContent).toContain("siguiente checkpoint");
+    expect(window.document.querySelector(".biblioteca-modal-card").textContent).toContain("contenido está incompleto");
     expect(window.AnexoDownload.download(v2, "v2")).toBe(false);
     expect(window.URL.createObjectURL).not.toHaveBeenCalled();
     const v1 = { id: "a1", titulo: "Anexo v1", contenido: { titulo_general: "Anexo v1", anexos: [] } };

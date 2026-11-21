@@ -90,7 +90,8 @@ No existe una slice de navegación visual legacy. No renombrar el objeto ni move
 
 - `cuadernillo-types.js` (catálogo canónico clásico de modalidades v2)
 - `anexo-generation.js`
-- `anexo-preview.js`
+- `anexo-preview.js` (owner del dispatch v1/v2 y del renderer web de los once
+  bloques canónicos; Word v2 sigue fuera de alcance)
 - `anexo-download.js`
 - `anexo-delete.js`
 

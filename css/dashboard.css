@@ -2056,3 +2056,234 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* ---- Cuadernillo v2 preview ---- */
+.biblioteca-modal-card.bib-cuadernillo-preview-card {
+  width: min(96vw, 960px);
+  max-width: min(96vw, 960px) !important;
+  max-height: 94vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bib-workbook-header,
+.bib-workbook-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.bib-workbook-header {
+  border-bottom: 1px solid rgb(226 232 240);
+  background: linear-gradient(135deg, rgb(236 254 255), #fff 62%);
+}
+
+.bib-workbook-header-copy { min-width: 0; }
+.bib-workbook-eyebrow,
+.bib-workbook-type-label,
+.bib-workbook-description,
+.bib-workbook-meta { margin: 0; }
+
+.bib-workbook-eyebrow {
+  color: rgb(8 145 178);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.bib-workbook-type-label {
+  margin-top: 0.35rem;
+  color: rgb(14 116 144);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.bib-workbook-header h3 {
+  margin: 0.2rem 0 0;
+  color: rgb(15 23 42);
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.bib-workbook-description {
+  max-width: 70ch;
+  margin-top: 0.55rem;
+  color: rgb(71 85 105);
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.bib-workbook-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin-top: 0.65rem;
+  padding: 0;
+  color: rgb(71 85 105);
+  font-size: 0.78rem;
+  list-style: none;
+}
+
+.bib-workbook-body {
+  max-height: calc(94vh - 13rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 1.4rem 1.5rem 2rem;
+  background: rgb(248 250 252);
+}
+
+.bib-workbook-general,
+.bib-workbook-section {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.bib-workbook-general { padding: 1.15rem; }
+.bib-workbook-general h4,
+.bib-workbook-section-head h4 { margin: 0; color: rgb(30 41 59); }
+
+.bib-workbook-general-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1.25rem;
+  margin: 1rem 0 0;
+}
+
+.bib-workbook-general-field { min-width: 0; }
+.bib-workbook-general-field dt {
+  color: rgb(100 116 139);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.bib-workbook-general-field dd {
+  margin: 0.28rem 0 0;
+  color: rgb(30 41 59);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.bib-workbook-missing { color: rgb(148 163 184); font-style: italic; }
+
+.bib-workbook-sections { display: grid; gap: 1rem; margin-top: 1rem; }
+.bib-workbook-section { overflow: hidden; }
+.bib-workbook-section-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252);
+}
+.bib-workbook-section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgb(14 116 144);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+.bib-workbook-section-content { padding: 0 1.15rem; }
+.bib-workbook-block { padding: 1.1rem 0; color: rgb(51 65 85); }
+.bib-workbook-block + .bib-workbook-block { border-top: 1px dashed rgb(203 213 225); }
+.bib-workbook-block-title { margin: 0 0 0.55rem; color: rgb(30 41 59); font-size: 1rem; }
+.bib-workbook-prose { margin: 0; line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; }
+.bib-workbook-list,
+.bib-workbook-steps,
+.bib-workbook-activity-list { margin: 0.4rem 0 0; padding-left: 1.35rem; line-height: 1.6; }
+.bib-workbook-list li + li,
+.bib-workbook-steps li + li,
+.bib-workbook-activity-list > li + li { margin-top: 0.45rem; }
+
+.bib-workbook-concepts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.bib-workbook-concept { padding: 0.85rem; border-radius: 0.75rem; background: rgb(241 245 249); }
+.bib-workbook-concept h6,
+.bib-workbook-subheading { margin: 0; color: rgb(15 23 42); font-size: 0.9rem; }
+.bib-workbook-concept p { margin: 0.35rem 0 0; line-height: 1.5; }
+.bib-workbook-concept-example { color: rgb(71 85 105); font-size: 0.85rem; }
+
+.bib-workbook-table-scroll { max-width: 100%; overflow-x: auto; border-radius: 0.7rem; outline-offset: 2px; }
+.bib-workbook-table { width: 100%; min-width: 32rem; border-collapse: collapse; font-size: 0.84rem; }
+.bib-workbook-table th,
+.bib-workbook-table td { padding: 0.65rem 0.75rem; border: 1px solid rgb(203 213 225); text-align: left; vertical-align: top; }
+.bib-workbook-table th { background: rgb(226 232 240); color: rgb(30 41 59); font-weight: 800; }
+
+.bib-workbook-modality {
+  display: inline-block;
+  margin: 0 0 0.55rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  background: rgb(207 250 254);
+  color: rgb(21 94 117);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.bib-workbook-activity-list { list-style: none; padding-left: 0; }
+.bib-workbook-activity-item > p { margin: 0; line-height: 1.55; }
+.bib-workbook-item-number { font-weight: 800; color: rgb(14 116 144); }
+.bib-workbook-options { display: grid; gap: 0.35rem; margin: 0.5rem 0 0; padding: 0; list-style: none; }
+.bib-workbook-options li,
+.bib-workbook-criteria li { display: flex; align-items: flex-start; gap: 0.55rem; }
+.bib-workbook-option-mark,
+.bib-workbook-check { width: 0.95rem; height: 0.95rem; margin-top: 0.2rem; border: 1px solid rgb(100 116 139); border-radius: 999px; flex: 0 0 auto; }
+.bib-workbook-check { border-radius: 0.2rem; }
+
+.bib-workbook-block-ejemplo_resuelto { margin: 0.75rem 0; padding: 1rem; border: 1px solid rgb(165 243 252); border-radius: 0.85rem; background: rgb(236 254 255); }
+.bib-workbook-example-prompt p,
+.bib-workbook-example-result p,
+.bib-workbook-example-interpretation p { margin: 0.25rem 0 0; line-height: 1.55; }
+.bib-workbook-example-result,
+.bib-workbook-example-interpretation { margin-top: 0.75rem; }
+.bib-workbook-project-summary { display: grid; gap: 0.65rem; margin: 0; }
+.bib-workbook-project-summary div { display: grid; gap: 0.2rem; }
+.bib-workbook-project-summary dt { color: rgb(15 23 42); font-weight: 800; }
+.bib-workbook-project-summary dd { margin: 0; line-height: 1.55; }
+.bib-workbook-subheading { margin-top: 0.9rem; }
+.bib-workbook-record-fields { display: grid; gap: 0.8rem; }
+.bib-workbook-record-field > span,
+.bib-workbook-answer-label { color: rgb(30 41 59); font-weight: 700; }
+.bib-workbook-criteria { display: grid; gap: 0.55rem; margin: 0.6rem 0 0; padding: 0; list-style: none; }
+.bib-workbook-scale { margin: 0 0 0.7rem; color: rgb(71 85 105); font-size: 0.85rem; }
+
+.bib-workbook-response-lines { display: grid; gap: 0.65rem; margin-top: 0.65rem; }
+.bib-workbook-response-line { display: block; height: 0.7rem; border-bottom: 1px solid rgb(148 163 184); }
+.bib-workbook-general-lines { margin-top: 0.25rem; }
+.bib-workbook-block-error { padding: 0.8rem; border: 1px solid rgb(254 202 202); border-radius: 0.65rem; background: rgb(255 241 242); color: rgb(159 18 57); }
+
+.bib-workbook-footer {
+  align-items: center;
+  border-top: 1px solid rgb(226 232 240);
+  background: #fff;
+}
+.bib-workbook-footer p { margin: 0; color: rgb(100 116 139); font-size: 0.75rem; }
+.bib-anexo-error-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.bib-anexo-error-body,
+.bib-anexo-loading-body { padding: 1rem; }
+
+@media (max-width: 640px) {
+  .biblioteca-modal-card.bib-cuadernillo-preview-card {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem) !important;
+    max-height: 96vh;
+    border-radius: 0.85rem;
+  }
+  .bib-workbook-header,
+  .bib-workbook-footer { padding: 1rem; }
+  .bib-workbook-body { max-height: calc(96vh - 12rem); padding: 1rem; }
+  .bib-workbook-general-grid,
+  .bib-workbook-concepts { grid-template-columns: 1fr; }
+  .bib-workbook-section-head,
+  .bib-workbook-section-content { padding-left: 0.85rem; padding-right: 0.85rem; }
+  .bib-workbook-footer { align-items: stretch; flex-direction: column; }
+  .bib-workbook-footer .bib-lista-submit { width: 100%; }
+}
