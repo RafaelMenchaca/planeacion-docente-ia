@@ -122,6 +122,9 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
 - Planeaciones pueden usar SSE para progreso.
 - Exámenes crean jobs y realizan polling.
 - Anexos y listas conservan sus contratos de selección y duplicados.
+- Anexos obtiene sus tres modalidades de `cuadernillo-types.js`; el modal guarda
+  un tipo por planeación y coordina requests individuales secuenciales. El
+  renderer y exportador v2 continúan pendientes y están protegidos por guardas.
 - Biblioteca recarga y reconcilia la colección después de operaciones persistentes.
 
 Los contratos detallados viven en el backend:

@@ -21,6 +21,16 @@ function renderBibliotecaAnexoCreateModal() {
   if (!modal) return;
 
   const state    = BibliotecaAnexoModalState.getState();
+  const cuadernilloTypes = window.CuadernilloTypes;
+  const hasCuadernilloTypes = Boolean(
+    cuadernilloTypes
+    && typeof cuadernilloTypes.isValid === "function"
+    && typeof cuadernilloTypes.get === "function"
+    && typeof cuadernilloTypes.all === "function"
+  );
+  if (!hasCuadernilloTypes) {
+    BibliotecaAnexoModalState.setError("No se pudieron cargar los tipos de cuadernillo. Cierra el modal e intenta nuevamente.");
+  }
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
   const generatingMap    = BibliotecaAnexosPending.getBatch(state.conjuntoId) || {};
@@ -40,7 +50,14 @@ function renderBibliotecaAnexoCreateModal() {
   if (selectedValidIds.length !== state.selectedPlaneacionIds.length) {
     BibliotecaAnexoModalState.setSelectedPlaneacionIds(selectedValidIds);
   }
-  const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0 && !state.submitting;
+  Object.keys(state.tipoPorPlaneacionId).forEach((id) => {
+    if (!selectedValidIds.includes(id)) BibliotecaAnexoModalState.deleteTipoPorPlaneacionId(id);
+  });
+  const allSelectedHaveType = hasCuadernilloTypes && selectedValidIds.every(
+    (id) => cuadernilloTypes.isValid(state.tipoPorPlaneacionId[id])
+  );
+  const canSubmit = selectedValidIds.length > 0 && disponibles.length > 0
+    && allSelectedHaveType && !state.submitting;
 
   const planeacionesHtml = state.planeaciones.length
     ? `<div class="bib-lista-topic-list">
@@ -50,21 +67,47 @@ function renderBibliotecaAnexoCreateModal() {
           const estaGenerando = !tieneAnexo && !!generatingMap[pid];
           const bloqueada    = tieneAnexo || estaGenerando;
           const checked      = selectedValidIds.includes(pid);
+          const selectedType = state.tipoPorPlaneacionId[pid] || "";
           const titulo_p     = escapeBibliotecaDisplayText(p.tema || p.custom_title, "Sin titulo");
           const badge        = tieneAnexo
             ? `<span class="bib-lista-generated-badge">Anexo generado</span>`
             : estaGenerando
               ? `<span class="bib-lista-generated-badge" style="opacity:0.65;">Generando...</span>`
               : "";
+          const typeOptions = checked
+            ? `<fieldset class="bib-anexo-types" tabindex="-1"
+                data-bib-anexo-types-for="${escapeHtml(pid)}">
+                <legend>Tipo de cuadernillo para ${titulo_p}</legend>
+                <div class="bib-anexo-type-options">
+                  ${hasCuadernilloTypes ? cuadernilloTypes.all().map((tipo) => `
+                    <label class="bib-anexo-type-option ${selectedType === tipo.id ? "is-selected" : ""}">
+                      <input type="radio"
+                        name="bib-anexo-type-${escapeHtml(pid.replace(/[^a-zA-Z0-9_-]/g, "-"))}"
+                        value="${escapeHtml(tipo.id)}"
+                        data-bib-anexo-type-for="${escapeHtml(pid)}"
+                        ${selectedType === tipo.id ? "checked" : ""}
+                        ${state.submitting ? "disabled" : ""} />
+                      <span class="bib-anexo-type-copy">
+                        <strong>${escapeHtml(tipo.label)}</strong>
+                        <span><b>Enfoque:</b> ${escapeHtml(tipo.enfoque)}</span>
+                        <small>${escapeHtml(tipo.objetivo)}</small>
+                      </span>
+                    </label>`).join("") : ""}
+                </div>
+              </fieldset>`
+            : "";
           return `
-            <label class="bib-lista-topic ${bloqueada ? "is-disabled" : ""}">
-              <input type="checkbox" class="bib-lista-checkbox"
-                data-bib-anexo-planid="${escapeHtml(pid)}"
-                ${checked   ? "checked"  : ""}
-                ${bloqueada ? "disabled" : ""} />
-              <span class="bib-lista-topic-title">${titulo_p}</span>
-              ${badge}
-            </label>`;
+            <div class="bib-lista-topic-wrap ${bloqueada ? "is-disabled" : ""}">
+              <label class="bib-lista-topic ${bloqueada ? "is-disabled" : ""}">
+                <input type="checkbox" class="bib-lista-checkbox"
+                  data-bib-anexo-planid="${escapeHtml(pid)}"
+                  ${checked   ? "checked"  : ""}
+                  ${(bloqueada || state.submitting) ? "disabled" : ""} />
+                <span class="bib-lista-topic-title">${titulo_p}</span>
+                ${badge}
+              </label>
+              ${typeOptions}
+            </div>`;
         }).join("")}
       </div>`
     : `<p class="bib-lista-empty">Este bloque no tiene planeaciones disponibles.</p>`;
@@ -86,7 +129,8 @@ function renderBibliotecaAnexoCreateModal() {
         <h3>Crear anexos</h3>
         <p>Selecciona las planeaciones para las que deseas generar anexos.<br>Las que ya tienen anexo generado no se pueden volver a seleccionar.</p>
       </div>
-      <button type="button" id="bib-anexo-create-close" class="bib-lista-close">X</button>
+      <button type="button" id="bib-anexo-create-close" class="bib-lista-close"
+        aria-label="Cerrar" ${state.submitting ? "disabled" : ""}>X</button>
     </div>
 
     <div class="bib-lista-content">
@@ -106,6 +150,7 @@ function renderBibliotecaAnexoCreateModal() {
         <button type="button" id="bib-anexo-create-cancel" class="bib-lista-cancel"
           ${state.submitting ? "disabled" : ""}>Cancelar</button>
         <button type="button" id="bib-anexo-create-submit" class="bib-lista-submit"
+          aria-disabled="${canSubmit ? "false" : "true"}"
           ${canSubmit ? "" : "disabled"}>
           ${state.submitting ? "Generando..." : "Generar anexos seleccionados"}
         </button>
@@ -120,7 +165,7 @@ function renderBibliotecaAnexoCreateModal() {
   modal.querySelectorAll("[data-bib-anexo-planid]").forEach((cb) => {
     cb.addEventListener("change", (e) => {
       if (e.target.disabled) return;
-      const pid = e.target.dataset.bibAnexoPlanid;
+      const pid = normalizeBibliotecaId(e.target.dataset.bibAnexoPlanid);
       if (!availableIds.has(normalizeBibliotecaId(pid))) {
         e.target.checked = false;
         return;
@@ -134,8 +179,22 @@ function renderBibliotecaAnexoCreateModal() {
         BibliotecaAnexoModalState.setSelectedPlaneacionIds(
           modalState.selectedPlaneacionIds.filter((id) => id !== pid)
         );
+        BibliotecaAnexoModalState.deleteTipoPorPlaneacionId(pid);
       }
-      renderBibliotecaAnexoCreateModal();
+      BibliotecaModalRender.renderAnexos();
+    });
+  });
+
+  modal.querySelectorAll("[data-bib-anexo-type-for]").forEach((radio) => {
+    radio.addEventListener("change", (event) => {
+      if (event.target.disabled || !event.target.checked) return;
+      const pid = normalizeBibliotecaId(event.target.dataset.bibAnexoTypeFor);
+      const tipo = event.target.value;
+      const modalState = BibliotecaAnexoModalState.getState();
+      if (!modalState.selectedPlaneacionIds.includes(pid) || !cuadernilloTypes?.isValid(tipo)) return;
+      BibliotecaAnexoModalState.setTipoPorPlaneacionId(pid, tipo);
+      BibliotecaAnexoModalState.setError("");
+      BibliotecaModalRender.renderAnexos();
     });
   });
 }

@@ -1578,6 +1578,14 @@
   background: rgb(248 250 252);
 }
 
+.bib-lista-topic-wrap {
+  background: #fff;
+}
+
+.bib-lista-topic-wrap + .bib-lista-topic-wrap {
+  border-top: 1px solid rgb(226 232 240);
+}
+
 .bib-lista-topic {
   display: flex;
   align-items: center;
@@ -1598,6 +1606,78 @@
 
 .bib-lista-topic + .bib-lista-topic {
   border-top: 0;
+}
+
+.bib-anexo-types {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid rgb(226 232 240);
+  padding: 0.75rem 0.8rem 0.9rem 2.55rem;
+  min-width: 0;
+}
+
+.bib-anexo-types:focus-visible {
+  outline: 2px solid rgb(14 116 144);
+  outline-offset: -2px;
+}
+
+.bib-anexo-types legend {
+  padding: 0 0.25rem;
+  color: rgb(51 65 85);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.bib-anexo-type-options {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.bib-anexo-type-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  background: rgb(248 250 252);
+  cursor: pointer;
+}
+
+.bib-anexo-type-option.is-selected {
+  border-color: rgb(14 116 144);
+  background: rgb(236 254 255);
+}
+
+.bib-anexo-type-option input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  accent-color: rgb(14 116 144);
+}
+
+.bib-anexo-type-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.bib-anexo-type-copy strong {
+  color: rgb(15 23 42);
+  font-size: 0.9rem;
+}
+
+.bib-anexo-type-copy span,
+.bib-anexo-type-copy small {
+  color: rgb(71 85 105);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.bib-anexo-v2-pending {
+  margin-top: 0.75rem;
+  color: rgb(71 85 105);
+  line-height: 1.5;
 }
 
 .bib-lista-topic.is-disabled {
@@ -1700,8 +1780,15 @@
 }
 
 .bib-lista-submit:disabled {
-  opacity: 0.65;
+  border-color: rgb(203 213 225);
+  background: rgb(226 232 240);
+  color: rgb(100 116 139);
+  opacity: 1;
   cursor: not-allowed;
+}
+
+.bib-lista-submit:disabled:hover {
+  background: rgb(226 232 240);
 }
 
 @media (min-width: 640px) {
@@ -1782,6 +1869,14 @@
 
   .bib-lista-topic-title {
     white-space: normal;
+  }
+
+  .bib-anexo-types {
+    padding-left: 0.75rem;
+  }
+
+  .bib-anexo-type-options {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .biblioteca-items-list {

@@ -1,4 +1,10 @@
 (function () {
+  const V2_PENDING_MESSAGE = "La visualización de este cuadernillo estará disponible en el siguiente checkpoint.";
+
+  function isCuadernilloV2(anexo) {
+    return Boolean(anexo?.tipo_cuadernillo) || Number(anexo?.schema_version || anexo?.contenido?.schema_version) === 2;
+  }
+
   async function openBibliotecaAnexoPreview(anexoId) {
     try {
       const session = await window.requireSession();
@@ -57,6 +63,19 @@
     if (!modal) return;
 
     const card       = modal.querySelector(".biblioteca-modal-card");
+    if (isCuadernilloV2(anexo)) {
+      const tipo = window.CuadernilloTypes.get(anexo.tipo_cuadernillo);
+      card.innerHTML = `
+        <div class="bib-anexo-head">
+          <div>
+            <h3>${escapeHtml(tipo?.label || anexo.titulo || "Cuadernillo")}</h3>
+            <p class="bib-anexo-v2-pending">${escapeHtml(V2_PENDING_MESSAGE)}</p>
+          </div>
+          <button type="button" id="bib-anexo-close" class="bib-lista-close" aria-label="Cerrar">X</button>
+        </div>`;
+      document.getElementById("bib-anexo-close")?.addEventListener("click", closeBibliotecaAnexoModal);
+      return;
+    }
     const contenido  = anexo.contenido || {};
     const titulo     = contenido.titulo_general || anexo.titulo || "Anexos";
     const descripcion = contenido.descripcion || "";

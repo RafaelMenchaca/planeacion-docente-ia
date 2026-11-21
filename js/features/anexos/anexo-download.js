@@ -1,4 +1,10 @@
 (function () {
+  const V2_PENDING_MESSAGE = "La descarga Word de este cuadernillo estará disponible en el siguiente checkpoint.";
+
+  function isCuadernilloV2(anexo) {
+    return Boolean(anexo?.tipo_cuadernillo) || Number(anexo?.schema_version || anexo?.contenido?.schema_version) === 2;
+  }
+
   async function bibDescargarAnexo(anexoId) {
     console.debug("[downloads] anexo:start", { anexoId });
     try {
@@ -7,6 +13,10 @@
       const res = await apiObtenerAnexoDetalle(anexoId, session.access_token);
       const anexo = res?.anexo;
       if (!anexo) throw new Error("No se pudo obtener el anexo.");
+      if (isCuadernilloV2(anexo)) {
+        alert(V2_PENDING_MESSAGE);
+        return;
+      }
 
       const suggested = window.AppUI.buildDownloadSuggestedName(
         "Anexo",
@@ -24,6 +34,10 @@
   }
 
   function descargarAnexoWord(anexo, filenameOverride) {
+    if (isCuadernilloV2(anexo)) {
+      alert(V2_PENDING_MESSAGE);
+      return false;
+    }
     const contenido = anexo.contenido || {};
     const tituloGeneral = contenido.titulo_general || anexo.titulo || "Anexos";
     const descripcion   = contenido.descripcion || "";
@@ -113,6 +127,7 @@
     link.click();
     document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return true;
   }
 
   window.AnexoDownload = {

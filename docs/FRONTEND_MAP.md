@@ -88,6 +88,7 @@ No existe una slice de navegación visual legacy. No renombrar el objeto ni move
 
 ### Anexos
 
+- `cuadernillo-types.js` (catálogo canónico clásico de modalidades v2)
 - `anexo-generation.js`
 - `anexo-preview.js`
 - `anexo-download.js`
@@ -109,7 +110,7 @@ No existe una slice de navegación visual legacy. No renombrar el objeto ni move
 
 ## Orden de carga del Dashboard
 
-`pages/dashboard.html` conserva sus 42 scripts locales y el CDN de Supabase, precedidos ahora por el override opcional `core/config.local.js` (ignorado por Git). Login también carga el mismo provider `core/config.js`. El orden conceptual es:
+`pages/dashboard.html` conserva sus 44 scripts locales y el CDN de Supabase, precedidos ahora por el override opcional `core/config.local.js` (ignorado por Git). Login también carga el mismo provider `core/config.js`. El orden conceptual es:
 
 ```text
 core/config.local → core/config → Supabase/client/auth
@@ -117,7 +118,7 @@ core/config.local → core/config → Supabase/client/auth
 → generation owners requeridos temprano
 → wordExport y preview/download owners
 → UI compartida
-→ Biblioteca/Anexos APIs
+→ Biblioteca API / catálogo de cuadernillos / Anexos API
 → owners por recurso
 → Dashboard page/bootstrap/Quick
 → Biblioteca page/Loader/Render/Modal Render/Events
