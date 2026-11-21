@@ -147,13 +147,15 @@ describe("Preview web de cuadernillos v2", () => {
     expect(window.document.getElementById("biblioteca-anexo-modal").classList.contains("hidden")).toBe(true);
   });
 
-  test("descarga v2 continúa bloqueada y descarga v1 conserva el exportador histórico", () => {
+  test("descarga desde preview usa el exportador v2 y v1 conserva el histórico", async () => {
     jest.useFakeTimers();
     const { window } = createHarness();
     const fixture = v2Fixture();
+    window.AnexoDownload.request = jest.fn(async () => true);
     window.AnexoPreview.render(fixture);
     window.document.getElementById("bib-anexo-descargar").click();
-    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("siguiente checkpoint"));
+    await Promise.resolve();
+    expect(window.AnexoDownload.request).toHaveBeenCalledWith(fixture);
     expect(window.URL.createObjectURL).not.toHaveBeenCalled();
 
     const v1 = { id: "v1", titulo: "Histórico", contenido: { titulo_general: "Histórico", anexos: [] } };

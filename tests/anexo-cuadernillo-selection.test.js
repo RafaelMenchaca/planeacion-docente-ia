@@ -335,7 +335,7 @@ describe("Transporte, coordinación parcial y compatibilidad", () => {
     expect(pendingHtml).toContain("Cuadernillo de aprendizaje guiado");
   });
 
-  test("preview y descarga v2 no atraviesan render/export v1; v1 conserva exportación", () => {
+  test("preview v2 incompleto no atraviesa export v1; v1 conserva exportación", () => {
     jest.useFakeTimers();
     const dom = new JSDOM('<!doctype html><html><body><div id="biblioteca-anexo-modal"><div class="biblioteca-modal-card"></div></div></body></html>', { runScripts: "outside-only" });
     const { window } = dom;

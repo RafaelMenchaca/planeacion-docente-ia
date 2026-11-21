@@ -208,10 +208,10 @@
       <button type="button" id="bib-anexo-close" class="bib-lista-close" aria-label="Cerrar">X</button></header>
       <div class="bib-workbook-body">${renderCuadernilloV2DatosGenerales(contenido.datos_generales)}
         <div class="bib-workbook-sections">${sortedSections.map((section, index) => renderCuadernilloV2Seccion(section, index + 1)).join("")}</div></div>
-      <footer class="bib-workbook-footer"><p>La descarga Word de cuadernillos estará disponible en un siguiente checkpoint.</p>
+      <footer class="bib-workbook-footer"><p>Descarga una copia editable e imprimible en formato Word.</p>
         <button type="button" id="bib-anexo-descargar" class="bib-lista-submit">Descargar Word</button></footer>`;
     bindClose();
-    document.getElementById("bib-anexo-descargar")?.addEventListener("click", () => window.AnexoDownload.download(anexo));
+    document.getElementById("bib-anexo-descargar")?.addEventListener("click", () => window.AnexoDownload.request(anexo));
   }
 
   function renderAnexoV1(card, anexo) {

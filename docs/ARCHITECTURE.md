@@ -128,8 +128,10 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
   renderer histórico v1 y el renderer web v2. Este último presenta datos
   generales y los bloques `texto`, `lista`, `conceptos`, `tabla`, `actividad`,
   `procedimiento`, `ejemplo_resuelto`, `proyecto`, `registro`, `evaluacion` y
-  `espacio_respuesta`. El exportador Word v2 continúa pendiente y protegido por
-  una guarda.
+  `espacio_respuesta`. `AnexoDownload` aplica el mismo dispatch estricto v1/v2 y
+  construye localmente un `.doc` compatible con Word para los once bloques;
+  conserva el exportador histórico y rechaza versiones inconsistentes sin
+  fallback.
 - Biblioteca recarga y reconcilia la colección después de operaciones persistentes.
 
 Los contratos detallados viven en el backend:
