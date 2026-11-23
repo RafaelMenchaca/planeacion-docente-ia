@@ -247,7 +247,8 @@ function renderAnexosTab(conjunto) {
     const tema    = escapeBibliotecaDisplayText(anexo.tema, "Sin titulo");
     const titulo  = tema;
     const fecha   = bibFormatShortDateTime(anexo.created_at);
-    const meta    = fecha || "";
+    const tipoMeta = window.CuadernilloTypes.get(anexo.tipo_cuadernillo);
+    const meta    = [tipoMeta?.label || "", fecha].filter(Boolean).join(" &middot; ");
     const anexoId = escapeHtml(String(anexo.id));
     return `
       <div class="biblioteca-item-row">
@@ -279,7 +280,8 @@ function renderAnexosTab(conjunto) {
       const titulo = escapeBibliotecaDisplayText(item.titulo, "Sin titulo");
       const meta   = [
         escapeBibliotecaDisplayText(item.materia),
-        escapeBibliotecaDisplayText(item.nivel)
+        escapeBibliotecaDisplayText(item.nivel),
+        escapeBibliotecaDisplayText(item.tipoLabel)
       ].filter(Boolean).join(" &middot; ");
 
       if (item.status === "error") {

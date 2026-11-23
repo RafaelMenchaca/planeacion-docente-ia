@@ -1,5 +1,5 @@
 (function () {
-  function generateFromBiblioteca({ conjuntoId, selectedIds, planeaciones, accessToken }) {
+  function generateFromBiblioteca({ conjuntoId, selections, planeaciones, accessToken }) {
     // Construir mapa con info de cada planeacion seleccionada para las cards temporales
     const planMap = new Map(
       (Array.isArray(planeaciones) ? planeaciones : [])
@@ -10,29 +10,34 @@
     if (!BibliotecaAnexosPending.getBatch(conjuntoId)) {
       BibliotecaAnexosPending.setBatch(conjuntoId, {});
     }
-    for (const pid of selectedIds) {
+    for (const selection of selections) {
+      const pid = selection.planeacionId;
+      const tipo = window.CuadernilloTypes.get(selection.tipoCuadernillo);
       const p = planMap.get(pid);
       BibliotecaAnexosPending.setItem(conjuntoId, pid, {
         titulo:  p?.tema || p?.custom_title || "Sin titulo",
         materia: p?.materia || null,
         nivel:   p?.nivel   || null,
+        tipoCuadernillo: tipo?.id || null,
+        tipoLabel: tipo?.label || "",
         status:  "generating",
         errorMessage: ""
       });
     }
 
-    closeBibliotecaAnexoCreateModal();
+    closeBibliotecaAnexoCreateModal({ force: true });
     setSelectedConjunto(conjuntoId, { tab: "anexos" });
     renderBibliotecaDetailInPlace();
 
     ;(async () => {
       let anySuccess = false;
       let successCount = 0;
-      console.info("[anexos] generate:start", { batchId: conjuntoId, planeacionesCount: selectedIds.length });
+      console.info("[anexos] generate:start", { batchId: conjuntoId, planeacionesCount: selections.length });
 
-      for (const pid of selectedIds) {
+      for (const selection of selections) {
+        const pid = selection.planeacionId;
         try {
-          const res = await apiGenerarAnexo(pid, accessToken);
+          const res = await apiGenerarAnexo(pid, selection.tipoCuadernillo, accessToken);
 
           // Update optimista: crear anexo en el estado local para que aparezca inmediatamente
           const conjuntoObj = bibliotecaState.conjuntos.find(
@@ -47,6 +52,9 @@
               titulo:        item?.titulo  || "Anexo",
               materia:       item?.materia || null,
               nivel:         item?.nivel   || null,
+              tipo_cuadernillo: selection.tipoCuadernillo,
+              schema_version: 2,
+              prompt_version: "v2_cuadernillo_segmentado",
               status:        "generated",
               created_at:    new Date().toISOString()
             });
@@ -78,16 +86,31 @@
         BibliotecaAnexosPending.deleteBatch(conjuntoId);
       }
 
-      console.info("[anexos] generate:success", {
+      const errorCount = selections.length - successCount;
+      const finalEvent = successCount === selections.length
+        ? "[anexos] generate:success"
+        : successCount > 0
+          ? "[anexos] generate:partial"
+          : "[anexos] generate:error";
+      const logFinal = successCount === selections.length
+        ? console.info
+        : successCount > 0
+          ? console.warn
+          : console.error;
+      logFinal(finalEvent, {
         batchId: conjuntoId,
         successCount,
-        totalSolicitados: selectedIds.length
+        errorCount,
+        totalSolicitados: selections.length
       });
 
       // Reload silencioso para confirmar datos reales del servidor
       if (anySuccess) {
         await window.BibliotecaLoader.load({ silent: true, targetBatchId: conjuntoId, activeTab: "anexos" });
-        BibliotecaAnexosPending.deleteBatch(conjuntoId);
+        const pendingAfterReload = BibliotecaAnexosPending.getBatch(conjuntoId) || {};
+        if (Object.keys(pendingAfterReload).length === 0) {
+          BibliotecaAnexosPending.deleteBatch(conjuntoId);
+        }
       }
     })();
   }

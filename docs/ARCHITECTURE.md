@@ -122,6 +122,16 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
 - Planeaciones pueden usar SSE para progreso.
 - Exámenes crean jobs y realizan polling.
 - Anexos y listas conservan sus contratos de selección y duplicados.
+- Anexos obtiene sus tres modalidades de `cuadernillo-types.js`; el modal guarda
+  un tipo por planeación y coordina requests individuales secuenciales. El
+  owner `AnexoPreview` detecta el esquema y despacha sin fallback entre el
+  renderer histórico v1 y el renderer web v2. Este último presenta datos
+  generales y los bloques `texto`, `lista`, `conceptos`, `tabla`, `actividad`,
+  `procedimiento`, `ejemplo_resuelto`, `proyecto`, `registro`, `evaluacion` y
+  `espacio_respuesta`. `AnexoDownload` aplica el mismo dispatch estricto v1/v2 y
+  construye localmente un `.doc` compatible con Word para los once bloques;
+  conserva el exportador histórico y rechaza versiones inconsistentes sin
+  fallback.
 - Biblioteca recarga y reconcilia la colección después de operaciones persistentes.
 
 Los contratos detallados viven en el backend:

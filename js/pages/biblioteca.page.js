@@ -29,6 +29,7 @@ function buildEmptyBibliotecaState() {
     conjuntoId: null,
     planeaciones: [],
     selectedPlaneacionIds: [],
+    tipoPorPlaneacionId: {},
     submitting: false,
     error: ""
   },
@@ -127,6 +128,13 @@ const BibliotecaAnexoModalState = {
   setSelectedPlaneacionIds(ids) {
     bibliotecaState.anexoModal.selectedPlaneacionIds = ids;
     return ids;
+  },
+  setTipoPorPlaneacionId(planeacionId, tipoCuadernillo) {
+    bibliotecaState.anexoModal.tipoPorPlaneacionId[planeacionId] = tipoCuadernillo;
+    return tipoCuadernillo;
+  },
+  deleteTipoPorPlaneacionId(planeacionId) {
+    delete bibliotecaState.anexoModal.tipoPorPlaneacionId[planeacionId];
   },
   addSelectedPlaneacionId(id) {
     bibliotecaState.anexoModal.selectedPlaneacionIds.push(id);
@@ -492,6 +500,7 @@ function openBibliotecaAnexoCreateModal(conjunto) {
     conjuntoId:            conjunto.id,
     planeaciones,
     selectedPlaneacionIds: [],
+    tipoPorPlaneacionId:   {},
     submitting:            false,
     error:                 ""
   });
@@ -501,15 +510,35 @@ function openBibliotecaAnexoCreateModal(conjunto) {
   renderBibliotecaAnexoCreateModal();
 }
 
-function closeBibliotecaAnexoCreateModal() {
-  BibliotecaAnexoModalState.close();
+function closeBibliotecaAnexoCreateModal({ force = false } = {}) {
+  if (BibliotecaAnexoModalState.getState().submitting && !force) return false;
+  BibliotecaAnexoModalState.open({
+    open: false,
+    conjuntoId: null,
+    planeaciones: [],
+    selectedPlaneacionIds: [],
+    tipoPorPlaneacionId: {},
+    submitting: false,
+    error: ""
+  });
   const modal = document.getElementById("biblioteca-anexo-create-modal");
   if (modal) modal.classList.add("hidden");
   document.body.classList.remove("overflow-hidden");
+  return true;
 }
 
 async function submitBibliotecaAnexoCreateModal() {
   const state    = BibliotecaAnexoModalState.getState();
+  if (state.submitting) return;
+  const cuadernilloTypes = window.CuadernilloTypes;
+  if (!cuadernilloTypes
+      || typeof cuadernilloTypes.isValid !== "function"
+      || typeof cuadernilloTypes.get !== "function"
+      || typeof cuadernilloTypes.all !== "function") {
+    BibliotecaAnexoModalState.setError("No se pudieron cargar los tipos de cuadernillo. Cierra el modal e intenta nuevamente.");
+    renderBibliotecaAnexoCreateModal();
+    return;
+  }
   const conjunto = findConjuntoById(state.conjuntoId);
   const anexosExistentes  = Array.isArray(conjunto?.anexos) ? conjunto.anexos : [];
   const currentGenerating = BibliotecaAnexosPending.getBatch(state.conjuntoId) || {};
@@ -534,6 +563,28 @@ async function submitBibliotecaAnexoCreateModal() {
     return;
   }
 
+  const incompleteId = selectedIds.find(
+    (id) => !cuadernilloTypes.isValid(state.tipoPorPlaneacionId[id])
+  );
+  if (incompleteId) {
+    const planeacion = state.planeaciones.find(
+      (item) => normalizeBibliotecaId(item.id) === incompleteId
+    );
+    BibliotecaAnexoModalState.setError(
+      `Selecciona un tipo de cuadernillo para ${planeacion?.tema || planeacion?.custom_title || "la planeacion indicada"}.`
+    );
+    renderBibliotecaAnexoCreateModal();
+    const target = [...document.querySelectorAll("[data-bib-anexo-types-for]")]
+      .find((element) => element.dataset.bibAnexoTypesFor === incompleteId);
+    (target?.querySelector("input[type=radio]") || target)?.focus();
+    return;
+  }
+
+  const selections = selectedIds.map((planeacionId) => ({
+    planeacionId,
+    tipoCuadernillo: state.tipoPorPlaneacionId[planeacionId]
+  }));
+
   BibliotecaAnexoModalState.setSubmitting(true);
   BibliotecaAnexoModalState.setError("");
   renderBibliotecaAnexoCreateModal();
@@ -545,7 +596,7 @@ async function submitBibliotecaAnexoCreateModal() {
     const conjuntoId = state.conjuntoId;
     window.AnexoGeneration.generateFromBiblioteca({
       conjuntoId,
-      selectedIds,
+      selections,
       planeaciones: state.planeaciones,
       accessToken: session.access_token
     });
@@ -767,7 +818,7 @@ function addBibliotecaAgregarTema() {
     const tema    = BibliotecaPlaneacionModalState.getTemaByLocalId(localId);
     if (!tema) return;
     if (!tema.actividades_momentos) tema.actividades_momentos = {};
-    if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val))) {
+    if (val && (typeof isActividadDidacticaValida !== "function" || isActividadDidacticaValida(val, momento))) {
       tema.actividades_momentos[momento] = val;
     } else {
       delete tema.actividades_momentos[momento];
@@ -837,6 +888,12 @@ async function submitBibliotecaAgregarModal() {
 
 async function initBiblioteca() {
   injectBibliotecaModals();
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const state = BibliotecaAnexoModalState.getState();
+    if (state.open && !state.submitting) closeBibliotecaAnexoCreateModal();
+  });
 
   BibliotecaEvents.bind();
 

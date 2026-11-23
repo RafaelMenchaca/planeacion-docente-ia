@@ -58,68 +58,37 @@ const MOMENTOS_ACTIVIDADES_DIDACTICAS = [
   { key: "desarrollo", label: "Desarrollo" },
   { key: "cierre", label: "Cierre" }
 ];
-const ACTIVIDADES_DIDACTICAS = [
-  { nombre: "Actividades interdisciplinarias", descripcion: "Integración de materias" },
-  { nombre: "Análisis de estudio de caso", descripcion: "Análisis y decisiones" },
-  { nombre: "Análisis de textos", descripcion: "Interpretación crítica" },
-  { nombre: "Análisis de videos", descripcion: "Interpretación audiovisual" },
-  { nombre: "Aprendizaje basado en problemas (ABPr)", descripcion: "Solución de problemas" },
-  { nombre: "Aprendizaje basado en proyectos (ABP)", descripcion: "Problemas reales" },
-  { nombre: "Aprendizaje basado en retos", descripcion: "Innovación y desafíos" },
-  { nombre: "Aprendizaje cooperativo", descripcion: "Interacción grupal" },
-  { nombre: "Aprendizaje servicio", descripcion: "Acciones comunitarias" },
-  { nombre: "Círculo de lectura", descripcion: "Discusión de textos" },
-  { nombre: "Clase invertida (Flipped Classroom)", descripcion: "Aprendizaje autónomo" },
-  { nombre: "Concurso de preguntas", descripcion: "Repaso y competencia amistosa" },
-  { nombre: "Creación de blogs educativos", descripcion: "Escritura digital" },
-  { nombre: "Creación de infografías", descripcion: "Recursos visuales" },
-  { nombre: "Creación de videos educativos", descripcion: "Creatividad digital" },
-  { nombre: "Cuadros comparativos", descripcion: "Diferencias y semejanzas" },
-  { nombre: "Debate académico", descripcion: "Pensamiento crítico" },
-  { nombre: "Diarios de aprendizaje", descripcion: "Reflexión personal" },
-  { nombre: "Dinámica de preguntas con globos", descripcion: "Preguntas y retos grupales" },
-  { nombre: "Dinámica de preguntas con pelota", descripcion: "Participación oral grupal" },
-  { nombre: "Dinámicas rompehielo", descripcion: "Integración grupal" },
-  { nombre: "Diseño de experimentos", descripcion: "Método científico" },
-  { nombre: "Diseño de prototipos", descripcion: "Innovación tecnológica" },
-  { nombre: "Elaboración de maquetas", descripcion: "Modelos físicos" },
-  { nombre: "Elaboración de resúmenes", descripcion: "Síntesis de información" },
-  { nombre: "Encuestas y entrevistas", descripcion: "Recopilación de datos" },
-  { nombre: "Ensayo académico", descripcion: "Argumentación escrita" },
-  { nombre: "Escape room educativo", descripcion: "Trabajo en equipo" },
-  { nombre: "Excursiones educativas", descripcion: "Experiencias reales" },
-  { nombre: "Exposición oral", descripcion: "Comunicación y dominio" },
-  { nombre: "Feria científica o tecnológica", descripcion: "Proyectos al público" },
-  { nombre: "Foros de discusión", descripcion: "Intercambio de opiniones" },
-
-  { nombre: "Gamificación", descripcion: "Motivación por el juego" },
-  { nombre: "Historietas o cómics educativos", descripcion: "Narrativa visual" },
-  { nombre: "Investigación documental", descripcion: "Análisis de fuentes" },
-  { nombre: "Juegos de mesa educativos", descripcion: "Lógica y estrategia" },
-  { nombre: "Juegos de rol", descripcion: "Perspectivas y contextos" },
-  { nombre: "Juegos y dinámicas de movimiento", descripcion: "Aprendizaje activo y físico" },
-  { nombre: "Kahoot o cuestionarios interactivos", descripcion: "Evaluación lúdica interactiva" },
-  { nombre: "Lectura guiada", descripcion: "Comprensión lectora" },
-  { nombre: "Líneas del tiempo", descripcion: "Organización cronológica" },
-  { nombre: "Lluvia de ideas", descripcion: "Participación creativa" },
-  { nombre: "Mapas mentales", descripcion: "Ideas creativas" },
-  { nombre: "Mesa redonda", descripcion: "Análisis colectivo" },
-  { nombre: "Organizador Grafico", descripcion: "Información visual" },
-  { nombre: "Panel de expertos", descripcion: "Exposición especializada" },
-  { nombre: "Podcasts educativos", descripcion: "Comunicación oral" },
-  { nombre: "Portafolio de evidencias", descripcion: "Documentación de avances" },
-  { nombre: "Prácticas de laboratorio", descripcion: "Aprendizaje experimental" },
-  { nombre: "Preguntas de reflexión", descripcion: "Pensamiento profundo" },
-  { nombre: "Presentaciones multimedia", descripcion: "Comunicación visual" },
-  { nombre: "Proyectos artísticos", descripcion: "Creatividad y expresión" },
-  { nombre: "Proyectos de investigación", descripcion: "Fomenta la curiosidad" },
-  { nombre: "Resolución de problemas", descripcion: "Razonamiento lógico" },
-  { nombre: "Simulación de situaciones reales", descripcion: "Experiencia práctica" },
-  { nombre: "Taller de escritura creativa", descripcion: "Expresión escrita" },
-  { nombre: "Trabajo colaborativo", descripcion: "Cooperación efectiva" },
-  { nombre: "Traducción de textos", descripcion: "Producción en otro idioma" },
-  { nombre: "Tutoría entre pares", descripcion: "Aprendizaje colaborativo" }
-];
+const ACTIVIDADES_DIDACTICAS_POR_MOMENTO = {
+  conocimientos_previos: [
+    "Activación y diagnóstico", "Lluvia de ideas", "Preguntas detonadoras", "Cuestionario diagnóstico",
+    "Quiz interactivo", "Estudio de caso", "Análisis de imágenes", "Análisis de videos",
+    "Análisis de noticias", "Diálogo en parejas", "Cuadro SQA", "Mapa mental", "Red de conceptos",
+    "Línea del tiempo", "Exploración de materiales", "Demostración experimental", "Observación del entorno"
+  ],
+  desarrollo: [
+    "Construcción y aplicación del conocimiento", "Mapa conceptual", "Mapa mental", "Cuadro comparativo",
+    "Cuadro sinóptico", "Diagrama de flujo", "Infografía", "Esquema explicativo", "Resumen",
+    "Resolución de ejercicios", "Resolución de problemas", "Práctica de laboratorio", "Simulación digital",
+    "Práctica informática", "Dibujo técnico", "Modelado a escala", "Lectura comentada", "Análisis de textos",
+    "Investigación documental", "Matriz de análisis", "Reporte técnico", "Bitácora de trabajo",
+    "Trabajo colaborativo", "Elaboración de prototipos", "Elaboración de maquetas", "Redacción de ensayos",
+    "Elaboración de propuestas", "Producción audiovisual", "Presentación digital"
+  ],
+  cierre: [
+    "Evaluación y retroalimentación", "Ticket de salida", "Cuestionario final", "Quiz de comprobación",
+    "Ejercicio de aplicación", "Preguntas de comprensión", "Coevaluación", "Autoevaluación",
+    "Reflexión individual", "Retroalimentación grupal", "Conclusiones grupales", "Exposición breve",
+    "Galería de trabajos", "Debate grupal", "Mesa redonda", "Portafolio de evidencias",
+    "Mapa de síntesis", "Cuadro de conclusiones"
+  ]
+};
+const ACTIVIDADES_DIDACTICAS = Object.values(ACTIVIDADES_DIDACTICAS_POR_MOMENTO)
+  .flat()
+  .map((nombre) => ({ nombre, descripcion: "" }));
+const ACTIVIDADES_DIDACTICAS_SETS = Object.fromEntries(
+  Object.entries(ACTIVIDADES_DIDACTICAS_POR_MOMENTO)
+    .map(([momento, actividades]) => [momento, new Set(actividades)])
+);
 const ACTIVIDADES_DIDACTICAS_MAP = new Map(
   ACTIVIDADES_DIDACTICAS.map((actividad) => [actividad.nombre, actividad.descripcion])
 );
@@ -127,8 +96,11 @@ function normalizeActividadDidactica(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function isActividadDidacticaValida(value) {
-  return ACTIVIDADES_DIDACTICAS_MAP.has(normalizeActividadDidactica(value));
+function isActividadDidacticaValida(value, momentoKey) {
+  const normalized = normalizeActividadDidactica(value);
+  return momentoKey
+    ? Boolean(ACTIVIDADES_DIDACTICAS_SETS[momentoKey]?.has(normalized))
+    : ACTIVIDADES_DIDACTICAS_MAP.has(normalized);
 }
 
 function getActividadDidacticaDescripcion(value) {
@@ -141,7 +113,7 @@ function normalizeActividadesMomentos(value) {
 
   MOMENTOS_ACTIVIDADES_DIDACTICAS.forEach(({ key }) => {
     const actividad = normalizeActividadDidactica(source[key]);
-    if (isActividadDidacticaValida(actividad)) {
+    if (isActividadDidacticaValida(actividad, key)) {
       normalized[key] = actividad;
     }
   });
@@ -166,14 +138,14 @@ function getActividadCierreLegacy(actividadesMomentos) {
   return normalizeActividadesMomentos(actividadesMomentos).cierre || "";
 }
 
-function buildActividadDidacticaOptions(selectedValue) {
+function buildActividadDidacticaOptions(selectedValue, momentoKey) {
   const normalized = normalizeActividadDidactica(selectedValue);
   const options = ['<option value="">Sin actividad espec&iacute;fica</option>'];
 
-  ACTIVIDADES_DIDACTICAS.forEach((actividad) => {
-    const isSelected = normalized === actividad.nombre ? " selected" : "";
+  (ACTIVIDADES_DIDACTICAS_POR_MOMENTO[momentoKey] || []).forEach((nombre) => {
+    const isSelected = normalized === nombre ? " selected" : "";
 
-    options.push(`<option value="${escapeHtml(actividad.nombre)}"${isSelected}>${escapeHtml(actividad.nombre)}</option>`);
+    options.push(`<option value="${escapeHtml(nombre)}"${isSelected}>${escapeHtml(nombre)}</option>`);
   });
 
   return options.join("");
@@ -188,19 +160,19 @@ function renderActividadDidacticaSelect({ scope, localId, momentoKey, actividad 
     ? `data-quick-actividad-select="${safeLocalId}"`
     : `data-staging-actividad-select="${safeLocalId}"`;
   const descripcion = getActividadDidacticaDescripcion(actividad);
-  const title = isActividadDidacticaValida(actividad)
+  const title = isActividadDidacticaValida(actividad, momentoKey)
     ? `${normalizeActividadDidactica(actividad)}${descripcion ? ` - ${descripcion}` : ""}`
     : "Sin actividad especifica";
 
   return `
     <select
       id="${selectId}"
-      class="actividad-cierre-select actividad-didactica-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none ${isActividadDidacticaValida(actividad) ? "is-filled" : ""}"
+      class="actividad-cierre-select actividad-didactica-select min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none ${isActividadDidacticaValida(actividad, momentoKey) ? "is-filled" : ""}"
       title="${escapeHtml(title)}"
       data-actividad-momento="${safeMomentoKey}"
       ${dataAttribute}
     >
-      ${buildActividadDidacticaOptions(actividad)}
+      ${buildActividadDidacticaOptions(actividad, momentoKey)}
     </select>
   `;
 }

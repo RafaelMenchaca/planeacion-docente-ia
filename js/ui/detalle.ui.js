@@ -201,6 +201,7 @@ function renderTablaIA(tablaIA, { modoEdicion = false } = {}) {
   tablaIA.forEach((row, rowIndex) => {
     const tr = document.createElement("tr");
     tr.setAttribute("data-row-index", String(rowIndex));
+    tr.setAttribute("data-actividad-seleccionada", String(row.actividad_seleccionada || ""));
     tr.innerHTML = `
       <td class="col-tiempo" data-field="tiempo_sesion">${escapeHtml(row.tiempo_sesion || "")}</td>
       <td class="col-actividades" data-field="actividades">${renderActividadesCell(row, { modoEdicion, rowIndex })}</td>
@@ -295,6 +296,7 @@ function obtenerDatosTablaIA() {
   const filas = document.querySelectorAll("#tablaDetalleIA tbody tr");
   return Array.from(filas).map((fila) => ({
     tiempo_sesion: obtenerTextoCelda(fila, "tiempo_sesion"),
+    actividad_seleccionada: fila.dataset.actividadSeleccionada || "",
     actividades: fila.querySelector("[data-actividad-text]")?.innerText.trim() || "",
     tiempo_min: obtenerTextoCelda(fila, "tiempo_min"),
     producto: obtenerTextoCelda(fila, "producto"),

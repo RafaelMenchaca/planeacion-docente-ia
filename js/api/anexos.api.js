@@ -45,13 +45,16 @@ const anexosGet = function (path, accessToken, fallbackMessage) {
   );
 };
 
-async function apiGenerarAnexo(planeacionId, accessToken) {
+async function apiGenerarAnexo(planeacionId, tipoCuadernillo, accessToken) {
   return requestAnexosJson(
     `${API_BASE_URL}/api/anexos/generate`,
     {
       method: "POST",
       headers: buildAnexosHeaders(accessToken),
-      body: JSON.stringify({ planeacion_id: planeacionId })
+      body: JSON.stringify({
+        planeacion_id: planeacionId,
+        tipo_cuadernillo: tipoCuadernillo
+      })
     },
     "No se pudo generar el anexo"
   );

@@ -56,6 +56,14 @@ El Explorer visual jerárquico antiguo fue retirado. Las tablas, IDs, caches, lo
 - `dashboard-bootstrap.js`: layout, bindings e inicialización.
 - `js/features/{recurso}/`: generación, preview, download y delete por dominio.
 
+Anexos usa `js/features/anexos/cuadernillo-types.js` como catálogo canónico de
+modalidades. El modal exige una modalidad por cada planeación marcada y envía
+requests individuales y secuenciales. `AnexoPreview` despacha explícitamente el
+renderer histórico v1 o el renderer web de cuadernillos v2, que soporta los once
+discriminadores del contrato persistido. `AnexoDownload` despacha también por
+versión y exporta localmente v1 y v2 como HTML compatible con Word dentro de un
+archivo `.doc`, con nombre editable y sin llamadas adicionales al backend.
+
 `dashboard.page.js` conserva state técnico compartido, caches/loaders jerárquicos y helpers. `window.explorerState` es un contrato clásico compartido; su nombre no implica que exista un Explorer visual.
 
 ## Páginas relevantes
