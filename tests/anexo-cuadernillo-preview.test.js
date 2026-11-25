@@ -83,6 +83,18 @@ function v2Fixture() {
   };
 }
 
+function v3Fixture() {
+  const value = v2Fixture();
+  value.schema_version = 3;
+  value.prompt_version = "v3_cuadernillo_editorial_segmentado";
+  value.contenido.schema_version = 3;
+  delete value.contenido.datos_generales;
+  value.contenido.secciones.flatMap((section) => section.bloques)
+    .filter((block) => block.tipo === "ejemplo_resuelto")
+    .forEach((block) => { block.verificacion = ["Sustituye el resultado en las condiciones originales."]; });
+  return value;
+}
+
 describe("Preview web de cuadernillos v2", () => {
   test("dispatch explícito conserva v1 y rechaza formatos desconocidos", () => {
     const { window, card } = createHarness();
@@ -92,7 +104,7 @@ describe("Preview web de cuadernillos v2", () => {
     expect(card.textContent).toContain("MATERIAL PARA ALUMNOS");
     expect(card.textContent).toContain("Anexo histórico");
 
-    const unknown = { tipo_cuadernillo: "ejercicios_aplicacion", contenido: { schema_version: 3, anexos: [] } };
+    const unknown = { tipo_cuadernillo: "ejercicios_aplicacion", contenido: { schema_version: 4, anexos: [] } };
     expect(window.AnexoPreview.detectSchemaVersion(unknown)).toBe("unknown");
     window.AnexoPreview.render(unknown);
     expect(card.textContent).toContain("formato no es compatible");
@@ -132,6 +144,58 @@ describe("Preview web de cuadernillos v2", () => {
     expect(card.innerHTML).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(JSON.stringify(fixture)).toBe(original);
     expect(window.apiObtenerAnexoDetalle).not.toHaveBeenCalled();
+  });
+
+  test("dispatch y render v3 omiten datos generales y conservan contenido pedagogico", () => {
+    const { window, card } = createHarness();
+    const fixture = v3Fixture();
+    const procedure = fixture.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "procedimiento");
+    procedure.pasos = ["Forma la matriz de coeficientes.", "Calcula el determinante principal.", "Obtén cada variable."];
+    window.AnexoPreview.render(fixture);
+    expect(window.AnexoPreview.detectSchemaVersion(fixture)).toBe("v3");
+    expect(card.classList.contains("bib-cuadernillo-preview-card")).toBe(true);
+    expect(card.querySelector(".bib-workbook-general")).toBeNull();
+    expect(card.textContent).not.toContain("Datos generales");
+    expect(card.textContent).toContain("Fundamentos");
+    expect(card.textContent).toMatch(/Pr.*ctica/);
+    expect(card.textContent).toContain("Asignatura:");
+    expect(card.textContent).not.toMatch(/Autoevaluaci/);
+    expect(card.textContent).toContain("Comprobación");
+    expect(card.textContent).toContain("Sustituye el resultado en las condiciones originales.");
+    procedure.pasos.forEach((step) => expect(card.textContent).toContain(step));
+    expect(card.querySelector(".bib-workbook-example-verification")).not.toBeNull();
+  });
+
+  test("v2 historico no exige verificacion y v3 incompleto falla cerrado", () => {
+    const { window, card } = createHarness();
+    window.AnexoPreview.render(v2Fixture());
+    expect(card.querySelector(".bib-workbook-example-verification")).toBeNull();
+    const invalid = v3Fixture();
+    delete invalid.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "ejemplo_resuelto").verificacion;
+    window.AnexoPreview.render(invalid);
+    expect(card.textContent).toContain("No se puede visualizar");
+  });
+
+  test("preview v3 presenta resultado cuantitativo verificado sin metadata interna ni LaTeX", () => {
+    const { window, card } = createHarness();
+    const value = v3Fixture();
+    const example = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "ejemplo_resuelto");
+    example.resultado = "x = 12/5, y = 2/5";
+    example.pasos = ["Calcula x = 12/5.", "Calcula y = 2/5."];
+    example.verificacion = ["Ecuación 1: 6 = 6", "Ecuación 2: 2 = 2"];
+    example.matrices = [{ titulo: "Sistema lineal", columnas: ["x", "y", "b"], filas: [["2", "3", "6"], ["1", "-1", "2"]] }];
+    window.AnexoPreview.render(value);
+    expect(card.textContent).toContain("x = 12/5, y = 2/5");
+    expect(card.textContent.split("x = 12/5, y = 2/5")).toHaveLength(2);
+    expect(card.textContent).toContain("Ecuación 2: 2 = 2");
+    expect(card.textContent.split("Ecuación 1: 6 = 6")).toHaveLength(2);
+    expect(card.textContent.split("Ecuación 2: 2 = 2")).toHaveLength(2);
+    const matrices = [...card.querySelectorAll("table")];
+    expect(matrices.at(-1).textContent).toContain("2");
+    expect(matrices.at(-1).textContent).toContain("x");
+    expect(card.textContent).toContain("Sistema lineal");
+    expect(card.innerHTML).not.toContain("familia_problema");
+    expect(card.innerHTML).not.toContain("contrato_cuantitativo");
   });
 
   test("cerrar y volver a renderizar funciona; Escape conserva el cierre del modal", () => {

@@ -59,10 +59,14 @@ El Explorer visual jerárquico antiguo fue retirado. Las tablas, IDs, caches, lo
 Anexos usa `js/features/anexos/cuadernillo-types.js` como catálogo canónico de
 modalidades. El modal exige una modalidad por cada planeación marcada y envía
 requests individuales y secuenciales. `AnexoPreview` despacha explícitamente el
-renderer histórico v1 o el renderer web de cuadernillos v2, que soporta los once
-discriminadores del contrato persistido. `AnexoDownload` despacha también por
-versión y exporta localmente v1 y v2 como HTML compatible con Word dentro de un
+renderer histórico v1 o los renderers explícitos v2/v3, que soportan los once
+discriminadores. V2 conserva Datos generales y Autoevaluación; v3 los rechaza y
+presenta únicamente secciones pedagógicas. `AnexoDownload` despacha también por
+versión y exporta localmente v1, v2 y v3 como HTML compatible con Word dentro de un
 archivo `.doc`, con nombre editable y sin llamadas adicionales al backend.
+V3 recibe del backend resultados y comprobaciones cuantitativas ya verificados
+para las familias soportadas; preview y Word muestran texto plano, Unicode y
+tablas, sin metadata académica interna ni interpretación de LaTeX.
 
 `dashboard.page.js` conserva state técnico compartido, caches/loaders jerárquicos y helpers. `window.explorerState` es un contrato clásico compartido; su nombre no implica que exista un Explorer visual.
 

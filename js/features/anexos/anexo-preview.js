@@ -17,6 +17,10 @@
       const validType = Boolean(window.CuadernilloTypes?.isValid?.(anexo?.tipo_cuadernillo));
       return validType && Array.isArray(contenido.secciones) ? "v2" : "unknown";
     }
+    if (Number(declaredVersion) === 3) {
+      const validType = Boolean(window.CuadernilloTypes?.isValid?.(anexo?.tipo_cuadernillo));
+      return validType && Array.isArray(contenido.secciones) ? "v3" : "unknown";
+    }
     if (declaredVersion == null && Array.isArray(contenido.anexos) && !anexo?.tipo_cuadernillo) return "v1";
     return "unknown";
   }
@@ -27,7 +31,7 @@
   }
 
   function setCardMode(card, mode) {
-    card?.classList.toggle("bib-cuadernillo-preview-card", mode === "v2");
+    card?.classList.toggle("bib-cuadernillo-preview-card", mode === "v2" || mode === "v3");
   }
 
   function bindClose() {
@@ -142,8 +146,10 @@
 
   function renderSolvedExampleBlock(block) {
     return `${renderBlockTitle(block)}<div class="bib-workbook-example-prompt"><strong>Enunciado</strong><p>${safe(block.enunciado)}</p></div>
+      ${Array.isArray(block.matrices) ? block.matrices.map((matrix) => renderTableBlock(matrix)).join("") : ""}
       <ol class="bib-workbook-steps">${(block.pasos || []).map((step) => `<li>${safe(step)}</li>`).join("")}</ol>
       <div class="bib-workbook-example-result"><strong>Resultado</strong><p>${safe(block.resultado)}</p></div>
+      ${Array.isArray(block.verificacion) ? `<div class="bib-workbook-example-verification"><strong>Comprobación</strong><ol class="bib-workbook-steps">${block.verificacion.map((step) => `<li>${safe(step)}</li>`).join("")}</ol></div>` : ""}
       <div class="bib-workbook-example-interpretation"><strong>Interpretación</strong><p>${safe(block.interpretacion)}</p></div>`;
   }
 
@@ -192,21 +198,35 @@
       && section.bloques.every((block) => block && BLOCK_TYPES.has(block.tipo)));
   }
 
-  function renderCuadernilloV2(card, anexo) {
+  function isRenderableV3(contenido) {
+    if (!contenido || typeof contenido.titulo !== "string" || !contenido.titulo.trim()) return false;
+    if (typeof contenido.descripcion !== "string" || !contenido.descripcion.trim()) return false;
+    if (Object.hasOwn(contenido, "datos_generales")) return false;
+    if (!Array.isArray(contenido.secciones) || contenido.secciones.length === 0) return false;
+    return contenido.secciones.every((section) => section && section.id !== "datos_generales"
+      && typeof section.titulo === "string" && section.titulo.trim()
+      && Number.isInteger(section.orden) && Array.isArray(section.bloques) && section.bloques.length > 0
+      && section.bloques.every((block) => block && BLOCK_TYPES.has(block.tipo)
+        && (block.tipo !== "ejemplo_resuelto" || (Array.isArray(block.verificacion) && block.verificacion.length > 0 && block.verificacion.every((item) => typeof item === "string" && item.trim())))
+        && !(block.tipo === "evaluacion" && block.modalidad === "autoevaluacion")));
+  }
+
+  function renderCuadernillo(card, anexo, version) {
     const contenido = anexo.contenido;
-    if (!isRenderableV2(contenido)) return renderSafeError(card, INVALID_V2_MESSAGE);
+    const isValid = version === "v2" ? isRenderableV2(contenido) : isRenderableV3(contenido);
+    if (!isValid) return renderSafeError(card, INVALID_V2_MESSAGE);
     const typeMeta = window.CuadernilloTypes.get(anexo.tipo_cuadernillo);
     const sortedSections = [...contenido.secciones].sort((a, b) => a.orden - b.orden);
-    const subject = contenido.datos_generales?.asignatura?.valor || anexo.materia || "";
-    const topic = contenido.datos_generales?.tema?.valor || anexo.tema || "";
+    const subject = version === "v2" ? contenido.datos_generales?.asignatura?.valor || anexo.materia || "" : anexo.materia || "";
+    const topic = version === "v2" ? contenido.datos_generales?.tema?.valor || anexo.tema || "" : anexo.tema || "";
     const metadata = [subject && `Asignatura: ${subject}`, topic && `Tema: ${topic}`].filter(Boolean);
-    setCardMode(card, "v2");
+    setCardMode(card, version);
     card.innerHTML = `<header class="bib-workbook-header"><div class="bib-workbook-header-copy">
       <p class="bib-workbook-eyebrow">MATERIAL PARA ESTUDIANTES</p><p class="bib-workbook-type-label">${safe(typeMeta.label)}</p>
       <h3>${safe(contenido.titulo)}</h3><p class="bib-workbook-description">${safe(contenido.descripcion)}</p>
       ${metadata.length ? `<ul class="bib-workbook-meta" aria-label="Datos del cuadernillo">${metadata.map((item) => `<li>${safe(item)}</li>`).join("")}</ul>` : ""}</div>
       <button type="button" id="bib-anexo-close" class="bib-lista-close" aria-label="Cerrar">X</button></header>
-      <div class="bib-workbook-body">${renderCuadernilloV2DatosGenerales(contenido.datos_generales)}
+      <div class="bib-workbook-body">${version === "v2" ? renderCuadernilloV2DatosGenerales(contenido.datos_generales) : ""}
         <div class="bib-workbook-sections">${sortedSections.map((section, index) => renderCuadernilloV2Seccion(section, index + 1)).join("")}</div></div>
       <footer class="bib-workbook-footer"><p>Descarga una copia editable e imprimible en formato Word.</p>
         <button type="button" id="bib-anexo-descargar" class="bib-lista-submit">Descargar Word</button></footer>`;
@@ -260,7 +280,7 @@
     if (!card) return;
     const version = detectAnexoSchemaVersion(anexo);
     if (version === "v1") return renderAnexoV1(card, anexo);
-    if (version === "v2") return renderCuadernilloV2(card, anexo);
+    if (version === "v2" || version === "v3") return renderCuadernillo(card, anexo, version);
     return renderSafeError(card, UNKNOWN_VERSION_MESSAGE);
   }
 

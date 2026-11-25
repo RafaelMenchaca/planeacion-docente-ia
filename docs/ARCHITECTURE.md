@@ -125,11 +125,16 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
 - Anexos obtiene sus tres modalidades de `cuadernillo-types.js`; el modal guarda
   un tipo por planeación y coordina requests individuales secuenciales. El
   owner `AnexoPreview` detecta el esquema y despacha sin fallback entre el
-  renderer histórico v1 y el renderer web v2. Este último presenta datos
+  renderer histórico v1 y renderers explícitos v2/v3. V2 presenta datos
   generales y los bloques `texto`, `lista`, `conceptos`, `tabla`, `actividad`,
   `procedimiento`, `ejemplo_resuelto`, `proyecto`, `registro`, `evaluacion` y
-  `espacio_respuesta`. `AnexoDownload` aplica el mismo dispatch estricto v1/v2 y
+  `espacio_respuesta`; v3 omite Datos generales y Autoevaluación sin alterar
+  históricos. `AnexoDownload` aplica el mismo dispatch estricto v1/v2/v3 y
   construye localmente un `.doc` compatible con Word para los once bloques;
+  los ejemplos resueltos v3 muestran una sección de Comprobación obligatoria,
+  incluidas operaciones y resultados cuantitativos derivados por backend en
+  texto plano o tablas; nunca exponen contratos internos ni interpretan LaTeX.
+  mientras los documentos v2 conservan su estructura histórica;
   conserva el exportador histórico y rechaza versiones inconsistentes sin
   fallback.
 - Biblioteca recarga y reconcilia la colección después de operaciones persistentes.

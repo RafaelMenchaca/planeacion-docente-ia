@@ -49,6 +49,19 @@ function fixture(type = "ejercicios_aplicacion") {
   };
 }
 
+function v3Fixture(type = "ejercicios_aplicacion") {
+  const value = fixture(type);
+  value.schema_version = 3;
+  value.prompt_version = "v3_cuadernillo_editorial_segmentado";
+  value.contenido.schema_version = 3;
+  delete value.contenido.datos_generales;
+  value.contenido.secciones = value.contenido.secciones.filter((section) => section.id !== "datos_generales");
+  value.contenido.secciones.flatMap((section) => section.bloques)
+    .filter((block) => block.tipo === "ejemplo_resuelto")
+    .forEach((block) => { block.verificacion = ["Sustituye el resultado en las condiciones originales."]; });
+  return value;
+}
+
 function harness({ modalResult = "Cuadernillo_final" } = {}) {
   const dom = new JSDOM('<!doctype html><html><body><div id="biblioteca-anexo-modal"><div class="biblioteca-modal-card"></div></div></body></html>', { runScripts: "outside-only", url: "https://example.test/pages/dashboard.html" });
   const { window } = dom;
@@ -74,11 +87,74 @@ function harness({ modalResult = "Cuadernillo_final" } = {}) {
 }
 
 describe("Exportación Word de cuadernillos v2", () => {
-  test("dispatch es explícito para v1, v2 y desconocido", () => {
+  test("dispatch es explícito para v1, v2, v3 y desconocido", () => {
     const { window } = harness();
     expect(window.AnexoDownload.detectVersion({ contenido: { anexos: [] } })).toBe("v1");
     expect(window.AnexoDownload.detectVersion(fixture())).toBe("v2");
-    expect(window.AnexoDownload.detectVersion({ tipo_cuadernillo: "ejercicios_aplicacion", contenido: { schema_version: 3, anexos: [] } })).toBe("unknown");
+    expect(window.AnexoDownload.detectVersion(v3Fixture())).toBe("v3");
+    expect(window.AnexoDownload.detectVersion({ tipo_cuadernillo: "ejercicios_aplicacion", contenido: { schema_version: 4, anexos: [] } })).toBe("unknown");
+  });
+
+  test("Word v3 conserva contenido y metadata externa sin datos generales", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const procedure = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "procedimiento");
+    procedure.pasos = ["Forma la matriz de coeficientes.", "Calcula el determinante principal.", "Obtén cada variable."];
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain("MATERIAL PARA ESTUDIANTES");
+    expect(html).not.toContain("Datos generales");
+    expect(html).not.toContain('<section class="general-data">');
+    expect(html).not.toContain("Autoevaluación");
+    expect(html).toContain("Fundamentos");
+    expect(html).toContain("Práctica");
+    expect(html).toContain("Comprobación:");
+    expect(html).toContain("Sustituye el resultado en las condiciones originales.");
+    procedure.pasos.forEach((step) => expect(html).toContain(step));
+    expect(window.AnexoDownload.buildV2WordHtml(fixture())).not.toContain("Comprobación:");
+  });
+
+  test("Word v3 exige verificacion y escapa sus pasos", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const example = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "ejemplo_resuelto");
+    example.verificacion = ["Comprueba <script>alert(1)</script> en ambas ecuaciones."];
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(html).not.toContain("<script>alert(1)</script>");
+    delete example.verificacion;
+    expect(() => window.AnexoDownload.buildV3WordHtml(value)).toThrow("bloque_invalido");
+  });
+
+  test("Word v3 exporta matematicas verificadas en texto plano sin metadata interna", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const example = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "ejemplo_resuelto");
+    example.resultado = "x = 12/5, y = 2/5";
+    example.pasos = ["Calcula x = 12/5.", "Calcula y = 2/5."];
+    example.verificacion = ["Ecuación 1: 6 = 6", "Ecuación 2: 2 = 2"];
+    example.matrices = [{ titulo: "Sistema lineal", columnas: ["x", "y", "b"], filas: [["2", "3", "6"], ["1", "-1", "2"]] }];
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain("x = 12/5, y = 2/5");
+    expect(html.split("x = 12/5, y = 2/5")).toHaveLength(2);
+    expect(html).toContain("Ecuación 2: 2 = 2");
+    expect(html.split("Ecuación 1: 6 = 6")).toHaveLength(2);
+    expect(html.split("Ecuación 2: 2 = 2")).toHaveLength(2);
+    expect(html).toContain("<table>");
+    expect(html).toContain("Sistema lineal");
+    expect(html).not.toContain("familia_problema");
+    expect(html).not.toContain("contrato_cuantitativo");
+  });
+
+  test("descarga v3 usa el mismo flujo local de Blob y cleanup", () => {
+    jest.useFakeTimers();
+    const { window, blobs } = harness();
+    expect(window.AnexoDownload.download(v3Fixture(), "Cuadernillo v3")).toBe(true);
+    expect(blobs).toHaveLength(1);
+    expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(window.HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
+    jest.advanceTimersByTime(5000);
+    expect(window.URL.revokeObjectURL).toHaveBeenCalledWith("blob:word");
+    jest.useRealTimers();
   });
 
   test.each([

@@ -23,6 +23,10 @@
       const validType = Boolean(window.CuadernilloTypes?.isValid?.(anexo?.tipo_cuadernillo));
       return validType && Array.isArray(contenido.secciones) ? "v2" : "unknown";
     }
+    if (Number(declaredVersion) === 3) {
+      const validType = Boolean(window.CuadernilloTypes?.isValid?.(anexo?.tipo_cuadernillo));
+      return validType && Array.isArray(contenido.secciones) ? "v3" : "unknown";
+    }
     if (declaredVersion == null && Array.isArray(contenido.anexos) && !anexo?.tipo_cuadernillo) return "v1";
     return "unknown";
   }
@@ -127,7 +131,7 @@
       case "procedimiento":
         return `<div class="block procedure-block">${blockTitle(block)}<ol>${(block.pasos || []).map((step) => `<li>${safe(step)}</li>`).join("")}</ol></div>`;
       case "ejemplo_resuelto":
-        return `<div class="block example-block">${blockTitle(block)}<p><strong>Enunciado:</strong> ${safe(block.enunciado)}</p><p><strong>Procedimiento:</strong></p><ol>${(block.pasos || []).map((step) => `<li>${safe(step)}</li>`).join("")}</ol><p><strong>Resultado:</strong> ${safe(block.resultado)}</p><p><strong>Interpretación:</strong> ${safe(block.interpretacion)}</p></div>`;
+        return `<div class="block example-block">${blockTitle(block)}<p><strong>Enunciado:</strong> ${safe(block.enunciado)}</p>${Array.isArray(block.matrices) ? block.matrices.map((matrix) => `<div class="table-block">${matrix?.titulo ? `<h4>${safe(matrix.titulo)}</h4>` : ""}<table><thead><tr>${(matrix?.columnas || []).map((column) => `<th>${safe(column)}</th>`).join("")}</tr></thead><tbody>${(matrix?.filas || []).map((row) => `<tr>${(Array.isArray(row) ? row : []).map((cell) => `<td>${safe(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("") : ""}<p><strong>Procedimiento:</strong></p><ol>${(block.pasos || []).map((step) => `<li>${safe(step)}</li>`).join("")}</ol><p><strong>Resultado:</strong> ${safe(block.resultado)}</p>${Array.isArray(block.verificacion) ? `<p><strong>Comprobación:</strong></p><ol>${block.verificacion.map((step) => `<li>${safe(step)}</li>`).join("")}</ol>` : ""}<p><strong>Interpretación:</strong> ${safe(block.interpretacion)}</p></div>`;
       case "proyecto":
         return `<div class="block project-block">${blockTitle(block)}<p><strong>Producto:</strong> ${safe(block.producto)}</p><p><strong>Instrucciones:</strong> ${safe(block.instrucciones)}</p><p><strong>Etapas:</strong></p><ol>${(block.etapas || []).map((stage) => `<li>${safe(stage)}</li>`).join("")}</ol>${responseLines(block.espacio_respuesta?.lineas)}</div>`;
       case "registro":
@@ -154,7 +158,7 @@
     return Array.isArray(value) && value.length > 0 && value.every(hasText);
   }
 
-  function assertValidBlock(block) {
+  function assertValidBlock(block, version = "v2") {
     if (!block || !BLOCK_TYPES.has(block.tipo)) throw new Error("tipo_bloque_no_soportado");
     if (block.titulo !== undefined && !hasText(block.titulo)) throw new Error("bloque_invalido");
     switch (block.tipo) {
@@ -181,6 +185,7 @@
         break;
       case "ejemplo_resuelto":
         if (!hasText(block.enunciado) || !hasTextArray(block.pasos) || !hasText(block.resultado) || !hasText(block.interpretacion)) throw new Error("bloque_invalido");
+        if (version === "v3" && !hasTextArray(block.verificacion)) throw new Error("bloque_invalido");
         break;
       case "proyecto":
         if (!hasText(block.producto) || !hasText(block.instrucciones) || !hasTextArray(block.etapas) || !Number.isInteger(block.espacio_respuesta?.lineas) || block.espacio_respuesta.lineas <= 0) throw new Error("bloque_invalido");
@@ -199,22 +204,26 @@
     }
   }
 
-  function assertRenderableV2(anexo) {
+  function assertRenderableWorkbook(anexo, version) {
     const content = anexo?.contenido;
     if (!content || typeof content.titulo !== "string" || !content.titulo.trim() || typeof content.descripcion !== "string" || !content.descripcion.trim()) throw new Error("contenido_v2_invalido");
-    if (!content.datos_generales || !Array.isArray(content.secciones) || content.secciones.length === 0) throw new Error("contenido_v2_invalido");
+    if (version === "v2" && !content.datos_generales) throw new Error("contenido_v2_invalido");
+    if (version === "v3" && Object.hasOwn(content, "datos_generales")) throw new Error("contenido_v3_invalido");
+    if (!Array.isArray(content.secciones) || content.secciones.length === 0) throw new Error("contenido_v2_invalido");
     content.secciones.forEach((section) => {
       if (!section || !Number.isInteger(section.orden) || !Array.isArray(section.bloques) || section.bloques.length === 0) throw new Error("contenido_v2_invalido");
-      section.bloques.forEach(assertValidBlock);
+      if (version === "v3" && section.id === "datos_generales") throw new Error("contenido_v3_invalido");
+      if (version === "v3" && section.bloques.some((block) => block?.tipo === "evaluacion" && block.modalidad === "autoevaluacion")) throw new Error("contenido_v3_invalido");
+      section.bloques.forEach((block) => assertValidBlock(block, version));
     });
   }
 
-  function buildCuadernilloV2WordHtml(anexo) {
-    assertRenderableV2(anexo);
+  function buildCuadernilloWordHtml(anexo, version) {
+    assertRenderableWorkbook(anexo, version);
     const content = anexo.contenido;
     const typeMeta = window.CuadernilloTypes.get(anexo.tipo_cuadernillo);
-    const subject = content.datos_generales?.asignatura?.valor || anexo.materia || "";
-    const topic = content.datos_generales?.tema?.valor || anexo.tema || "";
+    const subject = version === "v2" ? content.datos_generales?.asignatura?.valor || anexo.materia || "" : anexo.materia || "";
+    const topic = version === "v2" ? content.datos_generales?.tema?.valor || anexo.tema || "" : anexo.tema || "";
     const sections = [...content.secciones].sort((a, b) => a.orden - b.orden);
     const sectionHtml = sections
       .filter((section) => section.id !== "datos_generales")
@@ -251,8 +260,16 @@
       <header class="cover"><p class="eyebrow">MATERIAL PARA ESTUDIANTES</p><p class="type-label">${safe(typeMeta.label)}</p>
         <h1>${safe(content.titulo)}</h1><div class="description">${paragraphs(content.descripcion)}</div>
         <p class="metadata">${subject ? `<strong>Asignatura:</strong> ${safe(subject)}` : ""}${subject && topic ? " &nbsp;·&nbsp; " : ""}${topic ? `<strong>Tema:</strong> ${safe(topic)}` : ""}</p></header>
-      ${buildCuadernilloV2GeneralDataHtml(content.datos_generales)}${sectionHtml}
+      ${version === "v2" ? buildCuadernilloV2GeneralDataHtml(content.datos_generales) : ""}${sectionHtml}
     </body></html>`;
+  }
+
+  function buildCuadernilloV2WordHtml(anexo) {
+    return buildCuadernilloWordHtml(anexo, "v2");
+  }
+
+  function buildCuadernilloV3WordHtml(anexo) {
+    return buildCuadernilloWordHtml(anexo, "v3");
   }
 
   function downloadAnexo(anexo, filenameOverride) {
@@ -264,11 +281,12 @@
         return createWordDownload(buildAnexoV1WordHtml(anexo), filenameOverride || defaultName);
       }
       if (version === "v2") return createWordDownload(buildCuadernilloV2WordHtml(anexo), filenameOverride || buildCuadernilloFilename(anexo));
+      if (version === "v3") return createWordDownload(buildCuadernilloV3WordHtml(anexo), filenameOverride || buildCuadernilloFilename(anexo));
       alert(UNKNOWN_VERSION_MESSAGE);
       return false;
     } catch (error) {
       console.error("[downloads] anexo:build_error", { version, errorType: error?.message || "unknown" });
-      alert(version === "v2" ? INVALID_V2_MESSAGE : DOWNLOAD_ERROR_MESSAGE);
+      alert(version === "v2" || version === "v3" ? INVALID_V2_MESSAGE : DOWNLOAD_ERROR_MESSAGE);
       return false;
     }
   }
@@ -282,7 +300,7 @@
     }
     requestInProgress = true;
     try {
-      const suggested = version === "v2"
+      const suggested = version === "v2" || version === "v3"
         ? buildCuadernilloFilename(anexo)
         : window.AppUI.buildDownloadSuggestedName("Anexo", anexo.tema || anexo.titulo);
       const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
@@ -318,6 +336,7 @@
     detectVersion: detectAnexoDownloadVersion,
     buildV1WordHtml: buildAnexoV1WordHtml,
     buildV2WordHtml: buildCuadernilloV2WordHtml,
+    buildV3WordHtml: buildCuadernilloV3WordHtml,
     buildSuggestedFilename: buildCuadernilloFilename
   };
 })();

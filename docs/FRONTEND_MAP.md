@@ -90,10 +90,11 @@ No existe una slice de navegación visual legacy. No renombrar el objeto ni move
 
 - `cuadernillo-types.js` (catálogo canónico clásico de modalidades v2)
 - `anexo-generation.js`
-- `anexo-preview.js` (owner del dispatch v1/v2 y del renderer web de los once
-  bloques canónicos)
-- `anexo-download.js` (owner del dispatch Word v1/v2, nombre editable y
-  exportación local `.doc` de los once bloques canónicos)
+- `anexo-preview.js` (owner del dispatch v1/v2/v3 y del renderer web de los once
+  bloques canónicos; presenta la Comprobación explícita y resultados
+  cuantitativos v3 en texto plano/tablas, sin metadata interna ni LaTeX)
+- `anexo-download.js` (owner del dispatch Word v1/v2/v3, nombre editable y
+  exportación local `.doc` de los once bloques canónicos, incluida Comprobación v3)
 - `anexo-delete.js`
 
 ### Listas de cotejo
