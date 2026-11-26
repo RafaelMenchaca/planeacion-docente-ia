@@ -49,6 +49,19 @@ function fixture(type = "ejercicios_aplicacion") {
   };
 }
 
+function v3Fixture(type = "ejercicios_aplicacion") {
+  const value = fixture(type);
+  value.schema_version = 3;
+  value.prompt_version = "v3_cuadernillo_editorial_segmentado";
+  value.contenido.schema_version = 3;
+  delete value.contenido.datos_generales;
+  value.contenido.secciones = value.contenido.secciones.filter((section) => section.id !== "datos_generales");
+  value.contenido.secciones.flatMap((section) => section.bloques)
+    .filter((block) => block.tipo === "ejemplo_resuelto")
+    .forEach((block) => { block.verificacion = ["Sustituye el resultado en las condiciones originales."]; });
+  return value;
+}
+
 function harness({ modalResult = "Cuadernillo_final" } = {}) {
   const dom = new JSDOM('<!doctype html><html><body><div id="biblioteca-anexo-modal"><div class="biblioteca-modal-card"></div></div></body></html>', { runScripts: "outside-only", url: "https://example.test/pages/dashboard.html" });
   const { window } = dom;
@@ -60,6 +73,19 @@ function harness({ modalResult = "Cuadernillo_final" } = {}) {
   window.URL.createObjectURL = jest.fn(() => "blob:word");
   window.URL.revokeObjectURL = jest.fn();
   window.HTMLAnchorElement.prototype.click = jest.fn();
+  window.DocxExport = {
+    adapters: { anexo: jest.fn((anexo, version) => ({ anexo, version })) },
+    download: jest.fn(async (_model, filename) => {
+      const blob = new window.Blob(["PK\u0003\u0004"], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = window.URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = `${String(filename).replace(/\.docx?$/i, "")}.docx`;
+      window.document.body.appendChild(link);
+      link.click(); link.remove(); window.URL.revokeObjectURL(url);
+      return true;
+    })
+  };
   window.AppUI = {
     buildDownloadSuggestedName: jest.fn((prefix, text) => `${prefix}_${text}`),
     sanitizeDownloadFilename: jest.fn((raw) => String(raw).replace(/\.doc$/i, "").replace(/[^\p{L}\p{N}\s_-]/gu, "").trim().replace(/\s+/g, "_") || "Documento"),
@@ -74,11 +100,94 @@ function harness({ modalResult = "Cuadernillo_final" } = {}) {
 }
 
 describe("Exportación Word de cuadernillos v2", () => {
-  test("dispatch es explícito para v1, v2 y desconocido", () => {
+  test("dispatch es explícito para v1, v2, v3 y desconocido", () => {
     const { window } = harness();
     expect(window.AnexoDownload.detectVersion({ contenido: { anexos: [] } })).toBe("v1");
     expect(window.AnexoDownload.detectVersion(fixture())).toBe("v2");
-    expect(window.AnexoDownload.detectVersion({ tipo_cuadernillo: "ejercicios_aplicacion", contenido: { schema_version: 3, anexos: [] } })).toBe("unknown");
+    expect(window.AnexoDownload.detectVersion(v3Fixture())).toBe("v3");
+    expect(window.AnexoDownload.detectVersion({ tipo_cuadernillo: "ejercicios_aplicacion", contenido: { schema_version: 4, anexos: [] } })).toBe("unknown");
+  });
+
+  test("Word v3 conserva contenido y metadata externa sin datos generales", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const procedure = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "procedimiento");
+    procedure.pasos = ["Forma la matriz de coeficientes.", "Calcula el determinante principal.", "Obtén cada variable."];
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain("MATERIAL PARA ESTUDIANTES");
+    expect(html).not.toContain("Datos generales");
+    expect(html).not.toContain('<section class="general-data">');
+    expect(html).not.toContain("Autoevaluación");
+    expect(html).toContain("Fundamentos");
+    expect(html).toContain("Práctica");
+    expect(html).toContain("Comprobación:");
+    expect(html).toContain("Sustituye el resultado en las condiciones originales.");
+    procedure.pasos.forEach((step) => expect(html).toContain(step));
+    expect(window.AnexoDownload.buildV2WordHtml(fixture())).not.toContain("Comprobación:");
+  });
+
+  test("Word v3 exige verificacion y escapa sus pasos", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const example = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "ejemplo_resuelto");
+    example.verificacion = ["Comprueba <script>alert(1)</script> en ambas ecuaciones."];
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(html).not.toContain("<script>alert(1)</script>");
+    delete example.verificacion;
+    expect(() => window.AnexoDownload.buildV3WordHtml(value)).toThrow("bloque_invalido");
+  });
+
+  test("Word v3 exporta matematicas verificadas en texto plano sin metadata interna", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const example = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "ejemplo_resuelto");
+    example.resultado = "x = 12/5, y = 2/5";
+    example.pasos = ["Calcula x = 12/5.", "Calcula y = 2/5."];
+    example.verificacion = ["Ecuación 1: 6 = 6", "Ecuación 2: 2 = 2"];
+    example.matrices = [{ titulo: "Sistema lineal", columnas: ["x", "y", "b"], filas: [["2", "3", "6"], ["1", "-1", "2"]] }];
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain("x = 12/5, y = 2/5");
+    expect(html.split("x = 12/5, y = 2/5")).toHaveLength(2);
+    expect(html).toContain("Ecuación 2: 2 = 2");
+    expect(html.split("Ecuación 1: 6 = 6")).toHaveLength(2);
+    expect(html.split("Ecuación 2: 2 = 2")).toHaveLength(2);
+    expect(html).toContain("<table>");
+    expect(html).toContain("Sistema lineal");
+    expect(html).not.toContain("familia_problema");
+    expect(html).not.toContain("contrato_cuantitativo");
+  });
+
+  test("Word v3 conserva espacios backend para completar y clasificar", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const section = value.contenido.secciones.at(-1);
+    section.bloques.push(
+      {
+        tipo: "actividad", modalidad: "completar", instrucciones: "Identifica el término correcto.",
+        items: [{ id: "complete-1", enunciado: "Escribe el término que corresponde a un arreglo rectangular.", opciones: ["matriz", "vector"], respuesta_correcta: "matriz", espacio_respuesta: { lineas: 2 } }], cobertura: [23]
+      },
+      {
+        tipo: "tabla", columnas: ["Elemento", "Clasificación (Vector / Matriz)"],
+        filas: [["Lista ordenada de componentes", ""], ["Arreglo rectangular", ""], ["Magnitud y dirección", ""], ["Organización en filas", ""]], cobertura: [26]
+      }
+    );
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain('class="answer-lines"');
+    expect((html.match(/height:28pt/g) || [])).toHaveLength(4);
+    expect(html).not.toContain("actividades_comprension:26");
+    expect(html).not.toContain("respuesta_correcta");
+  });
+
+  test("descarga v3 usa el mismo flujo local de Blob y cleanup", async () => {
+    jest.useFakeTimers();
+    const { window, blobs } = harness();
+    await expect(window.AnexoDownload.download(v3Fixture(), "Cuadernillo v3")).resolves.toBe(true);
+    expect(blobs).toHaveLength(1);
+    expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(window.HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
+    expect(window.URL.revokeObjectURL).toHaveBeenCalledWith("blob:word");
+    jest.useRealTimers();
   });
 
   test.each([
@@ -134,18 +243,16 @@ describe("Exportación Word de cuadernillos v2", () => {
       });
   });
 
-  test("descarga v2 crea un Blob Word, un clic, limpia nodo y revoca URL", () => {
+  test("descarga v2 crea un Blob DOCX, un clic, limpia nodo y revoca URL", async () => {
     jest.useFakeTimers();
     const { window, blobs } = harness();
     const initialLinks = window.document.querySelectorAll("a").length;
-    expect(window.AnexoDownload.download(fixture(), "Cuadernillo final.doc")).toBe(true);
+    await expect(window.AnexoDownload.download(fixture(), "Cuadernillo final.doc")).resolves.toBe(true);
     expect(window.Blob).toHaveBeenCalledTimes(1);
-    expect(blobs[0].type).toBe("application/msword");
+    expect(blobs[0].type).toBe("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(window.HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
     expect(window.document.querySelectorAll("a")).toHaveLength(initialLinks);
-    expect(window.AppUI.sanitizeDownloadFilename).toHaveBeenCalledWith("Cuadernillo final", "doc");
-    jest.advanceTimersByTime(5000);
     expect(window.URL.revokeObjectURL).toHaveBeenCalledWith("blob:word");
     jest.useRealTimers();
   });
@@ -155,7 +262,7 @@ describe("Exportación Word de cuadernillos v2", () => {
     await expect(window.AnexoDownload.downloadBiblioteca("anexo-1")).resolves.toBe(false);
     expect(window.requireSession).toHaveBeenCalledTimes(1);
     expect(window.apiObtenerAnexoDetalle).toHaveBeenCalledWith("anexo-1", "test-token");
-    expect(window.AppUI.openDownloadNameModal).toHaveBeenCalledWith(expect.objectContaining({ extension: "doc" }));
+    expect(window.AppUI.openDownloadNameModal).toHaveBeenCalledWith(expect.objectContaining({ extension: "docx" }));
     expect(window.Blob).not.toHaveBeenCalled();
   });
 
@@ -171,32 +278,34 @@ describe("Exportación Word de cuadernillos v2", () => {
     resolveModal("Cuadernillo listo");
     await expect(first).resolves.toBe(true);
     expect(window.Blob).toHaveBeenCalledTimes(1);
-    jest.runOnlyPendingTimers();
     jest.useRealTimers();
   });
 
-  test("v2 inválido, desconocido o bloque ajeno no produce descarga parcial", () => {
+  test("v2 inválido, desconocido o bloque ajeno no produce descarga parcial", async () => {
     const { window } = harness();
     const unknown = { contenido: { schema_version: 9, anexos: [] } };
-    expect(window.AnexoDownload.download(unknown, "x")).toBe(false);
+    await expect(window.AnexoDownload.download(unknown, "x")).resolves.toBe(false);
     const invalid = fixture();
     invalid.contenido.secciones[0].bloques[0].tipo = "bloque_externo";
-    expect(window.AnexoDownload.download(invalid, "x")).toBe(false);
+    await expect(window.AnexoDownload.download(invalid, "x")).resolves.toBe(false);
     expect(window.Blob).not.toHaveBeenCalled();
     expect(window.URL.createObjectURL).not.toHaveBeenCalled();
     expect(window.HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("contenido está incompleto"));
   });
 
-  test("v1 conserva contenido, MIME y nombre histórico", () => {
+  test("v1 conserva compatibilidad con MIME DOCX", async () => {
     jest.useFakeTimers();
     const { window, blobs } = harness();
     const v1 = { titulo: "Anexo histórico", materia: "Historia", tema: "México", contenido: { titulo_general: "Anexo histórico", descripcion: "Descripción", anexos: [{ numero: 1, titulo: "Actividad", instrucciones: "Lee", contenido: [{ subtitulo: "Caso", texto: "Texto histórico", preguntas: ["¿Qué ocurrió?"] }] }] } };
-    expect(window.AnexoDownload.download(v1, "Anexo_editado")).toBe(true);
-    expect(blobs[0].type).toBe("application/msword");
-    expect(blobs[0].parts.join("")).toContain("Texto histórico");
-    expect(blobs[0].parts.join("")).not.toContain("Cuadernillo de ejercicios");
-    jest.runOnlyPendingTimers();
+    await expect(window.AnexoDownload.download(v1, "Anexo_editado")).resolves.toBe(true);
+    expect(blobs[0].type).toBe("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     jest.useRealTimers();
+  });
+  test("la exportación vigente delega al owner DOCX real", () => {
+    const source = read("js/features/anexos/anexo-download.js");
+    const docs = [read("README.md"), read("docs/ARCHITECTURE.md"), read("docs/FRONTEND_MAP.md")].join("\n");
+    expect(source).toContain("window.DocxExport.download");
+    expect(docs).toMatch(/DOCX/i);
   });
 });

@@ -125,13 +125,26 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
 - Anexos obtiene sus tres modalidades de `cuadernillo-types.js`; el modal guarda
   un tipo por planeación y coordina requests individuales secuenciales. El
   owner `AnexoPreview` detecta el esquema y despacha sin fallback entre el
-  renderer histórico v1 y el renderer web v2. Este último presenta datos
+  renderer histórico v1 y renderers explícitos v2/v3. V2 presenta datos
   generales y los bloques `texto`, `lista`, `conceptos`, `tabla`, `actividad`,
   `procedimiento`, `ejemplo_resuelto`, `proyecto`, `registro`, `evaluacion` y
-  `espacio_respuesta`. `AnexoDownload` aplica el mismo dispatch estricto v1/v2 y
-  construye localmente un `.doc` compatible con Word para los once bloques;
-  conserva el exportador histórico y rechaza versiones inconsistentes sin
-  fallback.
+  `espacio_respuesta`; v3 omite Datos generales, Autoevaluación y Evaluación,
+  muestra las secciones especializadas en orden y termina en Cierre y reflexión
+  sin alterar históricos. `AnexoDownload` aplica el mismo dispatch estricto v1/v2/v3 y
+  adapta los once bloques al modelo documental compartido y construye localmente
+  un `.docx` OOXML real;
+  los ejemplos resueltos v3 muestran una sección de Comprobación obligatoria,
+  incluidas operaciones y resultados cuantitativos derivados por backend en
+  texto plano o tablas; nunca exponen contratos internos ni interpretan LaTeX.
+  Los documentos v2 conservan su estructura y exportador históricos, y las
+  versiones inconsistentes se rechazan sin fallback. `js/ui/docxExport.js` es
+  el owner compartido de adaptación, serialización y descarga; preserva escape,
+  tablas, estilos, Blob y compatibilidad histórica. La distribución local de
+  `docx` 9.16.0 se carga antes del owner; cambiar
+  solo extensión o MIME no es válido.
+  En v3, los espacios de actividad proceden de `espacio_respuesta`; las tablas
+  de clasificación usan celdas vacías con etiqueta accesible en preview y altura
+  utilizable en Word, sin exponer metadata contractual.
 - Biblioteca recarga y reconcilia la colección después de operaciones persistentes.
 
 Los contratos detallados viven en el backend:

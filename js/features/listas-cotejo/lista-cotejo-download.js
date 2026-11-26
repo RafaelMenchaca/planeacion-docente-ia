@@ -1,10 +1,10 @@
 (function () {
   async function download(lista) {
     const suggested = window.AppUI.buildDownloadSuggestedName("Lista_cotejo", lista.tema || lista.titulo);
-    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+    const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "docx" });
     if (filename === null) return;
     if (typeof window.descargarListaCotejoWord === "function") {
-      window.descargarListaCotejoWord(lista, filename);
+      return await window.descargarListaCotejoWord(lista, filename);
     }
   }
 
@@ -17,11 +17,11 @@
         "Lista_cotejo",
         lista?.tema || lista?.titulo
       );
-      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "docx" });
       if (filename === null) return;
 
       if (typeof window.descargarListaCotejoWord === "function") {
-        window.descargarListaCotejoWord(lista, filename);
+        await window.descargarListaCotejoWord(lista, filename);
       }
       console.debug("[downloads] lista:success", { listaId });
     } catch (error) {

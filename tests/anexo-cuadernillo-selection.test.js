@@ -335,7 +335,7 @@ describe("Transporte, coordinación parcial y compatibilidad", () => {
     expect(pendingHtml).toContain("Cuadernillo de aprendizaje guiado");
   });
 
-  test("preview v2 incompleto no atraviesa export v1; v1 conserva exportación", () => {
+  test("preview v2 incompleto no atraviesa export v1; v1 conserva exportación", async () => {
     jest.useFakeTimers();
     const dom = new JSDOM('<!doctype html><html><body><div id="biblioteca-anexo-modal"><div class="biblioteca-modal-card"></div></div></body></html>', { runScripts: "outside-only" });
     const { window } = dom;
@@ -345,26 +345,26 @@ describe("Transporte, coordinación parcial y compatibilidad", () => {
     window.URL.createObjectURL = jest.fn(() => "blob:v1");
     window.URL.revokeObjectURL = jest.fn();
     window.HTMLAnchorElement.prototype.click = jest.fn();
+    window.DocxExport = { adapters: { anexo: jest.fn(() => ({})) }, download: jest.fn(async () => { const url = window.URL.createObjectURL({}); window.URL.revokeObjectURL(url); return true; }) };
     run(context, "js/features/anexos/cuadernillo-types.js");
     run(context, "js/features/anexos/anexo-download.js");
     run(context, "js/features/anexos/anexo-preview.js");
     const v2 = { id: "a2", tipo_cuadernillo: "aprendizaje_guiado", contenido: { schema_version: 2, secciones: [] } };
     window.AnexoPreview.render(v2);
     expect(window.document.querySelector(".biblioteca-modal-card").textContent).toContain("contenido está incompleto");
-    expect(window.AnexoDownload.download(v2, "v2")).toBe(false);
+    await expect(window.AnexoDownload.download(v2, "v2")).resolves.toBe(false);
     expect(window.URL.createObjectURL).not.toHaveBeenCalled();
     const v1 = { id: "a1", titulo: "Anexo v1", contenido: { titulo_general: "Anexo v1", anexos: [] } };
     window.AnexoPreview.render(v1);
     expect(window.document.querySelector(".biblioteca-modal-card").textContent).toContain("Anexo v1");
-    expect(window.AnexoDownload.download(v1, "v1")).toBe(true);
+    await expect(window.AnexoDownload.download(v1, "v1")).resolves.toBe(true);
     expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
-    jest.runOnlyPendingTimers();
     jest.useRealTimers();
   });
 
   test("catálogo carga antes de API, generation, state y render en la página contractual", () => {
     const html = read("pages/dashboard.html");
-    expect((html.match(/<script src="\.\.\//g) || [])).toHaveLength(44);
+    expect((html.match(/<script src="\.\.\//g) || [])).toHaveLength(46);
     const catalog = html.indexOf("cuadernillo-types.js");
     ["anexos.api.js", "anexo-generation.js", "biblioteca.page.js", "biblioteca-modal-render.js"]
       .forEach((consumer) => expect(catalog).toBeLessThan(html.indexOf(consumer)));
