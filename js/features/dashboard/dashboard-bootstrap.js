@@ -38,7 +38,7 @@
       try {
         const examen = explorerState.examenDetalleById?.[examenId];
         const suggested = window.AppUI.buildDownloadSuggestedName("Examen", examen?.titulo || "");
-        const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+        const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "docx" });
         if (filename === null) return;
 
         await window.ExamDownload.download(examenId, filename);

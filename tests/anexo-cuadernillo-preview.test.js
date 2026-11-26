@@ -27,6 +27,7 @@ function createHarness() {
   window.URL.createObjectURL = jest.fn(() => "blob:v1");
   window.URL.revokeObjectURL = jest.fn();
   window.HTMLAnchorElement.prototype.click = jest.fn();
+  window.DocxExport = { adapters: { anexo: jest.fn(() => ({})) }, download: jest.fn(async () => { const url = window.URL.createObjectURL({}); window.URL.revokeObjectURL(url); return true; }) };
   run(context, "js/features/anexos/cuadernillo-types.js");
   run(context, "js/features/anexos/anexo-download.js");
   run(context, "js/features/anexos/anexo-preview.js");
@@ -245,9 +246,8 @@ describe("Preview web de cuadernillos v2", () => {
     expect(window.URL.createObjectURL).not.toHaveBeenCalled();
 
     const v1 = { id: "v1", titulo: "Histórico", contenido: { titulo_general: "Histórico", anexos: [] } };
-    expect(window.AnexoDownload.download(v1, "Histórico")).toBe(true);
+    await expect(window.AnexoDownload.download(v1, "Histórico")).resolves.toBe(true);
     expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
-    jest.runOnlyPendingTimers();
     jest.useRealTimers();
   });
 

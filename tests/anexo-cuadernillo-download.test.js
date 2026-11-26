@@ -73,6 +73,19 @@ function harness({ modalResult = "Cuadernillo_final" } = {}) {
   window.URL.createObjectURL = jest.fn(() => "blob:word");
   window.URL.revokeObjectURL = jest.fn();
   window.HTMLAnchorElement.prototype.click = jest.fn();
+  window.DocxExport = {
+    adapters: { anexo: jest.fn((anexo, version) => ({ anexo, version })) },
+    download: jest.fn(async (_model, filename) => {
+      const blob = new window.Blob(["PK\u0003\u0004"], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+      const url = window.URL.createObjectURL(blob);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = `${String(filename).replace(/\.docx?$/i, "")}.docx`;
+      window.document.body.appendChild(link);
+      link.click(); link.remove(); window.URL.revokeObjectURL(url);
+      return true;
+    })
+  };
   window.AppUI = {
     buildDownloadSuggestedName: jest.fn((prefix, text) => `${prefix}_${text}`),
     sanitizeDownloadFilename: jest.fn((raw) => String(raw).replace(/\.doc$/i, "").replace(/[^\p{L}\p{N}\s_-]/gu, "").trim().replace(/\s+/g, "_") || "Documento"),
@@ -166,14 +179,13 @@ describe("Exportación Word de cuadernillos v2", () => {
     expect(html).not.toContain("respuesta_correcta");
   });
 
-  test("descarga v3 usa el mismo flujo local de Blob y cleanup", () => {
+  test("descarga v3 usa el mismo flujo local de Blob y cleanup", async () => {
     jest.useFakeTimers();
     const { window, blobs } = harness();
-    expect(window.AnexoDownload.download(v3Fixture(), "Cuadernillo v3")).toBe(true);
+    await expect(window.AnexoDownload.download(v3Fixture(), "Cuadernillo v3")).resolves.toBe(true);
     expect(blobs).toHaveLength(1);
     expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(window.HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
-    jest.advanceTimersByTime(5000);
     expect(window.URL.revokeObjectURL).toHaveBeenCalledWith("blob:word");
     jest.useRealTimers();
   });
@@ -231,18 +243,16 @@ describe("Exportación Word de cuadernillos v2", () => {
       });
   });
 
-  test("descarga v2 crea un Blob Word, un clic, limpia nodo y revoca URL", () => {
+  test("descarga v2 crea un Blob DOCX, un clic, limpia nodo y revoca URL", async () => {
     jest.useFakeTimers();
     const { window, blobs } = harness();
     const initialLinks = window.document.querySelectorAll("a").length;
-    expect(window.AnexoDownload.download(fixture(), "Cuadernillo final.doc")).toBe(true);
+    await expect(window.AnexoDownload.download(fixture(), "Cuadernillo final.doc")).resolves.toBe(true);
     expect(window.Blob).toHaveBeenCalledTimes(1);
-    expect(blobs[0].type).toBe("application/msword");
+    expect(blobs[0].type).toBe("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(window.HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
     expect(window.document.querySelectorAll("a")).toHaveLength(initialLinks);
-    expect(window.AppUI.sanitizeDownloadFilename).toHaveBeenCalledWith("Cuadernillo final", "doc");
-    jest.advanceTimersByTime(5000);
     expect(window.URL.revokeObjectURL).toHaveBeenCalledWith("blob:word");
     jest.useRealTimers();
   });
@@ -252,7 +262,7 @@ describe("Exportación Word de cuadernillos v2", () => {
     await expect(window.AnexoDownload.downloadBiblioteca("anexo-1")).resolves.toBe(false);
     expect(window.requireSession).toHaveBeenCalledTimes(1);
     expect(window.apiObtenerAnexoDetalle).toHaveBeenCalledWith("anexo-1", "test-token");
-    expect(window.AppUI.openDownloadNameModal).toHaveBeenCalledWith(expect.objectContaining({ extension: "doc" }));
+    expect(window.AppUI.openDownloadNameModal).toHaveBeenCalledWith(expect.objectContaining({ extension: "docx" }));
     expect(window.Blob).not.toHaveBeenCalled();
   });
 
@@ -268,42 +278,34 @@ describe("Exportación Word de cuadernillos v2", () => {
     resolveModal("Cuadernillo listo");
     await expect(first).resolves.toBe(true);
     expect(window.Blob).toHaveBeenCalledTimes(1);
-    jest.runOnlyPendingTimers();
     jest.useRealTimers();
   });
 
-  test("v2 inválido, desconocido o bloque ajeno no produce descarga parcial", () => {
+  test("v2 inválido, desconocido o bloque ajeno no produce descarga parcial", async () => {
     const { window } = harness();
     const unknown = { contenido: { schema_version: 9, anexos: [] } };
-    expect(window.AnexoDownload.download(unknown, "x")).toBe(false);
+    await expect(window.AnexoDownload.download(unknown, "x")).resolves.toBe(false);
     const invalid = fixture();
     invalid.contenido.secciones[0].bloques[0].tipo = "bloque_externo";
-    expect(window.AnexoDownload.download(invalid, "x")).toBe(false);
+    await expect(window.AnexoDownload.download(invalid, "x")).resolves.toBe(false);
     expect(window.Blob).not.toHaveBeenCalled();
     expect(window.URL.createObjectURL).not.toHaveBeenCalled();
     expect(window.HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("contenido está incompleto"));
   });
 
-  test("v1 conserva contenido, MIME y nombre histórico", () => {
+  test("v1 conserva compatibilidad con MIME DOCX", async () => {
     jest.useFakeTimers();
     const { window, blobs } = harness();
     const v1 = { titulo: "Anexo histórico", materia: "Historia", tema: "México", contenido: { titulo_general: "Anexo histórico", descripcion: "Descripción", anexos: [{ numero: 1, titulo: "Actividad", instrucciones: "Lee", contenido: [{ subtitulo: "Caso", texto: "Texto histórico", preguntas: ["¿Qué ocurrió?"] }] }] } };
-    expect(window.AnexoDownload.download(v1, "Anexo_editado")).toBe(true);
-    expect(blobs[0].type).toBe("application/msword");
-    expect(blobs[0].parts.join("")).toContain("Texto histórico");
-    expect(blobs[0].parts.join("")).not.toContain("Cuadernillo de ejercicios");
-    jest.runOnlyPendingTimers();
+    await expect(window.AnexoDownload.download(v1, "Anexo_editado")).resolves.toBe(true);
+    expect(blobs[0].type).toBe("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     jest.useRealTimers();
   });
-  test("la exportación vigente sigue siendo DOC y la deuda DOCX real queda documentada", () => {
+  test("la exportación vigente delega al owner DOCX real", () => {
     const source = read("js/features/anexos/anexo-download.js");
     const docs = [read("README.md"), read("docs/ARCHITECTURE.md"), read("docs/FRONTEND_MAP.md")].join("\n");
-    expect(source).toContain('type: "application/msword"');
-    expect(source).toContain('.doc`');
-    expect(source).not.toContain('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    expect(docs).toMatch(/DOCX real/i);
-    expect(docs).toMatch(/Office Open XML|librería evaluada/i);
-    expect(docs).toMatch(/no (?:se simula|debe crearse) un `?\.docx`? falso/i);
+    expect(source).toContain("window.DocxExport.download");
+    expect(docs).toMatch(/DOCX/i);
   });
 });

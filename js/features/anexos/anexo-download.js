@@ -46,20 +46,8 @@
     return clean || fallback || "Documento";
   }
 
-  function createWordDownload(htmlDoc, filename) {
-    const blob = new Blob([htmlDoc], { type: "application/msword" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${sanitizeFilename(filename, "Documento")}.doc`;
-    document.body.appendChild(link);
-    try {
-      link.click();
-    } finally {
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
-    return true;
+  async function createWordDownload(model, filename) {
+    return window.DocxExport.download(model, filename, "Documento");
   }
 
   function buildAnexoV1WordHtml(anexo) {
@@ -277,16 +265,22 @@
     return buildCuadernilloWordHtml(anexo, "v3");
   }
 
-  function downloadAnexo(anexo, filenameOverride) {
+  async function downloadAnexo(anexo, filenameOverride) {
     const version = detectAnexoDownloadVersion(anexo);
     try {
       if (version === "v1") {
         const title = anexo.contenido?.titulo_general || anexo.titulo || "Anexos";
         const defaultName = title.replace(/[^a-zA-Z0-9\s\-_]/g, "").trim() || "Anexos";
-        return createWordDownload(buildAnexoV1WordHtml(anexo), filenameOverride || defaultName);
+        return await createWordDownload(window.DocxExport.adapters.anexo(anexo, "v1"), filenameOverride || defaultName);
       }
-      if (version === "v2") return createWordDownload(buildCuadernilloV2WordHtml(anexo), filenameOverride || buildCuadernilloFilename(anexo));
-      if (version === "v3") return createWordDownload(buildCuadernilloV3WordHtml(anexo), filenameOverride || buildCuadernilloFilename(anexo));
+      if (version === "v2") {
+        assertRenderableWorkbook(anexo, "v2");
+        return await createWordDownload(window.DocxExport.adapters.anexo(anexo, "v2"), filenameOverride || buildCuadernilloFilename(anexo));
+      }
+      if (version === "v3") {
+        assertRenderableWorkbook(anexo, "v3");
+        return await createWordDownload(window.DocxExport.adapters.anexo(anexo, "v3"), filenameOverride || buildCuadernilloFilename(anexo));
+      }
       alert(UNKNOWN_VERSION_MESSAGE);
       return false;
     } catch (error) {
@@ -308,9 +302,9 @@
       const suggested = version === "v2" || version === "v3"
         ? buildCuadernilloFilename(anexo)
         : window.AppUI.buildDownloadSuggestedName("Anexo", anexo.tema || anexo.titulo);
-      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "docx" });
       if (filename === null) return false;
-      return downloadAnexo(anexo, filename);
+      return await downloadAnexo(anexo, filename);
     } finally {
       requestInProgress = false;
     }

@@ -538,12 +538,12 @@ async function initDetallePage() {
     ) || ("Planeacion_" + (PLANEACION_ORIGINAL.materia || "SinMateria"));
 
     const filename = window.AppUI?.openDownloadNameModal
-      ? await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" })
+      ? await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "docx" })
       : suggested;
 
     if (filename === null) return;
 
-    descargarWord({
+    await descargarWord({
       data: PLANEACION_ORIGINAL,
       tableId: "tablaDetalleIA",
       filenameOverride: filename

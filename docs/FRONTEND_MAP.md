@@ -94,7 +94,7 @@ No existe una slice de navegación visual legacy. No renombrar el objeto ni move
   bloques canónicos; presenta la Comprobación explícita y resultados
   cuantitativos v3 en texto plano/tablas, sin metadata interna ni LaTeX)
 - `anexo-download.js` (owner del dispatch Word v1/v2/v3, nombre editable y
-  exportación local `.doc` de los once bloques canónicos, incluida Comprobación v3)
+  exportación local `.docx` de los once bloques canónicos, incluida Comprobación v3)
 
 Los consumidores v3 son agnósticos al número de slots: renderizan las cinco
 secciones de Aprendizaje guiado, seis de Ejercicios o cinco de Integradoras en
@@ -102,10 +102,10 @@ el orden persistido. El contrato 2O.1 no presenta secciones de Evaluación;
 conserva espacios de respuesta, tablas, dos ejemplos resueltos y la evidencia
 integradora única sin exponer cobertura, slots ni metadata contractual.
 
-La salida Word vigente es HTML dentro de un `Blob` `application/msword` con
-extensión `.doc`. Implementar DOCX real mediante Office Open XML o una librería
-evaluada, conservando escape, tablas, estilos, Blob y compatibilidad histórica,
-queda como deuda; no debe crearse un `.docx` falso cambiando nombre o MIME.
+La salida Word vigente es Office Open XML real. `js/ui/docxExport.js` normaliza
+el modelo documental, adapta planeación, anexo, examen y lista de cotejo,
+serializa con `docx` 9.16.0 y descarga con el MIME DOCX. La distribución browser
+es local, se carga antes del owner y no depende de CDN.
 - `anexo-delete.js`
 
 ### Listas de cotejo

@@ -64,11 +64,11 @@ discriminadores. V2 conserva Datos generales y Autoevaluación; v3 rechaza ambos
 y toda sección de Evaluación, termina en Cierre y reflexión y presenta las
 estructuras especializadas de Guiado, Ejercicios e Integradoras ABP. V3
 presenta únicamente secciones pedagógicas. `AnexoDownload` despacha también por
-versión y exporta localmente v1, v2 y v3 como HTML compatible con Word dentro de un
-archivo `.doc`, con nombre editable y sin llamadas adicionales al backend.
-La exportación DOCX real queda como deuda explícita: implementar Office Open XML
-o una librería evaluada, conservando escape, tablas, estilos, Blob y
-compatibilidad histórica. No se simula un `.docx` cambiando extensión o MIME.
+versión y exporta localmente v1, v2 y v3 como `.docx` Office Open XML real,
+con nombre editable y sin llamadas adicionales al backend. El owner compartido
+`js/ui/docxExport.js` usa `docx` 9.16.0 servido localmente; planeaciones,
+exámenes y listas de cotejo delegan en el mismo serializador y nunca insertan el
+HTML del preview dentro del paquete Word.
 V3 recibe del backend resultados y comprobaciones cuantitativas ya verificados
 para las familias soportadas; preview y Word muestran texto plano, Unicode y
 tablas, sin metadata académica interna ni interpretación de LaTeX.

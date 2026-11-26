@@ -131,14 +131,16 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
   `espacio_respuesta`; v3 omite Datos generales, Autoevaluación y Evaluación,
   muestra las secciones especializadas en orden y termina en Cierre y reflexión
   sin alterar históricos. `AnexoDownload` aplica el mismo dispatch estricto v1/v2/v3 y
-  construye localmente un `.doc` compatible con Word para los once bloques;
+  adapta los once bloques al modelo documental compartido y construye localmente
+  un `.docx` OOXML real;
   los ejemplos resueltos v3 muestran una sección de Comprobación obligatoria,
   incluidas operaciones y resultados cuantitativos derivados por backend en
   texto plano o tablas; nunca exponen contratos internos ni interpretan LaTeX.
   Los documentos v2 conservan su estructura y exportador históricos, y las
-  versiones inconsistentes se rechazan sin fallback. DOCX real permanece
-  diferido: deberá implementarse con Office Open XML o una librería evaluada,
-  preservando escape, tablas, estilos, Blob y compatibilidad histórica; cambiar
+  versiones inconsistentes se rechazan sin fallback. `js/ui/docxExport.js` es
+  el owner compartido de adaptación, serialización y descarga; preserva escape,
+  tablas, estilos, Blob y compatibilidad histórica. La distribución local de
+  `docx` 9.16.0 se carga antes del owner; cambiar
   solo extensión o MIME no es válido.
   En v3, los espacios de actividad proceden de `espacio_respuesta`; las tablas
   de clasificación usan celdas vacías con etiqueta accesible en preview y altura

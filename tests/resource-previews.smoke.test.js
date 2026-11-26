@@ -66,6 +66,10 @@ function createHarness() {
   window.URL.createObjectURL = jest.fn(() => "blob:exam");
   window.URL.revokeObjectURL = jest.fn();
   window.HTMLAnchorElement.prototype.click = jest.fn();
+  window.DocxExport = {
+    adapters: { exam: jest.fn(() => ({})) },
+    download: jest.fn(async () => { const url = window.URL.createObjectURL({}); window.URL.revokeObjectURL(url); return true; })
+  };
 
   run(context, "js/features/examenes/exam-download.js");
   run(context, "js/features/examenes/exam-preview.js");

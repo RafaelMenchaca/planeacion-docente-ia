@@ -270,10 +270,10 @@
     bindClose();
     document.getElementById("bib-anexo-descargar")?.addEventListener("click", async () => {
       const suggested = window.AppUI.buildDownloadSuggestedName("Anexo", anexo.tema || anexo.titulo);
-      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "doc" });
+      const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "docx" });
       if (filename === null) return;
       closeBibliotecaAnexoModal();
-      window.AnexoDownload.download(anexo, filename);
+      await window.AnexoDownload.download(anexo, filename);
     });
   }
 

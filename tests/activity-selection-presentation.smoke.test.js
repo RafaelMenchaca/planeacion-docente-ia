@@ -66,10 +66,7 @@ test("keeps structured activity internal while preserving it through editing", (
 test("Word export hides structured metadata and keeps descriptions and historical rows unchanged", async () => {
   const dom = new JSDOM("<!doctype html><body></body>", { runScripts: "outside-only" });
   const { window } = dom;
-  let documentHtml = "";
-  window.Blob = class BlobCapture {
-    constructor(parts) { documentHtml = parts.join(""); }
-  };
+  let documentModel = null;
   window.URL.createObjectURL = () => "blob:synthetic";
   window.URL.revokeObjectURL = () => {};
   window.HTMLAnchorElement.prototype.click = () => {};
@@ -86,8 +83,12 @@ test("Word export hides structured metadata and keeps descriptions and historica
     buildDownloadSuggestedName: () => "Planeacion",
     openDownloadNameModal: async () => "planeacion"
   };
+  run(dom.getInternalVMContext(), "js/ui/docxExport.js");
+  window.DocxExport.download = jest.fn(async (model) => { documentModel = model; return true; });
   run(dom.getInternalVMContext(), "js/features/planeaciones/planeacion-download.js");
   await window.PlaneacionDownload.downloadFromBiblioteca(1);
+
+  const documentHtml = JSON.stringify(documentModel);
 
   expect(documentHtml).not.toContain("Lluvia de ideas");
   expect(documentHtml).not.toContain("Ticket de salida");
