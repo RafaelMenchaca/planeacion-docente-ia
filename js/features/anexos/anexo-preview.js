@@ -9,6 +9,11 @@
     return escapeHtml(String(value ?? ""));
   }
 
+  function safeEditorial(value) {
+    const text = window.EditorialText?.normalizeParagraphSeparators?.(String(value ?? "")) ?? String(value ?? "");
+    return escapeHtml(text).replace(/\n/g, "<br>");
+  }
+
   function detectAnexoSchemaVersion(anexo) {
     const contenido = anexo?.contenido;
     if (!contenido || typeof contenido !== "object" || Array.isArray(contenido)) return "unknown";
@@ -105,21 +110,21 @@
   }
 
   function renderBlockTitle(block) {
-    return block?.titulo ? `<h5 class="bib-workbook-block-title">${safe(block.titulo)}</h5>` : "";
+    return block?.titulo ? `<h5 class="bib-workbook-block-title">${safeEditorial(block.titulo)}</h5>` : "";
   }
 
   function renderTextBlock(block) {
-    return `${renderBlockTitle(block)}<p class="bib-workbook-prose">${safe(block.contenido)}</p>`;
+    return `${renderBlockTitle(block)}<p class="bib-workbook-prose">${safeEditorial(block.contenido)}</p>`;
   }
 
   function renderListBlock(block) {
-    return `${renderBlockTitle(block)}<ul class="bib-workbook-list">${(block.items || []).map((item) => `<li>${safe(item)}</li>`).join("")}</ul>`;
+    return `${renderBlockTitle(block)}<ul class="bib-workbook-list">${(block.items || []).map((item) => `<li>${safeEditorial(item)}</li>`).join("")}</ul>`;
   }
 
   function renderConceptsBlock(block) {
     return `${renderBlockTitle(block)}<div class="bib-workbook-concepts">${(block.items || []).map((item) => `
-      <article class="bib-workbook-concept"><h6>${safe(item?.termino)}</h6><p>${safe(item?.explicacion)}</p>
-        ${item?.ejemplo ? `<p class="bib-workbook-concept-example"><strong>Ejemplo:</strong> ${safe(item.ejemplo)}</p>` : ""}</article>`).join("")}</div>`;
+      <article class="bib-workbook-concept"><h6>${safeEditorial(item?.termino)}</h6><p>${safeEditorial(item?.explicacion)}</p>
+        ${item?.ejemplo ? `<p class="bib-workbook-concept-example"><strong>Ejemplo:</strong> ${safeEditorial(item.ejemplo)}</p>` : ""}</article>`).join("")}</div>`;
   }
 
   function renderTableBlock(block) {
@@ -132,48 +137,48 @@
   }
 
   function renderActivityItem(item, index) {
-    return `<li class="bib-workbook-activity-item"><p><span class="bib-workbook-item-number" aria-hidden="true">${index + 1}.</span> ${safe(item?.enunciado)}</p>
-      ${Array.isArray(item?.opciones) && item.opciones.length ? `<ul class="bib-workbook-options">${item.opciones.map((option) => `<li><span class="bib-workbook-option-mark" aria-hidden="true"></span>${safe(option)}</li>`).join("")}</ul>` : ""}
+    return `<li class="bib-workbook-activity-item"><p><span class="bib-workbook-item-number" aria-hidden="true">${index + 1}.</span> ${safeEditorial(item?.enunciado)}</p>
+      ${Array.isArray(item?.opciones) && item.opciones.length ? `<ul class="bib-workbook-options">${item.opciones.map((option) => `<li><span class="bib-workbook-option-mark" aria-hidden="true"></span>${safeEditorial(option)}</li>`).join("")}</ul>` : ""}
       ${item?.espacio_respuesta ? renderResponseLines(item.espacio_respuesta.lineas) : ""}</li>`;
   }
 
   function renderActivityBlock(block) {
     return `${renderBlockTitle(block)}<p class="bib-workbook-modality">${safe(ACTIVITY_LABELS[block.modalidad] || "Actividad")}</p>
-      <p class="bib-workbook-prose">${safe(block.instrucciones)}</p><ol class="bib-workbook-activity-list">${(block.items || []).map(renderActivityItem).join("")}</ol>`;
+      <p class="bib-workbook-prose">${safeEditorial(block.instrucciones)}</p><ol class="bib-workbook-activity-list">${(block.items || []).map(renderActivityItem).join("")}</ol>`;
   }
 
   function renderProcedureBlock(block) {
-    return `${renderBlockTitle(block)}<ol class="bib-workbook-steps">${(block.pasos || []).map((step) => `<li>${safe(step)}</li>`).join("")}</ol>`;
+    return `${renderBlockTitle(block)}<ol class="bib-workbook-steps">${(block.pasos || []).map((step) => `<li>${safeEditorial(step)}</li>`).join("")}</ol>`;
   }
 
   function renderSolvedExampleBlock(block) {
-    return `${renderBlockTitle(block)}<div class="bib-workbook-example-prompt"><strong>Enunciado</strong><p>${safe(block.enunciado)}</p></div>
+    return `${renderBlockTitle(block)}<div class="bib-workbook-example-prompt"><strong>Enunciado</strong><p>${safeEditorial(block.enunciado)}</p></div>
       ${Array.isArray(block.matrices) ? block.matrices.map((matrix) => renderTableBlock(matrix)).join("") : ""}
-      <ol class="bib-workbook-steps">${(block.pasos || []).map((step) => `<li>${safe(step)}</li>`).join("")}</ol>
+      <ol class="bib-workbook-steps">${(block.pasos || []).map((step) => `<li>${safeEditorial(step)}</li>`).join("")}</ol>
       <div class="bib-workbook-example-result"><strong>Resultado</strong><p>${safe(block.resultado)}</p></div>
-      ${Array.isArray(block.verificacion) ? `<div class="bib-workbook-example-verification"><strong>Comprobación</strong><ol class="bib-workbook-steps">${block.verificacion.map((step) => `<li>${safe(step)}</li>`).join("")}</ol></div>` : ""}
-      <div class="bib-workbook-example-interpretation"><strong>Interpretación</strong><p>${safe(block.interpretacion)}</p></div>`;
+      ${Array.isArray(block.verificacion) ? `<div class="bib-workbook-example-verification"><strong>Comprobación</strong><ol class="bib-workbook-steps">${block.verificacion.map((step) => `<li>${safeEditorial(step)}</li>`).join("")}</ol></div>` : ""}
+      <div class="bib-workbook-example-interpretation"><strong>Interpretación</strong><p>${safeEditorial(block.interpretacion)}</p></div>`;
   }
 
   function renderProjectBlock(block) {
-    return `${renderBlockTitle(block)}<dl class="bib-workbook-project-summary"><div><dt>Producto</dt><dd>${safe(block.producto)}</dd></div>
-      <div><dt>Instrucciones</dt><dd>${safe(block.instrucciones)}</dd></div></dl><h6 class="bib-workbook-subheading">Etapas</h6>
-      <ol class="bib-workbook-steps">${(block.etapas || []).map((stage) => `<li>${safe(stage)}</li>`).join("")}</ol>${renderResponseLines(block.espacio_respuesta?.lineas)}`;
+    return `${renderBlockTitle(block)}<dl class="bib-workbook-project-summary"><div><dt>Producto</dt><dd>${safeEditorial(block.producto)}</dd></div>
+      <div><dt>Instrucciones</dt><dd>${safeEditorial(block.instrucciones)}</dd></div></dl><h6 class="bib-workbook-subheading">Etapas</h6>
+      <ol class="bib-workbook-steps">${(block.etapas || []).map((stage) => `<li>${safeEditorial(stage)}</li>`).join("")}</ol>${renderResponseLines(block.espacio_respuesta?.lineas)}`;
   }
 
   function renderRecordBlock(block) {
     return `${renderBlockTitle(block)}<div class="bib-workbook-record-fields">${(block.campos || []).map((field) => `
-      <div class="bib-workbook-record-field"><span>${safe(field)}</span>${renderResponseLines(block.espacio_respuesta?.lineas)}</div>`).join("")}</div>`;
+      <div class="bib-workbook-record-field"><span>${safeEditorial(field)}</span>${renderResponseLines(block.espacio_respuesta?.lineas)}</div>`).join("")}</div>`;
   }
 
   function renderEvaluationBlock(block) {
     return `${renderBlockTitle(block)}<p class="bib-workbook-modality">${safe(EVALUATION_LABELS[block.modalidad] || "Evaluación")}</p>
       ${Array.isArray(block.escala) && block.escala.length ? `<p class="bib-workbook-scale"><strong>Escala:</strong> ${block.escala.map(safe).join(" · ")}</p>` : ""}
-      <ul class="bib-workbook-criteria">${(block.criterios || []).map((criterion) => `<li><span class="bib-workbook-check" aria-hidden="true"></span><span>${safe(criterion?.texto)}</span></li>`).join("")}</ul>`;
+      <ul class="bib-workbook-criteria">${(block.criterios || []).map((criterion) => `<li><span class="bib-workbook-check" aria-hidden="true"></span><span>${safeEditorial(criterion?.texto)}</span></li>`).join("")}</ul>`;
   }
 
   function renderAnswerSpaceBlock(block) {
-    return `<p class="bib-workbook-answer-label">${safe(block.etiqueta)}</p>${renderResponseLines(block.lineas)}`;
+    return `<p class="bib-workbook-answer-label">${safeEditorial(block.etiqueta)}</p>${renderResponseLines(block.lineas)}`;
   }
 
   function renderCuadernilloV2Bloque(block) {
@@ -225,7 +230,7 @@
     setCardMode(card, version);
     card.innerHTML = `<header class="bib-workbook-header"><div class="bib-workbook-header-copy">
       <p class="bib-workbook-eyebrow">MATERIAL PARA ESTUDIANTES</p><p class="bib-workbook-type-label">${safe(typeMeta.label)}</p>
-      <h3>${safe(contenido.titulo)}</h3><p class="bib-workbook-description">${safe(contenido.descripcion)}</p>
+      <h3>${safeEditorial(contenido.titulo)}</h3><p class="bib-workbook-description">${safeEditorial(contenido.descripcion)}</p>
       ${metadata.length ? `<ul class="bib-workbook-meta" aria-label="Datos del cuadernillo">${metadata.map((item) => `<li>${safe(item)}</li>`).join("")}</ul>` : ""}</div>
       <button type="button" id="bib-anexo-close" class="bib-lista-close" aria-label="Cerrar">X</button></header>
       <div class="bib-workbook-body">${version === "v2" ? renderCuadernilloV2DatosGenerales(contenido.datos_generales) : ""}
@@ -245,12 +250,12 @@
     function renderAnexoBlock(item) {
       let html = `<div style="margin-bottom:1.5rem;"><p style="font-weight:700; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase; color:#64748b; margin-bottom:2px;">ANEXO ${item.numero || ""}</p>`;
       html += `<h4 style="font-size:1rem; font-weight:700; color:#1e293b; margin-bottom:6px;">${safe(item.titulo || "")}</h4>`;
-      if (item.instrucciones) html += `<p style="font-style:italic; color:#475569; margin-bottom:10px; font-size:0.875rem;"><em>Instrucciones:</em> ${safe(item.instrucciones)}</p>`;
+      if (item.instrucciones) html += `<p style="font-style:italic; color:#475569; margin-bottom:10px; font-size:0.875rem;"><em>Instrucciones:</em> ${safeEditorial(item.instrucciones)}</p>`;
       if (Array.isArray(item.contenido)) {
         for (const block of item.contenido) {
-          if (block.subtitulo) html += `<p style="font-weight:600; color:#334155; margin-top:10px; margin-bottom:4px;">${safe(block.subtitulo)}</p>`;
-          if (block.texto) html += `<p style="color:#475569; margin-bottom:6px; font-size:0.875rem;">${safe(block.texto)}</p>`;
-          if (Array.isArray(block.preguntas) && block.preguntas.length) html += `<ol style="padding-left:1.25rem; margin-bottom:6px;">${block.preguntas.map((question) => `<li style="color:#475569; font-size:0.875rem; margin-bottom:3px;">${safe(question)}</li>`).join("")}</ol>`;
+          if (block.subtitulo) html += `<p style="font-weight:600; color:#334155; margin-top:10px; margin-bottom:4px;">${safeEditorial(block.subtitulo)}</p>`;
+          if (block.texto) html += `<p style="color:#475569; margin-bottom:6px; font-size:0.875rem;">${safeEditorial(block.texto)}</p>`;
+          if (Array.isArray(block.preguntas) && block.preguntas.length) html += `<ol style="padding-left:1.25rem; margin-bottom:6px;">${block.preguntas.map((question) => `<li style="color:#475569; font-size:0.875rem; margin-bottom:3px;">${safeEditorial(question)}</li>`).join("")}</ol>`;
         }
       }
       if (item.tabla && Array.isArray(item.tabla.columnas) && Array.isArray(item.tabla.filas)) {
@@ -262,7 +267,7 @@
     const bodyHtml = listaAnexos.length ? listaAnexos.map(renderAnexoBlock).join('<hr style="border:none; border-top:1px solid #e2e8f0; margin:1rem 0;">') : `<p style="color:#94a3b8; font-size:0.875rem;">Este anexo no tiene contenido.</p>`;
     card.innerHTML = `<div class="bib-anexo-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding-bottom:0.75rem; border-bottom:1px solid #e2e8f0; margin-bottom:1rem;"><div>
       <p style="font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#0891b2; margin-bottom:2px;">MATERIAL PARA ALUMNOS</p>
-      <h3 style="font-size:1.125rem; font-weight:700; color:#1e293b;">${safe(titulo)}</h3>${descripcion ? `<p style="font-size:0.8125rem; color:#64748b; margin-top:2px;">${safe(descripcion)}</p>` : ""}
+      <h3 style="font-size:1.125rem; font-weight:700; color:#1e293b;">${safeEditorial(titulo)}</h3>${descripcion ? `<p style="font-size:0.8125rem; color:#64748b; margin-top:2px;">${safeEditorial(descripcion)}</p>` : ""}
       ${anexo.materia || anexo.nivel ? `<p style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">${[anexo.materia, anexo.nivel, anexo.tema].filter(Boolean).map(safe).join(" · ")}</p>` : ""}</div>
       <button type="button" id="bib-anexo-close" class="bib-lista-close" style="flex-shrink:0;">X</button></div>
       <div class="bib-anexo-body" style="overflow-y:auto; max-height:45vh; padding-right:4px;">${bodyHtml}</div>

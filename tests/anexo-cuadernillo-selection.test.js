@@ -364,7 +364,7 @@ describe("Transporte, coordinación parcial y compatibilidad", () => {
 
   test("catálogo carga antes de API, generation, state y render en la página contractual", () => {
     const html = read("pages/dashboard.html");
-    expect((html.match(/<script src="\.\.\//g) || [])).toHaveLength(46);
+    expect((html.match(/<script src="\.\.\//g) || [])).toHaveLength(47);
     const catalog = html.indexOf("cuadernillo-types.js");
     ["anexos.api.js", "anexo-generation.js", "biblioteca.page.js", "biblioteca-modal-render.js"]
       .forEach((consumer) => expect(catalog).toBeLessThan(html.indexOf(consumer)));

@@ -12,6 +12,7 @@ function owner() {
   const dom = new JSDOM("<!doctype html><body></body>", { runScripts: "outside-only" });
   dom.window.docx = docx;
   dom.window.Blob = Blob;
+  vm.runInContext(fs.readFileSync(path.join(ROOT, "js/ui/editorialText.js"), "utf8"), dom.getInternalVMContext());
   vm.runInContext(fs.readFileSync(path.join(ROOT, "js/ui/docxExport.js"), "utf8"), dom.getInternalVMContext());
   return { dom, api: dom.window.DocxExport };
 }
@@ -41,6 +42,25 @@ test("serializes a real OOXML ZIP with required parts and inert text", async () 
   expect(result.documentXml).not.toMatch(/<(?:html|body|div|script)(?:\s|>)/i);
   expect(result.documentXml).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
   expect(result.documentXml).toContain("Álgebra &amp; análisis");
+});
+
+test("historical annex paragraph escapes become OOXML breaks while a technical escape stays literal", async () => {
+  const { api } = owner();
+  const anexo = {
+    contenido: {
+      titulo: "V3",
+      descripcion: "Descripcion",
+      secciones: [{ id: "s", orden: 1, titulo: "Teoria", bloques: [{
+        tipo: "texto",
+        contenido: 'Primer parrafo.\\n\\nSegundo parrafo. En JavaScript, "\\n" representa un salto.'
+      }] }]
+    }
+  };
+  const model = api.adapters.anexo(anexo, "v3");
+  const { documentXml } = await inspect(model);
+  expect(documentXml).not.toContain("Primer parrafo.\\n\\nSegundo parrafo.");
+  expect(documentXml).toMatch(/Primer parrafo\.<\/w:t>[\s\S]*<\/w:p>[\s\S]*Segundo parrafo\./);
+  expect(documentXml).toContain('En JavaScript, &quot;\\n&quot; representa un salto.');
 });
 
 test.each([
@@ -125,10 +145,12 @@ test("classic pages load the local DOCX distribution before the owner and consum
   for (const page of ["pages/dashboard.html", "pages/detalle.html"]) {
     const source = fs.readFileSync(path.join(ROOT, page), "utf8");
     const vendor = source.indexOf("docx-9.16.0.iife.js");
+    const editorialText = source.indexOf("editorialText.js");
     const ownerIndex = source.indexOf("docxExport.js");
     const wrapper = source.indexOf("wordExport.js");
     expect(vendor).toBeGreaterThan(-1);
-    expect(ownerIndex).toBeGreaterThan(vendor);
+    expect(editorialText).toBeGreaterThan(vendor);
+    expect(ownerIndex).toBeGreaterThan(editorialText);
     expect(wrapper).toBeGreaterThan(ownerIndex);
   }
 });

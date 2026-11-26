@@ -28,6 +28,7 @@ function createHarness() {
   window.URL.revokeObjectURL = jest.fn();
   window.HTMLAnchorElement.prototype.click = jest.fn();
   window.DocxExport = { adapters: { anexo: jest.fn(() => ({})) }, download: jest.fn(async () => { const url = window.URL.createObjectURL({}); window.URL.revokeObjectURL(url); return true; }) };
+  run(context, "js/ui/editorialText.js");
   run(context, "js/features/anexos/cuadernillo-types.js");
   run(context, "js/features/anexos/anexo-download.js");
   run(context, "js/features/anexos/anexo-preview.js");
@@ -97,6 +98,19 @@ function v3Fixture() {
 }
 
 describe("Preview web de cuadernillos v2", () => {
+  test("normaliza separadores historicos de parrafo y conserva un escape tecnico simple", () => {
+    const { window, card } = createHarness();
+    const value = v3Fixture();
+    const text = value.contenido.secciones.flatMap((section) => section.bloques).find((block) => block.tipo === "texto");
+    text.contenido = 'Primer parrafo.\\n\\nSegundo parrafo. En JavaScript, "\\n" representa un salto. <script>alert(1)</script>';
+    window.AnexoPreview.render(value);
+    expect(card.innerHTML).not.toContain("\\n\\n");
+    expect(card.innerHTML).toContain("Primer parrafo.<br><br>Segundo parrafo.");
+    expect(card.textContent).toContain('En JavaScript, "\\n" representa un salto.');
+    expect(card.innerHTML).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(card.querySelector("script")).toBeNull();
+  });
+
   test("dispatch explícito conserva v1 y rechaza formatos desconocidos", () => {
     const { window, card } = createHarness();
     const v1 = { id: "v1", titulo: "Anexo histórico", contenido: { titulo_general: "Anexo histórico", anexos: [] } };

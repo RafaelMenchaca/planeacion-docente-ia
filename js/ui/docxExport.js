@@ -13,6 +13,11 @@
     return scalar(value).replace(/\s+/g, " ").trim();
   }
 
+  function editorialText(value) {
+    const text = scalar(value);
+    return window.EditorialText?.normalizeParagraphSeparators?.(text) ?? text;
+  }
+
   function normalizeFilename(raw, fallback) {
     const withoutExtension = scalar(raw || fallback || "Documento").replace(/\.docx?$/i, "");
     const clean = withoutExtension.replace(/[\u0000-\u001f<>:"/\\|?*]/g, "")
@@ -34,16 +39,18 @@
 
   function modelNodeToDocx(node, d) {
     const textRun = (value, options) => new d.TextRun({ text: scalar(value), ...(options || {}) });
+    const textRunsWithBreaks = (value, options) => editorialText(value).split("\n")
+      .map((line, index) => textRun(line, { ...(options || {}), ...(index ? { break: 1 } : {}) }));
     if (!node || typeof node !== "object") return [];
     if (node.type === "heading") {
       const levels = [d.HeadingLevel.TITLE, d.HeadingLevel.HEADING_1, d.HeadingLevel.HEADING_2, d.HeadingLevel.HEADING_3];
       return [new d.Paragraph({ text: scalar(node.text), heading: levels[Math.min(Math.max(node.level || 1, 0), 3)], keepNext: true, spacing: { before: 180, after: 100 } })];
     }
     if (node.type === "paragraph") {
-      return [new d.Paragraph({ children: [textRun(node.text, { bold: Boolean(node.bold), italics: Boolean(node.italics) })], spacing: { after: 100 }, keepNext: Boolean(node.keepNext) })];
+      return [new d.Paragraph({ children: textRunsWithBreaks(node.text, { bold: Boolean(node.bold), italics: Boolean(node.italics) }), spacing: { after: 100 }, keepNext: Boolean(node.keepNext) })];
     }
     if (node.type === "list") {
-      return node.items.map((item) => new d.Paragraph({ text: item, numbering: node.ordered ? { reference: "educativo-numbering", level: 0 } : undefined, bullet: node.ordered ? undefined : { level: 0 }, indent: { left: 360 }, spacing: { after: 70 } }));
+      return node.items.map((item) => new d.Paragraph({ children: textRunsWithBreaks(item), numbering: node.ordered ? { reference: "educativo-numbering", level: 0 } : undefined, bullet: node.ordered ? undefined : { level: 0 }, indent: { left: 360 }, spacing: { after: 70 } }));
     }
     if (node.type === "answerLines") {
       return Array.from({ length: node.count }, () => new d.Paragraph({ children: [textRun(" ")], border: { bottom: { style: d.BorderStyle.SINGLE, size: 4, color: "94A3B8" } }, spacing: { before: 100, after: 80 } }));
@@ -155,7 +162,7 @@
     if (block?.titulo) nodes.push(heading(block.titulo, 3));
     switch (block?.tipo) {
       case "texto":
-        scalar(block.contenido).split(/\r?\n/).forEach((line) => nodes.push(paragraph(line)));
+        editorialText(block.contenido).split("\n").forEach((line) => nodes.push(paragraph(line)));
         break;
       case "lista": nodes.push(list(block.items)); break;
       case "conceptos":
@@ -219,7 +226,7 @@
   }
 
   window.DocxExport = {
-    MIME, scalar, compactText, normalizeFilename, paragraph, heading, list, table, answerLines, pageBreak,
+    MIME, scalar, compactText, editorialText, normalizeFilename, paragraph, heading, list, table, answerLines, pageBreak,
     buildDocument, createBlob, download,
     adapters: { planeacion: planeacionModel, listaCotejo: listaModel, exam: examModel, anexo: anexoModel }
   };
