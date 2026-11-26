@@ -125,7 +125,7 @@
       case "conceptos":
         return `<div class="block concepts-block">${blockTitle(block)}${(block.items || []).map((item) => `<div class="concept"><p><strong>${safe(item?.termino)}</strong></p><p>${safe(item?.explicacion)}</p>${item?.ejemplo ? `<p><em>Ejemplo:</em> ${safe(item.ejemplo)}</p>` : ""}</div>`).join("")}</div>`;
       case "tabla":
-        return `<div class="block table-block">${blockTitle(block)}<table><thead><tr>${(block.columnas || []).map((column) => `<th>${safe(column)}</th>`).join("")}</tr></thead><tbody>${(block.filas || []).map((row) => `<tr>${(Array.isArray(row) ? row : []).map((cell) => `<td>${safe(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+        return `<div class="block table-block">${blockTitle(block)}<table><thead><tr>${(block.columnas || []).map((column) => `<th>${safe(column)}</th>`).join("")}</tr></thead><tbody>${(block.filas || []).map((row) => `<tr>${(Array.isArray(row) ? row : []).map((cell) => cell === "" ? '<td style="height:28pt;">&nbsp;</td>' : `<td>${safe(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
       case "actividad":
         return `<div class="block activity-block">${blockTitle(block)}<p class="tag">${safe(ACTIVITY_LABELS[block.modalidad] || "Actividad")}</p><p><strong>Instrucciones:</strong> ${safe(block.instrucciones)}</p><ol>${(block.items || []).map((item) => `<li>${safe(item?.enunciado)}${Array.isArray(item?.opciones) ? `<ul class="options">${item.opciones.map((option) => `<li>○ ${safe(option)}</li>`).join("")}</ul>` : ""}${item?.espacio_respuesta ? responseLines(item.espacio_respuesta.lineas) : ""}</li>`).join("")}</ol></div>`;
       case "procedimiento":
@@ -174,7 +174,12 @@
       case "tabla": {
         if (!hasTextArray(block.columnas) || !Array.isArray(block.filas) || !block.filas.length) throw new Error("bloque_invalido");
         const width = block.columnas.length;
-        if (block.filas.some((row) => !Array.isArray(row) || row.length !== width || !row.every(hasText))) throw new Error("tabla_invalida");
+        const isClassificationWorkspace = version === "v3"
+          && Array.isArray(block.cobertura) && block.cobertura.length === 1 && block.cobertura[0] === 26;
+        const invalidRow = isClassificationWorkspace
+          ? (row) => !Array.isArray(row) || row.length !== 2 || !hasText(row[0]) || row[1] !== ""
+          : (row) => !Array.isArray(row) || row.length !== width || !row.every(hasText);
+        if (block.filas.some(invalidRow)) throw new Error("tabla_invalida");
         break;
       }
       case "actividad":

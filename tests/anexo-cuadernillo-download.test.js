@@ -145,6 +145,27 @@ describe("Exportación Word de cuadernillos v2", () => {
     expect(html).not.toContain("contrato_cuantitativo");
   });
 
+  test("Word v3 conserva espacios backend para completar y clasificar", () => {
+    const { window } = harness();
+    const value = v3Fixture();
+    const section = value.contenido.secciones.at(-1);
+    section.bloques.push(
+      {
+        tipo: "actividad", modalidad: "completar", instrucciones: "Identifica el término correcto.",
+        items: [{ id: "complete-1", enunciado: "Escribe el término que corresponde a un arreglo rectangular.", opciones: ["matriz", "vector"], respuesta_correcta: "matriz", espacio_respuesta: { lineas: 2 } }], cobertura: [23]
+      },
+      {
+        tipo: "tabla", columnas: ["Elemento", "Clasificación (Vector / Matriz)"],
+        filas: [["Lista ordenada de componentes", ""], ["Arreglo rectangular", ""], ["Magnitud y dirección", ""], ["Organización en filas", ""]], cobertura: [26]
+      }
+    );
+    const html = window.AnexoDownload.buildV3WordHtml(value);
+    expect(html).toContain('class="answer-lines"');
+    expect((html.match(/height:28pt/g) || [])).toHaveLength(4);
+    expect(html).not.toContain("actividades_comprension:26");
+    expect(html).not.toContain("respuesta_correcta");
+  });
+
   test("descarga v3 usa el mismo flujo local de Blob y cleanup", () => {
     jest.useFakeTimers();
     const { window, blobs } = harness();
@@ -274,5 +295,15 @@ describe("Exportación Word de cuadernillos v2", () => {
     expect(blobs[0].parts.join("")).not.toContain("Cuadernillo de ejercicios");
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
+  });
+  test("la exportación vigente sigue siendo DOC y la deuda DOCX real queda documentada", () => {
+    const source = read("js/features/anexos/anexo-download.js");
+    const docs = [read("README.md"), read("docs/ARCHITECTURE.md"), read("docs/FRONTEND_MAP.md")].join("\n");
+    expect(source).toContain('type: "application/msword"');
+    expect(source).toContain('.doc`');
+    expect(source).not.toContain('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    expect(docs).toMatch(/DOCX real/i);
+    expect(docs).toMatch(/Office Open XML|librería evaluada/i);
+    expect(docs).toMatch(/no (?:se simula|debe crearse) un `?\.docx`? falso/i);
   });
 });

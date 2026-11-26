@@ -125,7 +125,9 @@
   function renderTableBlock(block) {
     return `${renderBlockTitle(block)}<div class="bib-workbook-table-scroll" tabindex="0" aria-label="Tabla desplazable">
       <table class="bib-workbook-table"><thead><tr>${(block.columnas || []).map((column) => `<th scope="col">${safe(column)}</th>`).join("")}</tr></thead>
-      <tbody>${(block.filas || []).map((row) => `<tr>${(Array.isArray(row) ? row : []).map((cell) => `<td>${safe(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>
+      <tbody>${(block.filas || []).map((row) => `<tr>${(Array.isArray(row) ? row : []).map((cell) => cell === ""
+        ? '<td class="bib-workbook-table-answer-cell" aria-label="Espacio para responder"><span aria-hidden="true" style="display:block;min-height:2rem;min-width:8rem;">&nbsp;</span></td>'
+        : `<td>${safe(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>
     </div>`;
   }
 

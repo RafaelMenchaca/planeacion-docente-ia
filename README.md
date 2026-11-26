@@ -60,10 +60,15 @@ Anexos usa `js/features/anexos/cuadernillo-types.js` como catálogo canónico de
 modalidades. El modal exige una modalidad por cada planeación marcada y envía
 requests individuales y secuenciales. `AnexoPreview` despacha explícitamente el
 renderer histórico v1 o los renderers explícitos v2/v3, que soportan los once
-discriminadores. V2 conserva Datos generales y Autoevaluación; v3 los rechaza y
+discriminadores. V2 conserva Datos generales y Autoevaluación; v3 rechaza ambos
+y toda sección de Evaluación, termina en Cierre y reflexión y presenta las
+estructuras especializadas de Guiado, Ejercicios e Integradoras ABP. V3
 presenta únicamente secciones pedagógicas. `AnexoDownload` despacha también por
 versión y exporta localmente v1, v2 y v3 como HTML compatible con Word dentro de un
 archivo `.doc`, con nombre editable y sin llamadas adicionales al backend.
+La exportación DOCX real queda como deuda explícita: implementar Office Open XML
+o una librería evaluada, conservando escape, tablas, estilos, Blob y
+compatibilidad histórica. No se simula un `.docx` cambiando extensión o MIME.
 V3 recibe del backend resultados y comprobaciones cuantitativas ya verificados
 para las familias soportadas; preview y Word muestran texto plano, Unicode y
 tablas, sin metadata académica interna ni interpretación de LaTeX.

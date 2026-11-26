@@ -198,6 +198,28 @@ describe("Preview web de cuadernillos v2", () => {
     expect(card.innerHTML).not.toContain("contrato_cuantitativo");
   });
 
+  test("preview v3 muestra espacios backend para completar y clasificar sin marcadores textuales", () => {
+    const { window, card } = createHarness();
+    const value = v3Fixture();
+    const section = value.contenido.secciones.at(-1);
+    section.bloques.push(
+      {
+        tipo: "actividad", modalidad: "completar", instrucciones: "Identifica el término correcto.",
+        items: [{ id: "complete-1", enunciado: "Escribe el término que corresponde a un arreglo rectangular.", opciones: ["matriz", "vector"], respuesta_correcta: "matriz", espacio_respuesta: { lineas: 2 } }], cobertura: [23]
+      },
+      {
+        tipo: "tabla", columnas: ["Elemento", "Clasificación (Vector / Matriz)"],
+        filas: [["Lista ordenada de componentes", ""], ["Arreglo rectangular", ""], ["Magnitud y dirección", ""], ["Organización en filas", ""]], cobertura: [26]
+      }
+    );
+    window.AnexoPreview.render(value);
+    expect(card.querySelectorAll(".bib-workbook-activity-item .bib-workbook-response-line").length).toBeGreaterThanOrEqual(2);
+    expect(card.querySelectorAll('.bib-workbook-table-answer-cell[aria-label="Espacio para responder"]')).toHaveLength(4);
+    expect(card.textContent).not.toContain("____");
+    expect(card.textContent).not.toContain("respuesta_correcta");
+    expect(card.innerHTML).not.toContain("aprendizaje_guiado:actividades_comprension");
+  });
+
   test("cerrar y volver a renderizar funciona; Escape conserva el cierre del modal", () => {
     const { window, card } = createHarness();
     const fixture = v2Fixture();
