@@ -106,6 +106,8 @@ La salida Word vigente es Office Open XML real. `js/ui/docxExport.js` normaliza
 el modelo documental, adapta planeación, anexo, examen y lista de cotejo,
 serializa con `docx` 9.16.0 y descarga con el MIME DOCX. La distribución browser
 es local, se carga antes del owner y no depende de CDN.
+Los adaptadores de planeación, lista y examen asignan perfiles de estilo del
+owner común; no duplican márgenes, tipografía ni serialización en sus wrappers.
 - `anexo-delete.js`
 
 ### Listas de cotejo

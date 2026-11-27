@@ -142,6 +142,9 @@ El frontend conserva los contratos del backend. Los campos `unidad_id`, `planeac
   tablas, estilos, Blob y compatibilidad histórica. La distribución local de
   `docx` 9.16.0 se carga antes del owner; cambiar
   solo extensión o MIME no es válido.
+  El mismo owner selecciona perfiles de estilo por modelo documental:
+  `planeacionCompacta`, `listaCotejo` y `examen`; el perfil base de Anexos no se
+  modifica.
   En v3, los espacios de actividad proceden de `espacio_respuesta`; las tablas
   de clasificación usan celdas vacías con etiqueta accesible en preview y altura
   utilizable en Word, sin exponer metadata contractual.

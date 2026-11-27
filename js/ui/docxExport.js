@@ -2,6 +2,12 @@
   "use strict";
 
   const MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const STYLE_PROFILES = Object.freeze({
+    default: Object.freeze({ font: "Arial", bodySize: 22, line: 276, margins: Object.freeze({ top: 1134, right: 1134, bottom: 1134, left: 1134 }), headings: Object.freeze([32, 28, 24, 22]), headingSpacing: Object.freeze({ before: 180, after: 100 }), paragraphAfter: 100, listAfter: 70, tableBodySize: 22, tableHeaderSize: 22, cellMargins: Object.freeze({ top: 90, bottom: 90, left: 100, right: 100 }), headerFill: "DCE6F1", headerColor: "1F2937" }),
+    planeacionCompacta: Object.freeze({ font: "Arial", bodySize: 16, line: 200, margins: Object.freeze({ top: 504, right: 576, bottom: 504, left: 576 }), headings: Object.freeze([24, 20, 18, 16]), headingSpacing: Object.freeze({ before: 40, after: 40 }), paragraphAfter: 20, listAfter: 20, tableBodySize: 15, tableHeaderSize: 16, cellMargins: Object.freeze({ top: 40, bottom: 40, left: 50, right: 50 }), headerFill: "3F6F55", headerColor: "FFFFFF" }),
+    listaCotejo: Object.freeze({ font: "Arial", bodySize: 18, line: 220, margins: Object.freeze({ top: 720, right: 720, bottom: 720, left: 720 }), headings: Object.freeze([28, 22, 20, 18]), headingSpacing: Object.freeze({ before: 80, after: 60 }), paragraphAfter: 40, listAfter: 35, tableBodySize: 18, tableHeaderSize: 17, cellMargins: Object.freeze({ top: 55, bottom: 55, left: 65, right: 65 }), headerFill: "3F6F55", headerColor: "FFFFFF" }),
+    examen: Object.freeze({ font: "Arial", bodySize: 21, line: 240, margins: Object.freeze({ top: 720, right: 864, bottom: 720, left: 864 }), headings: Object.freeze([30, 24, 22, 20]), headingSpacing: Object.freeze({ before: 90, after: 55 }), paragraphAfter: 55, listAfter: 35, tableBodySize: 20, tableHeaderSize: 20, cellMargins: Object.freeze({ top: 60, bottom: 60, left: 75, right: 75 }), headerFill: "DCE6F1", headerColor: "1F2937" })
+  });
 
   function scalar(value) {
     if (typeof value === "string") return value;
@@ -26,8 +32,8 @@
   }
 
   const paragraph = (text, options) => ({ type: "paragraph", text: scalar(text), ...(options || {}) });
-  const heading = (text, level = 1) => ({ type: "heading", text: scalar(text), level });
-  const list = (items, ordered = false) => ({ type: "list", ordered, items: (Array.isArray(items) ? items : []).map(scalar).filter(Boolean) });
+  const heading = (text, level = 1, options) => ({ type: "heading", text: scalar(text), level, ...(options || {}) });
+  const list = (items, ordered = false, options) => ({ type: "list", ordered, items: (Array.isArray(items) ? items : []).map(scalar).filter(Boolean), ...(options || {}) });
   const table = (headers, rows, options) => ({ type: "table", headers: (headers || []).map(scalar), rows: (rows || []).map((row) => (Array.isArray(row) ? row.map(scalar) : [])), ...(options || {}) });
   const answerLines = (count = 3) => ({ type: "answerLines", count: Math.min(Math.max(Number(count) || 1, 1), 10) });
   const pageBreak = () => ({ type: "pageBreak" });
@@ -37,20 +43,21 @@
     return window.docx;
   }
 
-  function modelNodeToDocx(node, d) {
+  function modelNodeToDocx(node, d, profile) {
     const textRun = (value, options) => new d.TextRun({ text: scalar(value), ...(options || {}) });
     const textRunsWithBreaks = (value, options) => editorialText(value).split("\n")
       .map((line, index) => textRun(line, { ...(options || {}), ...(index ? { break: 1 } : {}) }));
     if (!node || typeof node !== "object") return [];
     if (node.type === "heading") {
       const levels = [d.HeadingLevel.TITLE, d.HeadingLevel.HEADING_1, d.HeadingLevel.HEADING_2, d.HeadingLevel.HEADING_3];
-      return [new d.Paragraph({ text: scalar(node.text), heading: levels[Math.min(Math.max(node.level || 1, 0), 3)], keepNext: true, spacing: { before: 180, after: 100 } })];
+      const level = Math.min(Math.max(node.level ?? 1, 0), 3);
+      return [new d.Paragraph({ children: [textRun(node.text, { bold: true, size: profile.headings[level], color: node.color || "1F2937" })], heading: levels[level], keepNext: node.keepNext !== false, spacing: node.spacing || profile.headingSpacing })];
     }
     if (node.type === "paragraph") {
-      return [new d.Paragraph({ children: textRunsWithBreaks(node.text, { bold: Boolean(node.bold), italics: Boolean(node.italics) }), spacing: { after: 100 }, keepNext: Boolean(node.keepNext) })];
+      return [new d.Paragraph({ children: textRunsWithBreaks(node.text, { bold: Boolean(node.bold), italics: Boolean(node.italics), size: node.size || profile.bodySize }), spacing: node.spacing || { after: profile.paragraphAfter }, keepNext: Boolean(node.keepNext) })];
     }
     if (node.type === "list") {
-      return node.items.map((item) => new d.Paragraph({ children: textRunsWithBreaks(item), numbering: node.ordered ? { reference: "educativo-numbering", level: 0 } : undefined, bullet: node.ordered ? undefined : { level: 0 }, indent: { left: 360 }, spacing: { after: 70 } }));
+      return node.items.map((item, index) => new d.Paragraph({ children: textRunsWithBreaks(item, { size: node.size || profile.bodySize }), numbering: node.ordered ? { reference: "educativo-numbering", level: 0 } : undefined, bullet: node.ordered || node.plain ? undefined : { level: 0 }, indent: { left: node.indent ?? 360 }, spacing: { after: node.spacingAfter ?? profile.listAfter }, keepNext: Boolean(node.keepTogether && index < node.items.length - 1) }));
     }
     if (node.type === "answerLines") {
       return Array.from({ length: node.count }, () => new d.Paragraph({ children: [textRun(" ")], border: { bottom: { style: d.BorderStyle.SINGLE, size: 4, color: "94A3B8" } }, spacing: { before: 100, after: 80 } }));
@@ -59,16 +66,17 @@
     if (node.type === "table") {
       const border = { style: d.BorderStyle.SINGLE, size: 4, color: "94A3B8" };
       const borders = { top: border, bottom: border, left: border, right: border, insideHorizontal: border, insideVertical: border };
-      const cell = (value, header) => new d.TableCell({
-        children: [new d.Paragraph({ children: [textRun(value, { bold: header })], spacing: { after: 0 } })],
-        shading: header ? { fill: "DCE6F1", type: d.ShadingType.CLEAR } : undefined,
-        margins: { top: 90, bottom: 90, left: 100, right: 100 },
-        verticalAlign: d.VerticalAlign.CENTER
+      const cell = (value, header, columnIndex) => new d.TableCell({
+        children: [new d.Paragraph({ children: textRunsWithBreaks(value, { bold: header, size: header ? (node.headerFontSize || profile.tableHeaderSize) : (node.fontSize || profile.tableBodySize), color: header ? (node.headerColor || profile.headerColor) : "1F2937" }), spacing: { after: 0, line: profile.line } })],
+        shading: header ? { fill: node.headerFill || profile.headerFill, type: d.ShadingType.CLEAR } : node.bodyFill ? { fill: node.bodyFill, type: d.ShadingType.CLEAR } : undefined,
+        margins: node.cellMargins || profile.cellMargins,
+        verticalAlign: node.verticalAlign === "center" ? d.VerticalAlign.CENTER : d.VerticalAlign.TOP,
+        ...(Array.isArray(node.columnWidths) && node.columnWidths[columnIndex] ? { width: { size: node.columnWidths[columnIndex], type: d.WidthType.PERCENTAGE } } : {})
       });
       const rows = [];
-      if (node.headers.length) rows.push(new d.TableRow({ tableHeader: true, cantSplit: true, children: node.headers.map((value) => cell(value, true)) }));
-      node.rows.forEach((row) => rows.push(new d.TableRow({ cantSplit: false, children: row.map((value) => cell(value, false)) })));
-      return [new d.Table({ rows, width: { size: 100, type: d.WidthType.PERCENTAGE }, borders, layout: d.TableLayoutType.FIXED })];
+      if (node.headers.length) rows.push(new d.TableRow({ tableHeader: node.repeatHeader !== false, cantSplit: true, children: node.headers.map((value, index) => cell(value, true, index)) }));
+      node.rows.forEach((row) => rows.push(new d.TableRow({ cantSplit: node.cantSplitRows !== false, children: row.map((value, index) => cell(value, false, index)) })));
+      return [new d.Table({ rows, width: { size: 100, type: d.WidthType.PERCENTAGE }, borders, layout: d.TableLayoutType.FIXED, ...(Array.isArray(node.columnWidths) ? { columnWidths: node.columnWidths.map((width) => width * 100) } : {}) })];
     }
     return [];
   }
@@ -76,13 +84,14 @@
   function buildDocument(model) {
     const d = requireLibrary();
     if (!model || !Array.isArray(model.children)) throw new Error("docx_model_invalid");
-    const children = model.children.flatMap((node) => modelNodeToDocx(node, d));
+    const profile = STYLE_PROFILES[model.profile] || STYLE_PROFILES.default;
+    const children = model.children.flatMap((node) => modelNodeToDocx(node, d, profile));
     if (!children.length) throw new Error("docx_model_empty");
     return new d.Document({
-      styles: { default: { document: { run: { font: "Arial", size: 22, color: "1F2937" }, paragraph: { spacing: { line: 276 } } } } },
+      styles: { default: { document: { run: { font: profile.font, size: profile.bodySize, color: "1F2937" }, paragraph: { spacing: { line: profile.line, before: 0, after: 0 } } } } },
       numbering: { config: [{ reference: "educativo-numbering", levels: [{ level: 0, format: d.LevelFormat.DECIMAL, text: "%1.", alignment: d.AlignmentType.START, style: { paragraph: { indent: { left: 360, hanging: 180 } } } }] }] },
       sections: [{ properties: { page: {
-        margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 },
+        margin: profile.margins,
         ...(model.orientation === "landscape" ? { size: { orientation: d.PageOrientation.LANDSCAPE } } : {})
       } }, children }]
     });
@@ -112,14 +121,20 @@
 
   function planeacionModel(data, rowsOverride) {
     const rows = Array.isArray(rowsOverride) ? rowsOverride : (Array.isArray(data?.tabla_ia) ? data.tabla_ia.map((row) => [row?.tiempo_sesion, row?.actividades, row?.tiempo_min, row?.producto, row?.instrumento, row?.formativa, row?.sumativa]) : []);
-    return { orientation: "landscape", children: [heading("Planeación didáctica", 0), table(["Asignatura", "Nivel", "Tema", "Subtema", "Duración", "Sesiones"], [[data?.materia, data?.nivel, data?.tema, data?.subtema, data?.duracion ? `${scalar(data.duracion)} min` : "", data?.sesiones]]), heading("Secuencia didáctica", 1), table(["Momento / Sesión", "Actividades", "Tiempo (min)", "Producto", "Instrumento", "Formativa", "Sumativa"], rows)] };
+    return { profile: "planeacionCompacta", orientation: "landscape", children: [heading("Planeación didáctica", 0), table(["Asignatura", "Nivel", "Tema", "Subtema", "Duración", "Sesiones"], [[data?.materia, data?.nivel, data?.tema, data?.subtema, data?.duracion ? `${scalar(data.duracion)} min` : "", data?.sesiones]], { columnWidths: [17, 12, 27, 18, 12, 14], headerFill: "7A9E87", cantSplitRows: true }), heading("Secuencia didáctica", 1), table(["Momento / Sesión", "Actividades", "Tiempo (min)", "Producto", "Instrumento", "Formativa", "Sumativa"], rows, { columnWidths: [10, 37, 8, 12, 11, 14, 8], cantSplitRows: true })] };
   }
 
   function listaModel(lista) {
     let criterios = lista?.criterios;
     if (typeof criterios === "string") { try { criterios = JSON.parse(criterios); } catch { criterios = []; } }
     if (!Array.isArray(criterios) || !criterios.length) throw new Error("lista_sin_criterios");
-    return { children: [heading("Lista de cotejo", 0), paragraph(`Tema: ${compactText(lista?.tema || "Sin tema")}`), ...(lista?.materia ? [paragraph(`Materia: ${compactText(lista.materia)}`)] : []), ...(lista?.nivel ? [paragraph(`Nivel: ${compactText(lista.nivel)}`)] : []), table(["Criterio", "Sí", "No", "Observaciones"], criterios.map((item) => [item?.criterio, item?.si ?? 2, item?.no ?? 0, ""]), { landscape: false }), paragraph(`Total: ${scalar(lista?.total_puntos ?? 10)} puntos`, { bold: true })] };
+    return { profile: "listaCotejo", children: [heading("Lista de cotejo", 0), paragraph(`Tema: ${compactText(lista?.tema || "Sin tema")}`), ...(lista?.materia ? [paragraph(`Materia: ${compactText(lista.materia)}`)] : []), ...(lista?.nivel ? [paragraph(`Nivel: ${compactText(lista.nivel)}`)] : []), table(["Criterio", "Sí", "No", "Observaciones"], criterios.map((item) => [item?.criterio, item?.si ?? 2, item?.no ?? 0, ""]), { columnWidths: [58, 8, 8, 26], verticalAlign: "center", cantSplitRows: true }), paragraph(`Total: ${scalar(lista?.total_puntos ?? 10)} puntos`, { bold: true })] };
+  }
+
+  function stripMatchingPrefix(value, expected) {
+    const text = compactText(value);
+    const escaped = scalar(expected).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return text.replace(new RegExp(`^${escaped}\\s*[.)]\\s*`, "i"), "").trim();
   }
 
   function answerValues(question) {
@@ -139,13 +154,13 @@
       ...(content.instrucciones_generales ? [heading("Instrucciones", 2), paragraph(content.instrucciones_generales)] : [])
     ];
     questions.forEach((question, index) => {
-      children.push(heading(`${index + 1}. ${compactText(question?.pregunta)}`, 2));
+      children.push(heading(`${index + 1}. ${stripMatchingPrefix(question?.pregunta, index + 1)}`, 2));
       const options = Array.isArray(question?.opciones) ? question.opciones : [];
-      if (options.length) children.push(list(options.map((option, optionIndex) => `${String.fromCharCode(65 + optionIndex)}. ${scalar(option)}`)));
+      if (options.length) children.push(list(options.map((option, optionIndex) => { const label = String.fromCharCode(65 + optionIndex); return `${label}. ${stripMatchingPrefix(option, label)}`; }), false, { plain: true, indent: 420, keepTogether: true }));
       const pairs = Array.isArray(question?.pares) ? question.pares : [];
-      if (pairs.length) children.push(table(["Columna A", "Columna B"], pairs.map((pair, pairIndex) => [`${pairIndex + 1}. ${scalar(pair?.lado_a)}`, `${String.fromCharCode(65 + pairIndex)}. ${scalar(pair?.lado_b)}`])));
+      if (pairs.length) children.push(table(["Columna A", "Columna B"], pairs.map((pair, pairIndex) => { const label = String.fromCharCode(65 + pairIndex); return [`${pairIndex + 1}. ${stripMatchingPrefix(pair?.lado_a, pairIndex + 1)}`, `${label}. ${stripMatchingPrefix(pair?.lado_b, label)}`]; }), { columnWidths: [50, 50], cantSplitRows: true }));
       const elements = Array.isArray(question?.elementos) ? question.elementos : [];
-      if (elements.length) children.push(list(elements, true));
+      if (elements.length) children.push(list(elements.map((element, elementIndex) => stripMatchingPrefix(element, elementIndex + 1)), true, { keepTogether: true }));
       if (!options.length && !pairs.length && !elements.length) children.push(answerLines(4));
     });
     if (includeAnswers) {
@@ -154,7 +169,7 @@
         children.push(paragraph(`${index + 1}. ${answerValues(question).join("; ") || "Sin respuesta disponible."}`));
       });
     }
-    return { children };
+    return { profile: "examen", children };
   }
 
   function workbookBlockNodes(block) {
@@ -226,7 +241,7 @@
   }
 
   window.DocxExport = {
-    MIME, scalar, compactText, editorialText, normalizeFilename, paragraph, heading, list, table, answerLines, pageBreak,
+    MIME, STYLE_PROFILES, scalar, compactText, editorialText, normalizeFilename, paragraph, heading, list, table, answerLines, pageBreak,
     buildDocument, createBlob, download,
     adapters: { planeacion: planeacionModel, listaCotejo: listaModel, exam: examModel, anexo: anexoModel }
   };

@@ -69,6 +69,8 @@ con nombre editable y sin llamadas adicionales al backend. El owner compartido
 `js/ui/docxExport.js` usa `docx` 9.16.0 servido localmente; planeaciones,
 exámenes y listas de cotejo delegan en el mismo serializador y nunca insertan el
 HTML del preview dentro del paquete Word.
+El owner aplica perfiles DOCX específicos para UDI compacta horizontal, listas
+de cotejo y exámenes; Anexos conserva su perfil histórico sin cambios.
 V3 recibe del backend resultados y comprobaciones cuantitativas ya verificados
 para las familias soportadas; preview y Word muestran texto plano, Unicode y
 tablas, sin metadata académica interna ni interpretación de LaTeX.

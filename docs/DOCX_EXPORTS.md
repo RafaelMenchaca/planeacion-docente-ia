@@ -25,6 +25,26 @@ El archivo siempre termina en `.docx`, usa el MIME
 `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, crea
 un único object URL y lo revoca una vez después del click.
 
+## Perfiles de presentación
+
+El owner conserva un perfil base para Anexos y aplica perfiles explícitos solo
+a los otros recursos:
+
+- `planeacionCompacta`: tamaño vigente A4 horizontal, márgenes de 0.35–0.40 pulgadas,
+  Arial 7.5–12 pt, encabezado verde y tabla didáctica con proporciones
+  10/37/8/12/11/14/8. Las filas no tienen altura fija y no se dividen cuando
+  caben completas.
+- `listaCotejo`: Arial 8.5–14 pt, márgenes de 0.5 pulgadas y columnas
+  58/8/8/26 para criterio, Sí, No y observaciones. El encabezado de tabla se
+  repite al cruzar página.
+- `examen`: Arial 10–15 pt, márgenes compactos, preguntas con `keepNext` y
+  opciones A–D sin viñeta adicional. Los prefijos que coinciden con el número
+  o letra que agrega el adaptador se eliminan antes de serializar; números o
+  letras que forman parte real de otro contenido se conservan.
+
+La compactación no elimina ni trunca contenido. Una UDI excepcionalmente larga
+puede ocupar más de una página para mantener legibilidad.
+
 ## Compatibilidad y seguridad
 
 Los adaptadores toleran campos opcionales ausentes sin serializar `undefined`,
@@ -37,7 +57,10 @@ solo una variante solicitada explícitamente añade respuestas.
 
 `tests/docx-export.test.js` abre el Blob como ZIP, verifica las partes OOXML,
 parsea `word/document.xml` y comprueba escape, MIME, nombres, cleanup y
-adaptadores. Para la revisión manual, abrir sin advertencias en Microsoft Word o
+adaptadores. También comprueba orientación, márgenes, fuentes, tamaños,
+proporciones, encabezados repetibles y normalización de numeración. El entorno
+automatizado actual no incluye LibreOffice, por lo que el conteo visual de
+páginas requiere revisión manual. Para esa revisión, abrir sin advertencias en Microsoft Word o
 LibreOffice una planeación, un anexo de cada modalidad v3, un examen de opción
 múltiple y una lista. Revisar nombre editable, tablas, saltos, Unicode, espacios
 de respuesta, contenido completo, paridad card/modal y ausencia de HTML visible.
