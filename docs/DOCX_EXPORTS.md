@@ -40,7 +40,10 @@ a los otros recursos:
 - `examen`: Arial 10–15 pt, márgenes compactos, preguntas con `keepNext` y
   opciones A–D sin viñeta adicional. Los prefijos que coinciden con el número
   o letra que agrega el adaptador se eliminan antes de serializar; números o
-  letras que forman parte real de otro contenido se conservan.
+  letras que forman parte real de otro contenido se conservan. Tras un salto de
+  página, la descarga añade la misma hoja resuelta que muestra la aplicación:
+  cada pregunta y su respuesta correcta. No es una hoja vacía para captura del
+  alumno y no se agrega una segunda clave duplicada.
 
 La compactación no elimina ni trunca contenido. Una UDI excepcionalmente larga
 puede ocupar más de una página para mantener legibilidad.
@@ -50,8 +53,8 @@ puede ocupar más de una página para mantener legibilidad.
 Los adaptadores toleran campos opcionales ausentes sin serializar `undefined`,
 `null` u objetos como texto. Anexos persistidos v1, v2 y v3 mantienen su dispatch.
 Todo dato se entrega a la biblioteca como texto: no se usa `innerHTML` como XML
-ni se ejecuta contenido. La variante de examen del estudiante omite la clave;
-solo una variante solicitada explícitamente añade respuestas.
+ni se ejecuta contenido. El preview y el adaptador DOCX comparten la misma
+transformación pura de `respuesta_correcta` para la hoja resuelta.
 
 ## Pruebas y revisión manual
 

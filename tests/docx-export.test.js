@@ -97,7 +97,7 @@ test("does not create an object URL when serialization fails", async () => {
   expect(dom.window.URL.createObjectURL).not.toHaveBeenCalled();
 });
 
-test("resource adapters preserve their contractual content without leaking answers", async () => {
+test("resource adapters preserve their contractual content and the resolved exam sheet", async () => {
   const { api } = owner();
   const planning = api.adapters.planeacion({ materia: "Historia", tema: "Tema", tabla_ia: [
     { tiempo_sesion: "Inicio", actividades: "Explorar", tiempo_min: 10 },
@@ -110,8 +110,9 @@ test("resource adapters preserve their contractual content without leaking answe
   const exam = { examen_ia: { preguntas: [{ pregunta: "Elige", opciones: ["Uno", "Dos", "Tres", "Cuatro"], respuesta_correcta: "Dos" }] } };
   const student = JSON.stringify(api.adapters.exam(exam));
   expect(student).toContain("D. Cuatro");
+  expect(student).toContain("Hoja de respuestas");
+  expect(student).toContain("Dos");
   expect(student).not.toContain("Clave de respuestas");
-  expect(JSON.stringify(api.adapters.exam(exam, { includeAnswers: true }))).toContain("Clave de respuestas");
 
   const checklist = api.adapters.listaCotejo({ tema: "Tema", criterios: [{ criterio: "Explica" }] });
   expect(JSON.stringify(checklist)).toContain("Observaciones");
@@ -159,7 +160,7 @@ test("checklist profile keeps complete criteria, narrow compliance columns and r
   expect(stylesXml).toContain('w:ascii="Arial"');
 });
 
-test("exam profile normalizes matching question and option prefixes without bullets or answer leakage", async () => {
+test("exam profile normalizes question, option and resolved-answer prefixes without duplicate keys", async () => {
   const { api } = owner();
   const exam = { examen_ia: { titulo: "Examen", instrucciones_generales: "Lee y responde.", preguntas: [
     { pregunta: "1. Selecciona la respuesta correcta", opciones: ["A. Primera", "B) Segunda", "c) Tercera", "D. Cuarta"], respuesta_correcta: "B. Segunda" },
@@ -176,16 +177,50 @@ test("exam profile normalizes matching question and option prefixes without bull
   expect(serialized).not.toMatch(/A\. A\.|B\. B[.)]|C\. c[.)]|D\. D\./i);
   expect(serialized).toContain("Columna A");
   expect(serialized).toContain("4. 1984 es parte real del contenido");
-  expect(serialized).not.toContain("Respuesta privada");
+  expect(serialized).toContain("Respuesta privada");
   expect(serialized).not.toContain("Clave de respuestas");
   const optionList = student.children.find((node) => node.type === "list" && node.items?.[0] === "A. Primera");
   expect(optionList.plain).toBe(true);
   const { documentXml, stylesXml } = await inspect(student);
   expect(documentXml).not.toContain("w:numPr");
   expect(stylesXml).toContain('w:ascii="Arial"');
-  const answerVersion = JSON.stringify(api.adapters.exam(exam, { includeAnswers: true }));
-  expect(answerVersion).toContain("Clave de respuestas");
-  expect(answerVersion).toContain("Respuesta privada");
+  expect(serialized.match(/Hoja de respuestas/g)).toHaveLength(1);
+});
+
+test("exam DOCX adds the resolved app answer sheet for mixed question types", async () => {
+  const { api } = owner();
+  const exam = { examen_ia: { titulo: "Evaluación mixta Ω", preguntas: [
+    { tipo: "opcion_multiple", pregunta: "Selecciona una opción", opciones: ["A) 4", "B) 5.66", "C) 6", "D) 8"], respuesta_correcta: "B) B) 5.66" },
+    { tipo: "verdadero_falso", pregunta: "Determina el valor de verdad", opciones: ["Verdadero", "Falso"], respuesta_correcta: "Verdadero" },
+    { tipo: "pregunta_abierta", pregunta: "Explica <script>el caso</script>", respuesta_correcta: "Análisis & conclusión" },
+    { tipo: "emparejamiento", pregunta: "Relaciona", pares: [{ lado_a: "Concepto", lado_b: "Definición" }, { lado_a: "Causa", lado_b: "Efecto" }], respuesta_correcta: [{ lado_a: "Concepto", lado_b: "Definición" }, { lado_a: "Causa", lado_b: "Efecto" }] },
+    { tipo: "ordenacion_jerarquizacion", pregunta: "Ordena", elementos: ["Inicio", "Proceso", "Cierre"], respuesta_correcta: ["Inicio", "Proceso", "Cierre"] }
+  ] } };
+  const model = api.adapters.exam(exam);
+  const serialized = JSON.stringify(model);
+  expect(serialized).toContain("Hoja de respuestas");
+  expect(serialized).toContain("Incluye cada pregunta con su respuesta correcta.");
+  ["Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5"].forEach((label) => expect(serialized).toContain(label));
+  expect(serialized.match(/Respuesta correcta/g)).toHaveLength(5);
+  expect(serialized).toContain("B) 5.66");
+  expect(serialized).not.toContain("B) B) 5.66");
+  expect(serialized).toContain("Verdadero");
+  expect(serialized).toContain("Análisis & conclusión");
+  expect(serialized).toContain("Concepto - Definición");
+  expect(serialized).toMatch(/1\. Inicio.*2\. Proceso.*3\. Cierre/s);
+  expect(serialized).not.toMatch(/Marca tu respuesta|Escribe tu respuesta|☐|Clave de respuestas/);
+  const pageBreakIndex = model.children.findIndex((node) => node.type === "pageBreak");
+  const sheetIndex = model.children.findIndex((node) => node.type === "heading" && node.text === "Hoja de respuestas");
+  expect(pageBreakIndex).toBeGreaterThan(-1);
+  expect(sheetIndex).toBe(pageBreakIndex + 1);
+  expect(model.children.filter((node) => node.type === "pageBreak")).toHaveLength(1);
+  const { bytes, documentXml } = await inspect(model);
+  expect(bytes.subarray(0, 2).toString()).toBe("PK");
+  expect(documentXml).toMatch(/<w:br w:type="page"\/>[\s\S]*Hoja de respuestas/);
+  expect(documentXml).toContain("&lt;script&gt;el caso&lt;/script&gt;");
+  expect(documentXml).toContain("Análisis &amp; conclusión");
+  expect(documentXml).not.toMatch(/Marca tu respuesta|Escribe tu respuesta|☐|Clave de respuestas/);
+
 });
 
 test("annex keeps the unchanged default DOCX profile", () => {

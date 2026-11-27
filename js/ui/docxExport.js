@@ -137,14 +137,47 @@
     return text.replace(new RegExp(`^${escaped}\\s*[.)]\\s*`, "i"), "").trim();
   }
 
-  function answerValues(question) {
+  function examAnswerLines(question) {
     const raw = question?.respuesta_correcta;
-    if (Array.isArray(raw)) return raw.map((item) => typeof item === "object" && item ? Object.values(item).map(scalar).filter(Boolean).join(" - ") : scalar(item)).filter(Boolean);
+    if (Array.isArray(raw)) return raw.map((item, index) => {
+      if (item && typeof item === "object") {
+        const left = scalar(item.lado_a).trim();
+        const right = scalar(item.lado_b).trim();
+        if (left || right) return [left, right].filter(Boolean).join(" - ");
+        return Object.values(item).map(scalar).map((value) => value.trim()).filter(Boolean).join(" - ");
+      }
+      const value = scalar(item).trim();
+      return value ? `${index + 1}. ${value}` : "";
+    }).filter(Boolean);
     const value = scalar(raw).trim();
-    return value ? [value] : [];
+    if (!value) return [];
+    const visible = question?.tipo === "opcion_multiple"
+      ? value.replace(/^([A-Z])\s*[.)]\s*\1\s*[.)]\s*/i, "$1) ")
+      : value;
+    return [visible];
   }
 
-  function examModel(examen, { includeAnswers = false } = {}) {
+  function examAnswerSheetNodes(questions) {
+    const nodes = [
+      pageBreak(),
+      heading("Hoja de respuestas", 1),
+      paragraph("Incluye cada pregunta con su respuesta correcta.")
+    ];
+    questions.forEach((question, index) => {
+      const answers = examAnswerLines(question);
+      nodes.push(
+        heading(`Pregunta ${index + 1}`, 2),
+        paragraph(question?.pregunta, { keepNext: true }),
+        paragraph("Respuesta correcta", { bold: true, keepNext: true }),
+        ...(answers.length > 1
+          ? [list(answers, false, { plain: true, indent: 0, keepTogether: true })]
+          : [paragraph(answers[0] || "Sin respuesta disponible.")])
+      );
+    });
+    return nodes;
+  }
+
+  function examModel(examen) {
     const content = examen?.examen_ia || {};
     const questions = Array.isArray(content.preguntas) ? content.preguntas : [];
     if (!questions.length) throw new Error("exam_content_missing");
@@ -163,12 +196,7 @@
       if (elements.length) children.push(list(elements.map((element, elementIndex) => stripMatchingPrefix(element, elementIndex + 1)), true, { keepTogether: true }));
       if (!options.length && !pairs.length && !elements.length) children.push(answerLines(4));
     });
-    if (includeAnswers) {
-      children.push(pageBreak(), heading("Clave de respuestas", 1));
-      questions.forEach((question, index) => {
-        children.push(paragraph(`${index + 1}. ${answerValues(question).join("; ") || "Sin respuesta disponible."}`));
-      });
-    }
+    children.push(...examAnswerSheetNodes(questions));
     return { profile: "examen", children };
   }
 
@@ -241,7 +269,7 @@
   }
 
   window.DocxExport = {
-    MIME, STYLE_PROFILES, scalar, compactText, editorialText, normalizeFilename, paragraph, heading, list, table, answerLines, pageBreak,
+    MIME, STYLE_PROFILES, scalar, compactText, editorialText, normalizeFilename, paragraph, heading, list, table, answerLines, pageBreak, examAnswerLines, examAnswerSheetNodes,
     buildDocument, createBlob, download,
     adapters: { planeacion: planeacionModel, listaCotejo: listaModel, exam: examModel, anexo: anexoModel }
   };

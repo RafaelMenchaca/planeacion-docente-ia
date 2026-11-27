@@ -8,11 +8,11 @@
     return examen;
   }
 
-  async function download(examenId, filenameOverride, options = {}) {
+  async function download(examenId, filenameOverride) {
     const examen = await ensureExamenDetalle(examenId);
     if (!examen?.examen_ia) throw new Error("No hay contenido disponible para exportar.");
     const fallback = examen.titulo || "Examen_unidad";
-    return window.DocxExport.download(window.DocxExport.adapters.exam(examen, options), filenameOverride, fallback);
+    return window.DocxExport.download(window.DocxExport.adapters.exam(examen), filenameOverride, fallback);
   }
 
   async function downloadFromBiblioteca(examenId) {
@@ -23,7 +23,7 @@
       const suggested = window.AppUI.buildDownloadSuggestedName("Examen", conjunto?.titulo || "");
       const filename = await window.AppUI.openDownloadNameModal({ suggestedName: suggested, extension: "docx" });
       if (filename === null) return false;
-      await download(examenId, filename, { includeAnswers: false });
+      await download(examenId, filename);
       console.debug("[downloads] exam:success", { examenId });
       return true;
     } catch (error) {
