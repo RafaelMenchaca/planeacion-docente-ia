@@ -38,63 +38,8 @@
     return a;
   }
 
-  function normalizeExamAnswerScalar(value) {
-    if (typeof value === "string") return value.trim();
-    if (typeof value === "number" || typeof value === "boolean") return String(value);
-    return "";
-  }
-
-  function normalizeExamComparableText(value) {
-    return normalizeExamAnswerScalar(value)
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  }
-
-  function getExamCorrectOptionAnswerText(question, answerText) {
-    const normalizedAnswer = normalizeExamComparableText(answerText);
-    const options = Array.isArray(question?.opciones) ? question.opciones : [];
-    const optionIndex = options.findIndex((option) => normalizeExamComparableText(option) === normalizedAnswer);
-
-    return answerText;
-  }
-
-  function buildExamAnswerLines(question) {
-    const respuestaCorrecta = question?.respuesta_correcta;
-
-    if (Array.isArray(respuestaCorrecta)) {
-      return respuestaCorrecta.map((item, index) => {
-        if (item && typeof item === "object" && !Array.isArray(item)) {
-          const left = normalizeExamAnswerScalar(item.lado_a);
-          const right = normalizeExamAnswerScalar(item.lado_b);
-
-          if (left || right) {
-            return [left, right].filter(Boolean).join(" - ");
-          }
-
-          const objectValues = Object.values(item)
-            .map((value) => normalizeExamAnswerScalar(value))
-            .filter(Boolean);
-          return objectValues.join(" - ");
-        }
-
-        const value = normalizeExamAnswerScalar(item);
-        return value ? `${index + 1}. ${value}` : "";
-      }).filter(Boolean);
-    }
-
-    const answerText = normalizeExamAnswerScalar(respuestaCorrecta);
-    if (!answerText) return [];
-
-    if (question?.tipo === "opcion_multiple" || question?.tipo === "verdadero_falso") {
-      return [getExamCorrectOptionAnswerText(question, answerText)];
-    }
-
-    return [answerText];
-  }
-
   function renderExamAnswerSheetPreviewItem(question, index) {
-    const answerLines = buildExamAnswerLines(question);
+    const answerLines = window.DocxExport.examAnswerLines(question);
     const answerHtml = answerLines.length > 1
       ? `<div class="mt-2 space-y-1 text-sm text-emerald-900">${answerLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>`
       : `<p class="mt-2 text-sm font-semibold text-emerald-900">${escapeHtml(answerLines[0] || "Sin respuesta disponible.")}</p>`;

@@ -68,6 +68,7 @@ function createHarness() {
   window.HTMLAnchorElement.prototype.click = jest.fn();
   window.DocxExport = {
     adapters: { exam: jest.fn(() => ({})) },
+    examAnswerLines: jest.fn((question) => [String(question?.respuesta_correcta || "").trim()].filter(Boolean)),
     download: jest.fn(async () => { const url = window.URL.createObjectURL({}); window.URL.revokeObjectURL(url); return true; })
   };
 
